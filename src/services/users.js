@@ -1,7 +1,7 @@
 /** Alta, consulta y mantenimiento de usuarios. */
 import { getDb, inTransaction } from '../db/index.js';
 import { newId } from '../lib/ids.js';
-import { hashPassword, verifyPassword, needsRehash } from '../lib/passwords.js';
+import { hashPassword, verifyPassword, needsRehash, HASH_FICTICIO } from '../lib/passwords.js';
 import { conflict, notFound, badRequest } from '../lib/errors.js';
 import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
@@ -94,8 +94,9 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
 
   if (!user) {
     // Se gasta el mismo tiempo que una verificación real para no revelar por
-    // temporización si el correo existe.
-    await verifyPassword(password, 'scrypt$4096$8$1$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAA==');
+    // temporización si el correo existe. El hash ficticio lleva los parámetros
+    // vigentes, así que el costo coincide con el de una cuenta real.
+    await verifyPassword(password, HASH_FICTICIO);
     return { ok: false, reason: 'credenciales' };
   }
 

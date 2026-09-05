@@ -14,6 +14,15 @@ let abrirDialogoPack = () => {};
 
 const ROLES = { customer: 'Cliente', staff: 'Personal', master: 'Máster' };
 
+/**
+ * Envuelve una acción de un botón para que un fallo se vea en pantalla.
+ * Sin esto, una consulta que falla (sin señal, permisos revocados) dejaba el
+ * panel exactamente igual, sin abrir nada y sin decir por qué.
+ */
+function alPulsar(accion) {
+  return () => Promise.resolve(accion()).catch((error) => brindis(error.message, 'error'));
+}
+
 function temporizador(fn, ms) {
   let id;
   return (...args) => {
@@ -236,10 +245,10 @@ async function cargarUsuarios() {
                 el(
                   'div',
                   { class: 'fila' },
-                  el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verUsuario(usuario.id) }, 'Ver'),
+                  el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: alPulsar(() => verUsuario(usuario.id)) }, 'Ver'),
                   el(
                     'button',
-                    { class: 'boton boton--chico boton--principal', type: 'button', onClick: () => abrirDialogoPack(usuario) },
+                    { class: 'boton boton--chico boton--principal', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
                     'Vender',
                   ),
                 ),
@@ -271,14 +280,18 @@ async function verUsuario(userId) {
         class: 'boton boton--chico boton--fantasma',
         type: 'button',
         onClick: async () => {
-          const respuesta = await api.post(`/api/admin/users/${userId}/reset-password`, {});
-          const clave = respuesta.temporaryPassword;
-          await copiar(clave);
-          await confirmar({
-            titulo: 'Contraseña restablecida',
-            mensaje: `Nueva contraseña temporal (ya copiada al portapapeles): ${clave}`,
-            textoAceptar: 'Entendido',
-          });
+          try {
+            const respuesta = await api.post(`/api/admin/users/${userId}/reset-password`, {});
+            const clave = respuesta.temporaryPassword;
+            await copiar(clave);
+            await confirmar({
+              titulo: 'Contraseña restablecida',
+              mensaje: `Nueva contraseña temporal (ya copiada al portapapeles): ${clave}`,
+              textoAceptar: 'Entendido',
+            });
+          } catch (error) {
+            brindis(error.message, 'error');
+          }
         },
       },
       'Restablecer contraseña',
@@ -290,9 +303,13 @@ async function verUsuario(userId) {
             class: 'boton boton--chico boton--ok',
             type: 'button',
             onClick: async () => {
-              await api.post(`/api/admin/users/${userId}/unlock`, {});
-              brindis('Cuenta desbloqueada.', 'ok');
-              verUsuario(userId);
+              try {
+                await api.post(`/api/admin/users/${userId}/unlock`, {});
+                brindis('Cuenta desbloqueada.', 'ok');
+                verUsuario(userId);
+              } catch (error) {
+                brindis(error.message, 'error');
+              }
             },
           },
           'Desbloquear',
@@ -385,7 +402,7 @@ async function verUsuario(userId) {
                 el('div', { class: 'tenue-2 pequeno' }, `${pack.remaining} de ${pack.size} · ${dinero(pack.priceCents)}`),
               ),
               el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto),
-              el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verPack(pack.id) }, 'Abrir'),
+              el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: alPulsar(() => verPack(pack.id)) }, 'Abrir'),
             );
           }),
         ),
@@ -458,7 +475,7 @@ async function cargarPacks() {
               el('td', { class: 'num' }, el('strong', {}, String(pack.remaining)), ` / ${pack.size}`),
               el('td', {}, el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto)),
               el('td', { class: 'pequeno tenue' }, fecha(pack.createdAt, { conHora: false })),
-              el('td', {}, el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verPack(pack.id) }, 'Abrir')),
+              el('td', {}, el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: alPulsar(() => verPack(pack.id)) }, 'Abrir')),
             );
           }),
         ),
@@ -542,9 +559,13 @@ async function verPack(packId) {
               type: 'button',
               onClick: async () => {
                 const suspender = pack.status !== 'suspended';
-                await api.patch(`/api/admin/packs/${packId}`, { status: suspender ? 'suspended' : 'active' });
-                brindis(suspender ? 'Pack suspendido.' : 'Pack reactivado.', 'ok');
-                recargar();
+                try {
+                  await api.patch(`/api/admin/packs/${packId}`, { status: suspender ? 'suspended' : 'active' });
+                  brindis(suspender ? 'Pack suspendido.' : 'Pack reactivado.', 'ok');
+                  recargar();
+                } catch (error) {
+                  brindis(error.message, 'error');
+                }
               },
             },
             pack.status === 'suspended' ? 'Reactivar pack' : 'Suspender pack',
@@ -564,9 +585,13 @@ async function verPack(packId) {
                   peligro: true,
                 });
                 if (!seguro) return;
-                await api.patch(`/api/admin/packs/${packId}`, { status: 'cancelled' });
-                brindis('Pack anulado.', 'ok');
-                recargar();
+                try {
+                  await api.patch(`/api/admin/packs/${packId}`, { status: 'cancelled' });
+                  brindis('Pack anulado.', 'ok');
+                  recargar();
+                } catch (error) {
+                  brindis(error.message, 'error');
+                }
               },
             },
             'Anular pack',
@@ -578,20 +603,59 @@ async function verPack(packId) {
           class: 'boton boton--chico boton--fantasma',
           type: 'button',
           onClick: async () => {
-            await api.patch(`/api/admin/packs/${packId}`, { allowStaticQr: !pack.allowStaticQr });
-            brindis(pack.allowStaticQr ? 'QR impreso desactivado.' : 'QR impreso activado.', 'ok');
-            recargar();
+            try {
+              await api.patch(`/api/admin/packs/${packId}`, { allowStaticQr: !pack.allowStaticQr });
+              brindis(pack.allowStaticQr ? 'QR impreso desactivado.' : 'QR impreso activado.', 'ok');
+              recargar();
+            } catch (error) {
+              brindis(error.message, 'error');
+            }
           },
         },
         pack.allowStaticQr ? 'Desactivar QR impreso' : 'Activar QR impreso',
       ),
+      pack.status !== 'cancelled'
+        ? el(
+            'button',
+            {
+              class: 'boton boton--chico boton--fantasma',
+              type: 'button',
+              onClick: alPulsar(async () => {
+                const elegida = await pedirTexto({
+                  titulo: 'Cambiar vencimiento',
+                  mensaje: 'Déjalo vacío para que el pack no caduque.',
+                  etiqueta: 'Vence el',
+                  tipo: 'date',
+                  valorInicial: pack.expiresAt ? pack.expiresAt.slice(0, 10) : '',
+                  textoAceptar: 'Guardar fecha',
+                  minimo: 0,
+                });
+                if (elegida === null) return;
+                // La fecha elegida vale hasta el final de ese día.
+                const expiresAt = elegida ? new Date(`${elegida}T23:59:59`).toISOString() : null;
+                const cambios = { expiresAt };
+                // Darle fecha nueva a un pack vencido es, en el mostrador,
+                // devolverlo al servicio: se hace en un solo movimiento.
+                const seguiraVigente = expiresAt === null || Date.parse(expiresAt) > Date.now();
+                if (pack.status === 'expired' && seguiraVigente) cambios.status = 'active';
+                await api.patch(`/api/admin/packs/${packId}`, cambios);
+                brindis(
+                  expiresAt ? `El pack vence el ${fecha(expiresAt, { conHora: false })}.` : 'El pack ya no caduca.',
+                  'ok',
+                );
+                recargar();
+              }),
+            },
+            pack.expiresAt ? 'Cambiar vencimiento' : 'Poner vencimiento',
+          )
+        : null,
       pack.allowStaticQr
         ? el(
             'button',
             {
               class: 'boton boton--chico boton--fantasma',
               type: 'button',
-              onClick: () => imprimirPase(pack, datos.owner),
+              onClick: alPulsar(() => imprimirPase(pack, datos.owner)),
             },
             'Imprimir pase',
           )
@@ -849,6 +913,32 @@ async function cargarAuditoria() {
 }
 
 // ---------------------------------------------------------------------------
+// Exportación de reportes
+// ---------------------------------------------------------------------------
+
+/**
+ * Descarga un reporte CSV.
+ *
+ * No puede ser un enlace: la API se autentica con la cabecera `Authorization`
+ * y el token vive solo en memoria, así que una navegación normal llegaría sin
+ * sesión y devolvería un 401 en vez del archivo. Se pide con `fetch` y se
+ * entrega al navegador como archivo local.
+ */
+async function descargarReporte(entidad) {
+  const csv = await api.get(`/api/admin/export/${entidad}.csv`);
+  const nombre = `${entidad}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const enlace = el('a', { href: url, download: nombre });
+  document.body.append(enlace);
+  enlace.click();
+  enlace.remove();
+  // La URL temporal se libera después: revocarla en el mismo instante deja la
+  // descarga a medias en algunos navegadores.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return nombre;
+}
+
+// ---------------------------------------------------------------------------
 // Diálogos de alta
 // ---------------------------------------------------------------------------
 
@@ -1056,13 +1146,29 @@ function montarDialogoPack() {
   $('#buscar-packs').addEventListener('input', buscarPacks);
   $('#filtro-pack-estado').addEventListener('change', () => cargarPacks());
 
+  for (const boton of $$('[data-exportar]')) {
+    boton.addEventListener('click', () =>
+      conCarga(boton, async () => {
+        try {
+          const nombre = await descargarReporte(boton.dataset.exportar);
+          brindis(`Reporte ${nombre} descargado.`, 'ok');
+        } catch (error) {
+          brindis(`No se pudo exportar: ${error.message}`, 'error');
+        }
+      }),
+    );
+  }
+
   $('#btn-recargar-consumos').addEventListener('click', () => cargarConsumos());
   $('#btn-recargar-auditoria').addEventListener('click', () => cargarAuditoria());
-  $('#btn-verificar').addEventListener('click', async () => {
-    const integridad = await api.get('/api/admin/integrity');
-    pintarIntegridad(integridad);
-    brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Se encontraron diferencias.', integridad.ok ? 'ok' : 'error');
-  });
+  $('#btn-verificar').addEventListener(
+    'click',
+    alPulsar(async () => {
+      const integridad = await api.get('/api/admin/integrity');
+      pintarIntegridad(integridad);
+      brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Se encontraron diferencias.', integridad.ok ? 'ok' : 'error');
+    }),
+  );
 
   abrirPanel('resumen');
 

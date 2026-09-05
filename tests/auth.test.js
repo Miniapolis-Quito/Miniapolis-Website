@@ -2,6 +2,7 @@ import test, { before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { levantarServidor, bajarServidor, limpiarBase, crearCliente, sembrarUsuarios, CLAVES } from './helpers.js';
 import * as users from '../src/services/users.js';
+import { HASH_FICTICIO, hashPassword, needsRehash, verifyPassword } from '../src/lib/passwords.js';
 
 before(levantarServidor);
 after(bajarServidor);
@@ -68,6 +69,39 @@ test('el login rechaza credenciales incorrectas sin revelar si el correo existe'
   assert.equal(claveMala.status, 401);
   // El mismo mensaje en ambos casos: no se filtra qué correos están registrados.
   assert.equal(inexistente.datos.error.message, claveMala.datos.error.message);
+});
+
+test('el hash ficticio del login cuesta lo mismo que uno real', async () => {
+  // Si sus parámetros o el largo de la clave quedaran por detrás de los de
+  // verdad, verificar una cuenta inexistente sería más barato y el tiempo de
+  // respuesta delataría qué correos están registrados.
+  const real = await hashPassword('Chicane-Nocturna-77');
+  const parametros = (hash) => hash.split('$').slice(0, 4).join('$');
+  const largoClave = (hash) => Buffer.from(hash.split('$')[5], 'base64').length;
+
+  assert.equal(parametros(HASH_FICTICIO), parametros(real));
+  assert.equal(largoClave(HASH_FICTICIO), largoClave(real));
+  assert.equal(needsRehash(HASH_FICTICIO), false);
+  // Y, por supuesto, no vale como contraseña de nadie.
+  assert.equal(await verifyPassword('cualquier-cosa', HASH_FICTICIO), false);
+});
+
+test('la sesión propia y la que ve el máster se describen igual', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+
+  const propias = await cCliente.get('/api/auth/sessions');
+  assert.equal(propias.status, 200);
+  const propia = propias.datos.items.find((s) => s.current);
+  assert.ok(propia, 'la sesión en uso debería venir marcada');
+
+  const ficha = await cMaster.get(`/api/admin/users/${cliente.id}`);
+  const vistaMaster = ficha.datos.sessions.find((s) => s.id === propia.id);
+  assert.ok(vistaMaster, 'el máster debería ver la misma sesión');
+  // Mismo formato en las dos rutas: nada de columnas crudas de la base.
+  assert.deepEqual(Object.keys(vistaMaster).sort(), Object.keys(propia).sort());
+  assert.equal(vistaMaster.createdAt, propia.createdAt);
+  assert.equal(vistaMaster.current, false);
+  assert.equal(vistaMaster.last_used_at, undefined);
 });
 
 test('la cuenta se bloquea temporalmente tras varios intentos fallidos', async () => {

@@ -116,6 +116,26 @@ test('el cliente recibe el consumo en el momento en que el personal escanea', as
   }
 });
 
+test('el evento en vivo dice cómo y desde qué puesto se consumió la entrada', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const pack = packsService.findById(emitido.datos.pack.id);
+
+  const canal = await abrirCanal(cCliente.token);
+  try {
+    await canal.esperar('conectado');
+    // Consumo manual: si el evento no llevara el método, la actividad en vivo
+    // del escáner lo mostraría como si hubiera entrado por QR.
+    await cStaff.post('/api/scan/manual', { code: pack.code, deviceLabel: 'Mostrador' });
+
+    const evento = await canal.esperar('entrada.consumida');
+    assert.equal(evento.datos.method, 'manual_code');
+    assert.equal(evento.datos.deviceLabel, 'Mostrador');
+  } finally {
+    canal.cerrar();
+  }
+});
+
 test('un cliente no recibe los eventos de otro cliente', async () => {
   const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
   const otro = await cMaster.post('/api/admin/users', {

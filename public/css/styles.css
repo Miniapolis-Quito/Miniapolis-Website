@@ -446,6 +446,7 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
 }
 .brindis--ok { border-color: rgba(47,208,122,.55); background: linear-gradient(var(--ok-suave), var(--superficie-2)); }
 .brindis--error { border-color: rgba(255,85,102,.55); background: linear-gradient(var(--error-suave), var(--superficie-2)); }
+.brindis--alerta { border-color: rgba(255,197,61,.55); background: linear-gradient(var(--alerta-suave), var(--superficie-2)); }
 .brindis--saliendo { animation: bajar 200ms ease forwards; }
 @keyframes subir { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes bajar { to { opacity: 0; transform: translateY(10px); } }

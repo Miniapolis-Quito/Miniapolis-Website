@@ -123,7 +123,9 @@ async function registrarConsumo({ payload, code, clave }) {
     if (respuesta.remaining === 0) {
       brindis(`${respuesta.pack.code} quedó sin entradas. Ofrécele un pack nuevo.`, 'error', 7000);
     } else if (respuesta.remaining <= 2) {
-      brindis(`A ${respuesta.customer.fullName} le quedan ${respuesta.remaining} entradas.`, 'error', 6000);
+      // Aviso, no error: al cliente le queda saldo; es el momento de ofrecerle
+      // otro pack, no de alarmar a quien está en la puerta.
+      brindis(`A ${respuesta.customer.fullName} le quedan ${respuesta.remaining} entradas.`, 'alerta', 6000);
     }
     return respuesta;
   } catch (error) {
@@ -360,14 +362,31 @@ function montarManual() {
   const formulario = $('#form-manual');
   const entrada = $('#codigo-manual');
 
-  // Da formato al código mientras se escribe: RHE-XXXX-XXXX.
+  /**
+   * Da formato al código mientras se escribe: RHE-XXXX-XXXX.
+   *
+   * El prefijo no se añade solo: si se antepusiera al primer carácter, quien
+   * teclee el código completo ("RHE-...") acabaría escribiendo su prefijo
+   * dentro del cuerpo. Se agrupa lo que hay, con prefijo o sin él —el servidor
+   * acepta las dos formas— y así lo que se ve es siempre lo que se tecleó.
+   */
+  function formatearCodigo(valor) {
+    const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const conPrefijo = limpio.startsWith('RHE');
+    const cuerpo = (conPrefijo ? limpio.slice(3) : limpio).slice(0, 8);
+    let formateado = conPrefijo ? 'RHE' : '';
+    if (cuerpo.length) formateado += (conPrefijo ? '-' : '') + cuerpo.slice(0, 4);
+    if (cuerpo.length > 4) formateado += '-' + cuerpo.slice(4);
+    return formateado;
+  }
+
   entrada.addEventListener('input', () => {
-    const limpio = entrada.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const cuerpo = limpio.startsWith('RHE') ? limpio.slice(3) : limpio;
-    let formateado = 'RHE';
-    if (cuerpo.length) formateado += '-' + cuerpo.slice(0, 4);
-    if (cuerpo.length > 4) formateado += '-' + cuerpo.slice(4, 8);
-    entrada.value = cuerpo.length ? formateado : limpio;
+    // Reescribir el valor lleva el cursor al final, así que solo se da formato
+    // cuando ya se está escribiendo ahí; corrigiendo en medio, no se estorba.
+    const alFinal = entrada.selectionStart === entrada.value.length;
+    const formateado = formatearCodigo(entrada.value);
+    if (!alFinal || formateado === entrada.value) return;
+    entrada.value = formateado;
   });
 
   $('#btn-consultar').addEventListener('click', async () => {
@@ -474,8 +493,8 @@ function montarManual() {
                 customerName: datos.owner.fullName,
                 createdAt: datos.at,
                 packCode: datos.pack.code,
-                method: 'qr_dynamic',
-                deviceLabel: null,
+                method: datos.method,
+                deviceLabel: datos.deviceLabel,
                 remainingAfter: datos.remaining,
                 status: 'confirmed',
               },

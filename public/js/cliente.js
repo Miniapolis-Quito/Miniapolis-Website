@@ -335,7 +335,6 @@ function manejarEvento(tipo, datos) {
 
 function montarCuenta() {
   const dialogo = $('#dialogo-cuenta');
-  const usuario = getUsuario();
 
   $('#btn-cuenta').addEventListener('click', () => {
     $('#perfil-nombre').value = getUsuario()?.fullName ?? '';
@@ -394,10 +393,6 @@ function montarCuenta() {
       window.location.replace('/');
     }
   });
-
-  if (usuario?.role !== 'customer') {
-    $('#titulo').textContent = 'Mis entradas';
-  }
 }
 
 // ---------------------------------------------------------------------------

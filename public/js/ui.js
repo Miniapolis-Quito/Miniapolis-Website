@@ -245,10 +245,14 @@ export function confirmar({ titulo, mensaje, textoAceptar = 'Confirmar', peligro
   });
 }
 
-/** Pide un texto (motivo de una anulación, por ejemplo). */
-export function pedirTexto({ titulo, mensaje, etiqueta, valorInicial = '', textoAceptar = 'Guardar', minimo = 3 }) {
+/**
+ * Pide un dato (el motivo de una anulación, una fecha…).
+ * Devuelve el texto escrito, o `null` si se canceló: con `minimo: 0` esos dos
+ * casos son distintos, y vaciar el campo a propósito es una respuesta válida.
+ */
+export function pedirTexto({ titulo, mensaje, etiqueta, valorInicial = '', textoAceptar = 'Guardar', minimo = 3, tipo = 'text' }) {
   return new Promise((resolver) => {
-    const entrada = el('input', { type: 'text', value: valorInicial, maxlength: '300', required: true });
+    const entrada = el('input', { type: tipo, value: valorInicial, maxlength: '300', required: minimo > 0 });
     const error = el('div', { class: 'campo__error' });
     const dialogo = el(
       'dialog',

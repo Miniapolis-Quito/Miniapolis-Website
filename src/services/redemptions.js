@@ -169,6 +169,8 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     redemptionId,
     remainingBefore,
     remainingAfter,
+    method,
+    deviceLabel: deviceLabel ?? null,
     pack: packsService.findById(fresh.id, db),
     createdAt: nowIso,
   };
@@ -182,6 +184,11 @@ function publishRedemption(result, owner, scanner) {
     remaining: result.remainingAfter,
     owner: { id: owner.id, fullName: owner.full_name },
     scannedBy: scanner ? { id: scanner.id, fullName: scanner.fullName } : null,
+    // El método y el puesto viajan en el evento para que la actividad en vivo
+    // del escáner muestre lo mismo que el historial: sin ellos, un consumo
+    // manual aparecía en pantalla como si hubiera entrado por QR.
+    method: result.method,
+    deviceLabel: result.deviceLabel,
     at: result.createdAt,
   };
   hub.publish(

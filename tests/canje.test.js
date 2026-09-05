@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios } from './helpers.js';
 import { getDb } from '../src/db/index.js';
 import { buildQrPayload } from '../src/lib/qr.js';
+import { normalizePackCode } from '../src/lib/ids.js';
 import * as packsService from '../src/services/packs.js';
 import * as redemptions from '../src/services/redemptions.js';
 
@@ -182,6 +183,30 @@ test('el consumo manual por código funciona y tolera erratas al teclear', async
 
   assert.equal(r.status, 200);
   assert.equal(r.datos.method, 'manual_code');
+  assert.equal(r.datos.remaining, 4);
+});
+
+test('el código se normaliza aunque el cuerpo empiece por las letras del prefijo', () => {
+  // El alfabeto de los códigos incluye R, H y E, así que un cuerpo puede
+  // empezar por "RHE". Recortar el prefijo a ciegas lo dejaba inservible.
+  assert.equal(normalizePackCode('RHEABCDE'), 'RHE-RHEA-BCDE');
+  assert.equal(normalizePackCode('RHE-RHEA-BCDE'), 'RHE-RHEA-BCDE');
+  assert.equal(normalizePackCode('RHERHEABCDE'), 'RHE-RHEA-BCDE');
+  // Separadores de cualquier tipo, y confusiones típicas al teclear.
+  assert.equal(normalizePackCode('rhe.abcd/efgh'), 'RHE-ABCD-EFGH');
+  assert.equal(normalizePackCode('RHE-0OIL-UVWX'), 'RHE-QQ77-VVWX');
+  // Lo que no puede ser un código sigue sin serlo.
+  assert.equal(normalizePackCode('ABC'), '');
+  assert.equal(normalizePackCode(null), '');
+});
+
+test('un código dictado sin el prefijo se consume igual', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const cuerpo = pack.code.slice(4); // "XXXX-XXXX", sin "RHE-"
+
+  const r = await cStaff.post('/api/scan/manual', { code: cuerpo });
+  assert.equal(r.status, 200, JSON.stringify(r.datos));
   assert.equal(r.datos.remaining, 4);
 });
 

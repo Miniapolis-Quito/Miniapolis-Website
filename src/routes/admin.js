@@ -185,7 +185,7 @@ router.get(
       summary: packsService.summaryForUser(user.id),
       packs: packsService.listPacksForUser(user.id),
       redemptions: redemptions.listRedemptions({ userId: user.id, limit: 25 }).items,
-      sessions: sessions.listForUser(user.id).slice(0, 10),
+      sessions: sessions.listForUser(user.id).slice(0, 10).map((fila) => sessions.toPublicSession(fila)),
     });
   }),
 );

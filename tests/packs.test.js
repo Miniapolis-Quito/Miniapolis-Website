@@ -116,6 +116,38 @@ test('un ajuste no puede dejar el saldo en negativo', async () => {
   assert.ok(packs.checkIntegrity().ok);
 });
 
+test('reactivar un pack vencido pide antes cambiar la fecha', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', {
+    userId: cliente.id,
+    size: 5,
+    expiresAt: new Date(Date.now() + 1500).toISOString(),
+  });
+  const packId = emitido.datos.pack.id;
+  await new Promise((listo) => setTimeout(listo, 1700));
+
+  // El barrido lo marca como vencido en la siguiente lectura.
+  assert.equal((await cMaster.get(`/api/admin/packs?limit=200`)).datos.items.find((p) => p.id === packId).status, 'expired');
+
+  // Ponerlo "activo" a secas no serviría: volvería a vencer en el acto.
+  const fallido = await cMaster.patch(`/api/admin/packs/${packId}`, { status: 'active' });
+  assert.equal(fallido.status, 409);
+  assert.equal(fallido.datos.error.code, 'pack_expirado');
+
+  // Con una fecha nueva, sí: es lo que hace el panel en un solo movimiento.
+  const nuevaFecha = new Date(Date.now() + 86400000).toISOString();
+  const ok = await cMaster.patch(`/api/admin/packs/${packId}`, { status: 'active', expiresAt: nuevaFecha });
+  assert.equal(ok.status, 200, JSON.stringify(ok.datos));
+  assert.equal(ok.datos.pack.status, 'active');
+  assert.equal(ok.datos.pack.usable, true);
+
+  // Y quitarle la fecha del todo también lo deja en servicio.
+  const sinFecha = await cMaster.patch(`/api/admin/packs/${packId}`, { status: 'active', expiresAt: null });
+  assert.equal(sinFecha.status, 200, JSON.stringify(sinFecha.datos));
+  assert.equal(sinFecha.datos.pack.expiresAt, null);
+  assert.equal(sinFecha.datos.pack.usable, true);
+});
+
 test('un pack anulado no se puede reactivar ni ajustar', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
   const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });

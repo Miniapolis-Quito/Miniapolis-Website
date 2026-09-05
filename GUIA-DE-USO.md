@@ -107,6 +107,16 @@ normalidad.
 Abre el pack y usa **Ajustar entradas**. Número positivo acredita, negativo
 descuenta. Siempre pide un motivo y todo queda en el historial del pack.
 
+### Cambiar o quitar el vencimiento de un pack
+
+Abre el pack y toca **Cambiar vencimiento**. Si dejas la fecha vacía, el pack
+deja de caducar.
+
+Si el pack ya venció, ponerle una fecha nueva (o quitarla) lo devuelve al
+servicio en el mismo paso. Reactivarlo sin tocar la fecha no se puede: volvería
+a vencer en el acto, y el sistema lo dice en vez de dejarte creer que quedó
+arreglado.
+
 ### Un cliente perdió su contraseña
 
 Ábrelo en **Clientes y personal → Ver → Restablecer contraseña**. Se genera una
@@ -153,4 +163,5 @@ segundos entre escaneos del mismo pack; para un grupo, escanea uno por uno con
 pausa.
 
 **¿Las entradas caducan?**
-Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan.
+Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan. La
+fecha se puede cambiar o quitar después, desde el detalle del pack.

@@ -255,7 +255,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (90 pruebas)
+npm test        # suite completa (98 pruebas)
 npm run seed    # datos de demostración
 ```
 

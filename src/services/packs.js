@@ -270,6 +270,17 @@ export function updatePack(packId, changes, { actor, ip, userAgent } = {}) {
     if (pack.status === 'cancelled' && changes.status !== 'cancelled') {
       throw conflict('Un pack anulado no se puede reactivar. Emite uno nuevo.', 'pack_anulado');
     }
+    // Reactivar sin mover la fecha de vencimiento no serviría de nada: el
+    // barrido de vencidos volvería a marcarlo en la siguiente lectura y el
+    // panel diría "reactivado" sobre un pack que sigue sin funcionar.
+    const vencimiento = changes.expiresAt !== undefined ? changes.expiresAt : pack.expires_at;
+    if (changes.status === 'active' && vencimiento && Date.parse(vencimiento) <= Date.now()) {
+      throw conflict(
+        'Este pack venció. Para reactivarlo, cambia antes su fecha de vencimiento o quítala.',
+        'pack_expirado',
+        { expiresAt: vencimiento },
+      );
+    }
     fields.push('status = @status');
     params.status = changes.status;
   }

@@ -35,16 +35,32 @@ export function newPackCode(prefix = 'RHE') {
   return `${prefix}-${randomChars(4)}-${randomChars(4)}`;
 }
 
-/** Normaliza un código escrito a mano: mayúsculas, sin espacios y con guiones. */
+/** Longitud del cuerpo de un código, sin contar el prefijo. */
+const CODE_BODY_LENGTH = 8;
+const CODE_BODY_PATTERN = new RegExp(`^[${CODE_ALPHABET}]{${CODE_BODY_LENGTH}}$`);
+
+/** Normaliza un código escrito a mano: mayúsculas, sin separadores y con guiones. */
 export function normalizePackCode(input, prefix = 'RHE') {
   if (typeof input !== 'string') return '';
-  let cleaned = input.trim().toUpperCase().replace(/[\s_]+/g, '').replace(/-/g, '');
-  if (cleaned.startsWith(prefix)) cleaned = cleaned.slice(prefix.length);
+  // Se descarta cualquier separador (guiones, espacios, puntos, barras): en el
+  // mostrador el código se dicta en voz alta y cada quien lo escribe distinto.
+  let cleaned = input.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  // El prefijo solo se quita si lo que sobra tiene el largo de un cuerpo. Las
+  // letras R, H y E también forman parte del alfabeto de los códigos, así que
+  // recortarlo a ciegas destrozaría un cuerpo que empiece por "RHE" y que el
+  // cliente haya dictado sin el prefijo.
+  if (cleaned.length === prefix.length + CODE_BODY_LENGTH && cleaned.startsWith(prefix)) {
+    cleaned = cleaned.slice(prefix.length);
+  }
+
   // Confusiones típicas al teclear un código que no usa estas letras/dígitos.
-  cleaned = cleaned.replace(/O/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V');
-  cleaned = cleaned.replace(/0/g, 'Q').replace(/1/g, '7');
-  if (cleaned.length !== 8) return '';
-  if (!/^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}$/.test(cleaned)) return '';
+  // El alfabeto excluye 0, 1, I, L, O y U precisamente porque se confunden con
+  // los caracteres que sí lo forman: O/0 con Q, I/L/1 con 7, y U con V.
+  cleaned = cleaned.replace(/[O0]/g, 'Q').replace(/[IL1]/g, '7').replace(/U/g, 'V');
+
+  if (cleaned.length !== CODE_BODY_LENGTH) return '';
+  if (!CODE_BODY_PATTERN.test(cleaned)) return '';
   return `${prefix}-${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
 }
 
