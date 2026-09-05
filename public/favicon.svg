@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Racing Hobbies">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff6a1a"/>
+      <stop offset="1" stop-color="#ff3d6e"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)"/>
+  <path fill="#fff" d="M17 44V20h12.6c5.7 0 9.2 2.9 9.2 7.9 0 3.6-1.9 6.1-5.2 7.2L40 44h-6.4l-5.5-8h-5.2v8H17zm5.9-12.7h6c2.5 0 4-1.2 4-3.3s-1.5-3.2-4-3.2h-6v6.5z"/>
+  <circle cx="45" cy="24" r="4" fill="#fff" opacity=".92"/>
+</svg>

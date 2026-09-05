@@ -1,1 +1,281 @@
-# miniapolis-tickets
+# Sistema de entradas — Racing Hobbies Ecuador
+
+Control de acceso por packs de entradas para la pista de autos a control remoto.
+Los clientes compran packs de 5 o 10 entradas, muestran un código QR desde su
+teléfono y el personal lo escanea en la puerta: cada escaneo descuenta una
+entrada y el saldo se actualiza en el teléfono del cliente al instante.
+
+---
+
+## Qué hace
+
+**Para el cliente**
+- Ve cuántas entradas le quedan, en tiempo real y sin recargar la página.
+- Muestra un QR que se renueva solo cada 30 segundos, así una captura de
+  pantalla ajena deja de servir enseguida.
+- Consulta su historial: cuándo usó cada entrada, en qué pack y con qué saldo
+  quedó.
+- Si se queda sin señal, su código de pack (`RHE-XXXX-XXXX`) sigue sirviendo:
+  el personal puede ingresarlo a mano.
+
+**Para el personal de pista**
+- Escáner con la cámara del teléfono, con lector nativo del navegador cuando
+  está disponible y respaldo que funciona sin conexión a Internet.
+- Confirmación grande y con sonido: cuántas entradas quedan, de quién es el
+  pack, y aviso cuando el cliente se está quedando sin entradas.
+- Consulta un pack sin descontar nada, e ingreso manual por código.
+- No puede emitir packs, ajustar saldos ni ver la administración.
+
+**Para el usuario máster**
+- Vende packs, da de alta clientes y personal, y asigna roles.
+- Ajusta saldos, suspende o anula packs, y anula un consumo devolviendo la
+  entrada al cliente.
+- Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
+- Bitácora de auditoría de todo lo que ocurre y exportación a CSV.
+- Verificación de integridad contable con un clic.
+
+---
+
+## Puesta en marcha
+
+Requisitos: **Node.js 20.11 o superior**.
+
+```bash
+npm install
+
+cp .env.example .env
+# Genera los tres secretos y pégalos en .env:
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+
+npm start
+```
+
+El sistema queda en `http://localhost:3000`. La primera vez crea la cuenta
+máster indicada en `MASTER_EMAIL`; si dejaste `MASTER_PASSWORD` vacío, imprime
+una contraseña generada **una sola vez** en la consola.
+
+Para probarlo con datos de ejemplo antes de usarlo de verdad:
+
+```bash
+npm run seed
+```
+
+Crea un máster, un operador y cinco clientes con packs y consumos repartidos en
+las últimas dos semanas. Todos con la contraseña `Pista-Demo-2026`, que hay que
+cambiar antes de abrir al público.
+
+### Si nadie puede entrar al panel
+
+```bash
+npm run create-master -- --email admin@racinghobbies.ec --nombre "Tu nombre"
+```
+
+Crea la cuenta si no existe o le restablece la contraseña y le devuelve el rol
+máster si ya existía. Es la salida de emergencia, y solo funciona desde el
+servidor.
+
+---
+
+## Rutas de la interfaz
+
+| Ruta        | Quién entra           | Para qué |
+|-------------|-----------------------|----------|
+| `/`         | cualquiera            | Entrar o crear cuenta |
+| `/app`      | cualquier cuenta      | Saldo, QR e historial del cliente |
+| `/escanear` | personal y máster     | Control de acceso en la puerta |
+| `/admin`    | solo máster           | Administración completa |
+
+---
+
+## La cámara necesita HTTPS
+
+Los navegadores solo dan acceso a la cámara en `localhost` o sobre **HTTPS**.
+En la pista, el teléfono del operador no es `localhost`, así que **hay que
+servir el sistema por HTTPS o el escáner no abrirá la cámara** (el ingreso
+manual por código seguirá funcionando).
+
+La forma más simple es poner Caddy delante, que gestiona el certificado solo:
+
+```caddyfile
+entradas.racinghobbies.ec {
+    reverse_proxy localhost:3000
+}
+```
+
+Con nginx, además del bloque TLS habitual, hay que desactivar el búfer en el
+canal de tiempo real:
+
+```nginx
+location /api/events {
+    proxy_pass http://localhost:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Connection '';
+    proxy_buffering off;
+    proxy_read_timeout 24h;
+}
+
+location / {
+    proxy_pass http://localhost:3000;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
+Con proxy delante hay que poner `TRUST_PROXY=true` y `COOKIE_SECURE=true` en
+`.env`. **`TRUST_PROXY=true` sin un proxy real es peligroso**: permitiría a
+cualquiera falsificar su dirección IP y esquivar los límites de intentos.
+
+### Que el servicio se levante solo
+
+```ini
+# /etc/systemd/system/entradas.service
+[Unit]
+Description=Entradas Racing Hobbies
+After=network.target
+
+[Service]
+Type=simple
+User=racing
+WorkingDirectory=/opt/entradas
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now entradas
+```
+
+---
+
+## Cómo se protege el sistema
+
+**Contra el uso del QR ajeno.** El QR no es un código fijo: lleva la hora y un
+número de un solo uso, firmados con HMAC-SHA256 usando una clave derivada del
+secreto del servidor y de un secreto propio de cada pack. Un QR vale
+`QR_TTL_SECONDS` (120 por defecto) y **el mismo código nunca se acepta dos
+veces**, ni siquiera dentro de esa ventana. Sin ambos secretos no se puede
+fabricar uno válido, y el del pack nunca sale del servidor.
+
+Los pases impresos (QR fijo) están desactivados salvo que el máster los active
+pack por pack, porque un impreso sí es copiable.
+
+**Contra el doble descuento.** Tres barreras independientes:
+
+1. **Clave de idempotencia** — si el teléfono del operador pierde la señal y
+   reintenta, el servidor devuelve la misma respuesta sin volver a descontar.
+2. **Número de un solo uso del QR** — el mismo código no se acepta dos veces.
+3. **Tiempo de espera por pack** — dos escaneos del mismo pack en menos de
+   `REDEEM_COOLDOWN_SECONDS` se rechazan con un aviso claro, que es lo que
+   ocurre cuando la cámara dispara dos veces.
+
+Además, el descuento sucede dentro de una transacción con la condición
+`remaining = <valor leído>`: aunque dos puestos escaneen a la vez, solo uno
+puede ganar. Hay una prueba que lanza diez consumos simultáneos contra un pack
+de tres y verifica que pasan exactamente tres.
+
+**Contra la manipulación de saldos.** `packs.remaining` es una proyección: la
+verdad está en `pack_movements`, donde toda alta, consumo, anulación y ajuste
+deja un asiento con su saldo resultante. El panel máster verifica que ambos
+coincidan, y las pruebas comprueban que una alteración directa de la base se
+detecta.
+
+**Sesiones.** La contraseña se guarda con scrypt (N=2¹⁶, r=8, p=1). El token de
+acceso vive 15 minutos y solo en memoria del navegador; la sesión persiste con
+una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
+JavaScript no puede leer. El token de refresco **rota en cada uso** y, si
+alguna vez se presenta uno ya rotado, se asume robo y se revoca la sesión
+completa. Suspender una cuenta, cambiarle el rol o cambiar la contraseña corta
+el acceso al instante, sin esperar a que caduque nada.
+
+**Lo demás.** Límites de intentos persistidos en base (sobreviven a un
+reinicio), bloqueo temporal de cuenta tras 8 fallos, política de seguridad de
+contenido sin `unsafe-inline` ni `unsafe-eval`, consultas siempre
+parametrizadas, validación de entrada con esquemas, cabeceras de seguridad, y
+bitácora de auditoría de cada acción con su autor, hora y dirección IP.
+
+---
+
+## Operación diaria
+
+**Vender un pack.** Administración → Packs → *Vender pack*. Se busca al cliente
+(o se le crea antes en *Clientes y personal*), se elige el tamaño, se ajusta el
+precio si hubo descuento y se registra la forma de pago. El cliente ve el pack
+aparecer en su teléfono en el momento, sin recargar.
+
+**Cobrar la entrada.** El operador abre `/escanear`, escribe el nombre de su
+puesto una vez (queda guardado en ese teléfono) y enciende la cámara. Cada
+escaneo válido muestra en grande cuántas entradas quedan y avisa cuando el
+cliente baja de tres.
+
+**Corregir un error.** Administración → Consumos → *Anular*. Pide el motivo,
+devuelve la entrada al cliente y queda registrado quién lo hizo y por qué.
+
+**Cierre de caja.** Administración → Resumen → *Exportar packs / consumos /
+clientes*. Los CSV abren directamente en Excel con los acentos correctos.
+
+---
+
+## Copias de seguridad
+
+Todo vive en un único archivo SQLite (`data/tickets.db`). La forma correcta de
+copiarlo **con el sistema en marcha** es dejar que SQLite lo haga:
+
+```bash
+sqlite3 data/tickets.db ".backup '/respaldos/tickets-$(date +%F).db'"
+```
+
+Copiar el archivo con `cp` mientras el servidor escribe puede dar una copia
+inservible. Una tarea diaria basta:
+
+```cron
+0 3 * * * sqlite3 /opt/entradas/data/tickets.db ".backup '/respaldos/tickets-$(date +\%F).db'"
+```
+
+---
+
+## Desarrollo
+
+```bash
+npm run dev     # servidor con recarga automática
+npm test        # suite completa (62 pruebas)
+npm run seed    # datos de demostración
+```
+
+Las pruebas corren sobre una base en memoria y cubren autenticación y rotación
+de sesiones, emisión y ajuste de packs, las tres barreras contra el doble
+descuento, concurrencia, control de acceso por rol y las cabeceras de
+seguridad.
+
+### Estructura
+
+```
+src/
+  config.js            Configuración validada desde el entorno
+  app.js               Ensamblado de Express
+  server.js            Arranque, mantenimiento y apagado ordenado
+  bootstrap.js         Creación de la cuenta máster inicial
+  db/                  Conexión SQLite y migraciones incrementales
+  lib/                 QR, contraseñas, tokens, límites, eventos en vivo
+  middleware/          Seguridad, autenticación, manejo de errores
+  routes/              auth · packs · scan · admin · events
+  services/            Reglas de negocio (packs, consumos, usuarios, auditoría)
+public/                Interfaz web sin compilación ni dependencias externas
+tests/                 Pruebas automatizadas
+scripts/               Utilidades de terminal
+```
+
+La interfaz no usa ningún framework ni descarga nada de Internet: se sirve tal
+cual y funciona con la política de seguridad cerrada. La única librería de
+terceros del navegador es `jsQR`, incluida en `public/vendor/` como respaldo
+para leer códigos cuando el navegador no ofrece lector propio.
+
+### Sobre las migraciones
+
+`src/db/migrations.js` contiene una lista ordenada que se aplica una sola vez
+cada una. Para cambiar el esquema se **agrega** una entrada al final; nunca se
+edita ni se reordena una ya publicada, porque las bases existentes ya la
+aplicaron.

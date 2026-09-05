@@ -1,0 +1,292 @@
+/**
+ * Pruebas del consumo de entradas: la parte del sistema donde un error cuesta
+ * dinero o discusiones en el mostrador.
+ */
+import test, { before, after, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios } from './helpers.js';
+import { getDb } from '../src/db/index.js';
+import { buildQrPayload } from '../src/lib/qr.js';
+import * as packsService from '../src/services/packs.js';
+import * as redemptions from '../src/services/redemptions.js';
+
+before(levantarServidor);
+after(bajarServidor);
+beforeEach(limpiarBase);
+
+/** Emite un pack y devuelve la fila completa (incluye el secreto, para firmar QR). */
+async function emitirPack(cMaster, userId, size = 5, extras = {}) {
+  const r = await cMaster.post('/api/admin/packs', { userId, size, ...extras });
+  assert.equal(r.status, 201, JSON.stringify(r.datos));
+  return packsService.findById(r.datos.pack.id);
+}
+
+test('escanear un QR válido descuenta exactamente una entrada', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 10);
+
+  const r = await cStaff.post('/api/scan', { payload: buildQrPayload(pack), deviceLabel: 'Puerta 1' });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.ok, true);
+  assert.equal(r.datos.remaining, 9);
+  assert.equal(r.datos.remainingBefore, 10);
+  assert.equal(r.datos.method, 'qr_dynamic');
+  assert.equal(r.datos.customer.fullName, 'Carlos Piloto');
+
+  const saldo = await cCliente.get('/api/packs/mine/summary');
+  assert.equal(saldo.datos.summary.availableTickets, 9);
+});
+
+test('el mismo QR no se puede usar dos veces (protección anti-repetición)', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const qr = buildQrPayload(pack);
+
+  assert.equal((await cStaff.post('/api/scan', { payload: qr })).status, 200);
+
+  const segundo = await cStaff.post('/api/scan', { payload: qr });
+  assert.equal(segundo.status, 409);
+  assert.equal(segundo.datos.error.code, 'qr_ya_usado');
+
+  assert.equal(packsService.findById(pack.id).remaining, 4);
+});
+
+test('un QR caducado se rechaza', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  // QR firmado con una marca de tiempo de hace diez minutos.
+  const viejo = buildQrPayload(pack, { at: Date.now() - 600_000 });
+
+  const r = await cStaff.post('/api/scan', { payload: viejo });
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'qr_expirado');
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+});
+
+test('un QR con firma falsificada se rechaza', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const valido = buildQrPayload(pack);
+  const partes = valido.split('|');
+  const falsificado = [...partes.slice(0, 4), 'AAAAAAAAAAAAAAAAAAAAAAAAAAA'].join('|');
+
+  const r = await cStaff.post('/api/scan', { payload: falsificado });
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'qr_firma');
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+});
+
+test('un QR firmado con el secreto de otro pack no sirve', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const packA = await emitirPack(cMaster, cliente.id, 5);
+  const packB = await emitirPack(cMaster, cliente.id, 5);
+
+  // Se toma el código de A pero se firma con el secreto de B.
+  const impostor = buildQrPayload({ code: packA.code, secret: packB.secret });
+
+  const r = await cStaff.post('/api/scan', { payload: impostor });
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'qr_firma');
+});
+
+test('el QR impreso solo funciona si el pack lo permite', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const denegado = await cStaff.post('/api/scan', { payload: buildQrPayload(pack, { static: true }) });
+  assert.equal(denegado.status, 400);
+  assert.equal(denegado.datos.error.code, 'qr_estatico_no_permitido');
+
+  await cMaster.patch(`/api/admin/packs/${pack.id}`, { allowStaticQr: true });
+  const conPermiso = packsService.findById(pack.id);
+  const aceptado = await cStaff.post('/api/scan', { payload: buildQrPayload(conPermiso, { static: true }) });
+  assert.equal(aceptado.status, 200);
+  assert.equal(aceptado.datos.method, 'qr_static');
+});
+
+test('la clave de idempotencia evita el doble descuento en un reintento', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const qr = buildQrPayload(pack);
+  const clave = 'reintento-de-red-0001';
+
+  const primero = await cStaff.post('/api/scan', { payload: qr }, { cabeceras: { 'Idempotency-Key': clave } });
+  const segundo = await cStaff.post('/api/scan', { payload: qr }, { cabeceras: { 'Idempotency-Key': clave } });
+
+  assert.equal(primero.status, 200);
+  assert.equal(segundo.status, 200);
+  assert.equal(segundo.headers.get('idempotent-replay'), 'true');
+  assert.equal(primero.datos.redemptionId, segundo.datos.redemptionId);
+  assert.equal(packsService.findById(pack.id).remaining, 4, 'solo debe descontarse una entrada');
+});
+
+test('reusar una clave de idempotencia con otros datos es un conflicto', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const packA = await emitirPack(cMaster, cliente.id, 5);
+  const packB = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'clave-reutilizada-0001';
+
+  await cStaff.post('/api/scan', { payload: buildQrPayload(packA) }, { cabeceras: { 'Idempotency-Key': clave } });
+  const otro = await cStaff.post('/api/scan', { payload: buildQrPayload(packB) }, { cabeceras: { 'Idempotency-Key': clave } });
+
+  assert.equal(otro.status, 409);
+  assert.equal(otro.datos.error.code, 'idempotencia_conflicto');
+  assert.equal(packsService.findById(packB.id).remaining, 5);
+});
+
+test('un pack agotado no permite más consumos y queda marcado como tal', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 2);
+
+  assert.equal((await cStaff.post('/api/scan', { payload: buildQrPayload(pack) })).status, 200);
+  const ultima = await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+  assert.equal(ultima.status, 200);
+  assert.equal(ultima.datos.remaining, 0);
+  assert.equal(ultima.datos.pack.status, 'depleted');
+
+  const sobrante = await cStaff.post('/api/scan', { payload: buildQrPayload(packsService.findById(pack.id)) });
+  assert.equal(sobrante.status, 409);
+  assert.equal(sobrante.datos.error.code, 'pack_sin_entradas');
+});
+
+test('un pack suspendido, anulado o vencido no se puede consumir', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const db = getDb();
+
+  const suspendido = await emitirPack(cMaster, cliente.id, 5);
+  await cMaster.patch(`/api/admin/packs/${suspendido.id}`, { status: 'suspended' });
+  const rSuspendido = await cStaff.post('/api/scan', { payload: buildQrPayload(suspendido) });
+  assert.equal(rSuspendido.datos.error.code, 'pack_suspendido');
+
+  const anulado = await emitirPack(cMaster, cliente.id, 5);
+  await cMaster.patch(`/api/admin/packs/${anulado.id}`, { status: 'cancelled' });
+  const rAnulado = await cStaff.post('/api/scan', { payload: buildQrPayload(anulado) });
+  assert.equal(rAnulado.datos.error.code, 'pack_cancelado');
+
+  const vencido = await emitirPack(cMaster, cliente.id, 5);
+  db.prepare('UPDATE packs SET expires_at = ? WHERE id = ?').run(new Date(Date.now() - 1000).toISOString(), vencido.id);
+  const rVencido = await cStaff.post('/api/scan', { payload: buildQrPayload(vencido) });
+  assert.equal(rVencido.datos.error.code, 'pack_expirado');
+});
+
+test('el consumo manual por código funciona y tolera erratas al teclear', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  // Escrito en minúsculas, con espacios y sin guiones.
+  const desprolijo = pack.code.toLowerCase().replace(/-/g, ' ');
+  const r = await cStaff.post('/api/scan/manual', { code: desprolijo, deviceLabel: 'Mostrador' });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.method, 'manual_code');
+  assert.equal(r.datos.remaining, 4);
+});
+
+test('consultar un pack no descuenta entradas', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const porQr = await cStaff.post('/api/scan/verify', { payload: buildQrPayload(pack) });
+  assert.equal(porQr.status, 200);
+  assert.equal(porQr.datos.valid, true);
+
+  const porCodigo = await cStaff.get(`/api/scan/lookup/${pack.code}`);
+  assert.equal(porCodigo.status, 200);
+  assert.equal(porCodigo.datos.usable, true);
+  assert.equal(porCodigo.datos.customer.fullName, 'Carlos Piloto');
+
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+});
+
+test('varios escaneos simultáneos del mismo pack nunca dejan el saldo en negativo', async () => {
+  const { cMaster, staff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 3);
+
+  // Diez intentos a la vez sobre un pack de 3: solo 3 pueden prosperar.
+  const intentos = Array.from({ length: 10 }, () => {
+    try {
+      return redemptions.redeemByCode({
+        code: pack.code,
+        scanner: { id: staff.id, email: staff.email },
+        deviceLabel: 'Carrera',
+      });
+    } catch (error) {
+      return { error };
+    }
+  });
+
+  const exitosos = intentos.filter((r) => r.body?.ok).length;
+  assert.equal(exitosos, 3);
+  const final = packsService.findById(pack.id);
+  assert.equal(final.remaining, 0);
+  assert.equal(final.status, 'depleted');
+  assert.ok(packsService.checkIntegrity().ok);
+});
+
+test('el máster puede anular un consumo y la entrada vuelve al cliente', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const consumo = await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+  assert.equal(consumo.datos.remaining, 4);
+
+  const anulacion = await cMaster.post(`/api/admin/redemptions/${consumo.datos.redemptionId}/void`, {
+    reason: 'Se escaneó por error a la persona equivocada',
+  });
+  assert.equal(anulacion.status, 200);
+  assert.equal(anulacion.datos.remaining, 5);
+
+  const saldo = await cCliente.get('/api/packs/mine/summary');
+  assert.equal(saldo.datos.summary.availableTickets, 5);
+
+  // No se puede anular dos veces.
+  const repetida = await cMaster.post(`/api/admin/redemptions/${consumo.datos.redemptionId}/void`, { reason: 'otra vez' });
+  assert.equal(repetida.status, 409);
+  assert.ok(packsService.checkIntegrity().ok);
+});
+
+test('anular un consumo reactiva un pack que había quedado agotado', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 1);
+  const consumo = await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+  assert.equal(packsService.findById(pack.id).status, 'depleted');
+
+  await cMaster.post(`/api/admin/redemptions/${consumo.datos.redemptionId}/void`, { reason: 'Error del operador' });
+
+  const reactivado = packsService.findById(pack.id);
+  assert.equal(reactivado.status, 'active');
+  assert.equal(reactivado.remaining, 1);
+});
+
+test('cada consumo deja rastro en el libro mayor y en la auditoría', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  await cStaff.post('/api/scan', { payload: buildQrPayload(pack), deviceLabel: 'Puerta 2' });
+
+  const detalle = await cMaster.get(`/api/admin/packs/${pack.id}`);
+  const consumo = detalle.datos.movements.find((m) => m.reason === 'redeem');
+  assert.ok(consumo);
+  assert.equal(consumo.delta, -1);
+  assert.equal(consumo.balanceAfter, 4);
+  assert.equal(consumo.actorName, 'Beto Pista');
+
+  const auditoria = await cMaster.get('/api/admin/audit?action=entrada.consumida');
+  assert.equal(auditoria.datos.items.length, 1);
+  assert.equal(auditoria.datos.items[0].metadata.deviceLabel, 'Puerta 2');
+});
+
+test('un código inventado o basura no rompe nada', async () => {
+  const { cStaff } = await sembrarUsuarios();
+
+  const basura = await cStaff.post('/api/scan', { payload: 'hola soy un texto cualquiera' });
+  assert.equal(basura.status, 400);
+  assert.equal(basura.datos.error.code, 'qr_invalido');
+
+  const inexistente = await cStaff.post('/api/scan/manual', { code: 'RHE-2222-3333' });
+  assert.equal(inexistente.status, 404);
+
+  const vacio = await cStaff.post('/api/scan', { payload: '' });
+  assert.equal(vacio.status, 400);
+});

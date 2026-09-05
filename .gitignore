@@ -1,0 +1,20 @@
+# Dependencias
+node_modules/
+
+# Base de datos y sus archivos auxiliares de SQLite
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Configuración local: contiene secretos, nunca se versiona.
+# Los archivos de ejemplo sí se versionan: no llevan valores reales.
+.env
+.env.*
+!*.example
+
+# Registros y temporales
+*.log
+npm-debug.log*
+.DS_Store
+coverage/

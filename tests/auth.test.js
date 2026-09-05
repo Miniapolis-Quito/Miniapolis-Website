@@ -1,0 +1,188 @@
+import test, { before, after, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { levantarServidor, bajarServidor, limpiarBase, crearCliente, sembrarUsuarios, CLAVES } from './helpers.js';
+import * as users from '../src/services/users.js';
+
+before(levantarServidor);
+after(bajarServidor);
+beforeEach(limpiarBase);
+
+test('un visitante puede registrarse y queda con sesión iniciada', async () => {
+  const cliente = crearCliente();
+  const r = await cliente.post('/api/auth/register', {
+    email: 'Nuevo@Ejemplo.com',
+    password: 'Chasis-Aluminio-2026',
+    fullName: 'Nuevo Piloto',
+    phone: '+593 99 123 4567',
+  });
+
+  assert.equal(r.status, 201);
+  assert.ok(r.datos.accessToken);
+  assert.equal(r.datos.user.role, 'customer');
+  // El correo se normaliza a minúsculas y el teléfono pierde los separadores.
+  assert.equal(r.datos.user.email, 'nuevo@ejemplo.com');
+  assert.equal(r.datos.user.phone, '+593991234567');
+  assert.equal(r.datos.summary.availableTickets, 0);
+});
+
+test('no se permiten dos cuentas con el mismo correo, ni variando mayúsculas', async () => {
+  const cliente = crearCliente();
+  const datos = { email: 'repetido@pista.ec', password: 'Chasis-Aluminio-2026', fullName: 'Piloto Uno' };
+  assert.equal((await cliente.post('/api/auth/register', datos)).status, 201);
+
+  const segundo = crearCliente();
+  const r = await segundo.post('/api/auth/register', { ...datos, email: 'REPETIDO@pista.ec' });
+  assert.equal(r.status, 409);
+  assert.equal(r.datos.error.code, 'correo_en_uso');
+});
+
+test('se rechazan contraseñas débiles o que contienen el propio nombre', async () => {
+  const cliente = crearCliente();
+
+  const corta = await cliente.post('/api/auth/register', {
+    email: 'debil@pista.ec', password: 'corta', fullName: 'Piloto Débil',
+  });
+  assert.equal(corta.status, 400);
+
+  const comun = await cliente.post('/api/auth/register', {
+    email: 'debil@pista.ec', password: 'password123', fullName: 'Piloto Débil',
+  });
+  assert.equal(comun.status, 400);
+  assert.equal(comun.datos.error.code, 'password_debil');
+
+  const conNombre = await cliente.post('/api/auth/register', {
+    email: 'debil@pista.ec', password: 'piloto-de-pista', fullName: 'Piloto Débil',
+  });
+  assert.equal(conNombre.status, 400);
+  assert.match(conNombre.datos.error.message, /nombre/);
+});
+
+test('el login rechaza credenciales incorrectas sin revelar si el correo existe', async () => {
+  await sembrarUsuarios();
+  const cliente = crearCliente();
+
+  const inexistente = await cliente.post('/api/auth/login', { email: 'nadie@pista.ec', password: 'loquesea123' });
+  const claveMala = await cliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: 'incorrecta123' });
+
+  assert.equal(inexistente.status, 401);
+  assert.equal(claveMala.status, 401);
+  // El mismo mensaje en ambos casos: no se filtra qué correos están registrados.
+  assert.equal(inexistente.datos.error.message, claveMala.datos.error.message);
+});
+
+test('la cuenta se bloquea temporalmente tras varios intentos fallidos', async () => {
+  await sembrarUsuarios();
+  const cliente = crearCliente();
+
+  let ultima;
+  for (let i = 0; i < 8; i += 1) {
+    ultima = await cliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: `mala-clave-${i}` });
+  }
+  assert.equal(ultima.status, 429, 'el octavo intento debe bloquear la cuenta');
+
+  // Ni siquiera la contraseña correcta entra mientras dura el bloqueo.
+  const correcta = await cliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente });
+  assert.equal(correcta.status, 429);
+});
+
+test('el refresh token rota en cada uso', async () => {
+  await sembrarUsuarios();
+  const cliente = crearCliente();
+  await cliente.entrar('cliente@pista.ec', CLAVES.cliente);
+
+  const primero = await cliente.post('/api/auth/refresh');
+  assert.equal(primero.status, 200);
+  const segundo = await cliente.post('/api/auth/refresh');
+  assert.equal(segundo.status, 200);
+  assert.notEqual(primero.datos.accessToken, segundo.datos.accessToken);
+});
+
+test('reutilizar un refresh token ya rotado revoca toda la familia de sesiones', async () => {
+  await sembrarUsuarios();
+  const legitimo = crearCliente();
+  await legitimo.entrar('cliente@pista.ec', CLAVES.cliente);
+
+  // Un atacante se queda con una copia del token de refresco.
+  const tokenRobado = legitimo.leerCookie('rh_refresh');
+  assert.ok(tokenRobado);
+
+  // El usuario legítimo sigue navegando y su token rota con normalidad.
+  assert.equal((await legitimo.post('/api/auth/refresh')).status, 200);
+
+  // El atacante presenta el token viejo: ya fue rotado, así que se detecta.
+  const atacante = crearCliente();
+  const intento = await atacante.post('/api/auth/refresh', { refreshToken: tokenRobado });
+  assert.equal(intento.status, 401);
+  assert.equal(intento.datos.error.code, 'refresh_reutilizado');
+
+  // Y la sesión entera queda revocada, también para el usuario legítimo:
+  // más vale pedirle que vuelva a entrar que dejar viva una sesión robada.
+  const despues = await legitimo.post('/api/auth/refresh');
+  assert.equal(despues.status, 401);
+});
+
+test('cerrar sesión invalida la cookie de refresco', async () => {
+  await sembrarUsuarios();
+  const cliente = crearCliente();
+  await cliente.entrar('cliente@pista.ec', CLAVES.cliente);
+
+  assert.equal((await cliente.post('/api/auth/logout')).status, 200);
+  assert.equal((await cliente.post('/api/auth/refresh')).status, 401);
+});
+
+test('cambiar la contraseña cierra las demás sesiones', async () => {
+  await sembrarUsuarios();
+  const telefono = crearCliente();
+  const computadora = crearCliente();
+  await telefono.entrar('cliente@pista.ec', CLAVES.cliente);
+  await computadora.entrar('cliente@pista.ec', CLAVES.cliente);
+
+  const cambio = await telefono.post('/api/auth/change-password', {
+    currentPassword: CLAVES.cliente,
+    newPassword: 'Amortiguador-Nuevo-2026',
+  });
+  assert.equal(cambio.status, 200);
+
+  // La sesión del otro dispositivo deja de servir de inmediato.
+  const otra = await computadora.get('/api/packs/mine');
+  assert.equal(otra.status, 401);
+
+  // Quien hizo el cambio sigue dentro con el token nuevo.
+  telefono.token = cambio.datos.accessToken;
+  assert.equal((await telefono.get('/api/packs/mine')).status, 200);
+});
+
+test('suspender una cuenta corta el acceso al instante, sin esperar a que caduque el token', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  assert.equal((await cCliente.get('/api/packs/mine')).status, 200);
+
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'suspended' });
+
+  const despues = await cCliente.get('/api/packs/mine');
+  assert.equal(despues.status, 401);
+});
+
+test('un token manipulado se rechaza', async () => {
+  const { cCliente } = await sembrarUsuarios();
+  const partes = cCliente.token.split('.');
+  const cargaFalsa = Buffer.from(JSON.stringify({ sub: 'otro', role: 'master' })).toString('base64url');
+
+  cCliente.token = `${partes[0]}.${cargaFalsa}.${partes[2]}`;
+  assert.equal((await cCliente.get('/api/packs/mine')).status, 401);
+
+  cCliente.token = 'no-es-un-token';
+  assert.equal((await cCliente.get('/api/packs/mine')).status, 401);
+});
+
+test('el perfil se puede actualizar y validar', async () => {
+  const { cCliente } = await sembrarUsuarios();
+
+  const ok = await cCliente.patch('/api/auth/me', { fullName: 'Carlos A. Piloto', phone: '+593 98 765 4321' });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.datos.user.fullName, 'Carlos A. Piloto');
+  assert.equal(ok.datos.user.phone, '+593987654321');
+
+  const malo = await cCliente.patch('/api/auth/me', { fullName: 'X' });
+  assert.equal(malo.status, 400);
+  assert.ok(malo.datos.error.details.fields.fullName);
+});

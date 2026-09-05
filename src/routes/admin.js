@@ -1,0 +1,446 @@
+/** Panel del usuario máster: clientes, packs, consumos, reportes y auditoría. */
+import express from 'express';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { requireMaster } from '../middleware/auth.js';
+import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
+import {
+  createUserSchema,
+  updateUserSchema,
+  issuePackSchema,
+  adjustPackSchema,
+  updatePackSchema,
+  voidRedemptionSchema,
+  paginationSchema,
+  passwordSchema,
+  parseOrThrow,
+} from '../lib/validate.js';
+import { validatePasswordStrength } from '../lib/passwords.js';
+import { randomToken } from '../lib/ids.js';
+import { getDb } from '../db/index.js';
+import { config } from '../config.js';
+import * as users from '../services/users.js';
+import * as packsService from '../services/packs.js';
+import * as redemptions from '../services/redemptions.js';
+import * as sessions from '../services/sessions.js';
+import * as audit from '../services/audit.js';
+import { hub } from '../lib/events.js';
+
+export const router = express.Router();
+router.use(requireMaster);
+
+const actorContext = (req) => ({ actor: req.user, ip: req.clientIp, userAgent: req.get('user-agent') });
+
+// ---------------------------------------------------------------------------
+// Panel general
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/dashboard',
+  asyncHandler(async (req, res) => {
+    const db = getDb();
+    packsService.expireDuePacks(db);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayIso = startOfToday.toISOString();
+    const weekIso = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+
+    const totals = db
+      .prepare(
+        `SELECT
+           COUNT(*)                                                                   AS packs_totales,
+           IFNULL(SUM(CASE WHEN status='active' AND remaining>0 THEN 1 ELSE 0 END),0) AS packs_activos,
+           IFNULL(SUM(CASE WHEN status='active' THEN remaining ELSE 0 END),0)         AS entradas_pendientes,
+           IFNULL(SUM(size),0)                                                        AS entradas_emitidas,
+           IFNULL(SUM(size - remaining),0)                                            AS entradas_usadas,
+           IFNULL(SUM(price_cents),0)                                                 AS ingresos_cents
+         FROM packs WHERE status <> 'cancelled'`,
+      )
+      .get();
+
+    const consumos = db
+      .prepare(
+        `SELECT
+           IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS hoy,
+           IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS semana,
+           COUNT(*)                                                   AS total
+         FROM redemptions WHERE status = 'confirmed'`,
+      )
+      .get(todayIso, weekIso);
+
+    const clientes = db
+      .prepare(
+        `SELECT
+           COUNT(*)                                                AS total,
+           IFNULL(SUM(CASE WHEN role='customer' THEN 1 ELSE 0 END),0) AS clientes,
+           IFNULL(SUM(CASE WHEN role='staff' THEN 1 ELSE 0 END),0)    AS personal,
+           IFNULL(SUM(CASE WHEN role='master' THEN 1 ELSE 0 END),0)   AS masters,
+           IFNULL(SUM(CASE WHEN status='suspended' THEN 1 ELSE 0 END),0) AS suspendidos
+         FROM users`,
+      )
+      .get();
+
+    // Serie de los últimos 14 días para el gráfico de actividad.
+    const serie = db
+      .prepare(
+        `SELECT substr(created_at, 1, 10) AS dia, COUNT(*) AS n
+           FROM redemptions
+          WHERE status = 'confirmed' AND created_at >= ?
+          GROUP BY dia ORDER BY dia ASC`,
+      )
+      .all(new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString());
+
+    res.json({
+      totals: {
+        totalPacks: totals.packs_totales,
+        activePacks: totals.packs_activos,
+        pendingTickets: totals.entradas_pendientes,
+        issuedTickets: totals.entradas_emitidas,
+        usedTickets: totals.entradas_usadas,
+        revenueCents: totals.ingresos_cents,
+        currency: config.currency,
+      },
+      redemptions: { today: consumos.hoy, week: consumos.semana, total: consumos.total },
+      users: {
+        total: clientes.total,
+        customers: clientes.clientes,
+        staff: clientes.personal,
+        masters: clientes.masters,
+        suspended: clientes.suspendidos,
+      },
+      dailySeries: serie.map((r) => ({ date: r.dia, count: r.n })),
+      recent: redemptions.listRedemptions({ limit: 10 }).items,
+      liveConnections: hub.connectionCount,
+      integrity: packsService.checkIntegrity(),
+      serverTime: new Date().toISOString(),
+    });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Usuarios
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/users',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    res.json(
+      users.listUsers({
+        limit,
+        offset,
+        search: typeof req.query.search === 'string' ? req.query.search.slice(0, 100) : '',
+        role: ['master', 'staff', 'customer'].includes(req.query.role) ? req.query.role : null,
+        status: ['active', 'suspended'].includes(req.query.status) ? req.query.status : null,
+      }),
+    );
+  }),
+);
+
+router.post(
+  '/users',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(createUserSchema, req.body, badRequest);
+
+    // Sin contraseña indicada se genera una temporal que el máster comunica al cliente.
+    const generated = data.password ? null : randomToken(9);
+    const password = data.password ?? generated;
+
+    const strength = validatePasswordStrength(password, { email: data.email, fullName: data.fullName });
+    if (!strength.ok) {
+      throw badRequest(strength.errors[0], { fields: { password: strength.errors.join(' ') } }, 'password_debil');
+    }
+
+    const user = await users.createUser({
+      email: data.email,
+      password,
+      fullName: data.fullName,
+      phone: data.phone,
+      role: data.role,
+      createdBy: req.user.id,
+    });
+
+    audit.record({
+      ...actorContext(req),
+      action: 'usuario.creado',
+      entityType: 'user',
+      entityId: user.id,
+      metadata: { email: user.email, role: user.role, passwordGenerada: Boolean(generated) },
+    });
+
+    res.status(201).json({
+      user: users.toPublicUser(user),
+      // Solo se muestra una vez, en la respuesta de creación.
+      temporaryPassword: generated,
+    });
+  }),
+);
+
+router.get(
+  '/users/:id',
+  asyncHandler(async (req, res) => {
+    const user = users.findById(req.params.id);
+    if (!user) throw notFound('Usuario no encontrado.');
+    res.json({
+      user: users.toPublicUser(user),
+      summary: packsService.summaryForUser(user.id),
+      packs: packsService.listPacksForUser(user.id),
+      redemptions: redemptions.listRedemptions({ userId: user.id, limit: 25 }).items,
+      sessions: sessions.listForUser(user.id).slice(0, 10),
+    });
+  }),
+);
+
+router.patch(
+  '/users/:id',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(updateUserSchema, req.body, badRequest);
+    const target = users.findById(req.params.id);
+    if (!target) throw notFound('Usuario no encontrado.');
+
+    // Protecciones para no quedarse nunca sin administrador ni bloquearse a uno mismo.
+    if (target.id === req.user.id && data.role && data.role !== 'master') {
+      throw forbidden('No puedes quitarte a ti mismo el rol de máster.', 'auto_degradacion');
+    }
+    if (target.id === req.user.id && data.status === 'suspended') {
+      throw forbidden('No puedes suspender tu propia cuenta.', 'auto_suspension');
+    }
+    if (target.role === 'master' && (data.role !== undefined && data.role !== 'master')) {
+      if (users.countByRole('master') <= 1) {
+        throw conflict('Debe quedar al menos un usuario máster.', 'ultimo_master');
+      }
+    }
+    if (target.role === 'master' && data.status === 'suspended' && users.countByRole('master') <= 1) {
+      throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
+    }
+
+    const user = users.updateUser(req.params.id, data);
+    audit.record({
+      ...actorContext(req),
+      action: 'usuario.actualizado',
+      entityType: 'user',
+      entityId: user.id,
+      metadata: data,
+    });
+    res.json({ user: users.toPublicUser(user) });
+  }),
+);
+
+/** Restablece la contraseña de un usuario y devuelve una temporal. */
+router.post(
+  '/users/:id/reset-password',
+  asyncHandler(async (req, res) => {
+    const target = users.findById(req.params.id);
+    if (!target) throw notFound('Usuario no encontrado.');
+
+    let password = req.body?.password;
+    let generated = null;
+    if (password === undefined || password === null || password === '') {
+      generated = randomToken(9);
+      password = generated;
+    } else {
+      password = parseOrThrow(passwordSchema, password, badRequest);
+      const strength = validatePasswordStrength(password, { email: target.email, fullName: target.full_name });
+      if (!strength.ok) throw badRequest(strength.errors[0], { fields: { password: strength.errors.join(' ') } }, 'password_debil');
+    }
+
+    await users.setPassword(target.id, password);
+    audit.record({
+      ...actorContext(req),
+      action: 'usuario.password_restablecida',
+      entityType: 'user',
+      entityId: target.id,
+      metadata: { email: target.email },
+    });
+    res.json({ ok: true, temporaryPassword: generated });
+  }),
+);
+
+router.post(
+  '/users/:id/unlock',
+  asyncHandler(async (req, res) => {
+    const user = users.unlockUser(req.params.id);
+    if (!user) throw notFound('Usuario no encontrado.');
+    audit.record({ ...actorContext(req), action: 'usuario.desbloqueado', entityType: 'user', entityId: user.id });
+    res.json({ user: users.toPublicUser(user) });
+  }),
+);
+
+router.post(
+  '/users/:id/revoke-sessions',
+  asyncHandler(async (req, res) => {
+    const target = users.findById(req.params.id);
+    if (!target) throw notFound('Usuario no encontrado.');
+    const count = sessions.revokeAllForUser(target.id, 'revocada_por_master');
+    audit.record({
+      ...actorContext(req),
+      action: 'usuario.sesiones_revocadas',
+      entityType: 'user',
+      entityId: target.id,
+      metadata: { sesiones: count },
+    });
+    res.json({ ok: true, sesionesCerradas: count });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Packs
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/packs',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    res.json(
+      packsService.listPacks({
+        limit,
+        offset,
+        status: typeof req.query.status === 'string' ? req.query.status : null,
+        search: typeof req.query.search === 'string' ? req.query.search.slice(0, 100) : '',
+        userId: typeof req.query.userId === 'string' ? req.query.userId : null,
+      }),
+    );
+  }),
+);
+
+router.post(
+  '/packs',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(issuePackSchema, req.body, badRequest);
+    const pack = packsService.issuePack({ ...data, ...actorContext(req) });
+    res.status(201).json({ pack });
+  }),
+);
+
+router.get(
+  '/packs/:id',
+  asyncHandler(async (req, res) => {
+    const pack = packsService.findById(req.params.id);
+    if (!pack) throw notFound('Pack no encontrado.');
+    const owner = users.findById(pack.user_id);
+    res.json({
+      pack: packsService.toPublicPack(pack),
+      owner: users.toPublicUser(owner),
+      movements: packsService.movements(pack.id),
+      redemptions: redemptions.listRedemptions({ packId: pack.id, limit: 50 }).items,
+    });
+  }),
+);
+
+router.patch(
+  '/packs/:id',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(updatePackSchema, req.body, badRequest);
+    res.json({ pack: packsService.updatePack(req.params.id, data, actorContext(req)) });
+  }),
+);
+
+router.post(
+  '/packs/:id/adjust',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(adjustPackSchema, req.body, badRequest);
+    res.json({ pack: packsService.adjustPack(req.params.id, { ...data, ...actorContext(req) }) });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Consumos
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/redemptions',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    res.json(
+      redemptions.listRedemptions({
+        limit,
+        offset,
+        userId: typeof req.query.userId === 'string' ? req.query.userId : null,
+        packId: typeof req.query.packId === 'string' ? req.query.packId : null,
+        scannerId: typeof req.query.scannerId === 'string' ? req.query.scannerId : null,
+        since: typeof req.query.since === 'string' ? req.query.since : null,
+        status: ['confirmed', 'voided'].includes(req.query.status) ? req.query.status : null,
+      }),
+    );
+  }),
+);
+
+router.post(
+  '/redemptions/:id/void',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(voidRedemptionSchema, req.body, badRequest);
+    res.json(redemptions.voidRedemption(req.params.id, { ...data, ...actorContext(req) }));
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Auditoría, integridad y exportación
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/audit',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    res.json(
+      audit.list({
+        limit,
+        offset,
+        action: typeof req.query.action === 'string' ? req.query.action : undefined,
+        entityId: typeof req.query.entityId === 'string' ? req.query.entityId : undefined,
+        actorId: typeof req.query.actorId === 'string' ? req.query.actorId : undefined,
+      }),
+    );
+  }),
+);
+
+router.get(
+  '/integrity',
+  asyncHandler(async (req, res) => {
+    res.json(packsService.checkIntegrity());
+  }),
+);
+
+/** Exportación a CSV para contabilidad. */
+router.get(
+  '/export/:entity.csv',
+  asyncHandler(async (req, res) => {
+    const entity = req.params.entity;
+    const escape = (value) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    const toCsv = (headers, rows) =>
+      // Marca de orden de bytes: sin ella Excel abre los acentos mal.
+      '\uFEFF' + [headers.join(','), ...rows.map((r) => r.map(escape).join(','))].join('\r\n');
+
+    let csv;
+    if (entity === 'packs') {
+      const { items } = packsService.listPacks({ limit: 5000 });
+      csv = toCsv(
+        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'precio', 'moneda', 'vence', 'creado'],
+        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
+      );
+    } else if (entity === 'consumos') {
+      const { items } = redemptions.listRedemptions({ limit: 5000 });
+      csv = toCsv(
+        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'restantes', 'estado', 'dispositivo'],
+        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.remainingAfter, r.status, r.deviceLabel]),
+      );
+    } else if (entity === 'clientes') {
+      const { items } = users.listUsers({ limit: 5000 });
+      csv = toCsv(
+        ['nombre', 'correo', 'telefono', 'rol', 'estado', 'entradas_disponibles', 'packs_activos', 'creado'],
+        items.map((u) => [u.fullName, u.email, u.phone, u.role, u.status, u.availableTickets, u.activePacks, u.createdAt]),
+      );
+    } else {
+      throw notFound('Ese reporte no existe.');
+    }
+
+    audit.record({ ...actorContext(req), action: 'reporte.exportado', entityType: 'export', entityId: entity });
+    res.set('Content-Type', 'text/csv; charset=utf-8');
+    res.set('Content-Disposition', `attachment; filename="${entity}-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.send(csv);
+  }),
+);
+
+export default router;

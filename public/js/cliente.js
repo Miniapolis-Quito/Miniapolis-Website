@@ -1,0 +1,447 @@
+/**
+ * Portal del cliente: saldo en vivo, pase con QR rotativo e historial.
+ */
+import { $, el, render, brindis, fecha, dinero, plural, estadoPack, METODOS,
+         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar, vibrar } from './ui.js';
+import { api, iniciarPagina, getUsuario, cerrarSesion, ErrorRed } from './api.js';
+import { ConexionEnVivo } from './realtime.js';
+import { montarCabecera, aplicarMarca } from './shell.js';
+
+const estado = {
+  resumen: null,
+  packs: [],
+  packSeleccionado: null,
+  qrConfig: { ttlSeconds: 120, refreshSeconds: 30 },
+  segundosParaRenovar: 0,
+  cargandoQr: false,
+};
+
+let cabecera;
+let temporizadorQr = null;
+
+// ---------------------------------------------------------------------------
+// Saldo
+// ---------------------------------------------------------------------------
+
+function pintarSaldo(anterior) {
+  const disponibles = estado.resumen?.availableTickets ?? 0;
+  const numero = $('#saldo-numero');
+  const seccion = $('#saldo');
+
+  numero.textContent = String(disponibles);
+  $('#saldo-texto').textContent =
+    disponibles === 0
+      ? 'No te quedan entradas — compra un pack en recepción'
+      : `${disponibles === 1 ? 'entrada disponible' : 'entradas disponibles'}`;
+  seccion.classList.toggle('saldo--vacio', disponibles === 0);
+
+  // Animación solo cuando el número cambia de verdad.
+  if (anterior !== undefined && anterior !== disponibles) {
+    numero.classList.remove('pulso');
+    void numero.offsetWidth; // reinicia la animación
+    numero.classList.add('pulso');
+  }
+
+  const usadas = estado.resumen?.usedTickets ?? 0;
+  const compradas = estado.resumen?.purchasedTickets ?? 0;
+  $('#subtitulo').textContent = compradas
+    ? `${usadas} de ${compradas} entradas usadas · ${plural(estado.resumen.activePacks, 'pack activo', 'packs activos')}`
+    : 'Todavía no tienes packs. Acércate a recepción para comprar uno.';
+}
+
+// ---------------------------------------------------------------------------
+// Packs
+// ---------------------------------------------------------------------------
+
+function tarjetaPack(pack) {
+  const marca = estadoPack(pack);
+  const porcentaje = pack.size > 0 ? (pack.remaining / pack.size) * 100 : 0;
+  const activo = pack.usable;
+
+  return el(
+    'article',
+    { class: `pack ${activo ? '' : 'pack--inactivo'}`, dataset: { packId: pack.id } },
+    el(
+      'div',
+      { class: 'pack__cabecera' },
+      el(
+        'div',
+        {},
+        el('div', { class: 'pack__codigo' }, pack.code),
+        el('div', { class: 'tenue pequeno' }, `Pack de ${pack.size} · ${dinero(pack.priceCents, pack.currency)}`),
+      ),
+      el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto),
+    ),
+    el(
+      'div',
+      { class: 'fila fila--entre' },
+      el('div', {}, el('span', { class: 'pack__restantes' }, String(pack.remaining)), el('span', { class: 'tenue' }, ` / ${pack.size}`)),
+      activo && estado.packSeleccionado?.id !== pack.id
+        ? el(
+            'button',
+            { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => seleccionarPack(pack.id) },
+            'Mostrar QR',
+          )
+        : activo
+          ? el('span', { class: 'etiqueta etiqueta--info' }, 'QR en pantalla')
+          : null,
+    ),
+    el('div', { class: 'barra-progreso' }, el('div', { class: 'barra-progreso__relleno', style: `width:${porcentaje}%` })),
+    pack.expiresAt ? el('div', { class: 'tenue-2 pequeno' }, `Vence el ${fecha(pack.expiresAt, { conHora: false })}`) : null,
+    pack.note ? el('div', { class: 'tenue-2 pequeno' }, pack.note) : null,
+  );
+}
+
+function pintarPacks() {
+  const contenedor = $('#lista-packs');
+  if (estado.packs.length === 0) {
+    render(
+      contenedor,
+      el(
+        'div',
+        { class: 'tarjeta vacio' },
+        el('div', { class: 'vacio__icono' }, '🎟️'),
+        el('p', { class: 'sin-margen' }, 'Todavía no tienes packs de entradas.'),
+        el('p', { class: 'pequeno sin-margen' }, 'Compra uno en recepción y aparecerá aquí al instante.'),
+      ),
+    );
+    return;
+  }
+  render(contenedor, estado.packs.map(tarjetaPack));
+}
+
+/** El pase muestra el pack usable que vence antes; el cliente puede cambiarlo. */
+function elegirPackPorDefecto() {
+  const usables = estado.packs.filter((p) => p.usable);
+  if (usables.length === 0) return null;
+  if (estado.packSeleccionado) {
+    const vigente = usables.find((p) => p.id === estado.packSeleccionado.id);
+    if (vigente) return vigente;
+  }
+  return usables[0];
+}
+
+function pintarSelectorPacks() {
+  const usables = estado.packs.filter((p) => p.usable);
+  const selector = $('#selector-packs');
+  if (usables.length <= 1) {
+    selector.hidden = true;
+    return;
+  }
+  selector.hidden = false;
+  render(
+    selector,
+    el('span', { class: 'tenue pequeno' }, 'Usar el pack:'),
+    usables.map((pack) =>
+      el(
+        'button',
+        {
+          class: `boton boton--chico ${estado.packSeleccionado?.id === pack.id ? 'boton--principal' : 'boton--fantasma'}`,
+          type: 'button',
+          onClick: () => seleccionarPack(pack.id),
+        },
+        `${pack.code} (${pack.remaining})`,
+      ),
+    ),
+  );
+}
+
+async function seleccionarPack(packId) {
+  const pack = estado.packs.find((p) => p.id === packId);
+  if (!pack || !pack.usable) return;
+  estado.packSeleccionado = pack;
+  pintarPacks();
+  pintarSelectorPacks();
+  await refrescarQr({ inmediato: true });
+}
+
+// ---------------------------------------------------------------------------
+// Código QR
+// ---------------------------------------------------------------------------
+
+async function refrescarQr({ inmediato = false } = {}) {
+  const seccion = $('#seccion-qr');
+  const pack = elegirPackPorDefecto();
+  estado.packSeleccionado = pack;
+
+  if (!pack) {
+    seccion.hidden = true;
+    clearInterval(temporizadorQr);
+    temporizadorQr = null;
+    return;
+  }
+
+  seccion.hidden = false;
+  $('#qr-codigo').textContent = pack.code;
+  $('#qr-etiqueta-pack').textContent = `${plural(pack.remaining, 'entrada', 'entradas')} en este pack`;
+
+  if (estado.cargandoQr && !inmediato) return;
+  estado.cargandoQr = true;
+
+  const caja = $('#qr-caja');
+  try {
+    // El servidor firma y dibuja el QR: el navegador nunca ve el secreto del pack.
+    const svg = await api.get(`/api/packs/${pack.id}/qr.svg`);
+    // Contenido generado por nuestro propio servidor; se inserta como marcado
+    // para que el QR escale sin pérdida.
+    caja.classList.remove('qr-caja--cargando');
+    render(caja, el('div', { html: svg, class: 'contenido-qr' }));
+    estado.segundosParaRenovar = estado.qrConfig.refreshSeconds;
+    $('#qr-estado').hidden = false;
+    mostrarAviso($('#aviso'), '');
+  } catch (error) {
+    caja.classList.add('qr-caja--cargando');
+    render(
+      caja,
+      el(
+        'div',
+        { class: 'centrado' },
+        el('div', { class: 'vacio__icono' }, '📶'),
+        el('p', { class: 'tenue sin-margen' }, 'No pudimos generar el código.'),
+        el('p', { class: 'pequeno tenue-2 sin-margen' }, `Muestra tu código ${pack.code} en recepción.`),
+      ),
+    );
+    if (error instanceof ErrorRed) {
+      mostrarAviso($('#aviso'), 'Sin conexión. Tu código de pack sigue sirviendo: el personal puede ingresarlo a mano.', 'alerta');
+    } else {
+      mostrarAviso($('#aviso'), error.message, 'alerta');
+    }
+  } finally {
+    estado.cargandoQr = false;
+  }
+
+  if (!temporizadorQr) {
+    temporizadorQr = setInterval(() => {
+      estado.segundosParaRenovar -= 1;
+      $('#qr-cuenta').textContent = String(Math.max(0, estado.segundosParaRenovar));
+      if (estado.segundosParaRenovar <= 0) {
+        // No tiene sentido pedir un QR nuevo si la pantalla no está a la vista.
+        if (document.visibilityState === 'visible') refrescarQr();
+        else estado.segundosParaRenovar = estado.qrConfig.refreshSeconds;
+      }
+    }, 1000);
+  }
+  $('#qr-cuenta').textContent = String(estado.segundosParaRenovar);
+}
+
+// ---------------------------------------------------------------------------
+// Historial
+// ---------------------------------------------------------------------------
+
+async function cargarHistorial() {
+  const contenedor = $('#historial');
+  try {
+    const { items } = await api.get('/api/packs/mine/history?limit=25');
+    if (items.length === 0) {
+      render(
+        contenedor,
+        el('div', { class: 'vacio' }, el('div', { class: 'vacio__icono' }, '🏁'), el('p', { class: 'sin-margen' }, 'Todavía no has usado ninguna entrada.')),
+      );
+      return;
+    }
+    render(
+      contenedor,
+      el(
+        'ul',
+        { class: 'lista' },
+        items.map((item) =>
+          el(
+            'li',
+            { class: 'lista__item' },
+            el('span', { class: 'icono-lista--grande' }, item.status === 'voided' ? '↩️' : '🏎️'),
+            el(
+              'div',
+              { class: 'crece' },
+              el('div', {}, item.status === 'voided' ? 'Entrada devuelta' : 'Entrada usada'),
+              el(
+                'div',
+                { class: 'tenue-2 pequeno' },
+                `${fecha(item.createdAt)} · ${item.packCode} · ${METODOS[item.method] || item.method}`,
+              ),
+              item.voidReason ? el('div', { class: 'tenue-2 pequeno' }, `Motivo: ${item.voidReason}`) : null,
+            ),
+            el('span', { class: 'etiqueta' }, `Quedaban ${item.remainingAfter}`),
+          ),
+        ),
+      ),
+    );
+  } catch (error) {
+    render(contenedor, el('div', { class: 'aviso aviso--alerta' }, error.message));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Carga de datos
+// ---------------------------------------------------------------------------
+
+async function cargarTodo({ conHistorial = true } = {}) {
+  const anterior = estado.resumen?.availableTickets;
+  const datos = await api.get('/api/packs/mine');
+  estado.resumen = datos.summary;
+  estado.packs = datos.packs;
+  estado.qrConfig = datos.qrConfig || estado.qrConfig;
+
+  pintarSaldo(anterior);
+  // El pack en pantalla se elige antes de pintar las tarjetas para que la que
+  // está mostrando el QR aparezca marcada como tal.
+  estado.packSeleccionado = elegirPackPorDefecto();
+  pintarPacks();
+  pintarSelectorPacks();
+  await refrescarQr({ inmediato: true });
+  if (conHistorial) await cargarHistorial();
+}
+
+// ---------------------------------------------------------------------------
+// Tiempo real
+// ---------------------------------------------------------------------------
+
+function manejarEvento(tipo, datos) {
+  if (tipo === 'conectado' && datos.summary) {
+    const anterior = estado.resumen?.availableTickets;
+    estado.resumen = datos.summary;
+    pintarSaldo(anterior);
+    return;
+  }
+
+  if (tipo === 'entrada.consumida') {
+    vibrar([40, 60, 40]);
+    brindis(`Entrada registrada en ${datos.pack.code}. Te quedan ${datos.remaining}.`, 'ok');
+    cargarTodo({ conHistorial: true }).catch(() => {});
+    return;
+  }
+
+  if (tipo === 'entrada.anulada') {
+    brindis('Se te devolvió una entrada.', 'ok');
+    cargarTodo({ conHistorial: true }).catch(() => {});
+    return;
+  }
+
+  if (tipo === 'pack.emitido') {
+    brindis(`¡Nuevo pack ${datos.pack.code} con ${datos.pack.size} entradas!`, 'ok', 6000);
+    cargarTodo({ conHistorial: false }).catch(() => {});
+    return;
+  }
+
+  if (tipo === 'pack.actualizado') {
+    cargarTodo({ conHistorial: false }).catch(() => {});
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Diálogo de cuenta
+// ---------------------------------------------------------------------------
+
+function montarCuenta() {
+  const dialogo = $('#dialogo-cuenta');
+  const usuario = getUsuario();
+
+  $('#btn-cuenta').addEventListener('click', () => {
+    $('#perfil-nombre').value = getUsuario()?.fullName ?? '';
+    $('#perfil-telefono').value = getUsuario()?.phone ?? '';
+    mostrarAviso($('#aviso-perfil'), '');
+    mostrarAviso($('#aviso-password'), '');
+    dialogo.showModal();
+  });
+  $('#btn-cerrar-cuenta').addEventListener('click', () => dialogo.close());
+
+  $('#form-perfil').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const formulario = evento.currentTarget;
+    mostrarErroresCampo(formulario, {});
+    await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
+      try {
+        await api.patch('/api/auth/me', datosFormulario(formulario));
+        mostrarAviso($('#aviso-perfil'), 'Datos guardados.', 'ok');
+        brindis('Datos actualizados.', 'ok');
+      } catch (error) {
+        mostrarErroresCampo(formulario, error.campos || {});
+        mostrarAviso($('#aviso-perfil'), error.message, 'error');
+      }
+    });
+  });
+
+  $('#form-password').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const formulario = evento.currentTarget;
+    mostrarErroresCampo(formulario, {});
+    await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
+      try {
+        await api.post('/api/auth/change-password', datosFormulario(formulario));
+        formulario.reset();
+        mostrarAviso($('#aviso-password'), 'Contraseña cambiada. Las demás sesiones se cerraron.', 'ok');
+        brindis('Contraseña actualizada.', 'ok');
+      } catch (error) {
+        mostrarErroresCampo(formulario, error.campos || {});
+        mostrarAviso($('#aviso-password'), error.message, 'error');
+      }
+    });
+  });
+
+  $('#btn-cerrar-todo').addEventListener('click', async () => {
+    const seguro = await confirmar({
+      titulo: 'Cerrar todas las sesiones',
+      mensaje: 'Se cerrará tu sesión en este y en cualquier otro dispositivo. Tendrás que volver a entrar.',
+      textoAceptar: 'Cerrar todo',
+      peligro: true,
+    });
+    if (!seguro) return;
+    try {
+      await api.post('/api/auth/logout-all');
+    } finally {
+      await cerrarSesion();
+      window.location.replace('/');
+    }
+  });
+
+  if (usuario?.role !== 'customer') {
+    $('#titulo').textContent = 'Mis entradas';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Arranque
+// ---------------------------------------------------------------------------
+
+(async () => {
+  const sesion = await iniciarPagina();
+  if (!sesion) return;
+
+  cabecera = montarCabecera($('#cabecera'));
+  try {
+    aplicarMarca(await fetch('/api/config').then((r) => r.json()));
+  } catch {
+    /* opcional */
+  }
+
+  montarCuenta();
+  $('#btn-refrescar-qr').addEventListener('click', () => refrescarQr({ inmediato: true }));
+  $('#btn-copiar-codigo').addEventListener('click', async () => {
+    const codigo = estado.packSeleccionado?.code;
+    if (!codigo) return;
+    brindis((await copiar(codigo)) ? `Código ${codigo} copiado.` : `Tu código es ${codigo}.`, 'ok');
+  });
+  $('#btn-recargar-historial').addEventListener('click', () => cargarHistorial());
+
+  try {
+    await cargarTodo();
+  } catch (error) {
+    mostrarAviso($('#aviso'), error.message, 'error');
+  }
+
+  $('#cargando-inicial').hidden = true;
+  $('#contenido').hidden = false;
+
+  const conexion = new ConexionEnVivo({
+    onEvento: manejarEvento,
+    onEstado: (nuevo) => cabecera.actualizarEstado(nuevo),
+  }).iniciar();
+
+  // Red de seguridad: si el canal en vivo estuviera caído, se refresca igual.
+  setInterval(() => {
+    if (document.visibilityState === 'visible' && conexion.estado !== 'conectado') {
+      cargarTodo({ conHistorial: false }).catch(() => {});
+    }
+  }, 30_000);
+
+  window.addEventListener('pagehide', () => conexion.detener());
+})();

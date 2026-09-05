@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d12">
+  <title>Administración · Racing Hobbies Ecuador</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="barra" id="cabecera"></header>
+
+  <main class="contenedor">
+    <h1>Administración</h1>
+    <div id="aviso" class="aviso" role="alert" hidden></div>
+
+    <div class="pestanas" role="tablist" aria-label="Secciones de administración">
+      <button class="pestana" role="tab" data-panel="resumen"  aria-selected="true"  type="button">Resumen</button>
+      <button class="pestana" role="tab" data-panel="clientes" aria-selected="false" type="button">Clientes y personal</button>
+      <button class="pestana" role="tab" data-panel="packs"    aria-selected="false" type="button">Packs</button>
+      <button class="pestana" role="tab" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
+      <button class="pestana" role="tab" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
+    </div>
+
+    <!-- Resumen -->
+    <section id="panel-resumen" role="tabpanel">
+      <div class="rejilla rejilla--metricas" id="metricas"></div>
+
+      <div class="rejilla rejilla--2 mt-2 alinea-arriba">
+        <div class="tarjeta">
+          <div class="tarjeta__titulo">
+            <h2>Entradas usadas (14 días)</h2>
+          </div>
+          <div class="grafico" id="grafico"></div>
+          <div class="fila fila--entre mt">
+            <span class="tenue-2 pequeno" id="grafico-desde"></span>
+            <span class="tenue-2 pequeno">hoy</span>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="tarjeta__titulo">
+            <h2>Últimos accesos</h2>
+            <span class="etiqueta etiqueta--info" id="conexiones-vivas"></span>
+          </div>
+          <div id="ultimos-consumos"></div>
+        </div>
+      </div>
+
+      <div class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>Estado del sistema</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-verificar" type="button">Verificar ahora</button>
+        </div>
+        <div id="integridad"></div>
+        <div class="fila mt">
+          <a class="boton boton--fantasma boton--chico" id="exp-packs" href="/api/admin/export/packs.csv">Exportar packs</a>
+          <a class="boton boton--fantasma boton--chico" id="exp-consumos" href="/api/admin/export/consumos.csv">Exportar consumos</a>
+          <a class="boton boton--fantasma boton--chico" id="exp-clientes" href="/api/admin/export/clientes.csv">Exportar clientes</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clientes -->
+    <section id="panel-clientes" role="tabpanel" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Clientes y personal</h2>
+          <button class="boton boton--principal boton--chico" id="btn-nuevo-usuario" type="button">Nuevo usuario</button>
+        </div>
+        <div class="fila mb">
+          <input type="search" id="buscar-usuarios" placeholder="Buscar por nombre, correo o teléfono" class="crece min-200">
+          <select id="filtro-rol" class="ancho-auto">
+            <option value="">Todos los roles</option>
+            <option value="customer">Clientes</option>
+            <option value="staff">Personal</option>
+            <option value="master">Máster</option>
+          </select>
+          <select id="filtro-estado" class="ancho-auto">
+            <option value="">Todos los estados</option>
+            <option value="active">Activos</option>
+            <option value="suspended">Suspendidos</option>
+          </select>
+        </div>
+        <div id="tabla-usuarios"></div>
+      </div>
+    </section>
+
+    <!-- Packs -->
+    <section id="panel-packs" role="tabpanel" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Packs de entradas</h2>
+          <button class="boton boton--principal boton--chico" id="btn-nuevo-pack" type="button">Vender pack</button>
+        </div>
+        <div class="fila mb">
+          <input type="search" id="buscar-packs" placeholder="Buscar por código o cliente" class="crece min-200">
+          <select id="filtro-pack-estado" class="ancho-auto">
+            <option value="">Todos</option>
+            <option value="usable">Con entradas</option>
+            <option value="active">Activos</option>
+            <option value="depleted">Agotados</option>
+            <option value="expired">Vencidos</option>
+            <option value="suspended">Suspendidos</option>
+            <option value="cancelled">Anulados</option>
+          </select>
+        </div>
+        <div id="tabla-packs"></div>
+      </div>
+    </section>
+
+    <!-- Consumos -->
+    <section id="panel-consumos" role="tabpanel" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Consumos registrados</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-recargar-consumos" type="button">Actualizar</button>
+        </div>
+        <div id="tabla-consumos"></div>
+      </div>
+    </section>
+
+    <!-- Auditoría -->
+    <section id="panel-auditoria" role="tabpanel" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Bitácora de auditoría</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-recargar-auditoria" type="button">Actualizar</button>
+        </div>
+        <p class="tenue pequeno">Registro inalterable de todo lo que ocurre en el sistema.</p>
+        <div id="tabla-auditoria"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Nuevo usuario -->
+  <dialog id="dialogo-usuario">
+    <form id="form-usuario" novalidate>
+      <div class="modal__cuerpo">
+        <h2>Nuevo usuario</h2>
+        <div class="campo">
+          <label for="usuario-nombre">Nombre completo</label>
+          <input id="usuario-nombre" name="fullName" type="text" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="usuario-email">Correo electrónico</label>
+          <input id="usuario-email" name="email" type="email" required autocapitalize="off" spellcheck="false">
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="usuario-telefono">Teléfono <span class="tenue-2">(opcional)</span></label>
+          <input id="usuario-telefono" name="phone" type="tel" inputmode="tel" placeholder="+593 99 000 0000">
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="usuario-rol">Rol</label>
+          <select id="usuario-rol" name="role">
+            <option value="customer">Cliente</option>
+            <option value="staff">Personal de pista (puede escanear)</option>
+            <option value="master">Máster (control total)</option>
+          </select>
+          <div class="campo__ayuda">El personal solo puede escanear y consultar. El máster puede todo.</div>
+        </div>
+        <div class="campo">
+          <label for="usuario-password">Contraseña <span class="tenue-2">(en blanco = se genera una)</span></label>
+          <input id="usuario-password" name="password" type="text" autocomplete="new-password">
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-usuario" class="aviso" hidden></div>
+      </div>
+      <div class="modal__pie">
+        <button class="boton boton--fantasma" type="button" data-cerrar>Cancelar</button>
+        <button class="boton boton--principal" type="submit">Crear usuario</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Vender pack -->
+  <dialog id="dialogo-pack">
+    <form id="form-pack" novalidate>
+      <div class="modal__cuerpo">
+        <h2>Vender pack de entradas</h2>
+        <div class="campo">
+          <label for="pack-cliente">Cliente</label>
+          <input id="pack-cliente" type="search" placeholder="Busca por nombre o correo" autocomplete="off">
+          <input type="hidden" name="userId" id="pack-user-id">
+          <div id="resultados-cliente" class="lista mt lista-scroll"></div>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="pack-size">Pack</label>
+          <select id="pack-size" name="size"></select>
+        </div>
+        <div class="campo">
+          <label for="pack-precio">Precio cobrado (USD)</label>
+          <input id="pack-precio" name="price" type="number" min="0" step="0.01" inputmode="decimal">
+          <div class="campo__ayuda">Se rellena con el precio de lista; ajústalo si aplicaste un descuento.</div>
+        </div>
+        <div class="campo">
+          <label for="pack-pago">Forma de pago</label>
+          <select id="pack-pago" name="paymentMethod">
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="cortesia">Cortesía</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="pack-referencia">Referencia de pago <span class="tenue-2">(opcional)</span></label>
+          <input id="pack-referencia" name="paymentReference" type="text" maxlength="120">
+        </div>
+        <div class="campo">
+          <label for="pack-vence">Vence el <span class="tenue-2">(opcional)</span></label>
+          <input id="pack-vence" name="expiresAt" type="date">
+          <div class="campo__ayuda">Déjalo vacío si el pack no caduca.</div>
+        </div>
+        <div class="campo">
+          <label for="pack-nota">Nota <span class="tenue-2">(opcional)</span></label>
+          <input id="pack-nota" name="note" type="text" maxlength="500">
+        </div>
+        <div class="campo campo--linea">
+          <input type="checkbox" id="pack-estatico" name="allowStaticQr">
+          <label for="pack-estatico">Permitir QR impreso (pase físico)</label>
+        </div>
+        <div class="aviso aviso--alerta pequeno">
+          El QR impreso no cambia nunca, así que quien le tome una foto puede usarlo.
+          Actívalo solo para pases físicos entregados en mano.
+        </div>
+        <div id="aviso-pack" class="aviso" hidden></div>
+      </div>
+      <div class="modal__pie">
+        <button class="boton boton--fantasma" type="button" data-cerrar>Cancelar</button>
+        <button class="boton boton--principal" type="submit">Emitir pack</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Detalle -->
+  <dialog id="dialogo-detalle">
+    <div class="modal__cuerpo" id="detalle-cuerpo"></div>
+    <div class="modal__pie">
+      <button class="boton boton--fantasma" type="button" data-cerrar>Cerrar</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

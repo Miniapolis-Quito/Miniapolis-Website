@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d12">
+  <title>Escanear entradas · Racing Hobbies Ecuador</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="barra" id="cabecera"></header>
+
+  <main class="contenedor">
+    <div class="fila fila--entre mb-2">
+      <div>
+        <h1 class="sin-margen">Control de acceso</h1>
+        <p class="tenue sin-margen" id="subtitulo">Escanea el QR del cliente para descontar una entrada.</p>
+      </div>
+      <div class="fila">
+        <label class="tenue pequeno sin-salto" for="dispositivo">Puesto</label>
+        <input id="dispositivo" type="text" maxlength="60" placeholder="Puerta 1" autocomplete="off" class="ancho-puesto">
+      </div>
+    </div>
+
+    <div id="aviso" class="aviso" role="alert" hidden></div>
+
+    <div class="rejilla rejilla--2 alinea-arriba">
+      <!-- Cámara -->
+      <section class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Cámara</h2>
+          <span class="etiqueta" id="etiqueta-motor" hidden></span>
+        </div>
+
+        <div class="escaner" id="escaner" hidden>
+          <video id="video" playsinline muted autoplay></video>
+          <div class="escaner__marco"><div class="escaner__mira" id="mira"></div></div>
+        </div>
+
+        <div id="escaner-apagado" class="vacio">
+          <div class="vacio__icono">📷</div>
+          <p class="sin-margen">La cámara está apagada.</p>
+          <p class="pequeno tenue-2">Necesita permiso del navegador y una conexión segura (HTTPS o localhost).</p>
+        </div>
+
+        <div class="fila mt">
+          <button class="boton boton--principal boton--grande crece" id="btn-camara" type="button">Encender cámara</button>
+          <button class="boton boton--fantasma" id="btn-cambiar-camara" type="button" hidden>Cambiar cámara</button>
+        </div>
+
+        <div class="fila mt">
+          <label class="campo--linea sin-margen-todo">
+            <input type="checkbox" id="chk-continuo" checked>
+            <span class="pequeno">Escaneo continuo</span>
+          </label>
+          <label class="campo--linea sin-margen-todo">
+            <input type="checkbox" id="chk-sonido" checked>
+            <span class="pequeno">Sonido al registrar</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Resultado y entrada manual -->
+      <section class="columna">
+        <div class="resultado" id="resultado">
+          <div class="resultado__icono">🏁</div>
+          <div class="resultado__titulo">Listo para escanear</div>
+          <div class="resultado__detalle">Apunta la cámara al código del cliente.</div>
+        </div>
+
+        <div class="tarjeta">
+          <h2>Código manual</h2>
+          <p class="tenue pequeno">Si la cámara falla o el cliente no trae el teléfono, ingresa el código del pack.</p>
+          <form id="form-manual" novalidate>
+            <div class="campo">
+              <label for="codigo-manual">Código del pack</label>
+              <input id="codigo-manual" name="code" type="text" placeholder="RHE-XXXX-XXXX"
+                     autocomplete="off" autocapitalize="characters" spellcheck="false" class="entrada-codigo">
+              <div class="campo__error"></div>
+            </div>
+            <div class="fila">
+              <button class="boton boton--fantasma crece" id="btn-consultar" type="button">Consultar</button>
+              <button class="boton boton--principal crece" type="submit">Descontar entrada</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- Actividad reciente -->
+    <section class="tarjeta mt-2">
+      <div class="tarjeta__titulo">
+        <h2>Actividad reciente</h2>
+        <div class="fila">
+          <label class="campo--linea sin-margen-todo">
+            <input type="checkbox" id="chk-todos">
+            <span class="pequeno">Ver todo el personal</span>
+          </label>
+          <button class="boton boton--fantasma boton--chico" id="btn-recargar" type="button">Actualizar</button>
+        </div>
+      </div>
+      <div id="actividad"></div>
+    </section>
+  </main>
+
+  <script src="/vendor/jsQR.js" defer></script>
+  <script type="module" src="/js/escaner.js"></script>
+</body>
+</html>

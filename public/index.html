@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d12">
+  <meta name="description" content="Entradas para la pista de autos a control remoto de Racing Hobbies Ecuador.">
+  <title>Entrar · Racing Hobbies Ecuador</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="contenedor contenedor--angosto pt-pagina">
+    <div class="centrado mb-3">
+      <div class="logo logo--grande" aria-hidden="true">RH</div>
+      <h1 data-marca>Racing Hobbies Ecuador</h1>
+      <p class="tenue">Tus entradas para la pista de autos a control remoto.</p>
+    </div>
+
+    <div class="tarjeta">
+      <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
+        <button class="pestana" role="tab" id="pestana-entrar" aria-controls="panel-entrar" aria-selected="true" type="button">Entrar</button>
+        <button class="pestana" role="tab" id="pestana-registro" aria-controls="panel-registro" aria-selected="false" type="button">Crear cuenta</button>
+      </div>
+
+      <div id="aviso" class="aviso" role="alert" hidden></div>
+
+      <!-- Entrar -->
+      <form id="form-entrar" role="tabpanel" aria-labelledby="pestana-entrar" novalidate>
+        <div class="campo">
+          <label for="entrar-email">Correo electrónico</label>
+          <input id="entrar-email" name="email" type="email" autocomplete="username" inputmode="email"
+                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="entrar-password">Contraseña</label>
+          <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
+      </form>
+
+      <!-- Registro -->
+      <form id="form-registro" role="tabpanel" aria-labelledby="pestana-registro" novalidate hidden>
+        <div class="campo">
+          <label for="registro-nombre">Nombre completo</label>
+          <input id="registro-nombre" name="fullName" type="text" autocomplete="name" required placeholder="Tu nombre y apellido">
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="registro-email">Correo electrónico</label>
+          <input id="registro-email" name="email" type="email" autocomplete="username" inputmode="email"
+                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="registro-telefono">Teléfono <span class="tenue-2">(opcional)</span></label>
+          <input id="registro-telefono" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+593 99 000 0000">
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="registro-password">Contraseña</label>
+          <input id="registro-password" name="password" type="password" autocomplete="new-password" required>
+          <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Usa algo que solo tú recuerdes.</div>
+          <div class="campo__error"></div>
+        </div>
+        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Crear mi cuenta</button>
+      </form>
+    </div>
+
+    <p class="centrado tenue-2 pequeno mt-2">
+      ¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.
+    </p>
+  </main>
+
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>

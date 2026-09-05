@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d12">
+  <title>Mis entradas · Racing Hobbies Ecuador</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="barra" id="cabecera"></header>
+
+  <main class="contenedor">
+    <div id="cargando-inicial" class="vacio">
+      <div class="cargando cargando--grande"></div>
+      <p class="mt">Cargando tus entradas…</p>
+    </div>
+
+    <div id="contenido" hidden>
+      <div class="fila fila--entre mb-2">
+        <div>
+          <h1 class="sin-margen" id="titulo">Mis entradas</h1>
+          <p class="tenue sin-margen" id="subtitulo"></p>
+        </div>
+        <button class="boton boton--fantasma boton--chico" id="btn-cuenta" type="button">Mi cuenta</button>
+      </div>
+
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <!-- Saldo total -->
+      <section class="saldo" id="saldo" aria-live="polite">
+        <div class="saldo__numero" id="saldo-numero">—</div>
+        <div class="saldo__texto" id="saldo-texto">entradas disponibles</div>
+      </section>
+
+      <!-- Pase activo con QR -->
+      <section id="seccion-qr" class="tarjeta mt-2" hidden>
+        <div class="tarjeta__titulo">
+          <h2>Tu pase de entrada</h2>
+          <span class="etiqueta etiqueta--info" id="qr-etiqueta-pack"></span>
+        </div>
+        <p class="tenue pequeno">
+          Muestra este código al personal de la pista. Se renueva solo por seguridad:
+          si alguien le toma una foto, deja de servir en cuestión de segundos.
+        </p>
+
+        <div class="qr-caja qr-caja--cargando" id="qr-caja">
+          <div class="cargando cargando--grande"></div>
+        </div>
+
+        <div class="qr-pie mt">
+          <div class="mono codigo-grande" id="qr-codigo"></div>
+          <div id="qr-estado">Se renueva en <span class="qr-cuenta" id="qr-cuenta">—</span> s</div>
+        </div>
+
+        <div class="fila mt centro-flex">
+          <button class="boton boton--fantasma boton--chico" id="btn-refrescar-qr" type="button">Renovar ahora</button>
+          <button class="boton boton--fantasma boton--chico" id="btn-copiar-codigo" type="button">Copiar código</button>
+        </div>
+
+        <div id="selector-packs" class="fila mt centro-flex" hidden></div>
+      </section>
+
+      <!-- Packs -->
+      <section class="mt-2">
+        <h2>Mis packs</h2>
+        <div class="rejilla rejilla--2" id="lista-packs"></div>
+      </section>
+
+      <!-- Historial -->
+      <section class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>Historial de entradas</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-recargar-historial" type="button">Actualizar</button>
+        </div>
+        <div id="historial"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Diálogo de cuenta -->
+  <dialog id="dialogo-cuenta">
+    <div class="modal__cuerpo">
+      <h2>Mi cuenta</h2>
+      <form id="form-perfil" novalidate>
+        <div class="campo">
+          <label for="perfil-nombre">Nombre completo</label>
+          <input id="perfil-nombre" name="fullName" type="text" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="perfil-telefono">Teléfono</label>
+          <input id="perfil-telefono" name="phone" type="tel" inputmode="tel" placeholder="+593 99 000 0000">
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-perfil" class="aviso" role="status" hidden></div>
+        <button class="boton boton--principal" type="submit">Guardar datos</button>
+      </form>
+
+      <hr class="separador">
+
+      <h3>Cambiar contraseña</h3>
+      <form id="form-password" novalidate>
+        <div class="campo">
+          <label for="password-actual">Contraseña actual</label>
+          <input id="password-actual" name="currentPassword" type="password" autocomplete="current-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="password-nueva">Contraseña nueva</label>
+          <input id="password-nueva" name="newPassword" type="password" autocomplete="new-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-password" class="aviso" role="status" hidden></div>
+        <button class="boton boton--principal" type="submit">Cambiar contraseña</button>
+      </form>
+
+      <hr class="separador">
+      <button class="boton boton--peligro boton--bloque" id="btn-cerrar-todo" type="button">
+        Cerrar sesión en todos mis dispositivos
+      </button>
+    </div>
+    <div class="modal__pie">
+      <button class="boton boton--fantasma" id="btn-cerrar-cuenta" type="button">Cerrar</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/js/cliente.js"></script>
+</body>
+</html>

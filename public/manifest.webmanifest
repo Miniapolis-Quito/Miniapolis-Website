@@ -1,0 +1,14 @@
+{
+  "name": "Racing Hobbies Ecuador — Entradas",
+  "short_name": "RH Entradas",
+  "description": "Tus entradas para la pista de autos a control remoto.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0d12",
+  "theme_color": "#0a0d12",
+  "lang": "es-EC",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
