@@ -3,7 +3,7 @@
  */
 import { $, el, render, brindis, fecha, dinero, plural, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar, vibrar } from './ui.js';
-import { api, iniciarPagina, getUsuario, cerrarSesion, ErrorRed } from './api.js';
+import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 
@@ -186,7 +186,6 @@ async function refrescarQr({ inmediato = false } = {}) {
     // para que el QR escale sin pérdida.
     caja.classList.remove('qr-caja--cargando');
     render(caja, el('div', { html: svg, class: 'contenido-qr' }));
-    estado.segundosParaRenovar = estado.qrConfig.refreshSeconds;
     $('#qr-estado').hidden = false;
     mostrarAviso($('#aviso'), '');
   } catch (error) {
@@ -207,6 +206,9 @@ async function refrescarQr({ inmediato = false } = {}) {
       mostrarAviso($('#aviso'), error.message, 'alerta');
     }
   } finally {
+    // Se reinicia siempre, también tras un fallo: si no, el contador seguiría
+    // bajando y pediría un QR nuevo cada segundo mientras durase el problema.
+    estado.segundosParaRenovar = estado.qrConfig.refreshSeconds;
     estado.cargandoQr = false;
   }
 
@@ -430,6 +432,8 @@ function montarCuenta() {
 
   $('#cargando-inicial').hidden = true;
   $('#contenido').hidden = false;
+
+  redirigirAlPerderSesion();
 
   const conexion = new ConexionEnVivo({
     onEvento: manejarEvento,

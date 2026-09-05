@@ -1,0 +1,106 @@
+/**
+ * Camino de actualización del esquema.
+ *
+ * Una base ya en producción tiene que poder subir de versión sin perder datos
+ * y con las columnas nuevas rellenas. Aquí se simula ese salto en lugar de
+ * comprobar solo que una base nueva quede bien.
+ */
+import './env.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import Database from 'better-sqlite3';
+import { migrations } from '../src/db/migrations.js';
+import { textoBusquedaUsuario } from '../src/lib/texto.js';
+
+/** Aplica las primeras `hasta` migraciones sobre una base en memoria. */
+function baseEn(hasta) {
+  const db = new Database(':memory:');
+  db.pragma('foreign_keys = ON');
+  for (let i = 0; i < hasta; i += 1) {
+    migrations[i].up(db);
+    db.pragma(`user_version = ${i + 1}`);
+  }
+  return db;
+}
+
+test('las migraciones están numeradas y son únicas', () => {
+  const nombres = migrations.map((m) => m.name);
+  assert.equal(new Set(nombres).size, nombres.length, 'no puede haber dos migraciones con el mismo nombre');
+  for (const [indice, nombre] of nombres.entries()) {
+    assert.match(nombre, /^\d{3}-/, `"${nombre}" debe empezar por su número de orden`);
+    assert.equal(nombre.slice(0, 3), String(indice + 1).padStart(3, '0'), `"${nombre}" está fuera de orden`);
+  }
+});
+
+test('actualizar una base con datos rellena el texto de búsqueda', () => {
+  const db = baseEn(1);
+  const ahora = new Date().toISOString();
+
+  // Usuarios creados con el esquema antiguo, antes de que existiera la columna.
+  const insertar = db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, phone, role, password_hash,
+                        password_changed_at, created_at, updated_at)
+     VALUES (@id, @email, @email_normalized, @full_name, @phone, @role, 'x', @ahora, @ahora, @ahora)`,
+  );
+  insertar.run({ id: 'u1', email: 'Maria@Pista.ec', email_normalized: 'maria@pista.ec', full_name: 'María Chasís', phone: '+593991112233', role: 'customer', ahora });
+  insertar.run({ id: 'u2', email: 'beto@pista.ec', email_normalized: 'beto@pista.ec', full_name: 'Beto Muñoz', phone: null, role: 'staff', ahora });
+
+  // Se aplica la migración pendiente.
+  migrations[1].up(db);
+  db.pragma('user_version = 2');
+
+  const filas = db.prepare('SELECT id, search_text FROM users ORDER BY id').all();
+  assert.equal(filas.length, 2, 'no se debe perder ningún usuario');
+  assert.equal(
+    filas[0].search_text,
+    textoBusquedaUsuario({ fullName: 'María Chasís', email: 'Maria@Pista.ec', phone: '+593991112233' }),
+  );
+  assert.ok(filas[0].search_text.includes('maria chasis'), 'el texto debe quedar sin tildes');
+  assert.ok(filas[1].search_text.includes('beto munoz'), 'la eñe también se pliega');
+
+  db.close();
+});
+
+test('aplicar todas las migraciones deja el esquema esperado', () => {
+  const db = baseEn(migrations.length);
+
+  const tablas = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+    .all()
+    .map((r) => r.name);
+  assert.deepEqual(tablas, [
+    'audit_log', 'idempotency_keys', 'pack_movements', 'packs',
+    'rate_limits', 'redemptions', 'sessions', 'used_nonces', 'users',
+  ]);
+
+  assert.equal(db.pragma('user_version', { simple: true }), migrations.length);
+
+  // Índices que sostienen las garantías del sistema.
+  const indices = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((r) => r.name);
+  for (const necesario of ['idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack']) {
+    assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
+  }
+
+  db.close();
+});
+
+test('el esquema impide guardar un pack con saldo imposible', () => {
+  const db = baseEn(migrations.length);
+  const ahora = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, role, password_hash, password_changed_at, created_at, updated_at)
+     VALUES ('u1', 'a@b.ec', 'a@b.ec', 'Cliente', 'customer', 'x', ?, ?, ?)`,
+  ).run(ahora, ahora, ahora);
+
+  const insertarPack = (remaining, size) =>
+    db.prepare(
+      `INSERT INTO packs (id, code, user_id, size, remaining, secret, created_at, updated_at)
+       VALUES (?, ?, 'u1', ?, ?, 's', ?, ?)`,
+    ).run(`p${remaining}${size}`, `RHE-AAAA-${remaining}${size}${size}${size}`, size, remaining, ahora, ahora);
+
+  assert.throws(() => insertarPack(-1, 5), /CHECK/, 'un saldo negativo debe rechazarse');
+  assert.throws(() => insertarPack(6, 5), /CHECK/, 'no puede quedar más saldo que el tamaño del pack');
+  assert.doesNotThrow(() => insertarPack(5, 5));
+
+  db.close();
+});

@@ -3,7 +3,7 @@
  */
 import { $, $$, el, render, brindis, fecha, horaCorta, relativo, dinero, plural, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
-import { api, iniciarPagina, getUsuario } from './api.js';
+import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 
@@ -585,6 +585,17 @@ async function verPack(packId) {
         },
         pack.allowStaticQr ? 'Desactivar QR impreso' : 'Activar QR impreso',
       ),
+      pack.allowStaticQr
+        ? el(
+            'button',
+            {
+              class: 'boton boton--chico boton--fantasma',
+              type: 'button',
+              onClick: () => imprimirPase(pack, datos.owner),
+            },
+            'Imprimir pase',
+          )
+        : null,
     ),
     pack.expiresAt ? el('p', { class: 'tenue pequeno mt' }, `Vence el ${fecha(pack.expiresAt, { conHora: false })}`) : null,
     pack.note ? el('p', { class: 'tenue pequeno' }, `Nota: ${pack.note}`) : null,
@@ -627,6 +638,68 @@ async function verPack(packId) {
       : el('ul', { class: 'lista' }, datos.redemptions.map((item) => filaConsumo(item, recargar))),
   );
   $('#dialogo-detalle').showModal();
+}
+
+/**
+ * Prepara el pase físico de un pack y abre el diálogo de impresión.
+ *
+ * Solo tiene sentido con el QR impreso habilitado: ese código no caduca, que es
+ * justo lo que necesita un cartón entregado en mano (y lo que lo hace copiable,
+ * por eso viene desactivado de fábrica).
+ */
+async function imprimirPase(pack, propietario) {
+  const zona = $('#pase-impreso');
+  try {
+    const svg = await api.get(`/api/packs/${pack.id}/qr.svg?mode=static`);
+    render(
+      zona,
+      el(
+        'div',
+        { class: 'pase' },
+        el('div', { class: 'pase__marca' }, estado.configuracion?.brandName || 'Racing Hobbies Ecuador'),
+        el('div', { class: 'pase__titulo' }, `Pase de ${pack.size} entradas`),
+        el('div', { class: 'pase__qr', html: svg }),
+        el('div', { class: 'pase__codigo' }, pack.code),
+        el('div', { class: 'pase__cliente' }, propietario?.fullName || ''),
+        el(
+          'div',
+          { class: 'pase__pie' },
+          pack.expiresAt
+            ? `Válido hasta el ${fecha(pack.expiresAt, { conHora: false })}`
+            : 'Sin fecha de vencimiento',
+        ),
+      ),
+    );
+    zona.hidden = false;
+    document.body.classList.add('imprimiendo-pase');
+
+    // La limpieza se hace al terminar de imprimir, no justo después de llamar a
+    // `print()`: en los navegadores móviles esa llamada vuelve enseguida y el
+    // diálogo aparece más tarde, así que borrar el pase de inmediato imprimiría
+    // una hoja en blanco. El temporizador es el plan B por si el navegador no
+    // avisa del final.
+    let limpiado = false;
+    const limpiar = () => {
+      if (limpiado) return;
+      limpiado = true;
+      clearTimeout(respaldo);
+      window.removeEventListener('afterprint', limpiar);
+      document.body.classList.remove('imprimiendo-pase');
+      zona.hidden = true;
+      render(zona);
+    };
+    const respaldo = setTimeout(limpiar, 120_000);
+    window.addEventListener('afterprint', limpiar, { once: true });
+
+    // Un par de cuadros para que el navegador pinte el pase antes de imprimir.
+    await new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo)));
+    window.print();
+  } catch (error) {
+    document.body.classList.remove('imprimiendo-pase');
+    zona.hidden = true;
+    render(zona);
+    brindis(error.message, 'error');
+  }
 }
 
 function filaConsumo(item, alCambiar) {
@@ -996,6 +1069,8 @@ function montarDialogoPack() {
   const refrescarPanelActual = temporizador(() => {
     CARGADORES[estado.panel]?.().catch(() => {});
   }, 600);
+
+  redirigirAlPerderSesion();
 
   new ConexionEnVivo({
     onEstado: (nuevo) => cabecera.actualizarEstado(nuevo),

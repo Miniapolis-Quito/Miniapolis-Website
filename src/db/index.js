@@ -90,8 +90,3 @@ export function closeDb() {
     db = null;
   }
 }
-
-/** Solo para pruebas: reemplaza la conexión activa. */
-export function _setDbForTests(handle) {
-  db = handle;
-}

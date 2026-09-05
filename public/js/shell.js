@@ -1,5 +1,5 @@
 /** Cabecera común: marca, navegación por rol, estado en vivo y cierre de sesión. */
-import { el, render, $ } from './ui.js';
+import { el, render, $, configurarFormato } from './ui.js';
 import { cerrarSesion, getUsuario } from './api.js';
 import { textoEstado } from './realtime.js';
 
@@ -49,7 +49,13 @@ export function montarCabecera(contenedor, { marca = 'Racing Hobbies' } = {}) {
         { class: 'barra__interior' },
         el(
           'a',
-          { class: 'barra__marca subrayado-no', href: usuario ? '/app' : '/' },
+          {
+            class: 'barra__marca subrayado-no',
+            href: usuario ? '/app' : '/',
+            // El logotipo es decorativo y el nombre se oculta a la vista en
+            // pantallas estrechas, así que el enlace lleva su propio nombre.
+            'aria-label': `${marca} — inicio`,
+          },
           el('span', { class: 'logo', 'aria-hidden': 'true' }, 'RH'),
           el('span', {}, marca),
         ),
@@ -92,6 +98,7 @@ export function saludo() {
 /** Aplica la marca cargada del servidor a los textos de la página. */
 export async function aplicarMarca(configuracion) {
   if (!configuracion) return;
+  configurarFormato(configuracion);
   document.title = document.title.replace('Racing Hobbies', configuracion.brandShort || 'Racing Hobbies');
   for (const nodo of document.querySelectorAll('[data-marca]')) {
     nodo.textContent = configuracion.brandName;

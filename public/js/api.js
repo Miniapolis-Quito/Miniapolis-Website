@@ -10,6 +10,7 @@
 let accessToken = null;
 let usuarioActual = null;
 let refrescoEnCurso = null;
+let cierreExplicito = false;
 const oyentesSesion = new Set();
 
 export function getUsuario() {
@@ -182,6 +183,9 @@ export async function registrarse(datos) {
 }
 
 export async function cerrarSesion() {
+  // Marca la salida como voluntaria para que el vigilante de sesión no añada
+  // un "volver a esta página" al enlace de acceso.
+  cierreExplicito = true;
   try {
     await peticion('/api/auth/logout', { metodo: 'POST' });
   } catch {
@@ -211,6 +215,28 @@ export async function iniciarPagina({ rolesPermitidos = null, redirigirSiAnonimo
     }
     return null;
   }
+}
+
+/**
+ * Manda a la pantalla de acceso en cuanto la sesión deja de ser válida.
+ *
+ * Sin esto, si la sesión caduca o un administrador la revoca mientras alguien
+ * está usando la página, esa persona se queda en una pantalla que ya no
+ * responde y cada acción falla sin explicación.
+ */
+export function redirigirAlPerderSesion() {
+  let redirigiendo = false;
+  return onSesion((usuario) => {
+    if (usuario || redirigiendo) return;
+    redirigiendo = true;
+    if (cierreExplicito) {
+      window.location.replace('/');
+      return;
+    }
+    const destino = new URL('/', window.location.origin);
+    destino.searchParams.set('volver', window.location.pathname);
+    window.location.replace(destino.pathname + destino.search);
+  });
 }
 
 export function destinoPorRol(rol) {

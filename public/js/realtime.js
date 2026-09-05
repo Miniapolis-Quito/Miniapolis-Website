@@ -7,7 +7,7 @@
  * implementar la reconexión a mano: espera exponencial con algo de aleatoriedad
  * y reanudación desde el último evento recibido.
  */
-import { tokenActual, refrescarSesion } from './api.js';
+import { tokenActual, refrescarSesion, limpiarSesion } from './api.js';
 
 const ESPERA_BASE = 1000;
 const ESPERA_MAXIMA = 30_000;
@@ -160,6 +160,15 @@ export class ConexionEnVivo {
       if (Number.isInteger(numero) && numero > this.ultimoId) this.ultimoId = numero;
     }
     if (!datos) return;
+
+    // El servidor avisa cuando la sesión dejó de ser válida (cuenta suspendida,
+    // rol cambiado o sesión cerrada desde otro sitio): no tiene sentido
+    // reintentar, hay que volver a entrar.
+    if (tipo === 'sesion.invalida') {
+      this.detener();
+      limpiarSesion();
+      return;
+    }
 
     let contenido;
     try {

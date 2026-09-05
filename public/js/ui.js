@@ -67,7 +67,16 @@ export function render(nodo, ...hijos) {
 // Formato
 // ---------------------------------------------------------------------------
 
-const ZONA = 'America/Guayaquil';
+// Zona horaria y moneda vienen de la configuración del servidor; estos valores
+// son solo el punto de partida hasta que `configurarFormato` los reemplaza.
+let ZONA = 'America/Guayaquil';
+let MONEDA = 'USD';
+
+/** La llama `aplicarMarca` con lo que responde /api/config. */
+export function configurarFormato({ timezone, currency } = {}) {
+  if (timezone) ZONA = timezone;
+  if (currency) MONEDA = currency;
+}
 
 export function fecha(iso, { conHora = true } = {}) {
   if (!iso) return '—';
@@ -108,7 +117,7 @@ export function relativo(iso) {
   return formato.format(-Math.round(segundos / elegida[1]), elegida[0]);
 }
 
-export function dinero(centavos, moneda = 'USD') {
+export function dinero(centavos, moneda = MONEDA) {
   const valor = Number(centavos || 0) / 100;
   try {
     return new Intl.NumberFormat('es-EC', { style: 'currency', currency: moneda }).format(valor);

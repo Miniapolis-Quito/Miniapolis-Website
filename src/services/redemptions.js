@@ -30,20 +30,31 @@ function hashRequest(value) {
   return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 }
 
-/** Busca una respuesta ya emitida para la misma clave de idempotencia. */
+/** Deja un código tecleado en su forma canónica, para comparar reintentos. */
+function normalizarCodigo(code) {
+  return String(code ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/**
+ * Busca una respuesta ya emitida para la misma clave de idempotencia.
+ *
+ * La búsqueda es solo por clave, sin filtrar por operación: una clave la genera
+ * el cliente y debe identificar un único intento. Si la misma clave aparece en
+ * otra operación o con otros datos, es un error del cliente y se responde con
+ * un conflicto claro, en vez de dejar que choque más adelante contra el índice
+ * único de `redemptions` y acabe en un error interno.
+ */
 function lookupIdempotent(db, key, endpoint, requestHash) {
   if (!key) return null;
-  const row = db
-    .prepare('SELECT * FROM idempotency_keys WHERE key = ? AND endpoint = ?')
-    .get(key, endpoint);
+  const row = db.prepare('SELECT * FROM idempotency_keys WHERE key = ?').get(key);
   if (!row) return null;
   if (row.expires_at <= new Date().toISOString()) {
     db.prepare('DELETE FROM idempotency_keys WHERE key = ?').run(key);
     return null;
   }
-  if (row.request_hash !== requestHash) {
+  if (row.endpoint !== endpoint || row.request_hash !== requestHash) {
     throw conflict(
-      'Esa clave de idempotencia ya se usó con datos distintos. Genera una nueva.',
+      'Esa clave de idempotencia ya se usó para otra operación. Genera una nueva.',
       'idempotencia_conflicto',
     );
   }
@@ -250,7 +261,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
       }
     }
 
-    return redeemOne(db, {
+    const consumo = redeemOne(db, {
       pack,
       method: verification.method,
       scannedBy: scanner?.id ?? null,
@@ -260,28 +271,32 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
       ip,
       now,
     });
+
+    const respuesta = {
+      ok: true,
+      message: `Entrada registrada. Quedan ${consumo.remainingAfter} entrada(s).`,
+      redemptionId: consumo.redemptionId,
+      method: verification.method,
+      remaining: consumo.remainingAfter,
+      remainingBefore: consumo.remainingBefore,
+      pack: packsService.toPublicPack(consumo.pack),
+      customer: { id: owner.id, fullName: owner.full_name },
+      at: consumo.createdAt,
+    };
+
+    saveIdempotent(db, {
+      key: idempotencyKey,
+      userId: scanner?.id,
+      endpoint,
+      requestHash,
+      statusCode: 200,
+      body: respuesta,
+    });
+
+    return { ...consumo, body: respuesta };
   });
 
-  const body = {
-    ok: true,
-    message: `Entrada registrada. Quedan ${result.remainingAfter} entrada(s).`,
-    redemptionId: result.redemptionId,
-    method: verification.method,
-    remaining: result.remainingAfter,
-    remainingBefore: result.remainingBefore,
-    pack: packsService.toPublicPack(result.pack),
-    customer: { id: owner.id, fullName: owner.full_name },
-    at: result.createdAt,
-  };
-
-  saveIdempotent(db, {
-    key: idempotencyKey,
-    userId: scanner?.id,
-    endpoint,
-    requestHash,
-    statusCode: 200,
-    body,
-  });
+  const body = result.body;
 
   audit.record({
     actor: scanner ? { id: scanner.id, email: scanner.email } : null,
@@ -311,7 +326,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
 export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, userAgent, now = Date.now() }) {
   const db = getDb();
   const endpoint = 'manual';
-  const requestHash = hashRequest({ code: String(code).toUpperCase(), deviceLabel });
+  const requestHash = hashRequest({ code: normalizarCodigo(code), deviceLabel });
 
   const cached = lookupIdempotent(db, idempotencyKey, endpoint, requestHash);
   if (cached) return { ...cached, idempotentReplay: true };
@@ -321,8 +336,8 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
 
   const owner = db.prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
 
-  const result = inTransaction(() =>
-    redeemOne(db, {
+  const result = inTransaction(() => {
+    const consumo = redeemOne(db, {
       pack,
       method: 'manual_code',
       scannedBy: scanner?.id ?? null,
@@ -331,22 +346,26 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
       nonce: null,
       ip,
       now,
-    }),
-  );
+    });
 
-  const body = {
-    ok: true,
-    message: `Entrada registrada manualmente. Quedan ${result.remainingAfter} entrada(s).`,
-    redemptionId: result.redemptionId,
-    method: 'manual_code',
-    remaining: result.remainingAfter,
-    remainingBefore: result.remainingBefore,
-    pack: packsService.toPublicPack(result.pack),
-    customer: { id: owner.id, fullName: owner.full_name },
-    at: result.createdAt,
-  };
+    const respuesta = {
+      ok: true,
+      message: `Entrada registrada manualmente. Quedan ${consumo.remainingAfter} entrada(s).`,
+      redemptionId: consumo.redemptionId,
+      method: 'manual_code',
+      remaining: consumo.remainingAfter,
+      remainingBefore: consumo.remainingBefore,
+      pack: packsService.toPublicPack(consumo.pack),
+      customer: { id: owner.id, fullName: owner.full_name },
+      at: consumo.createdAt,
+    };
 
-  saveIdempotent(db, { key: idempotencyKey, userId: scanner?.id, endpoint, requestHash, statusCode: 200, body });
+    saveIdempotent(db, { key: idempotencyKey, userId: scanner?.id, endpoint, requestHash, statusCode: 200, body: respuesta });
+
+    return { ...consumo, body: respuesta };
+  });
+
+  const body = result.body;
 
   audit.record({
     actor: scanner ? { id: scanner.id, email: scanner.email } : null,

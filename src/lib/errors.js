@@ -24,5 +24,3 @@ export const notFound = (message = 'No encontramos lo que buscas.', code = 'no_e
 export const conflict = (message, code = 'conflicto', details) => new AppError(409, code, message, details);
 export const tooManyRequests = (message, details) =>
   new AppError(429, 'demasiados_intentos', message, details);
-export const serverError = (message = 'Ocurrió un error inesperado.') =>
-  new AppError(500, 'error_interno', message);

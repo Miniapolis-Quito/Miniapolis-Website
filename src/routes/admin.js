@@ -404,10 +404,16 @@ router.get(
   '/export/:entity.csv',
   asyncHandler(async (req, res) => {
     const entity = req.params.entity;
+
     const escape = (value) => {
       if (value === null || value === undefined) return '';
-      const text = String(value);
-      return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      let text = String(value);
+      // Excel y LibreOffice interpretan como fórmula cualquier celda que empiece
+      // por =, +, - o @. Un nombre de cliente no debería poder ejecutar nada al
+      // abrir el reporte, así que se antepone un apóstrofo, que la hoja de
+      // cálculo entiende como "esto es texto".
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const toCsv = (headers, rows) =>
       // Marca de orden de bytes: sin ella Excel abre los acentos mal.

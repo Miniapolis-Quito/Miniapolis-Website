@@ -8,7 +8,7 @@
  */
 import { $, el, render, brindis, horaCorta, METODOS, claveIdempotencia,
          mostrarAviso, mostrarErroresCampo, conCarga, vibrar } from './ui.js';
-import { api, iniciarPagina, getUsuario, ErrorRed } from './api.js';
+import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 
@@ -455,6 +455,8 @@ function montarManual() {
   montarManual();
   reposar();
   await cargarActividad();
+
+  redirigirAlPerderSesion();
 
   const conexion = new ConexionEnVivo({
     onEstado: (nuevo) => {

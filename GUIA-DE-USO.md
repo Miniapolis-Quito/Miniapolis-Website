@@ -92,6 +92,16 @@ vender packs ni ver la administración.
 **Consumos → Anular** en la línea correspondiente. Pide el motivo, la entrada
 vuelve al cliente y queda registrado quién lo hizo.
 
+### Entregar un pase físico
+
+Abre el pack, toca **Activar QR impreso** y luego **Imprimir pase**. Sale un
+cartón con el QR, el código y el nombre del cliente, listo para recortar.
+
+Ese QR no cambia nunca, así que quien le tome una foto podría usarlo: entrégalo
+solo en mano. Si se pierde un pase, entra al pack y toca **Desactivar QR
+impreso**: deja de servir en el acto y el cliente sigue usando su app con
+normalidad.
+
 ### Regalar o corregir entradas
 
 Abre el pack y usa **Ajustar entradas**. Número positivo acredita, negativo
@@ -121,7 +131,17 @@ sobra ninguna entrada. Si alguna vez avisara de diferencias, mira la
 **¿Alguien puede copiar el QR de un cliente y entrar gratis?**
 No con el QR de la app: cambia cada pocos segundos y el mismo código nunca se
 acepta dos veces. Los pases impresos sí son copiables, por eso vienen
-desactivados y solo administración puede habilitarlos pack por pack.
+desactivados y solo administración puede habilitarlos pack por pack (y
+desactivarlos si un pase se pierde).
+
+**Suspendí a un cliente pero tenía la página abierta. ¿Puede seguir usándola?**
+No. Al suspenderlo, su pantalla vuelve sola a la página de acceso en el acto.
+Lo mismo al cerrarle las sesiones desde su ficha.
+
+**Busco a un cliente y no aparece.**
+La búsqueda ignora tildes y mayúsculas, así que "maria" encuentra a María y
+"munoz" a Muñoz. Prueba también con el correo, el teléfono o el código del
+pack.
 
 **¿Qué pasa si se cae Internet en la pista?**
 El escáner necesita conexión para descontar. Si se cae, anota los códigos de

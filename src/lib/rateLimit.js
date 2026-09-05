@@ -50,11 +50,6 @@ export function consume(key, { limit, windowSeconds, now = Date.now() }) {
   return { allowed: true, remaining: limit - row.count - 1, retryAfterSeconds, limit };
 }
 
-/** Devuelve la cuota consumida (por ejemplo, tras un login exitoso). */
-export function refund(key) {
-  getDb().prepare('UPDATE rate_limits SET count = MAX(0, count - 1) WHERE key = ?').run(key);
-}
-
 export function reset(key) {
   getDb().prepare('DELETE FROM rate_limits WHERE key = ?').run(key);
 }

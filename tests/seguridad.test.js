@@ -206,3 +206,52 @@ test('los mensajes de error no filtran detalles internos', async () => {
   assert.equal(r.status, 404);
   assert.ok(!/SQLITE|at Object|\/src\//.test(JSON.stringify(r.datos)));
 });
+
+test('los mensajes de validación llegan en español, también cuando falta el cuerpo', async () => {
+  const anonimo = crearCliente();
+
+  // Petición sin cuerpo: el error debe señalar los campos que faltan.
+  const sinCuerpo = await anonimo.post('/api/auth/login');
+  assert.equal(sinCuerpo.status, 400);
+  assert.deepEqual(Object.keys(sinCuerpo.datos.error.details.fields).sort(), ['email', 'password']);
+
+  const { cMaster } = await sembrarUsuarios();
+  const casos = [
+    ['/api/auth/login', { email: 'sin-arroba', password: 'x' }],
+    ['/api/auth/register', { email: 'a@b.ec', password: 'corta', fullName: 'A' }],
+    ['/api/admin/packs', { userId: 'no-es-uuid', size: 5 }],
+    ['/api/admin/users', { email: 'a@b.ec', fullName: 'Nombre', role: 'inventado' }],
+  ];
+
+  const mensajes = [];
+  for (const [ruta, cuerpo] of casos) {
+    const cliente = ruta.startsWith('/api/admin') ? cMaster : anonimo;
+    const r = await cliente.post(ruta, cuerpo);
+    assert.equal(r.status, 400, `${ruta} debería rechazarse`);
+    mensajes.push(r.datos.error.message, ...Object.values(r.datos.error.details?.fields ?? {}));
+  }
+
+  // Ningún texto de la librería de validación debe colarse sin traducir.
+  const enIngles = mensajes.filter((m) =>
+    /\b(Required|Invalid|Expected|String must|Number must|received)\b/.test(m),
+  );
+  assert.deepEqual(enIngles, [], `mensajes sin traducir: ${enIngles.join(' | ')}`);
+});
+
+test('la política de seguridad de contenido cubre las rutas de página', async () => {
+  const anonimo = crearCliente();
+  for (const ruta of ['/', '/app', '/escanear', '/admin']) {
+    const r = await anonimo.get(ruta);
+    assert.equal(r.status, 200, `${ruta} debe servirse`);
+    const csp = r.headers.get('content-security-policy');
+    assert.ok(csp?.includes("script-src 'self'"), `${ruta} sin política de scripts`);
+    assert.ok(!csp.includes('unsafe-inline'), `${ruta} permite estilos o scripts en línea`);
+  }
+});
+
+test('una página inexistente devuelve la página de error, no un fallo del servidor', async () => {
+  const anonimo = crearCliente();
+  const r = await anonimo.get('/ruta/que-no-existe');
+  assert.equal(r.status, 404);
+  assert.ok(String(r.datos).includes('Esa página no existe'));
+});

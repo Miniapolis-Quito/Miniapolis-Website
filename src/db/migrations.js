@@ -6,6 +6,8 @@
  * nunca se debe reordenar ni eliminar una migración ya publicada: para cambiar
  * algo se agrega una migración nueva al final.
  */
+import { textoBusquedaUsuario } from '../lib/texto.js';
+
 export const migrations = [
   {
     name: '001-esquema-inicial',
@@ -190,6 +192,28 @@ export const migrations = [
         );
         CREATE INDEX idx_idem_expiry ON idempotency_keys(expires_at);
       `);
+    },
+  },
+  {
+    name: '002-busqueda-sin-tildes',
+    up: (db) => {
+      // El LIKE de SQLite solo ignora mayúsculas en ASCII: sin una columna
+      // normalizada, buscar "maria" nunca encontraría a "María".
+      db.exec(`
+        ALTER TABLE users ADD COLUMN search_text TEXT NOT NULL DEFAULT '';
+        CREATE INDEX idx_users_search ON users(search_text);
+      `);
+
+      // Relleno de las filas existentes: el plegado se hace en JavaScript
+      // porque SQLite no sabe quitar tildes por sí solo.
+      const filas = db.prepare('SELECT id, full_name, email, phone FROM users').all();
+      const actualizar = db.prepare('UPDATE users SET search_text = ? WHERE id = ?');
+      for (const fila of filas) {
+        actualizar.run(
+          textoBusquedaUsuario({ fullName: fila.full_name, email: fila.email, phone: fila.phone }),
+          fila.id,
+        );
+      }
     },
   },
 ];

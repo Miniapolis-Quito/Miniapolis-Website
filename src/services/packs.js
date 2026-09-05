@@ -11,6 +11,7 @@ import { newId, newPackCode, randomHex, normalizePackCode } from '../lib/ids.js'
 import { badRequest, conflict, notFound } from '../lib/errors.js';
 import { buildQrPayload } from '../lib/qr.js';
 import { config } from '../config.js';
+import { patronLike } from '../lib/texto.js';
 import { hub, channels } from '../lib/events.js';
 import * as audit from './audit.js';
 
@@ -194,17 +195,24 @@ export function listPacksForUser(userId, { includeQr = false, includeInactive = 
 export function summaryForUser(userId) {
   const db = getDb();
   expireDuePacks(db);
+  // La condición de vencimiento va en la consulta además de en el barrido: así
+  // el saldo es correcto aunque el barrido todavía no haya marcado el pack.
   const row = db
     .prepare(
       `SELECT
-         IFNULL(SUM(CASE WHEN status = 'active' AND remaining > 0 THEN remaining ELSE 0 END), 0) AS disponibles,
-         IFNULL(SUM(CASE WHEN status = 'active' AND remaining > 0 THEN 1 ELSE 0 END), 0)         AS packs_activos,
-         IFNULL(SUM(size - remaining), 0)                                                        AS usadas,
-         IFNULL(SUM(size), 0)                                                                    AS compradas,
-         COUNT(*)                                                                                AS packs_totales
-       FROM packs WHERE user_id = ?`,
+         IFNULL(SUM(CASE WHEN usable THEN remaining ELSE 0 END), 0) AS disponibles,
+         IFNULL(SUM(CASE WHEN usable THEN 1 ELSE 0 END), 0)         AS packs_activos,
+         IFNULL(SUM(size - remaining), 0)                           AS usadas,
+         IFNULL(SUM(size), 0)                                       AS compradas,
+         COUNT(*)                                                   AS packs_totales
+       FROM (
+         SELECT size, remaining,
+                (status = 'active' AND remaining > 0
+                 AND (expires_at IS NULL OR expires_at > @ahora)) AS usable
+           FROM packs WHERE user_id = @userId
+       )`,
     )
-    .get(userId);
+    .get({ userId, ahora: new Date().toISOString() });
   const nextExpiry = db
     .prepare(
       `SELECT expires_at FROM packs
@@ -374,10 +382,11 @@ export function listPacks({ limit = 50, offset = 0, status = null, search = '', 
     params.userId = userId;
   }
   if (search) {
-    where.push('(p.code LIKE @search OR u.full_name LIKE @search OR u.email_normalized LIKE @search)');
-    params.search = `%${String(search).trim().toUpperCase()}%`;
-    // El LIKE de SQLite no distingue mayúsculas en ASCII, así que un solo
-    // patrón sirve para código (mayúsculas) y para nombre/correo.
+    // Dos patrones: el código va en mayúsculas y sin tildes, y el nombre del
+    // cliente contra la columna normalizada, para que "maria" encuentre a María.
+    where.push("(p.code LIKE @codigo ESCAPE '\\' OR u.search_text LIKE @search ESCAPE '\\')");
+    params.search = patronLike(search);
+    params.codigo = `%${String(search).trim().toUpperCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 

@@ -9,11 +9,15 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { hub, channels } from '../lib/events.js';
 import { summaryForUser } from '../services/packs.js';
+import { isSessionActive } from '../services/sessions.js';
+import { getDb } from '../db/index.js';
 import { logger } from '../lib/logger.js';
 
 export const router = express.Router();
 
 const HEARTBEAT_MS = 25_000;
+/** Cada cuánto se revisa que la sesión que abrió el canal siga siendo válida. */
+const REVALIDACION_MS = 10_000;
 
 /** Canales a los que puede suscribirse cada rol. */
 function channelsFor(user) {
@@ -21,6 +25,19 @@ function channelsFor(user) {
   if (user.role === 'staff' || user.role === 'master') list.push(channels.staff);
   if (user.role === 'master') list.push(channels.admin);
   return list;
+}
+
+/**
+ * ¿Sigue siendo válida la sesión que abrió este canal?
+ *
+ * Una conexión de tiempo real dura horas, así que solo comprobar los permisos
+ * al abrirla no basta: si al usuario lo suspenden o le cierran la sesión, su
+ * pantalla seguiría recibiendo datos hasta que hiciera otra petición.
+ */
+function sesionSigueViva(usuario) {
+  if (!isSessionActive(usuario.sessionId)) return false;
+  const fila = getDb().prepare('SELECT status, role FROM users WHERE id = ?').get(usuario.id);
+  return Boolean(fila) && fila.status === 'active' && fila.role === usuario.role;
 }
 
 function writeEvent(res, { id, type, data }) {
@@ -84,11 +101,25 @@ router.get('/', requireAuth, (req, res) => {
     }
   }, HEARTBEAT_MS);
 
+  // Red de seguridad por si el aviso inmediato no llegara (por ejemplo, si la
+  // sesión se revocó desde otro proceso).
+  const revalidacion = setInterval(() => {
+    try {
+      if (!sesionSigueViva(req.user)) {
+        writeEvent(res, { id: 0, type: 'sesion.invalida', data: { motivo: 'sesion_cerrada' } });
+        cleanup();
+      }
+    } catch {
+      cleanup();
+    }
+  }, REVALIDACION_MS);
+
   let closed = false;
   function cleanup() {
     if (closed) return;
     closed = true;
     clearInterval(heartbeat);
+    clearInterval(revalidacion);
     unsubscribe();
     unregister();
     try {

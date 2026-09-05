@@ -26,20 +26,6 @@ export function record({ actor, action, entityType, entityId, metadata, ip, user
   return entry;
 }
 
-/** Igual que `record`, pero desde un objeto `req` de Express. */
-export function recordFromRequest(req, action, { entityType, entityId, metadata, db } = {}) {
-  return record({
-    actor: req.user ? { id: req.user.id, email: req.user.email } : null,
-    action,
-    entityType,
-    entityId,
-    metadata,
-    ip: req.clientIp,
-    userAgent: req.get?.('user-agent'),
-    db,
-  });
-}
-
 export function list({ limit = 50, offset = 0, action, entityId, actorId } = {}) {
   const db = getDb();
   const where = [];

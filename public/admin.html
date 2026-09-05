@@ -17,15 +17,15 @@
     <div id="aviso" class="aviso" role="alert" hidden></div>
 
     <div class="pestanas" role="tablist" aria-label="Secciones de administración">
-      <button class="pestana" role="tab" data-panel="resumen"  aria-selected="true"  type="button">Resumen</button>
-      <button class="pestana" role="tab" data-panel="clientes" aria-selected="false" type="button">Clientes y personal</button>
-      <button class="pestana" role="tab" data-panel="packs"    aria-selected="false" type="button">Packs</button>
-      <button class="pestana" role="tab" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
-      <button class="pestana" role="tab" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
+      <button class="pestana" role="tab" id="pestana-resumen" aria-controls="panel-resumen" data-panel="resumen"  aria-selected="true"  type="button">Resumen</button>
+      <button class="pestana" role="tab" id="pestana-clientes" aria-controls="panel-clientes" data-panel="clientes" aria-selected="false" type="button">Clientes y personal</button>
+      <button class="pestana" role="tab" id="pestana-packs" aria-controls="panel-packs" data-panel="packs"    aria-selected="false" type="button">Packs</button>
+      <button class="pestana" role="tab" id="pestana-consumos" aria-controls="panel-consumos" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
+      <button class="pestana" role="tab" id="pestana-auditoria" aria-controls="panel-auditoria" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
     </div>
 
     <!-- Resumen -->
-    <section id="panel-resumen" role="tabpanel">
+    <section id="panel-resumen" role="tabpanel" aria-labelledby="pestana-resumen">
       <div class="rejilla rejilla--metricas" id="metricas"></div>
 
       <div class="rejilla rejilla--2 mt-2 alinea-arriba">
@@ -64,7 +64,7 @@
     </section>
 
     <!-- Clientes -->
-    <section id="panel-clientes" role="tabpanel" hidden>
+    <section id="panel-clientes" role="tabpanel" aria-labelledby="pestana-clientes" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">
           <h2>Clientes y personal</h2>
@@ -89,7 +89,7 @@
     </section>
 
     <!-- Packs -->
-    <section id="panel-packs" role="tabpanel" hidden>
+    <section id="panel-packs" role="tabpanel" aria-labelledby="pestana-packs" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">
           <h2>Packs de entradas</h2>
@@ -112,7 +112,7 @@
     </section>
 
     <!-- Consumos -->
-    <section id="panel-consumos" role="tabpanel" hidden>
+    <section id="panel-consumos" role="tabpanel" aria-labelledby="pestana-consumos" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">
           <h2>Consumos registrados</h2>
@@ -123,7 +123,7 @@
     </section>
 
     <!-- Auditoría -->
-    <section id="panel-auditoria" role="tabpanel" hidden>
+    <section id="panel-auditoria" role="tabpanel" aria-labelledby="pestana-auditoria" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">
           <h2>Bitácora de auditoría</h2>
@@ -246,6 +246,9 @@
       <button class="boton boton--fantasma" type="button" data-cerrar>Cerrar</button>
     </div>
   </dialog>
+
+  <!-- Solo se rellena al imprimir un pase físico. -->
+  <div id="pase-impreso" hidden></div>
 
   <script type="module" src="/js/admin.js"></script>
 </body>

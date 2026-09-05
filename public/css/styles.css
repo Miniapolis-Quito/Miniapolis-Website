@@ -454,12 +454,6 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
    Utilidades
    -------------------------------------------------------------------------- */
 
-.oculto { display: none !important; }
-.solo-lectores {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-}
 .tenue { color: var(--texto-2); }
 .tenue-2 { color: var(--texto-3); }
 .pequeno { font-size: .85rem; }
@@ -488,19 +482,57 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
 /* En pantallas estrechas el estado de conexión se reduce al punto de color y
    se oculta el nombre de la marca: ocupaban una línea entera de la cabecera. */
 @media (max-width: 560px) {
-  .estado-conexion span:not(.punto) { display: none; }
-  .barra__marca span:last-child { display: none; }
+  /* Se ocultan a la vista pero siguen anunciándose en el lector de pantalla:
+     con display:none el estado de conexión sería un punto de color sin nombre. */
+  .estado-conexion span:not(.punto),
+  .barra__marca span:last-child {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
+/* --------------------------------------------------------------------------
+   Pase físico (QR impreso)
+   -------------------------------------------------------------------------- */
+
+.pase {
+  width: 86mm;
+  margin: 0 auto;
+  padding: 8mm 6mm;
+  border: 2px solid #000;
+  border-radius: 4mm;
+  background: #fff;
+  color: #000;
+  text-align: center;
+  font-family: var(--fuente);
+}
+.pase__marca   { font-weight: 800; letter-spacing: -0.02em; font-size: 12pt; }
+.pase__titulo  { font-size: 10pt; margin-bottom: 4mm; }
+.pase__qr svg  { width: 55mm; height: 55mm; display: block; margin: 0 auto; }
+.pase__codigo  { font-family: var(--mono); font-size: 13pt; font-weight: 700; letter-spacing: .1em; margin-top: 3mm; }
+.pase__cliente { font-size: 10pt; margin-top: 1mm; }
+.pase__pie     { font-size: 8pt; margin-top: 3mm; color: #444; }
+
 @media print {
   body { background: #fff; color: #000; }
-  .barra, .boton, .brindis-zona, .no-imprimir { display: none !important; }
+  .barra, .boton, .brindis-zona { display: none !important; }
   .tarjeta, .pack { border: 1px solid #ccc; box-shadow: none; background: #fff; color: #000; }
   .qr-caja { min-height: auto; }
+
+  /* Al imprimir un pase, solo sale el pase: sin cabecera, panel ni diálogos. */
+  .imprimiendo-pase > *:not(#pase-impreso) { display: none !important; }
+  .imprimiendo-pase #pase-impreso { display: block !important; }
+  .imprimiendo-pase dialog { display: none !important; }
+
+  @page { margin: 10mm; }
 }
 
 /* --------------------------------------------------------------------------

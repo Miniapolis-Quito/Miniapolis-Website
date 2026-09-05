@@ -30,6 +30,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 - Vende packs, da de alta clientes y personal, y asigna roles.
 - Ajusta saldos, suspende o anula packs, y anula un consumo devolviendo la
   entrada al cliente.
+- Imprime pases físicos con QR fijo, para los packs donde lo habilite.
 - Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
 - Bitácora de auditoría de todo lo que ocurre y exportación a CSV.
 - Verificación de integridad contable con un clic.
@@ -161,7 +162,11 @@ veces**, ni siquiera dentro de esa ventana. Sin ambos secretos no se puede
 fabricar uno válido, y el del pack nunca sale del servidor.
 
 Los pases impresos (QR fijo) están desactivados salvo que el máster los active
-pack por pack, porque un impreso sí es copiable.
+pack por pack, porque un impreso sí es copiable. Al activarlos aparece
+**Imprimir pase** en el detalle del pack: sale un cartón con el QR, el código y
+el nombre del cliente. Ese código no cambia entre reimpresiones (es un objeto
+físico), y desactivar la opción invalida al instante todos los pases
+entregados.
 
 **Contra el doble descuento.** Tres barreras independientes:
 
@@ -191,10 +196,15 @@ alguna vez se presenta uno ya rotado, se asume robo y se revoca la sesión
 completa. Suspender una cuenta, cambiarle el rol o cambiar la contraseña corta
 el acceso al instante, sin esperar a que caduque nada.
 
+Suspender una cuenta o cerrarle las sesiones **cierra también su canal en vivo
+en el acto**: la pantalla de esa persona vuelve a la página de acceso sola, sin
+esperar a que falle su siguiente petición.
+
 **Lo demás.** Límites de intentos persistidos en base (sobreviven a un
 reinicio), bloqueo temporal de cuenta tras 8 fallos, política de seguridad de
 contenido sin `unsafe-inline` ni `unsafe-eval`, consultas siempre
-parametrizadas, validación de entrada con esquemas, cabeceras de seguridad, y
+parametrizadas, validación de entrada con esquemas y mensajes en español,
+cabeceras de seguridad, protección contra fórmulas en los CSV exportados, y
 bitácora de auditoría de cada acción con su autor, hora y dirección IP.
 
 ---
@@ -216,6 +226,10 @@ devuelve la entrada al cliente y queda registrado quién lo hizo y por qué.
 
 **Cierre de caja.** Administración → Resumen → *Exportar packs / consumos /
 clientes*. Los CSV abren directamente en Excel con los acentos correctos.
+
+**Buscar a alguien.** La búsqueda de clientes y de packs ignora tildes y
+mayúsculas: "maria" encuentra a *María Chasís*, y "munoz" a *Andrés Muñoz*.
+También busca por correo, por teléfono y por código de pack.
 
 ---
 
@@ -241,14 +255,19 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (62 pruebas)
+npm test        # suite completa (90 pruebas)
 npm run seed    # datos de demostración
 ```
 
 Las pruebas corren sobre una base en memoria y cubren autenticación y rotación
 de sesiones, emisión y ajuste de packs, las tres barreras contra el doble
-descuento, concurrencia, control de acceso por rol y las cabeceras de
-seguridad.
+descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo y
+leyendo lo que llega), la búsqueda sin tildes, el camino de actualización del
+esquema, control de acceso por rol y las cabeceras de seguridad.
+
+`tests/e2e/` contiene además una prueba en navegador real que recorre el flujo
+completo. No entra en `npm test` porque necesita Playwright; su README explica
+cómo ejecutarla.
 
 ### Estructura
 
@@ -259,7 +278,7 @@ src/
   server.js            Arranque, mantenimiento y apagado ordenado
   bootstrap.js         Creación de la cuenta máster inicial
   db/                  Conexión SQLite y migraciones incrementales
-  lib/                 QR, contraseñas, tokens, límites, eventos en vivo
+  lib/                 QR, contraseñas, tokens, límites, eventos en vivo, texto
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events
   services/            Reglas de negocio (packs, consumos, usuarios, auditoría)

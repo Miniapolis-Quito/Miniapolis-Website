@@ -205,3 +205,47 @@ test('la verificación de integridad detecta un saldo alterado a mano', async ()
   assert.equal(despues.datos.ok, false);
   assert.equal(despues.datos.mismatches.length, 1);
 });
+
+test('el pase impreso es estable entre reimpresiones y sirve en la puerta', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const packId = emitido.datos.pack.id;
+
+  await cMaster.patch(`/api/admin/packs/${packId}`, { allowStaticQr: true });
+
+  // Un cartón físico no puede cambiar cada vez que se imprime.
+  const primera = await cCliente.get(`/api/packs/${packId}/qr.svg?mode=static`);
+  const segunda = await cCliente.get(`/api/packs/${packId}/qr.svg?mode=static`);
+  assert.equal(primera.status, 200);
+  assert.equal(primera.datos, segunda.datos, 'dos impresiones del mismo pase deben dar el mismo código');
+
+  // Y el código dinámico sí cambia en cada consulta.
+  const dinamicoA = await cCliente.get(`/api/packs/${packId}/qr`);
+  const dinamicoB = await cCliente.get(`/api/packs/${packId}/qr`);
+  assert.notEqual(dinamicoA.datos.payload, dinamicoB.datos.payload);
+
+  // El pase impreso se puede canjear en la puerta.
+  const pack = packs.findById(packId);
+  const canje = await cStaff.post('/api/scan', {
+    payload: (await import('../src/lib/qr.js')).buildQrPayload(pack, { static: true }),
+  });
+  assert.equal(canje.status, 200);
+  assert.equal(canje.datos.method, 'qr_static');
+  assert.equal(canje.datos.remaining, 4);
+});
+
+test('desactivar el QR impreso invalida los pases ya entregados', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const { buildQrPayload } = await import('../src/lib/qr.js');
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const packId = emitido.datos.pack.id;
+
+  await cMaster.patch(`/api/admin/packs/${packId}`, { allowStaticQr: true });
+  const pase = buildQrPayload(packs.findById(packId), { static: true });
+  assert.equal((await cStaff.post('/api/scan', { payload: pase })).status, 200);
+
+  await cMaster.patch(`/api/admin/packs/${packId}`, { allowStaticQr: false });
+  const despues = await cStaff.post('/api/scan', { payload: pase });
+  assert.equal(despues.status, 400);
+  assert.equal(despues.datos.error.code, 'qr_estatico_no_permitido');
+});

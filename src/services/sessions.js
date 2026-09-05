@@ -11,6 +11,7 @@ import { newId, randomToken } from '../lib/ids.js';
 import { hashRefreshToken, signAccessToken } from '../lib/jwt.js';
 import { config } from '../config.js';
 import { logger } from '../lib/logger.js';
+import { hub, channels } from '../lib/events.js';
 
 export function issueSession(user, { ip, userAgent, familyId = null } = {}) {
   const db = getDb();
@@ -104,9 +105,20 @@ export function revokeByToken(refreshToken, reason = 'logout') {
 }
 
 export function revokeAllForUser(userId, reason = 'admin') {
-  return getDb()
+  const cambios = getDb()
     .prepare(`UPDATE sessions SET revoked_at = ?, revoke_reason = ? WHERE user_id = ? AND revoked_at IS NULL`)
     .run(new Date().toISOString(), reason, userId).changes;
+  if (cambios > 0) notificarSesionInvalida(userId, reason);
+  return cambios;
+}
+
+/**
+ * Avisa por el canal en vivo a las pantallas de ese usuario para que vuelvan a
+ * la página de acceso en el acto, en lugar de seguir mostrando datos hasta que
+ * la siguiente petición falle.
+ */
+export function notificarSesionInvalida(userId, motivo = 'sesion_cerrada') {
+  hub.publish(channels.user(userId), 'sesion.invalida', { motivo });
 }
 
 /** ¿La sesión referenciada por un access token sigue viva? */

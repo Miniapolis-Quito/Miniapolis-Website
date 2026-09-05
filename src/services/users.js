@@ -4,6 +4,8 @@ import { newId } from '../lib/ids.js';
 import { hashPassword, verifyPassword, needsRehash } from '../lib/passwords.js';
 import { conflict, notFound, badRequest } from '../lib/errors.js';
 import { config } from '../config.js';
+import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
+import { notificarSesionInvalida } from './sessions.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
 export function normalizeEmail(email) {
@@ -59,15 +61,16 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
     created_by: createdBy,
     created_at: now,
     updated_at: now,
+    search_text: textoBusquedaUsuario({ fullName, email, phone }),
   };
 
   try {
     getDb()
       .prepare(
         `INSERT INTO users (id, email, email_normalized, full_name, phone, role, status, password_hash,
-                            password_changed_at, created_by, created_at, updated_at)
+                            password_changed_at, created_by, created_at, updated_at, search_text)
          VALUES (@id, @email, @email_normalized, @full_name, @phone, @role, @status, @password_hash,
-                 @password_changed_at, @created_by, @created_at, @updated_at)`,
+                 @password_changed_at, @created_by, @created_at, @updated_at, @search_text)`,
       )
       .run(user);
   } catch (error) {
@@ -158,6 +161,7 @@ export async function setPassword(userId, newPassword) {
         WHERE user_id = ? AND revoked_at IS NULL`,
     ).run(now, userId);
   });
+  notificarSesionInvalida(userId, 'password_cambiada');
   return findById(userId, db);
 }
 
@@ -193,6 +197,17 @@ export function updateUser(userId, changes, db = getDb()) {
   const invalidates = changes.role !== undefined || changes.status !== undefined || changes.email !== undefined;
   if (invalidates) fields.push('token_version = token_version + 1');
 
+  // El texto de búsqueda se recalcula a partir del estado resultante, no del
+  // parcial recibido: si solo cambia el teléfono, el nombre debe seguir ahí.
+  if (changes.fullName !== undefined || changes.phone !== undefined || changes.email !== undefined) {
+    fields.push('search_text = @search_text');
+    params.search_text = textoBusquedaUsuario({
+      fullName: changes.fullName ?? user.full_name,
+      email: changes.email ?? user.email,
+      phone: changes.phone !== undefined ? changes.phone : user.phone,
+    });
+  }
+
   if (fields.length === 0) return user;
 
   try {
@@ -208,6 +223,7 @@ export function updateUser(userId, changes, db = getDb()) {
     db.prepare(
       `UPDATE sessions SET revoked_at = ?, revoke_reason = 'account_changed' WHERE user_id = ? AND revoked_at IS NULL`,
     ).run(params.updated_at, userId);
+    notificarSesionInvalida(userId, 'cuenta_modificada');
   }
 
   return findById(userId, db);
@@ -228,11 +244,12 @@ export function unlockUser(userId, db = getDb()) {
 export function listUsers({ limit = 50, offset = 0, search = '', role = null, status = null } = {}) {
   const db = getDb();
   const where = [];
-  const params = { limit, offset };
+  const params = { limit, offset, ahora: new Date().toISOString() };
 
   if (search) {
-    where.push('(u.full_name LIKE @search OR u.email_normalized LIKE @search OR IFNULL(u.phone, \'\') LIKE @search)');
-    params.search = `%${String(search).trim().toLowerCase()}%`;
+    // ESCAPE evita que un "%" tecleado por el usuario actúe como comodín.
+    where.push("u.search_text LIKE @search ESCAPE '\\'");
+    params.search = patronLike(search);
   }
   if (role) {
     where.push('u.role = @role');
@@ -253,10 +270,16 @@ export function listUsers({ limit = 50, offset = 0, search = '', role = null, st
          FROM users u
          LEFT JOIN (
               SELECT user_id,
-                     SUM(CASE WHEN status = 'active' AND remaining > 0 THEN 1 ELSE 0 END) AS packs_activos,
-                     SUM(CASE WHEN status = 'active' THEN remaining ELSE 0 END)           AS entradas,
-                     COUNT(*)                                                             AS packs_totales
-                FROM packs GROUP BY user_id
+                     SUM(CASE WHEN usable THEN 1 ELSE 0 END)         AS packs_activos,
+                     SUM(CASE WHEN usable THEN remaining ELSE 0 END) AS entradas,
+                     COUNT(*)                                        AS packs_totales
+                FROM (
+                     SELECT user_id, remaining,
+                            (status = 'active' AND remaining > 0
+                             AND (expires_at IS NULL OR expires_at > @ahora)) AS usable
+                       FROM packs
+                )
+                GROUP BY user_id
          ) p ON p.user_id = u.id
          ${clause}
          ORDER BY u.created_at DESC

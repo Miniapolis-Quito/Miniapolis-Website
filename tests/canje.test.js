@@ -290,3 +290,77 @@ test('un código inventado o basura no rompe nada', async () => {
   const vacio = await cStaff.post('/api/scan', { payload: '' });
   assert.equal(vacio.status, 400);
 });
+
+test('la misma clave de idempotencia en otra operación se rechaza sin romper nada', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'clave-compartida-0001';
+
+  const porQr = await cStaff.post(
+    '/api/scan',
+    { payload: buildQrPayload(pack) },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  assert.equal(porQr.status, 200);
+
+  // Reutilizar la clave en el canje manual choca con el índice único de
+  // consumos; el sistema debe responder un conflicto entendible, no un error
+  // interno, y sobre todo no descontar otra entrada.
+  const porCodigo = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  assert.equal(porCodigo.status, 409);
+  assert.equal(porCodigo.datos.error.code, 'idempotencia_conflicto');
+  assert.equal(packsService.findById(pack.id).remaining, 4);
+});
+
+test('un reintento manual escrito distinto cuenta como el mismo intento', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'reintento-tecleado-0001';
+
+  const primero = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  // El operador reintenta y esta vez teclea el código sin guiones y en minúsculas.
+  const segundo = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code.toLowerCase().replace(/-/g, ' ') },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+
+  assert.equal(segundo.status, 200);
+  assert.equal(segundo.headers.get('idempotent-replay'), 'true');
+  assert.equal(primero.datos.redemptionId, segundo.datos.redemptionId);
+  assert.equal(packsService.findById(pack.id).remaining, 4);
+});
+
+test('escaneos simultáneos por HTTP desde varios puestos no descuentan de más', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 4);
+
+  // Ocho peticiones HTTP a la vez, cada una con su propio QR válido: es el caso
+  // de varios puestos escaneando al mismo cliente en el mismo instante.
+  const respuestas = await Promise.all(
+    Array.from({ length: 8 }, () => cStaff.post('/api/scan', { payload: buildQrPayload(pack) })),
+  );
+
+  const aceptadas = respuestas.filter((r) => r.status === 200);
+  assert.equal(aceptadas.length, 4, 'solo pueden prosperar tantas como entradas hubiera');
+
+  // Cada aceptada informa un saldo distinto y consecutivo: 3, 2, 1 y 0.
+  const saldos = aceptadas.map((r) => r.datos.remaining).sort((a, b) => b - a);
+  assert.deepEqual(saldos, [3, 2, 1, 0]);
+
+  const final = packsService.findById(pack.id);
+  assert.equal(final.remaining, 0);
+  assert.equal(final.status, 'depleted');
+  assert.ok(packsService.checkIntegrity().ok, 'la contabilidad debe cuadrar');
+
+  const historial = await cMaster.get(`/api/admin/redemptions?packId=${pack.id}`);
+  assert.equal(historial.datos.total, 4, 'no debe quedar ningún consumo huérfano');
+});
