@@ -257,6 +257,7 @@ inservible. Una tarea diaria basta:
 npm run dev     # servidor con recarga automática
 npm test        # suite completa (98 pruebas)
 npm run seed    # datos de demostración
+npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 ```
 
 Las pruebas corren sobre una base en memoria y cubren autenticación y rotación
@@ -265,9 +266,12 @@ descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo y
 leyendo lo que llega), la búsqueda sin tildes, el camino de actualización del
 esquema, control de acceso por rol y las cabeceras de seguridad.
 
-`tests/e2e/` contiene además una prueba en navegador real que recorre el flujo
-completo. No entra en `npm test` porque necesita Playwright; su README explica
-cómo ejecutarla.
+`tests/e2e/` contiene además dos pruebas en navegador real, que no entran en
+`npm test` porque necesitan Playwright: `interfaz.mjs` levanta la aplicación en
+el propio proceso y comprueba que la interfaz hace lo que dice (descargas,
+formateo del código al teclearlo, actividad en vivo), y `flujo-completo.mjs`
+recorre el sistema ya instalado contra un servidor de verdad. El README de esa
+carpeta explica cómo ejecutarlas.
 
 ### Estructura
 

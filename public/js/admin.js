@@ -925,9 +925,9 @@ async function cargarAuditoria() {
  * entrega al navegador como archivo local.
  */
 async function descargarReporte(entidad) {
-  const csv = await api.get(`/api/admin/export/${entidad}.csv`);
+  const archivo = await api.get(`/api/admin/export/${entidad}.csv`, { comoBlob: true });
   const nombre = `${entidad}-${new Date().toISOString().slice(0, 10)}.csv`;
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(archivo);
   const enlace = el('a', { href: url, download: nombre });
   document.body.append(enlace);
   enlace.click();

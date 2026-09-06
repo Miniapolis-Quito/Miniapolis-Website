@@ -7,7 +7,22 @@
  *
  * Requiere Playwright y un servidor en marcha. Ver el README de esta carpeta.
  */
-import { chromium } from 'playwright';
+
+/** Playwright no es dependencia del proyecto: si falta, se dice cómo instalarlo. */
+async function cargarNavegador() {
+  try {
+    return (await import('playwright')).chromium;
+  } catch {
+    process.stderr.write(
+      '\nEsta prueba necesita Playwright, que no es dependencia del proyecto:\n\n' +
+        '  npm install --no-save playwright\n' +
+        '  npx playwright install chromium\n\n',
+    );
+    process.exit(1);
+  }
+}
+
+const chromium = await cargarNavegador();
 
 const B = process.env.BASE_URL || 'http://localhost:3000';
 const CAPTURAS = process.env.CAPTURAS || null;
