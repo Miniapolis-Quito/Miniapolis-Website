@@ -310,10 +310,12 @@ src/
   server.js            Arranque, mantenimiento y apagado ordenado
   bootstrap.js         Creación de la cuenta máster inicial
   db/                  Conexión SQLite y migraciones incrementales
-  lib/                 QR, contraseñas, tokens, límites, eventos en vivo, texto
+  lib/                 QR, contraseñas, tokens, límites, eventos en vivo,
+                       texto y días del calendario
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events
-  services/            Reglas de negocio (packs, consumos, usuarios, auditoría)
+  services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
+                       auditoría y las cifras del panel)
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas
 scripts/               Utilidades de terminal
