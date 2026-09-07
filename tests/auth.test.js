@@ -119,6 +119,92 @@ test('la cuenta se bloquea temporalmente tras varios intentos fallidos', async (
   assert.equal(correcta.status, 429);
 });
 
+test('el máster desbloquea una cuenta y esa persona vuelve a entrar', async () => {
+  const { cMaster, cliente: usuarioCliente } = await sembrarUsuarios();
+  const cliente = crearCliente();
+
+  for (let i = 0; i < 8; i += 1) {
+    await cliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: `mala-clave-${i}` });
+  }
+  assert.equal(
+    (await cliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente })).status,
+    429,
+    'la cuenta debería estar bloqueada',
+  );
+
+  // En la ficha se ve el bloqueo, que es lo que mira quien atiende el mostrador.
+  const ficha = await cMaster.get(`/api/admin/users/${usuarioCliente.id}`);
+  assert.equal(ficha.datos.user.locked, true);
+
+  const desbloqueo = await cMaster.post(`/api/admin/users/${usuarioCliente.id}/unlock`);
+  assert.equal(desbloqueo.status, 200);
+  assert.equal(desbloqueo.datos.user.locked, false);
+
+  const entrada = await cliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente });
+  assert.equal(entrada.status, 200, JSON.stringify(entrada.datos));
+});
+
+test('restablecer la contraseña entrega una temporal y cierra las sesiones abiertas', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+
+  // La sesión del cliente funciona antes de tocar nada.
+  assert.equal((await cCliente.get('/api/auth/me')).status, 200);
+
+  const reinicio = await cMaster.post(`/api/admin/users/${cliente.id}/reset-password`, {});
+  assert.equal(reinicio.status, 200);
+  const temporal = reinicio.datos.temporaryPassword;
+  assert.equal(typeof temporal, 'string');
+  assert.equal(temporal.length >= 10, true, 'la temporal debe cumplir la longitud mínima');
+
+  // Su sesión anterior deja de valer en el acto, sin esperar a que caduque.
+  const despues = await cCliente.get('/api/auth/me');
+  assert.equal(despues.status, 401);
+
+  // La contraseña vieja ya no sirve; la temporal sí.
+  const nuevoCliente = crearCliente();
+  assert.equal(
+    (await nuevoCliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente })).status,
+    401,
+  );
+  assert.equal(
+    (await nuevoCliente.post('/api/auth/login', { email: 'cliente@pista.ec', password: temporal })).status,
+    200,
+  );
+
+  // Y si el máster indica una contraseña, se usa esa y no se devuelve ninguna.
+  const elegida = await cMaster.post(`/api/admin/users/${cliente.id}/reset-password`, {
+    password: 'Amortiguador-Delantero-31',
+  });
+  assert.equal(elegida.status, 200);
+  assert.equal(elegida.datos.temporaryPassword, null);
+  const conElegida = crearCliente();
+  assert.equal(
+    (await conElegida.post('/api/auth/login', { email: 'cliente@pista.ec', password: 'Amortiguador-Delantero-31' })).status,
+    200,
+  );
+});
+
+test('cerrar sesión en todos los dispositivos deja fuera a todos', async () => {
+  const { cCliente } = await sembrarUsuarios();
+  // Un segundo dispositivo de la misma persona.
+  const otroDispositivo = crearCliente();
+  await otroDispositivo.entrar('cliente@pista.ec', CLAVES.cliente);
+  assert.equal((await otroDispositivo.get('/api/auth/me')).status, 200);
+
+  const cierre = await cCliente.post('/api/auth/logout-all');
+  assert.equal(cierre.status, 200);
+  assert.equal(cierre.datos.sesionesCerradas >= 2, true, 'debería cerrar las dos sesiones');
+
+  // Ni el que lo pidió ni el otro dispositivo siguen dentro, y la cookie del
+  // otro tampoco sirve para renovar.
+  assert.equal((await cCliente.get('/api/auth/me')).status, 401);
+  assert.equal((await otroDispositivo.get('/api/auth/me')).status, 401);
+  assert.equal((await otroDispositivo.post('/api/auth/refresh')).status, 401);
+
+  // Volver a entrar funciona con normalidad.
+  assert.equal((await otroDispositivo.post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente })).status, 200);
+});
+
 test('el refresh token rota en cada uso', async () => {
   await sembrarUsuarios();
   const cliente = crearCliente();

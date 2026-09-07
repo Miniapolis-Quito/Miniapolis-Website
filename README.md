@@ -258,16 +258,18 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (100 pruebas)
+npm test        # suite completa (107 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 ```
 
-Las pruebas corren sobre una base en memoria y cubren autenticación y rotación
-de sesiones, emisión y ajuste de packs, las tres barreras contra el doble
-descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo y
-leyendo lo que llega), la búsqueda sin tildes, el camino de actualización del
-esquema, control de acceso por rol y las cabeceras de seguridad.
+Las pruebas corren sobre una base en memoria y cubren todas las rutas de la API:
+autenticación y rotación de sesiones, desbloqueo y restablecimiento de
+contraseñas, emisión y ajuste de packs, las tres barreras contra el doble
+descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo,
+leyendo lo que llega y reanudándolo tras una caída), la búsqueda sin tildes, el
+camino de actualización del esquema, control de acceso por rol y las cabeceras
+de seguridad.
 
 `tests/e2e/` contiene además dos pruebas en navegador real, que no entran en
 `npm test` porque necesitan Playwright: `interfaz.mjs` levanta la aplicación en

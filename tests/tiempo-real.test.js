@@ -22,10 +22,14 @@ beforeEach(limpiarBase);
  * Abre una conexión de eventos y devuelve un lector con `esperar(tipo)`.
  * Se usa fetch en streaming, igual que la interfaz real.
  */
-async function abrirCanal(token) {
+async function abrirCanal(token, { desdeEvento = null } = {}) {
   const control = new AbortController();
   const respuesta = await fetch(`${base}/api/events`, {
-    headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` },
+    headers: {
+      Accept: 'text/event-stream',
+      Authorization: `Bearer ${token}`,
+      ...(desdeEvento ? { 'Last-Event-ID': String(desdeEvento) } : {}),
+    },
     signal: control.signal,
   });
   assert.equal(respuesta.status, 200);
@@ -47,12 +51,14 @@ async function abrirCanal(token) {
           pendiente = pendiente.slice(corte + 2);
           let tipo = 'message';
           let datos = '';
+          let id = null;
           for (const linea of bloque.split('\n')) {
             if (linea.startsWith('event:')) tipo = linea.slice(6).trim();
             else if (linea.startsWith('data:')) datos += linea.slice(5).trim();
+            else if (linea.startsWith('id:')) id = Number.parseInt(linea.slice(3).trim(), 10);
           }
           if (!datos) continue;
-          const evento = { tipo, datos: JSON.parse(datos) };
+          const evento = { tipo, id, datos: JSON.parse(datos) };
           recibidos.push(evento);
           for (let i = enEspera.length - 1; i >= 0; i -= 1) {
             if (enEspera[i].tipo === tipo) enEspera.splice(i, 1)[0].resolver(evento);
@@ -199,6 +205,42 @@ test('el personal ve la actividad de la pista, el cliente solo la suya', async (
     assert.equal(evento.datos.owner.fullName, 'Carlos Piloto');
   } finally {
     canalStaff.cerrar();
+  }
+});
+
+test('al reconectar, el canal reenvía lo que el cliente se perdió', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const pack = packsService.findById(emitido.datos.pack.id);
+
+  // Primer tramo: se recibe un consumo y se anota su id.
+  const primero = await abrirCanal(cCliente.token);
+  let ultimoId;
+  try {
+    await primero.esperar('conectado');
+    await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+    const evento = await primero.esperar('entrada.consumida');
+    ultimoId = evento.id;
+    assert.equal(Number.isInteger(ultimoId), true, 'cada evento viaja con su id');
+  } finally {
+    primero.cerrar();
+  }
+
+  // Se cae la conexión (un túnel, el ascensor de la pista) y mientras tanto
+  // pasan cosas: otro consumo y un pack nuevo.
+  await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+  await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 10 });
+
+  // Al volver, indicando el último id recibido, llega lo perdido sin recargar.
+  const segundo = await abrirCanal(cCliente.token, { desdeEvento: ultimoId });
+  try {
+    const reenviado = await segundo.esperar('entrada.consumida');
+    assert.equal(reenviado.id > ultimoId, true, 'no se repite lo ya recibido');
+    assert.equal(reenviado.datos.remaining, 3);
+    const nuevoPack = await segundo.esperar('pack.emitido');
+    assert.equal(nuevoPack.datos.pack.size, 10);
+  } finally {
+    segundo.cerrar();
   }
 });
 
