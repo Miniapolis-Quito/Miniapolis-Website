@@ -255,3 +255,20 @@ test('una página inexistente devuelve la página de error, no un fallo del serv
   assert.equal(r.status, 404);
   assert.ok(String(r.datos).includes('Esa página no existe'));
 });
+
+test('la sesión sobrevive aunque el dominio arrastre muchas cookies', async () => {
+  const { cCliente } = await sembrarUsuarios();
+  const refresco = cCliente.leerCookie('rh_refresh');
+  assert.ok(refresco, 'debería existir la cookie de refresco');
+
+  // Otra cosa del mismo dominio deja cookies grandes: analítica, un chat, lo
+  // que sea. La de refresco va la última, que es el caso incómodo.
+  const relleno = Array.from({ length: 12 }, (_, i) => `relleno${i}=${'x'.repeat(700)}`).join('; ');
+  const r = await cCliente.pedir('/api/auth/refresh', {
+    metodo: 'POST',
+    cabeceras: { Cookie: `${relleno}; rh_refresh=${refresco}` },
+  });
+
+  assert.equal(r.status, 200, 'la cookie de refresco tiene que seguir leyéndose');
+  assert.ok(r.datos.accessToken);
+});

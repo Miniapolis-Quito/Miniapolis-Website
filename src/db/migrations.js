@@ -216,6 +216,38 @@ export const migrations = [
       }
     },
   },
+  {
+    name: '003-idempotencia-por-operador',
+    up: (db) => {
+      // Una clave pertenece al cliente que la creó, no a toda la instalación.
+      // El esquema inicial la hacía global: dos puestos con una clave simple
+      // podían interferirse y, peor, recibir la respuesta del otro puesto.
+      db.exec(`
+        CREATE TABLE idempotency_keys_new (
+          user_id      TEXT NOT NULL,
+          key          TEXT NOT NULL,
+          endpoint     TEXT NOT NULL,
+          request_hash TEXT NOT NULL,
+          status_code  INTEGER NOT NULL,
+          response     TEXT NOT NULL,
+          created_at   TEXT NOT NULL,
+          expires_at   TEXT NOT NULL,
+          PRIMARY KEY (user_id, key)
+        );
+        INSERT INTO idempotency_keys_new
+          (user_id, key, endpoint, request_hash, status_code, response, created_at, expires_at)
+          SELECT COALESCE(user_id, ''), key, endpoint, request_hash, status_code, response, created_at, expires_at
+            FROM idempotency_keys;
+        DROP TABLE idempotency_keys;
+        ALTER TABLE idempotency_keys_new RENAME TO idempotency_keys;
+        CREATE INDEX idx_idem_expiry ON idempotency_keys(expires_at);
+
+        DROP INDEX idx_redemptions_idem;
+        CREATE UNIQUE INDEX idx_redemptions_idem ON redemptions(scanned_by, idempotency_key)
+          WHERE idempotency_key IS NOT NULL;
+      `);
+    },
+  },
 ];
 
 export default migrations;

@@ -122,9 +122,12 @@ location / {
 }
 ```
 
-Con proxy delante hay que poner `TRUST_PROXY=true` y `COOKIE_SECURE=true` en
-`.env`. **`TRUST_PROXY=true` sin un proxy real es peligroso**: permitiría a
-cualquiera falsificar su dirección IP y esquivar los límites de intentos.
+Con proxy delante hay que poner `TRUST_PROXY=true`,
+`TRUSTED_PROXY_IPS=127.0.0.1,::1` (si Caddy/nginx vive en la misma máquina) y
+`COOKIE_SECURE=true` en `.env`. Para un proxy remoto, usa su IP o su red CIDR
+en `TRUSTED_PROXY_IPS` y bloquea el acceso directo al puerto de Node. Así solo
+un proxy conocido puede aportar `X-Forwarded-For`; aceptar esa cabecera desde
+cualquier conexión permitiría falsificar IPs y esquivar los límites.
 
 ### Que el servicio se levante solo
 
@@ -263,7 +266,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (107 pruebas)
+npm test        # suite completa (123 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara

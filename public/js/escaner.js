@@ -464,11 +464,23 @@ function montarManual() {
   $('#subtitulo').textContent = `Operador: ${getUsuario().fullName}`;
 
   // El nombre del puesto se recuerda en este dispositivo: no es información
-  // sensible y ahorra escribirlo en cada turno.
-  const puestoGuardado = localStorage.getItem(CLAVE_DISPOSITIVO);
-  if (puestoGuardado) $('#dispositivo').value = puestoGuardado;
+  // sensible y ahorra escribirlo en cada turno. Si el navegador tiene el
+  // almacenamiento bloqueado, acceder a él lanza: recordar el puesto es una
+  // comodidad y no puede llevarse por delante el escáner entero.
+  const recordado = (() => {
+    try {
+      return localStorage.getItem(CLAVE_DISPOSITIVO);
+    } catch {
+      return null;
+    }
+  })();
+  if (recordado) $('#dispositivo').value = recordado;
   $('#dispositivo').addEventListener('change', (evento) => {
-    localStorage.setItem(CLAVE_DISPOSITIVO, evento.target.value.trim());
+    try {
+      localStorage.setItem(CLAVE_DISPOSITIVO, evento.target.value.trim());
+    } catch {
+      /* sin almacenamiento: el puesto solo dura lo que dure la pestaña */
+    }
   });
 
   $('#btn-camara').addEventListener('click', () => (estado.camaraActiva ? apagarCamara() : encenderCamara()));

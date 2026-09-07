@@ -71,7 +71,10 @@ class EventHub {
       .filter((c) => c.userId === userId)
       .sort((a, b) => a.connectedAt - b.connectedAt);
     const sobrantes = suyas.slice(0, Math.max(0, suyas.length - maximo));
-    for (const cliente of sobrantes) cliente.cerrar?.();
+    // Se avisa antes de cerrar para que esa pestaña se quede quieta en vez de
+    // reconectar: si no, con más pestañas que cupo se turnarían echándose unas
+    // a otras, reconectando sin parar.
+    for (const cliente of sobrantes) cliente.cerrar?.({ motivo: 'reemplazado' });
     return sobrantes.length;
   }
 

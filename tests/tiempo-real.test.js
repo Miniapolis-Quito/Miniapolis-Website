@@ -260,6 +260,12 @@ test('una misma persona no puede acumular conexiones sin fin', async () => {
   try {
     assert.equal(cuantasSuyas(), 8, 'debería quedarse en el tope de ocho');
 
+    // La que se cierra recibe el aviso antes de que le corten: sin él se
+    // pondría a reconectar y, con más pestañas que cupo, se turnarían echándose
+    // unas a otras sin parar.
+    const aviso = await canales[0].esperar('canal.reemplazado');
+    assert.equal(aviso.datos.motivo, 'reemplazado', 'la desalojada debe saber por qué se cerró');
+
     // Y la última en abrirse, que es la que la persona está mirando, sigue viva
     // y recibiendo: no se sacrifica la buena por respetar el tope.
     const ultima = canales[canales.length - 1];

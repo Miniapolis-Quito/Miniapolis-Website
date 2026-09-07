@@ -38,18 +38,17 @@ function normalizarCodigo(code) {
 /**
  * Busca una respuesta ya emitida para la misma clave de idempotencia.
  *
- * La búsqueda es solo por clave, sin filtrar por operación: una clave la genera
- * el cliente y debe identificar un único intento. Si la misma clave aparece en
- * otra operación o con otros datos, es un error del cliente y se responde con
- * un conflicto claro, en vez de dejar que choque más adelante contra el índice
- * único de `redemptions` y acabe en un error interno.
+ * La clave pertenece a un operador y debe identificar un único intento. Si ese
+ * mismo operador la reutiliza para otra operación o con otros datos, se
+ * responde con un conflicto claro. Operadores distintos pueden usar la misma
+ * clave sin interferirse entre sí.
  */
-function lookupIdempotent(db, key, endpoint, requestHash) {
+function lookupIdempotent(db, key, userId, endpoint, requestHash) {
   if (!key) return null;
-  const row = db.prepare('SELECT * FROM idempotency_keys WHERE key = ?').get(key);
+  const row = db.prepare('SELECT * FROM idempotency_keys WHERE user_id = ? AND key = ?').get(userId, key);
   if (!row) return null;
   if (row.expires_at <= new Date().toISOString()) {
-    db.prepare('DELETE FROM idempotency_keys WHERE key = ?').run(key);
+    db.prepare('DELETE FROM idempotency_keys WHERE user_id = ? AND key = ?').run(userId, key);
     return null;
   }
   if (row.endpoint !== endpoint || row.request_hash !== requestHash) {
@@ -67,7 +66,7 @@ function saveIdempotent(db, { key, userId, endpoint, requestHash, statusCode, bo
   db.prepare(
     `INSERT INTO idempotency_keys (key, user_id, endpoint, request_hash, status_code, response, created_at, expires_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(key) DO NOTHING`,
+     ON CONFLICT(user_id, key) DO NOTHING`,
   ).run(
     key,
     userId ?? null,
@@ -213,9 +212,6 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
   const endpoint = 'scan';
   const requestHash = hashRequest({ payload, deviceLabel });
 
-  const cached = lookupIdempotent(db, idempotencyKey, endpoint, requestHash);
-  if (cached) return { ...cached, idempotentReplay: true };
-
   const parsed = parseQrPayload(payload);
   if (!parsed.ok) {
     throw badRequest(
@@ -252,6 +248,12 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
   const owner = db.prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
 
   const result = inTransaction(() => {
+    // La consulta se hace dentro de la misma transacción que el descuento.
+    // Dos reintentos simultáneos ven así la respuesta del primero, en vez de
+    // competir por el nonce o devolver un error interno por la clave única.
+    const cached = lookupIdempotent(db, idempotencyKey, scanner?.id ?? '', endpoint, requestHash);
+    if (cached) return { cached };
+
     // Barrera 2: el nonce de un QR dinámico solo se acepta una vez.
     if (verification.method === 'qr_dynamic') {
       const nonceKey = `${pack.id}:${parsed.nonce}`;
@@ -309,6 +311,8 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
     return { ...consumo, body: respuesta };
   });
 
+  if (result.cached) return { ...result.cached, idempotentReplay: true };
+
   const body = result.body;
 
   audit.record({
@@ -341,15 +345,15 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
   const endpoint = 'manual';
   const requestHash = hashRequest({ code: normalizarCodigo(code), deviceLabel });
 
-  const cached = lookupIdempotent(db, idempotencyKey, endpoint, requestHash);
-  if (cached) return { ...cached, idempotentReplay: true };
-
   const pack = packsService.findByLooseCode(code, db);
   if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
 
   const owner = db.prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
 
   const result = inTransaction(() => {
+    const cached = lookupIdempotent(db, idempotencyKey, scanner?.id ?? '', endpoint, requestHash);
+    if (cached) return { cached };
+
     const consumo = redeemOne(db, {
       pack,
       method: 'manual_code',
@@ -377,6 +381,8 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
 
     return { ...consumo, body: respuesta };
   });
+
+  if (result.cached) return { ...result.cached, idempotentReplay: true };
 
   const body = result.body;
 

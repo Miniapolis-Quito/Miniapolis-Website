@@ -44,6 +44,11 @@ export function countByRole(role, db = getDb()) {
   return db.prepare('SELECT COUNT(*) AS n FROM users WHERE role = ?').get(role).n;
 }
 
+/** Número de cuentas utilizables de un rol. */
+export function countActiveByRole(role, db = getDb()) {
+  return db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = ? AND status = 'active'").get(role).n;
+}
+
 export async function createUser({ email, password, fullName, phone, role = 'customer', createdBy = null, status = 'active' }) {
   const normalized = normalizeEmail(email);
   const passwordHash = await hashPassword(password);

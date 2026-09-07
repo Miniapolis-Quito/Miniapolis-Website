@@ -108,7 +108,7 @@ router.get(
     res.json({
       user: users.toPublicUser(user),
       summary: packsService.summaryForUser(user.id),
-      packs: packsService.listPacksForUser(user.id),
+      packs: packsService.listPacksForUser(user.id, { owner: user }),
       redemptions: redemptions.listRedemptions({ userId: user.id, limit: 25 }).items,
       sessions: sessions.listForUser(user.id).slice(0, 10).map((fila) => sessions.toPublicSession(fila)),
     });
@@ -130,11 +130,11 @@ router.patch(
       throw forbidden('No puedes suspender tu propia cuenta.', 'auto_suspension');
     }
     if (target.role === 'master' && (data.role !== undefined && data.role !== 'master')) {
-      if (users.countByRole('master') <= 1) {
+      if (target.status === 'active' && users.countActiveByRole('master') <= 1) {
         throw conflict('Debe quedar al menos un usuario máster.', 'ultimo_master');
       }
     }
-    if (target.role === 'master' && data.status === 'suspended' && users.countByRole('master') <= 1) {
+    if (target.role === 'master' && data.status === 'suspended' && users.countActiveByRole('master') <= 1) {
       throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
     }
 
@@ -243,7 +243,7 @@ router.get(
     if (!pack) throw notFound('Pack no encontrado.');
     const owner = users.findById(pack.user_id);
     res.json({
-      pack: packsService.toPublicPack(pack),
+      pack: packsService.toPublicPack(pack, { owner }),
       owner: users.toPublicUser(owner),
       movements: packsService.movements(pack.id),
       redemptions: redemptions.listRedemptions({ packId: pack.id, limit: 50 }).items,
@@ -337,7 +337,9 @@ router.get(
       // por =, +, - o @. Un nombre de cliente no debería poder ejecutar nada al
       // abrir el reporte, así que se antepone un apóstrofo, que la hoja de
       // cálculo entiende como "esto es texto".
-      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      // Algunas hojas recortan espacios iniciales antes de interpretar la
+      // celda, por lo que " =1+1" también puede convertirse en fórmula.
+      if (/^\s*[=+\-@]/.test(text)) text = `'${text}`;
       return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const toCsv = (headers, rows) =>

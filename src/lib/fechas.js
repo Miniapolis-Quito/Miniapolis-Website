@@ -84,6 +84,13 @@ export function ultimosDias(cantidad, zona, ahora = new Date()) {
   return dias;
 }
 
+/** Día siguiente en el calendario, sin asumir que todos duran 24 horas. */
+export function siguienteDia(dia) {
+  const [anio, mes, diaDelMes] = dia.split('-').map(Number);
+  if (![anio, mes, diaDelMes].every(Number.isInteger)) throw new TypeError('El día debe tener formato AAAA-MM-DD.');
+  return new Date(Date.UTC(anio, mes - 1, diaDelMes + 1)).toISOString().slice(0, 10);
+}
+
 /** Instante en que empezó el día de hoy en la zona. */
 export function inicioDeHoy(zona, ahora = new Date()) {
   return inicioDelDia(diaLocal(ahora, zona), zona);

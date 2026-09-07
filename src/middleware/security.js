@@ -40,13 +40,10 @@ export function securityHeaders(req, res, next) {
 
 /** Resuelve la IP real del cliente, respetando el proxy solo si se configuró. */
 export function clientIp(req, res, next) {
-  let ip = req.socket?.remoteAddress || '';
-  if (config.security.trustProxy) {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string' && forwarded.length > 0) {
-      ip = forwarded.split(',')[0].trim();
-    }
-  }
+  // Express solo toma X-Forwarded-For cuando la conexión inmediata pertenece a
+  // una de las redes configuradas en TRUSTED_PROXY_IPS. Leer la cabecera aquí
+  // directamente permitiría falsificarla desde Internet.
+  const ip = req.ip || req.socket?.remoteAddress || '';
   req.clientIp = ip.replace(/^::ffff:/, '') || 'desconocida';
   next();
 }
@@ -78,13 +75,17 @@ export function sameOriginOnly(req, res, next) {
   if (!origin) return next(); // Clientes no navegador (curl, apps nativas) no envían Origin.
 
   const host = req.headers.host;
-  let originHost;
+  let originUrl;
+  let expectedOrigin;
   try {
-    originHost = new URL(origin).host;
+    originUrl = new URL(origin);
+    // "Mismo origen" incluye protocolo y puerto, no solo el host. Express
+    // toma X-Forwarded-Proto únicamente de los proxies permitidos en la app.
+    expectedOrigin = new URL(`${req.protocol}://${host}`).origin;
   } catch {
     return next(forbidden('Origen no válido.', 'origen_invalido'));
   }
-  if (originHost === host) return next();
+  if (originUrl.origin === expectedOrigin) return next();
   if (config.security.corsOrigins.includes(origin)) return next();
   return next(forbidden('Petición bloqueada por seguridad (origen no permitido).', 'origen_no_permitido'));
 }

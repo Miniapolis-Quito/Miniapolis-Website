@@ -18,8 +18,12 @@ import * as audit from './audit.js';
 const ACTIVE_STATUSES = new Set(['active']);
 
 /** Proyección del pack para el cliente. Nunca expone `secret`. */
-export function toPublicPack(row, { includeQr = false } = {}) {
+export function toPublicPack(row, { includeQr = false, owner = null } = {}) {
   if (!row) return null;
+  // Las consultas administrativas traen el estado del dueño en la propia fila;
+  // quien llama también puede pasarlo explícitamente. Así el indicador
+  // "usable" nunca contradice al escáner cuando la cuenta está suspendida.
+  const packOwner = owner ?? (row.owner_status !== undefined ? { status: row.owner_status } : null);
   const pack = {
     id: row.id,
     code: row.code,
@@ -37,7 +41,7 @@ export function toPublicPack(row, { includeQr = false } = {}) {
     paymentReference: row.payment_reference,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    usable: isUsable(row).ok,
+    usable: isUsable(row, { owner: packOwner }).ok,
   };
   if (row.owner_name !== undefined) pack.ownerName = row.owner_name;
   if (row.owner_email !== undefined) pack.ownerEmail = row.owner_email;
@@ -189,7 +193,7 @@ export function issuePack({
 }
 
 /** Packs de un cliente, ordenados: primero los usables y los que vencen antes. */
-export function listPacksForUser(userId, { includeQr = false, includeInactive = true } = {}) {
+export function listPacksForUser(userId, { includeQr = false, includeInactive = true, owner = null } = {}) {
   const db = getDb();
   expireDuePacks(db);
   const rows = db
@@ -202,7 +206,10 @@ export function listPacksForUser(userId, { includeQr = false, includeInactive = 
                  created_at ASC`,
     )
     .all(userId);
-  return rows.map((r) => toPublicPack(r, { includeQr: includeQr && isUsable(r).ok }));
+  return rows.map((r) => {
+    const usable = isUsable(r, { owner }).ok;
+    return toPublicPack(r, { owner, includeQr: includeQr && usable });
+  });
 }
 
 /** Resumen de saldo de un cliente. */
@@ -417,7 +424,7 @@ export function listPacks({ limit = 50, offset = 0, status = null, search = '', 
 
   const rows = db
     .prepare(
-      `SELECT p.*, u.full_name AS owner_name, u.email AS owner_email
+      `SELECT p.*, u.full_name AS owner_name, u.email AS owner_email, u.status AS owner_status
          FROM packs p JOIN users u ON u.id = p.user_id
          ${clause}
          ORDER BY p.created_at DESC

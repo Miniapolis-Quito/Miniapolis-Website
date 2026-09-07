@@ -138,6 +138,44 @@ test('reusar una clave de idempotencia con otros datos es un conflicto', async (
   assert.equal(packsService.findById(packB.id).remaining, 5);
 });
 
+test('dos operadores pueden usar la misma clave sin interferirse', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const packA = await emitirPack(cMaster, cliente.id, 5);
+  const packB = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'clave-local-al-operador';
+
+  const primero = await cStaff.post(
+    '/api/scan',
+    { payload: buildQrPayload(packA) },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  const segundo = await cMaster.post(
+    '/api/scan',
+    { payload: buildQrPayload(packB) },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+
+  assert.equal(primero.status, 200);
+  assert.equal(segundo.status, 200);
+  assert.equal(packsService.findById(packA.id).remaining, 4);
+  assert.equal(packsService.findById(packB.id).remaining, 4);
+});
+
+test('no se aceptan claves de idempotencia contradictorias', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const r = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code, idempotencyKey: 'clave-en-cuerpo-0001' },
+    { cabeceras: { 'Idempotency-Key': 'clave-en-cabecera-01' } },
+  );
+
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'idempotencia_invalida');
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+});
+
 test('un reintento tiene que repetir la misma petición, puesto incluido', async () => {
   const { cMaster, cStaff, cliente } = await sembrarUsuarios();
   const pack = await emitirPack(cMaster, cliente.id, 5);

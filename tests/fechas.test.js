@@ -53,6 +53,20 @@ test('la lista de días no se salta ninguno al cambiar el horario', () => {
   assert.equal(enLaPista.length, 14);
   assert.equal(enLaPista[13], '2026-09-05', 'el último día es el de la pista');
   assert.equal(enLaPista[0], '2026-08-23');
+  assert.equal(fechas.siguienteDia('2026-03-29'), '2026-03-30');
+});
+
+test('el día siguiente se calcula sobre el calendario, no sumando 24 horas', () => {
+  assert.equal(fechas.siguienteDia('2026-09-06'), '2026-09-07');
+  assert.equal(fechas.siguienteDia('2026-12-31'), '2027-01-01', 'cambio de año');
+  assert.equal(fechas.siguienteDia('2028-02-28'), '2028-02-29', 'año bisiesto');
+  assert.equal(fechas.siguienteDia('2026-02-28'), '2026-03-01');
+
+  // El 25 de octubre en Madrid dura 25 horas: sumarle 24 se quedaría corto y
+  // la última barra del gráfico perdería la última hora del día.
+  const empieza = fechas.inicioDelDia('2026-10-25', 'Europe/Madrid');
+  const acaba = fechas.inicioDelDia(fechas.siguienteDia('2026-10-25'), 'Europe/Madrid');
+  assert.equal((acaba - empieza) / 3600_000, 25);
 });
 
 test('una entrada usada por la tarde cuenta en el día de la pista', async () => {

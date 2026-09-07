@@ -74,7 +74,12 @@ router.get('/', requireAuth, (req, res) => {
     role: req.user.role,
     connectedAt: Date.now(),
     // El hub la usa para cerrar las conexiones sobrantes de este mismo usuario.
-    cerrar: () => cleanup(),
+    cerrar: ({ motivo } = {}) => {
+      if (motivo === 'reemplazado') {
+        writeEvent(res, { id: 0, type: 'canal.reemplazado', data: { motivo } });
+      }
+      cleanup();
+    },
   };
   const unregister = hub.registerClient(client);
   hub.limitarPorUsuario(req.user.id, MAXIMO_POR_USUARIO);

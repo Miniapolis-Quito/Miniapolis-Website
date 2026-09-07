@@ -16,7 +16,11 @@ router.use(requireStaff);
 /** La clave de idempotencia puede venir por cabecera (lo habitual) o en el cuerpo. */
 function idempotencyKey(req, body) {
   const header = req.get('Idempotency-Key');
-  const key = body.idempotencyKey || header;
+  const fromBody = body.idempotencyKey;
+  if (header && fromBody && header.trim() !== fromBody.trim()) {
+    throw badRequest('La clave de idempotencia de la cabecera no coincide con la del cuerpo.', null, 'idempotencia_invalida');
+  }
+  const key = header || fromBody;
   if (!key) return undefined;
   const value = String(key).trim();
   if (value.length < 8 || value.length > 80 || !/^[A-Za-z0-9_:-]+$/.test(value)) {
@@ -76,7 +80,7 @@ router.post(
       signatureOk: verification.ok,
       reason: verification.ok ? (usable.ok ? null : usable.reason) : verification.reason,
       message: verification.ok ? (usable.ok ? 'Código válido.' : usable.message) : 'El código no es válido o venció.',
-      pack: packsService.toPublicPack(pack),
+      pack: packsService.toPublicPack(pack, { owner }),
       customer: owner ? { id: owner.id, fullName: owner.full_name } : null,
     });
   }),
@@ -111,7 +115,7 @@ router.get(
     const owner = users.findById(pack.user_id);
     const usable = packsService.isUsable(pack, { owner });
     res.json({
-      pack: packsService.toPublicPack(pack),
+      pack: packsService.toPublicPack(pack, { owner }),
       customer: owner ? { id: owner.id, fullName: owner.full_name, email: owner.email } : null,
       usable: usable.ok,
       reason: usable.ok ? null : usable.reason,

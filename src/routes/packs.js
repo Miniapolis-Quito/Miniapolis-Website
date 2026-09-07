@@ -9,6 +9,7 @@ import { buildQrPayload } from '../lib/qr.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import * as packs from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
+import * as users from '../services/users.js';
 import { config } from '../config.js';
 
 export const router = express.Router();
@@ -21,7 +22,8 @@ function loadOwnPack(req) {
   if (pack.user_id !== req.user.id && req.user.role !== 'master') {
     throw forbidden('Este pack no te pertenece.');
   }
-  return pack;
+  const owner = pack.user_id === req.user.id ? { status: req.user.status } : users.findById(pack.user_id);
+  return { pack, owner };
 }
 
 /** Saldo y packs del usuario autenticado. */
@@ -52,8 +54,8 @@ router.get(
   '/:id/qr',
   rateLimit({ name: 'qr-user', limit: 600, windowSeconds: 15 * 60, keyFn: (req) => req.user?.id }),
   asyncHandler(async (req, res) => {
-    const pack = loadOwnPack(req);
-    const usable = packs.isUsable(pack);
+    const { pack, owner } = loadOwnPack(req);
+    const usable = packs.isUsable(pack, { owner });
     if (!usable.ok) throw badRequest(usable.message, { reason: usable.reason }, `pack_${usable.reason}`);
 
     res.set('Cache-Control', 'no-store');
@@ -73,16 +75,14 @@ router.get(
   '/:id/qr.svg',
   rateLimit({ name: 'qrsvg-user', limit: 600, windowSeconds: 15 * 60, keyFn: (req) => req.user?.id }),
   asyncHandler(async (req, res) => {
-    const pack = loadOwnPack(req);
+    const { pack, owner } = loadOwnPack(req);
     const wantsStatic = req.query.mode === 'static';
 
     if (wantsStatic && !pack.allow_static_qr) {
       throw forbidden('Este pack no tiene habilitado el QR impreso.', 'estatico_no_permitido');
     }
-    if (!wantsStatic) {
-      const usable = packs.isUsable(pack);
-      if (!usable.ok) throw badRequest(usable.message, { reason: usable.reason }, `pack_${usable.reason}`);
-    }
+    const usable = packs.isUsable(pack, { owner });
+    if (!usable.ok) throw badRequest(usable.message, { reason: usable.reason }, `pack_${usable.reason}`);
 
     const payload = buildQrPayload(pack, { static: wantsStatic });
     const svg = await QRCode.toString(payload, {
@@ -103,7 +103,7 @@ router.get(
 router.get(
   '/:id/movements',
   asyncHandler(async (req, res) => {
-    const pack = loadOwnPack(req);
+    const { pack } = loadOwnPack(req);
     res.json({ items: packs.movements(pack.id) });
   }),
 );

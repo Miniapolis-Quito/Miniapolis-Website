@@ -4,11 +4,18 @@ import { config } from '../config.js';
 export const REFRESH_COOKIE = 'rh_refresh';
 const COOKIE_PATH = '/api/auth';
 
-/** Parser mínimo de la cabecera Cookie; evita una dependencia adicional. */
+/**
+ * Parser mínimo de la cabecera Cookie; evita una dependencia adicional.
+ *
+ * No lleva tope de tamaño propio: Node ya rechaza las cabeceras desmesuradas
+ * antes de llegar aquí. Ponerle uno además significaba que, si otra cosa del
+ * mismo dominio dejaba cookies grandes, esta se rendía en silencio y la sesión
+ * dejaba de renovarse sin que nada lo explicara.
+ */
 export function parseCookies(req) {
   const header = req.headers?.cookie;
   const out = {};
-  if (typeof header !== 'string' || header.length === 0 || header.length > 8192) return out;
+  if (typeof header !== 'string' || header.length === 0) return out;
   for (const part of header.split(';')) {
     const eq = part.indexOf('=');
     if (eq === -1) continue;

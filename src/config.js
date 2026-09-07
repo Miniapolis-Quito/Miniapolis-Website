@@ -7,6 +7,7 @@
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { isIP } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -83,6 +84,44 @@ function list(name, fallback = []) {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/**
+ * Direcciones de los proxies desde los que se acepta X-Forwarded-For. Confiar
+ * en cualquier proxy permitiría que alguien que alcance Node directamente
+ * eligiera su propia IP y esquivara los límites de intentos.
+ */
+function trustedProxyIps() {
+  if (!bool('TRUST_PROXY', false)) return [];
+
+  const entries = list('TRUSTED_PROXY_IPS');
+  if (entries.length === 0) {
+    if (isProduction) {
+      throw new Error(
+        'Configuración inválida: TRUST_PROXY=true exige TRUSTED_PROXY_IPS en producción. ' +
+          'Indica la IP o red CIDR del proxy inverso (por ejemplo, "127.0.0.1,::1").',
+      );
+    }
+    // Para desarrollo, el único proxy razonable sin configuración explícita es
+    // uno local (Caddy/nginx en la misma máquina). Nunca se confía en Internet.
+    return ['127.0.0.1', '::1'];
+  }
+
+  for (const entry of entries) {
+    const [address, prefix, ...extra] = entry.split('/');
+    const family = isIP(address);
+    const maxPrefix = family === 4 ? 32 : family === 6 ? 128 : -1;
+    if (
+      extra.length > 0 ||
+      maxPrefix < 0 ||
+      (prefix !== undefined && (!/^\d+$/.test(prefix) || Number(prefix) > maxPrefix))
+    ) {
+      throw new Error(
+        `Configuración inválida: TRUSTED_PROXY_IPS contiene "${entry}". Usa una IP o una red CIDR válida.`,
+      );
+    }
+  }
+  return entries;
 }
 
 /**
@@ -183,8 +222,8 @@ export const config = Object.freeze({
     corsOrigins: list('CORS_ORIGINS', []),
     /** Marca Secure en las cookies. Por defecto activa en producción. */
     cookieSecure: bool('COOKIE_SECURE', isProduction),
-    /** Confiar en X-Forwarded-For (activar solo detrás de un proxy conocido). */
-    trustProxy: bool('TRUST_PROXY', false),
+    /** Proxies concretos autorizados a aportar X-Forwarded-For. */
+    trustedProxyIps: Object.freeze(trustedProxyIps()),
     /** Tamaño máximo del cuerpo JSON aceptado. */
     maxBodyBytes: num('MAX_BODY_BYTES', 64 * 1024, { min: 1024 }),
     /** Intentos fallidos de login antes de bloquear temporalmente la cuenta. */

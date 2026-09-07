@@ -61,9 +61,7 @@ function actividadPorDia(db, dias, zona) {
       WHERE status = 'confirmed' AND created_at >= ? AND created_at < ?`,
   );
   const inicios = dias.map((dia) => fechas.inicioDelDia(dia, zona).toISOString());
-  const finDeLaSerie = new Date(
-    fechas.inicioDelDia(dias[dias.length - 1], zona).getTime() + 86_400_000,
-  ).toISOString();
+  const finDeLaSerie = fechas.inicioDelDia(fechas.siguienteDia(dias[dias.length - 1]), zona).toISOString();
 
   return {
     inicios,
