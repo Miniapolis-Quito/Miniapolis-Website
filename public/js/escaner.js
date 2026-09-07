@@ -101,12 +101,21 @@ function puesto() {
   return $('#dispositivo').value.trim() || undefined;
 }
 
-async function registrarConsumo({ payload, code, clave }) {
+/**
+ * Registra un consumo. `clave` y `deviceLabel` solo llegan en un reintento: un
+ * reintento tiene que repetir la MISMA petición, porque el servidor identifica
+ * el intento por su clave de idempotencia junto con los datos enviados. Si el
+ * operador cambiara el nombre del puesto durante el corte de red, reconstruir
+ * el cuerpo con el valor nuevo haría que el servidor viera otra operación con
+ * una clave ya usada, y lo rechazaría en vez de confirmar lo que ya pasó.
+ */
+async function registrarConsumo({ payload, code, clave, deviceLabel }) {
   estado.procesando = true;
   const idempotencyKey = clave || claveIdempotencia('scan');
+  const puestoUsado = deviceLabel ?? puesto();
   const cuerpo = payload
-    ? { payload, deviceLabel: puesto() }
-    : { code, deviceLabel: puesto() };
+    ? { payload, deviceLabel: puestoUsado }
+    : { code, deviceLabel: puestoUsado };
 
   try {
     const respuesta = await api.post(payload ? '/api/scan' : '/api/scan/manual', cuerpo, { idempotencyKey });
@@ -135,7 +144,7 @@ async function registrarConsumo({ payload, code, clave }) {
     if (error instanceof ErrorRed) {
       // La entrada puede haberse descontado o no: se guarda el intento con su
       // clave para poder reintentar sin riesgo de descontar dos veces.
-      estado.pendiente = { payload, code, clave: idempotencyKey };
+      estado.pendiente = { payload, code, clave: idempotencyKey, deviceLabel: puestoUsado };
       mostrarResultado({
         tipo: 'alerta',
         icono: '📶',

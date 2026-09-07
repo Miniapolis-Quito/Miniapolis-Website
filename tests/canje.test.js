@@ -138,6 +138,36 @@ test('reusar una clave de idempotencia con otros datos es un conflicto', async (
   assert.equal(packsService.findById(packB.id).remaining, 5);
 });
 
+test('un reintento tiene que repetir la misma petición, puesto incluido', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'reintento-tras-corte-01';
+  const cuerpo = { code: pack.code, deviceLabel: 'Puerta 1' };
+
+  const primero = await cStaff.post('/api/scan/manual', cuerpo, { cabeceras: { 'Idempotency-Key': clave } });
+  assert.equal(primero.status, 200);
+  assert.equal(primero.datos.remaining, 4);
+
+  // Repetir el intento tal cual devuelve la misma respuesta sin descontar más:
+  // es lo que hace el botón "Reintentar" del escáner tras un corte de red.
+  const reintento = await cStaff.post('/api/scan/manual', cuerpo, { cabeceras: { 'Idempotency-Key': clave } });
+  assert.equal(reintento.status, 200);
+  assert.equal(reintento.datos.remaining, 4);
+  assert.equal(reintento.headers.get('idempotent-replay'), 'true');
+
+  // Cambiar el puesto y reutilizar la clave ya no es el mismo intento, y el
+  // servidor lo dice en vez de dejarlo pasar: por eso el escáner guarda el
+  // puesto junto con la clave y reintenta con él.
+  const otroPuesto = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code, deviceLabel: 'Mostrador' },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  assert.equal(otroPuesto.status, 409);
+  assert.equal(otroPuesto.datos.error.code, 'idempotencia_conflicto');
+  assert.equal(packsService.findById(pack.id).remaining, 4);
+});
+
 test('un pack agotado no permite más consumos y queda marcado como tal', async () => {
   const { cMaster, cStaff, cliente } = await sembrarUsuarios();
   const pack = await emitirPack(cMaster, cliente.id, 2);

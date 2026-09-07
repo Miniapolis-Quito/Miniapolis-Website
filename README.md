@@ -11,8 +11,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 
 **Para el cliente**
 - Ve cuántas entradas le quedan, en tiempo real y sin recargar la página.
-- Muestra un QR que se renueva solo cada 30 segundos, así una captura de
-  pantalla ajena deja de servir enseguida.
+- Muestra un QR que se renueva solo cada 30 segundos y caduca a los dos
+  minutos, así que una captura de pantalla ajena sirve de poco — y de nada en
+  cuanto ese código se usa una vez.
 - Consulta su historial: cuándo usó cada entrada, en qué pack y con qué saldo
   quedó.
 - Si se queda sin señal, su código de pack (`RHE-XXXX-XXXX`) sigue sirviendo:
@@ -257,7 +258,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (99 pruebas)
+npm test        # suite completa (100 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 ```
