@@ -104,23 +104,35 @@ entradas.racinghobbies.ec {
 }
 ```
 
-Con nginx, además del bloque TLS habitual, hay que desactivar el búfer en el
-canal de tiempo real:
+Con nginx hay que pasarle tres cabeceras —el nombre del sitio, el protocolo y
+la IP de quien llama— y desactivar el búfer en el canal de tiempo real. Sin
+`Host` y `X-Forwarded-Proto`, la aplicación cree estar sirviendo en
+`http://localhost:3000` y rechaza por seguridad las peticiones del propio
+sitio, que es exactamente lo que parece un ataque desde otro origen:
 
 ```nginx
+# Ojo: un bloque que declara sus propias cabeceras deja de heredar las de
+# fuera, así que se repiten en los dos en vez de ponerlas una sola vez.
 location /api/events {
     proxy_pass http://localhost:3000;
     proxy_http_version 1.1;
-    proxy_set_header Connection '';
+    proxy_set_header Connection        '';
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
     proxy_buffering off;
     proxy_read_timeout 24h;
 }
 
 location / {
     proxy_pass http://localhost:3000;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
 }
 ```
+
+Caddy manda esas tres por su cuenta, así que el bloque de arriba basta tal cual.
 
 Con proxy delante hay que poner `TRUST_PROXY=true`,
 `TRUSTED_PROXY_IPS=127.0.0.1,::1` (si Caddy/nginx vive en la misma máquina) y
@@ -266,7 +278,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (124 pruebas)
+npm test        # suite completa (129 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
