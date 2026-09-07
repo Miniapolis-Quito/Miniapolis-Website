@@ -206,6 +206,23 @@ test('un reintento tiene que repetir la misma petición, puesto incluido', async
   assert.equal(packsService.findById(pack.id).remaining, 4);
 });
 
+test('un consumo sin operador también respeta su clave de idempotencia', async () => {
+  // Los consumos que no vienen de una persona —una carga de datos de ejemplo,
+  // una tarea interna— no tienen operador. La clave tiene que guardarse y
+  // encontrarse igual, sin dejar la fila a medias.
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'tarea-interna-0001';
+
+  const primero = redemptions.redeemByCode({ code: pack.code, scanner: null, idempotencyKey: clave });
+  assert.equal(primero.body.remaining, 4);
+
+  const repetido = redemptions.redeemByCode({ code: pack.code, scanner: null, idempotencyKey: clave });
+  assert.equal(repetido.idempotentReplay, true, 'el segundo intento debe repetir la respuesta');
+  assert.equal(repetido.body.remaining, 4);
+  assert.equal(packsService.findById(pack.id).remaining, 4, 'y no descontar de nuevo');
+});
+
 test('un pack agotado no permite más consumos y queda marcado como tal', async () => {
   const { cMaster, cStaff, cliente } = await sembrarUsuarios();
   const pack = await emitirPack(cMaster, cliente.id, 2);

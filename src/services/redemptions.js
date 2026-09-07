@@ -43,6 +43,14 @@ function normalizarCodigo(code) {
  * responde con un conflicto claro. Operadores distintos pueden usar la misma
  * clave sin interferirse entre sí.
  */
+/**
+ * Un consumo puede venir de una tarea interna sin operador (una carga de datos
+ * de ejemplo, por ejemplo). La clave se guarda entonces bajo el mismo dueño
+ * vacío con el que luego se busca: la columna no admite nulos, y guardar y
+ * consultar con criterios distintos dejaría el reintento sin efecto.
+ */
+const SIN_OPERADOR = '';
+
 function lookupIdempotent(db, key, userId, endpoint, requestHash) {
   if (!key) return null;
   const row = db.prepare('SELECT * FROM idempotency_keys WHERE user_id = ? AND key = ?').get(userId, key);
@@ -69,7 +77,7 @@ function saveIdempotent(db, { key, userId, endpoint, requestHash, statusCode, bo
      ON CONFLICT(user_id, key) DO NOTHING`,
   ).run(
     key,
-    userId ?? null,
+    userId ?? SIN_OPERADOR,
     endpoint,
     requestHash,
     statusCode,
@@ -251,7 +259,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
     // La consulta se hace dentro de la misma transacción que el descuento.
     // Dos reintentos simultáneos ven así la respuesta del primero, en vez de
     // competir por el nonce o devolver un error interno por la clave única.
-    const cached = lookupIdempotent(db, idempotencyKey, scanner?.id ?? '', endpoint, requestHash);
+    const cached = lookupIdempotent(db, idempotencyKey, scanner?.id ?? SIN_OPERADOR, endpoint, requestHash);
     if (cached) return { cached };
 
     // Barrera 2: el nonce de un QR dinámico solo se acepta una vez.
@@ -351,7 +359,7 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
   const owner = db.prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
 
   const result = inTransaction(() => {
-    const cached = lookupIdempotent(db, idempotencyKey, scanner?.id ?? '', endpoint, requestHash);
+    const cached = lookupIdempotent(db, idempotencyKey, scanner?.id ?? SIN_OPERADOR, endpoint, requestHash);
     if (cached) return { cached };
 
     const consumo = redeemOne(db, {
