@@ -58,6 +58,15 @@ function abrirPanel(nombre) {
 // Resumen
 // ---------------------------------------------------------------------------
 
+/**
+ * Un día del calendario ("2026-09-06") como instante, para poder darle formato.
+ * Se toma el mediodía UTC a propósito: es la única hora que cae en ese mismo
+ * día en cualquier zona horaria, así que la fecha mostrada nunca se corre.
+ */
+function mediodiaDe(dia) {
+  return `${dia}T12:00:00Z`;
+}
+
 function tarjetaMetrica(valor, etiqueta, modificador = '') {
   return el(
     'div',
@@ -86,25 +95,22 @@ async function cargarResumen() {
     tarjetaMetrica(String(datos.users.staff), 'Personal de pista'),
   );
 
-  // Gráfico de barras de los últimos 14 días.
-  const porDia = new Map(datos.dailySeries.map((d) => [d.date, d.count]));
-  const dias = [];
-  for (let i = 13; i >= 0; i -= 1) {
-    const dia = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
-    dias.push({ dia, total: porDia.get(dia) ?? 0 });
-  }
-  const maximo = Math.max(1, ...dias.map((d) => d.total));
+  // Gráfico de barras de los últimos 14 días. El calendario lo arma el
+  // servidor, que es quien conoce la zona horaria de la pista: aquí solo se
+  // dibuja lo que llega.
+  const dias = datos.dailySeries;
+  const maximo = Math.max(1, ...dias.map((d) => d.count));
   render(
     $('#grafico'),
     dias.map((d) =>
       el('div', {
         class: 'grafico__barra',
-        style: `height:${Math.max(3, (d.total / maximo) * 100)}%`,
-        title: `${d.dia}: ${plural(d.total, 'entrada', 'entradas')}`,
+        style: `height:${Math.max(3, (d.count / maximo) * 100)}%`,
+        title: `${fecha(mediodiaDe(d.date), { conHora: false })}: ${plural(d.count, 'entrada', 'entradas')}`,
       }),
     ),
   );
-  $('#grafico-desde').textContent = fecha(dias[0].dia, { conHora: false });
+  $('#grafico-desde').textContent = fecha(mediodiaDe(dias[0].date), { conHora: false });
 
   $('#conexiones-vivas').textContent = `${plural(datos.liveConnections, 'pantalla conectada', 'pantallas conectadas')}`;
 

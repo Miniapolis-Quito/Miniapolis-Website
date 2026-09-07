@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { hub, channels } from '../lib/events.js';
 import { summaryForUser } from '../services/packs.js';
 import { isSessionActive } from '../services/sessions.js';
-import { getDb } from '../db/index.js';
+import * as users from '../services/users.js';
 import { logger } from '../lib/logger.js';
 
 export const router = express.Router();
@@ -18,6 +18,12 @@ export const router = express.Router();
 const HEARTBEAT_MS = 25_000;
 /** Cada cuánto se revisa que la sesión que abrió el canal siga siendo válida. */
 const REVALIDACION_MS = 10_000;
+/**
+ * Conexiones en vivo que se le permiten a la vez a una misma persona. Da de
+ * sobra para varias pestañas y el teléfono a la vez, y evita que una pestaña
+ * enganchada en un bucle de reconexión acumule sockets sin fin.
+ */
+const MAXIMO_POR_USUARIO = 8;
 
 /** Canales a los que puede suscribirse cada rol. */
 function channelsFor(user) {
@@ -36,7 +42,7 @@ function channelsFor(user) {
  */
 function sesionSigueViva(usuario) {
   if (!isSessionActive(usuario.sessionId)) return false;
-  const fila = getDb().prepare('SELECT status, role FROM users WHERE id = ?').get(usuario.id);
+  const fila = users.findById(usuario.id);
   return Boolean(fila) && fila.status === 'active' && fila.role === usuario.role;
 }
 
@@ -63,8 +69,15 @@ router.get('/', requireAuth, (req, res) => {
   req.socket.setNoDelay(true);
   req.socket.setKeepAlive(true);
 
-  const client = { userId: req.user.id, role: req.user.role, connectedAt: Date.now() };
+  const client = {
+    userId: req.user.id,
+    role: req.user.role,
+    connectedAt: Date.now(),
+    // El hub la usa para cerrar las conexiones sobrantes de este mismo usuario.
+    cerrar: () => cleanup(),
+  };
   const unregister = hub.registerClient(client);
+  hub.limitarPorUsuario(req.user.id, MAXIMO_POR_USUARIO);
 
   // Estado inicial, para que la interfaz pinte datos correctos sin otra petición.
   writeEvent(res, {

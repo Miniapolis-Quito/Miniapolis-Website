@@ -8,7 +8,7 @@ import { scanSchema, manualRedeemSchema, paginationSchema, parseOrThrow } from '
 import { parseQrPayload, verifyQrPayload } from '../lib/qr.js';
 import * as packsService from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
-import { getDb } from '../db/index.js';
+import * as users from '../services/users.js';
 
 export const router = express.Router();
 router.use(requireStaff);
@@ -68,7 +68,7 @@ router.post(
     if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
 
     const verification = verifyQrPayload(parsed, pack);
-    const owner = getDb().prepare('SELECT id, full_name, status FROM users WHERE id = ?').get(pack.user_id);
+    const owner = users.findById(pack.user_id);
     const usable = packsService.isUsable(pack, { owner });
 
     res.json({
@@ -108,7 +108,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const pack = packsService.findByLooseCode(req.params.code);
     if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
-    const owner = getDb().prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
+    const owner = users.findById(pack.user_id);
     const usable = packsService.isUsable(pack, { owner });
     res.json({
       pack: packsService.toPublicPack(pack),

@@ -219,6 +219,11 @@ bitácora de auditoría de cada acción con su autor, hora y dirección IP.
 precio si hubo descuento y se registra la forma de pago. El cliente ve el pack
 aparecer en su teléfono en el momento, sin recargar.
 
+Los packs a la venta salen de `.env`: de fábrica son el de 5 y el de 10, y con
+`PACK_CATALOG=5:2500,10:4500,20:8000` se venden los que haga falta, sin tocar
+el código. Un tamaño fuera del catálogo se puede emitir igual, escribiendo su
+precio a mano.
+
 **Cobrar la entrada.** El operador abre `/escanear`, escribe el nombre de su
 puesto una vez (queda guardado en ese teléfono) y enciende la cámara. Cada
 escaneo válido muestra en grande cuántas entradas quedan y avisa cuando el

@@ -85,6 +85,51 @@ function list(name, fallback = []) {
     .filter(Boolean);
 }
 
+/**
+ * Catálogo de packs a la venta.
+ *
+ * Se admite una lista completa en `PACK_CATALOG` ("5:2500,10:4500,20:8000":
+ * entradas por pack y precio en centavos) para que una pista pueda cambiar sus
+ * packs sin tocar el código. Si no está, se usan las dos variables de siempre,
+ * que es lo que ya tienen las instalaciones en marcha.
+ */
+function packCatalog() {
+  const raw = (process.env.PACK_CATALOG || '').trim();
+  if (!raw) {
+    return [
+      { size: 5, priceCents: num('PACK_5_PRICE_CENTS', 2500, { min: 0 }), label: 'Pack 5 entradas' },
+      { size: 10, priceCents: num('PACK_10_PRICE_CENTS', 4500, { min: 0 }), label: 'Pack 10 entradas' },
+    ];
+  }
+
+  const invalido = (detalle) =>
+    new Error(`Configuración inválida: PACK_CATALOG ${detalle}. Formato esperado: "5:2500,10:4500".`);
+
+  const vistos = new Set();
+  const entradas = raw
+    .split(',')
+    .map((trozo) => trozo.trim())
+    .filter(Boolean)
+    .map((trozo) => {
+      const partes = trozo.split(':');
+      if (partes.length !== 2) throw invalido(`no entiende "${trozo}"`);
+      const size = Number(partes[0].trim());
+      const priceCents = Number(partes[1].trim());
+      if (!Number.isInteger(size) || size < 1 || size > 500) {
+        throw invalido(`tiene un tamaño de pack fuera de rango en "${trozo}" (1 a 500)`);
+      }
+      if (!Number.isInteger(priceCents) || priceCents < 0) {
+        throw invalido(`tiene un precio que no es un entero de centavos en "${trozo}"`);
+      }
+      if (vistos.has(size)) throw invalido(`repite el pack de ${size} entradas`);
+      vistos.add(size);
+      return { size, priceCents, label: `Pack ${size} entradas` };
+    });
+
+  if (entradas.length === 0) throw invalido('está vacío');
+  return entradas.sort((a, b) => a.size - b.size);
+}
+
 export const config = Object.freeze({
   env: NODE_ENV,
   isProduction,
@@ -159,10 +204,7 @@ export const config = Object.freeze({
   },
 
   /** Catálogo de packs vendibles. */
-  packCatalog: [
-    { size: 5, priceCents: num('PACK_5_PRICE_CENTS', 2500, { min: 0 }), label: 'Pack 5 entradas' },
-    { size: 10, priceCents: num('PACK_10_PRICE_CENTS', 4500, { min: 0 }), label: 'Pack 10 entradas' },
-  ],
+  packCatalog: Object.freeze(packCatalog().map((entrada) => Object.freeze(entrada))),
 
   logLevel: process.env.LOG_LEVEL || (isTest ? 'silent' : 'info'),
 });

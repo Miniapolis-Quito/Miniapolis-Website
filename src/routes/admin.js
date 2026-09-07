@@ -16,14 +16,14 @@ import {
 } from '../lib/validate.js';
 import { validatePasswordStrength } from '../lib/passwords.js';
 import { randomToken } from '../lib/ids.js';
-import { getDb } from '../db/index.js';
 import { config } from '../config.js';
+import * as fechas from '../lib/fechas.js';
 import * as users from '../services/users.js';
 import * as packsService from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
 import * as sessions from '../services/sessions.js';
 import * as audit from '../services/audit.js';
-import { hub } from '../lib/events.js';
+import * as panel from '../services/panel.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -37,82 +37,7 @@ const actorContext = (req) => ({ actor: req.user, ip: req.clientIp, userAgent: r
 router.get(
   '/dashboard',
   asyncHandler(async (req, res) => {
-    const db = getDb();
-    packsService.expireDuePacks(db);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayIso = startOfToday.toISOString();
-    const weekIso = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-
-    const totals = db
-      .prepare(
-        `SELECT
-           COUNT(*)                                                                   AS packs_totales,
-           IFNULL(SUM(CASE WHEN status='active' AND remaining>0 THEN 1 ELSE 0 END),0) AS packs_activos,
-           IFNULL(SUM(CASE WHEN status='active' THEN remaining ELSE 0 END),0)         AS entradas_pendientes,
-           IFNULL(SUM(size),0)                                                        AS entradas_emitidas,
-           IFNULL(SUM(size - remaining),0)                                            AS entradas_usadas,
-           IFNULL(SUM(price_cents),0)                                                 AS ingresos_cents
-         FROM packs WHERE status <> 'cancelled'`,
-      )
-      .get();
-
-    const consumos = db
-      .prepare(
-        `SELECT
-           IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS hoy,
-           IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS semana,
-           COUNT(*)                                                   AS total
-         FROM redemptions WHERE status = 'confirmed'`,
-      )
-      .get(todayIso, weekIso);
-
-    const clientes = db
-      .prepare(
-        `SELECT
-           COUNT(*)                                                AS total,
-           IFNULL(SUM(CASE WHEN role='customer' THEN 1 ELSE 0 END),0) AS clientes,
-           IFNULL(SUM(CASE WHEN role='staff' THEN 1 ELSE 0 END),0)    AS personal,
-           IFNULL(SUM(CASE WHEN role='master' THEN 1 ELSE 0 END),0)   AS masters,
-           IFNULL(SUM(CASE WHEN status='suspended' THEN 1 ELSE 0 END),0) AS suspendidos
-         FROM users`,
-      )
-      .get();
-
-    // Serie de los últimos 14 días para el gráfico de actividad.
-    const serie = db
-      .prepare(
-        `SELECT substr(created_at, 1, 10) AS dia, COUNT(*) AS n
-           FROM redemptions
-          WHERE status = 'confirmed' AND created_at >= ?
-          GROUP BY dia ORDER BY dia ASC`,
-      )
-      .all(new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString());
-
-    res.json({
-      totals: {
-        totalPacks: totals.packs_totales,
-        activePacks: totals.packs_activos,
-        pendingTickets: totals.entradas_pendientes,
-        issuedTickets: totals.entradas_emitidas,
-        usedTickets: totals.entradas_usadas,
-        revenueCents: totals.ingresos_cents,
-        currency: config.currency,
-      },
-      redemptions: { today: consumos.hoy, week: consumos.semana, total: consumos.total },
-      users: {
-        total: clientes.total,
-        customers: clientes.clientes,
-        staff: clientes.personal,
-        masters: clientes.masters,
-        suspended: clientes.suspendidos,
-      },
-      dailySeries: serie.map((r) => ({ date: r.dia, count: r.n })),
-      recent: redemptions.listRedemptions({ limit: 10 }).items,
-      liveConnections: hub.connectionCount,
-      integrity: packsService.checkIntegrity(),
-      serverTime: new Date().toISOString(),
-    });
+    res.json(panel.resumen());
   }),
 );
 
@@ -444,7 +369,8 @@ router.get(
 
     audit.record({ ...actorContext(req), action: 'reporte.exportado', entityType: 'export', entityId: entity });
     res.set('Content-Type', 'text/csv; charset=utf-8');
-    res.set('Content-Disposition', `attachment; filename="${entity}-${new Date().toISOString().slice(0, 10)}.csv"`);
+    const hoy = fechas.diaLocal(new Date(), config.timezone);
+    res.set('Content-Disposition', `attachment; filename="${entity}-${hoy}.csv"`);
     res.send(csv);
   }),
 );

@@ -244,6 +244,33 @@ test('al reconectar, el canal reenvía lo que el cliente se perdió', async () =
   }
 });
 
+test('una misma persona no puede acumular conexiones sin fin', async () => {
+  const { cCliente, cliente } = await sembrarUsuarios();
+  const { hub } = await import('../src/lib/events.js');
+  const cuantasSuyas = () => [...hub.clients].filter((c) => c.userId === cliente.id).length;
+
+  // Nueve pestañas: una más del tope. La primera tiene que caerse sola.
+  const canales = [];
+  for (let i = 0; i < 9; i += 1) {
+    const canal = await abrirCanal(cCliente.token);
+    await canal.esperar('conectado');
+    canales.push(canal);
+  }
+
+  try {
+    assert.equal(cuantasSuyas(), 8, 'debería quedarse en el tope de ocho');
+
+    // Y la última en abrirse, que es la que la persona está mirando, sigue viva
+    // y recibiendo: no se sacrifica la buena por respetar el tope.
+    const ultima = canales[canales.length - 1];
+    hub.publish(`user:${cliente.id}`, 'prueba.tope', { ok: true });
+    const evento = await ultima.esperar('prueba.tope');
+    assert.equal(evento.datos.ok, true);
+  } finally {
+    for (const canal of canales) canal.cerrar();
+  }
+});
+
 test('sin token no se puede abrir el canal', async () => {
   const respuesta = await fetch(`${base}/api/events`, { headers: { Accept: 'text/event-stream' } });
   assert.equal(respuesta.status, 401);
