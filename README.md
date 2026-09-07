@@ -188,6 +188,19 @@ deja un asiento con su saldo resultante. El panel máster verifica que ambos
 coincidan, y las pruebas comprueban que una alteración directa de la base se
 detecta.
 
+**Contra el uso de una cuenta suspendida.** Suspender a alguien no solo le
+impide entrar: sus entradas dejan de poder consumirse en el acto, aunque el
+pack siga activo y aunque el operador teclee el código a mano. La consulta del
+pack en el puesto lo dice con esas palabras, para que en el mostrador se sepa
+que hay que pasar por administración.
+
+**Contra el código tecleado de más.** El alfabeto de los códigos evita a
+propósito los caracteres que se confunden (`0`, `O`, `1`, `I`, `L`, `U`). Si
+alguien teclea uno de ellos, el sistema **no adivina** cuál quiso escribir: el
+carácter más parecido también es válido y podría formar el código de otro
+cliente, al que se le descontaría una entrada. Se responde «no existe ningún
+pack con ese código» y quien atiende vuelve a mirar el cartón.
+
 **Sesiones.** La contraseña se guarda con scrypt (N=2¹⁶, r=8, p=1). El token de
 acceso vive 15 minutos y solo en memoria del navegador; la sesión persiste con
 una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
@@ -198,14 +211,22 @@ el acceso al instante, sin esperar a que caduque nada.
 
 Suspender una cuenta o cerrarle las sesiones **cierra también su canal en vivo
 en el acto**: la pantalla de esa persona vuelve a la página de acceso sola, sin
-esperar a que falle su siguiente petición.
+esperar a que falle su siguiente petición. Cada usuario puede tener hasta cinco
+canales en vivo abiertos a la vez; a partir de ahí el servidor los rechaza, para
+que una pestaña con un bucle de reconexión no se lleve por delante los sockets
+de los demás.
+
+Cuando el correo tecleado no existe, el login gasta el mismo tiempo que una
+comprobación real (con los mismos parámetros de coste), de modo que cronometrar
+las respuestas no revela qué correos están dados de alta.
 
 **Lo demás.** Límites de intentos persistidos en base (sobreviven a un
 reinicio), bloqueo temporal de cuenta tras 8 fallos, política de seguridad de
 contenido sin `unsafe-inline` ni `unsafe-eval`, consultas siempre
 parametrizadas, validación de entrada con esquemas y mensajes en español,
-cabeceras de seguridad, protección contra fórmulas en los CSV exportados, y
-bitácora de auditoría de cada acción con su autor, hora y dirección IP.
+cabeceras de seguridad, `robots.txt` que pide no indexar nada, protección
+contra fórmulas en los CSV exportados, y bitácora de auditoría de cada acción
+con su autor, hora y dirección IP.
 
 ---
 
@@ -226,6 +247,10 @@ devuelve la entrada al cliente y queda registrado quién lo hizo y por qué.
 
 **Cierre de caja.** Administración → Resumen → *Exportar packs / consumos /
 clientes*. Los CSV abren directamente en Excel con los acentos correctos.
+
+Las cifras del panel («usadas hoy», gráfico de los últimos 14 días) se calculan
+en la zona horaria de la pista (`TZ_DISPLAY`), no en la del servidor: el día
+cambia a medianoche en Ecuador aunque el servidor esté en UTC.
 
 **Buscar a alguien.** La búsqueda de clientes y de packs ignora tildes y
 mayúsculas: "maria" encuentra a *María Chasís*, y "munoz" a *Andrés Muñoz*.
@@ -255,7 +280,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (90 pruebas)
+npm test        # suite completa (100 pruebas)
 npm run seed    # datos de demostración
 ```
 
@@ -263,7 +288,8 @@ Las pruebas corren sobre una base en memoria y cubren autenticación y rotación
 de sesiones, emisión y ajuste de packs, las tres barreras contra el doble
 descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo y
 leyendo lo que llega), la búsqueda sin tildes, el camino de actualización del
-esquema, control de acceso por rol y las cabeceras de seguridad.
+esquema, control de acceso por rol y las cabeceras de seguridad. `npm ci &&
+npm test` se ejecuta también en cada empujón desde `.github/workflows/`.
 
 `tests/e2e/` contiene además una prueba en navegador real que recorre el flujo
 completo. No entra en `npm test` porque necesita Playwright; su README explica
@@ -278,7 +304,7 @@ src/
   server.js            Arranque, mantenimiento y apagado ordenado
   bootstrap.js         Creación de la cuenta máster inicial
   db/                  Conexión SQLite y migraciones incrementales
-  lib/                 QR, contraseñas, tokens, límites, eventos en vivo, texto
+  lib/                 QR, contraseñas, tokens, límites, eventos, texto, fechas
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events
   services/            Reglas de negocio (packs, consumos, usuarios, auditoría)

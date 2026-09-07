@@ -175,7 +175,13 @@ async function refrescarQr({ inmediato = false } = {}) {
   $('#qr-codigo').textContent = pack.code;
   $('#qr-etiqueta-pack').textContent = `${plural(pack.remaining, 'entrada', 'entradas')} en este pack`;
 
-  if (estado.cargandoQr && !inmediato) return;
+  if (estado.cargandoQr && !inmediato) {
+    // Ya hay una petición en marcha. Se reinicia la cuenta atrás igualmente:
+    // dejarla en cero haría que el temporizador volviera a entrar aquí cada
+    // segundo mientras durase la petición lenta.
+    estado.segundosParaRenovar = estado.qrConfig.refreshSeconds;
+    return;
+  }
   estado.cargandoQr = true;
 
   const caja = $('#qr-caja');
@@ -335,7 +341,6 @@ function manejarEvento(tipo, datos) {
 
 function montarCuenta() {
   const dialogo = $('#dialogo-cuenta');
-  const usuario = getUsuario();
 
   $('#btn-cuenta').addEventListener('click', () => {
     $('#perfil-nombre').value = getUsuario()?.fullName ?? '';
@@ -395,9 +400,6 @@ function montarCuenta() {
     }
   });
 
-  if (usuario?.role !== 'customer') {
-    $('#titulo').textContent = 'Mis entradas';
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -441,11 +443,15 @@ function montarCuenta() {
   }).iniciar();
 
   // Red de seguridad: si el canal en vivo estuviera caído, se refresca igual.
-  setInterval(() => {
+  const respaldo = setInterval(() => {
     if (document.visibilityState === 'visible' && conexion.estado !== 'conectado') {
       cargarTodo({ conHistorial: false }).catch(() => {});
     }
   }, 30_000);
 
-  window.addEventListener('pagehide', () => conexion.detener());
+  window.addEventListener('pagehide', () => {
+    conexion.detener();
+    clearInterval(respaldo);
+    clearInterval(temporizadorQr);
+  });
 })();

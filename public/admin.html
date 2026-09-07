@@ -55,10 +55,12 @@
           <button class="boton boton--fantasma boton--chico" id="btn-verificar" type="button">Verificar ahora</button>
         </div>
         <div id="integridad"></div>
+        <!-- Botones, no enlaces: la exportación exige el token de acceso, que
+             viaja en una cabecera y una navegación normal no puede enviar. -->
         <div class="fila mt">
-          <a class="boton boton--fantasma boton--chico" id="exp-packs" href="/api/admin/export/packs.csv">Exportar packs</a>
-          <a class="boton boton--fantasma boton--chico" id="exp-consumos" href="/api/admin/export/consumos.csv">Exportar consumos</a>
-          <a class="boton boton--fantasma boton--chico" id="exp-clientes" href="/api/admin/export/clientes.csv">Exportar clientes</a>
+          <button class="boton boton--fantasma boton--chico" type="button" data-exportar="packs">Exportar packs</button>
+          <button class="boton boton--fantasma boton--chico" type="button" data-exportar="consumos">Exportar consumos</button>
+          <button class="boton boton--fantasma boton--chico" type="button" data-exportar="clientes">Exportar clientes</button>
         </div>
       </div>
     </section>

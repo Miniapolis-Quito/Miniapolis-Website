@@ -54,10 +54,13 @@ export function clientIp(req, res, next) {
 /** CORS explícito: por defecto solo mismo origen. */
 export function cors(req, res, next) {
   const origin = req.headers.origin;
+  // `Vary: Origin` va siempre, también cuando el origen no está permitido: si
+  // solo apareciera en las respuestas con CORS, una caché compartida podría
+  // servirle a un origen la respuesta que se preparó para otro.
+  res.set('Vary', 'Origin');
   if (origin && config.security.corsOrigins.includes(origin)) {
     res.set('Access-Control-Allow-Origin', origin);
     res.set('Access-Control-Allow-Credentials', 'true');
-    res.set('Vary', 'Origin');
     res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key, X-Requested-With');
     res.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     res.set('Access-Control-Max-Age', '600');

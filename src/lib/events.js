@@ -59,6 +59,13 @@ class EventHub {
     return () => this.clients.delete(client);
   }
 
+  /** Cuántos canales tiene abiertos ahora mismo un usuario concreto. */
+  countForUser(userId) {
+    let total = 0;
+    for (const client of this.clients) if (client.userId === userId) total += 1;
+    return total;
+  }
+
   get connectionCount() {
     return this.clients.size;
   }

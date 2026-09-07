@@ -18,6 +18,13 @@ export const router = express.Router();
 const HEARTBEAT_MS = 25_000;
 /** Cada cuánto se revisa que la sesión que abrió el canal siga siendo válida. */
 const REVALIDACION_MS = 10_000;
+/**
+ * Canales simultáneos por usuario. Cada conexión SSE ocupa un socket y un
+ * temporizador durante horas; sin tope, una pestaña con un bucle de reconexión
+ * (o alguien probando) podría dejar el servidor sin descriptores. Cinco cubre
+ * de sobra el uso real: teléfono, tablet del puesto y un par de pestañas.
+ */
+const MAX_CANALES_POR_USUARIO = 5;
 
 /** Canales a los que puede suscribirse cada rol. */
 function channelsFor(user) {
@@ -48,6 +55,15 @@ function writeEvent(res, { id, type, data }) {
 
 router.get('/', requireAuth, (req, res) => {
   const subscribed = channelsFor(req.user);
+
+  if (hub.countForUser(req.user.id) >= MAX_CANALES_POR_USUARIO) {
+    return res.status(429).set('Retry-After', '30').json({
+      error: {
+        code: 'demasiados_canales',
+        message: 'Ya tienes demasiadas pantallas abiertas. Cierra alguna e inténtalo de nuevo.',
+      },
+    });
+  }
 
   res.status(200).set({
     'Content-Type': 'text/event-stream; charset=utf-8',

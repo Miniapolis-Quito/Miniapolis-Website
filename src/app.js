@@ -92,14 +92,25 @@ export function createApp() {
   // -------------------------------------------------------------------------
   // Interfaz web
   // -------------------------------------------------------------------------
+  // Los archivos de la interfaz no llevan huella en el nombre, así que una
+  // caché larga dejaría a los navegadores ejecutando la versión anterior
+  // después de un despliegue. `no-cache` no significa "no guardar": el
+  // navegador conserva el archivo y solo pregunta si cambió, y el ETag hace
+  // que la respuesta habitual sea un 304 sin cuerpo. Lo único con caché larga
+  // es `/vendor/`, que son librerías de terceros fijadas a una versión.
   app.use(
     express.static(PUBLIC_DIR, {
       index: false,
       dotfiles: 'ignore',
       etag: true,
-      maxAge: config.isProduction ? '1h' : 0,
+      lastModified: true,
+      maxAge: 0,
       setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+        const esVendor = filePath.includes(`${path.sep}vendor${path.sep}`);
+        res.setHeader(
+          'Cache-Control',
+          esVendor && config.isProduction ? 'public, max-age=31536000, immutable' : 'no-cache',
+        );
       },
     }),
   );

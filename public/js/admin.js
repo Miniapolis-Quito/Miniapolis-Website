@@ -1,8 +1,9 @@
 /**
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
-import { $, $$, el, render, brindis, fecha, horaCorta, relativo, dinero, plural, estadoPack, METODOS,
-         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
+import { $, $$, el, render, brindis, fecha, fechaDia, claveDia, finDelDiaIso, horaCorta, relativo, dinero,
+         plural, estadoPack, METODOS, mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga,
+         confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
@@ -81,7 +82,9 @@ async function cargarResumen() {
   const porDia = new Map(datos.dailySeries.map((d) => [d.date, d.count]));
   const dias = [];
   for (let i = 13; i >= 0; i -= 1) {
-    const dia = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    // Las claves se calculan en la zona de la pista, igual que las del
+    // servidor: con fechas UTC las barras se desplazarían un día.
+    const dia = claveDia(new Date(Date.now() - i * 86400000));
     dias.push({ dia, total: porDia.get(dia) ?? 0 });
   }
   const maximo = Math.max(1, ...dias.map((d) => d.total));
@@ -95,7 +98,7 @@ async function cargarResumen() {
       }),
     ),
   );
-  $('#grafico-desde').textContent = fecha(dias[0].dia, { conHora: false });
+  $('#grafico-desde').textContent = fechaDia(dias[0].dia);
 
   $('#conexiones-vivas').textContent = `${plural(datos.liveConnections, 'pantalla conectada', 'pantallas conectadas')}`;
 
@@ -253,8 +256,20 @@ async function cargarUsuarios() {
   );
 }
 
+/** Abre el diálogo de detalle; si ya estaba abierto solo se refresca su contenido. */
+function abrirDetalle() {
+  const dialogo = $('#dialogo-detalle');
+  if (!dialogo.open) dialogo.showModal();
+}
+
 async function verUsuario(userId) {
-  const datos = await api.get(`/api/admin/users/${userId}`);
+  let datos;
+  try {
+    datos = await api.get(`/api/admin/users/${userId}`);
+  } catch (error) {
+    brindis(error.message, 'error');
+    return;
+  }
   const usuario = datos.user;
 
   const acciones = el(
@@ -405,7 +420,7 @@ async function verUsuario(userId) {
           ),
         ),
   );
-  $('#dialogo-detalle').showModal();
+  abrirDetalle();
 }
 
 // ---------------------------------------------------------------------------
@@ -469,7 +484,13 @@ async function cargarPacks() {
 }
 
 async function verPack(packId) {
-  const datos = await api.get(`/api/admin/packs/${packId}`);
+  let datos;
+  try {
+    datos = await api.get(`/api/admin/packs/${packId}`);
+  } catch (error) {
+    brindis(error.message, 'error');
+    return;
+  }
   const pack = datos.pack;
   const marca = estadoPack(pack);
 
@@ -637,7 +658,7 @@ async function verPack(packId) {
       ? el('p', { class: 'tenue pequeno' }, 'Sin consumos.')
       : el('ul', { class: 'lista' }, datos.redemptions.map((item) => filaConsumo(item, recargar))),
   );
-  $('#dialogo-detalle').showModal();
+  abrirDetalle();
 }
 
 /**
@@ -849,6 +870,40 @@ async function cargarAuditoria() {
 }
 
 // ---------------------------------------------------------------------------
+// Exportación a CSV
+// ---------------------------------------------------------------------------
+
+const ETIQUETA_EXPORT = { packs: 'packs', consumos: 'consumos', clientes: 'clientes' };
+
+/**
+ * Descarga un reporte.
+ *
+ * No puede ser un enlace normal: la ruta exige el token de acceso, que vive en
+ * memoria y viaja en la cabecera Authorization, y una navegación del navegador
+ * no envía cabeceras propias. Así que se pide con fetch autenticado y el
+ * resultado se entrega como archivo.
+ */
+async function descargarCsv(entidad, boton) {
+  await conCarga(boton, async () => {
+    try {
+      const csv = await api.get(`/api/admin/export/${entidad}.csv`);
+      const enlace = el('a', {
+        href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })),
+        download: `${ETIQUETA_EXPORT[entidad] || entidad}-${new Date().toISOString().slice(0, 10)}.csv`,
+      });
+      document.body.append(enlace);
+      enlace.click();
+      enlace.remove();
+      // Se libera en el siguiente turno: revocar antes cancelaría la descarga.
+      setTimeout(() => URL.revokeObjectURL(enlace.href), 30_000);
+      brindis('Reporte descargado.', 'ok');
+    } catch (error) {
+      brindis(`No se pudo exportar: ${error.message}`, 'error');
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Diálogos de alta
 // ---------------------------------------------------------------------------
 
@@ -1001,8 +1056,9 @@ function montarDialogoPack() {
     };
     const vence = $('#pack-vence').value;
     if (vence) {
-      // La fecha elegida vale hasta el final de ese día.
-      cuerpo.expiresAt = new Date(`${vence}T23:59:59`).toISOString();
+      // La fecha elegida vale hasta el final de ese día en la pista, no en la
+      // zona horaria del navegador desde el que se emite el pack.
+      cuerpo.expiresAt = finDelDiaIso(vence);
     }
     for (const clave of Object.keys(cuerpo)) if (cuerpo[clave] === undefined) delete cuerpo[clave];
 
@@ -1055,6 +1111,10 @@ function montarDialogoPack() {
   const buscarPacks = temporizador(() => cargarPacks().catch(() => {}), 280);
   $('#buscar-packs').addEventListener('input', buscarPacks);
   $('#filtro-pack-estado').addEventListener('change', () => cargarPacks());
+
+  for (const boton of $$('[data-exportar]')) {
+    boton.addEventListener('click', () => descargarCsv(boton.dataset.exportar, boton));
+  }
 
   $('#btn-recargar-consumos').addEventListener('click', () => cargarConsumos());
   $('#btn-recargar-auditoria').addEventListener('click', () => cargarAuditoria());

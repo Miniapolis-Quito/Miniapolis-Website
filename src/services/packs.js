@@ -52,9 +52,23 @@ export function toPublicPack(row, { includeQr = false } = {}) {
   return pack;
 }
 
-/** ¿Se puede consumir una entrada de este pack ahora mismo? */
-export function isUsable(pack, { now = Date.now() } = {}) {
+/**
+ * ¿Se puede consumir una entrada de este pack ahora mismo?
+ *
+ * `ownerStatus` es opcional porque no todas las pantallas conocen el estado de
+ * la cuenta dueña; cuando se pasa (el consumo real siempre lo pasa), una cuenta
+ * suspendida bloquea el pack: suspender a alguien promete justamente eso.
+ */
+export function isUsable(pack, { now = Date.now(), ownerStatus = null } = {}) {
   if (!pack) return { ok: false, reason: 'no_encontrado', message: 'El pack no existe.' };
+  if (ownerStatus && ownerStatus !== 'active') {
+    return {
+      ok: false,
+      reason: 'cliente_suspendido',
+      code: 'cliente_suspendido',
+      message: 'La cuenta de este cliente está suspendida. Consulta en recepción.',
+    };
+  }
   if (pack.status === 'cancelled') return { ok: false, reason: 'cancelado', message: 'Este pack fue anulado.' };
   if (pack.status === 'suspended') return { ok: false, reason: 'suspendido', message: 'Este pack está suspendido. Consulta en recepción.' };
   if (pack.expires_at && Date.parse(pack.expires_at) <= now) {
@@ -68,6 +82,12 @@ export function isUsable(pack, { now = Date.now() } = {}) {
 
 export function findById(id, db = getDb()) {
   return db.prepare('SELECT * FROM packs WHERE id = ?').get(id) ?? null;
+}
+
+/** Estado de la cuenta dueña de un pack ('active', 'suspended' o null si no está). */
+export function ownerStatus(pack, db = getDb()) {
+  if (!pack) return null;
+  return db.prepare('SELECT status FROM users WHERE id = ?').get(pack.user_id)?.status ?? null;
 }
 
 export function findByCode(code, db = getDb()) {

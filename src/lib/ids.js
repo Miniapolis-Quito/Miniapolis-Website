@@ -35,16 +35,25 @@ export function newPackCode(prefix = 'RHE') {
   return `${prefix}-${randomChars(4)}-${randomChars(4)}`;
 }
 
-/** Normaliza un código escrito a mano: mayúsculas, sin espacios y con guiones. */
+const CODE_PATTERN = new RegExp(`^[${CODE_ALPHABET}]{8}$`);
+
+/**
+ * Normaliza un código escrito a mano: mayúsculas, sin espacios, sin guiones y
+ * con el prefijo opcional.
+ *
+ * Deliberadamente NO intenta "arreglar" un 0, una O, un 1, una I, una L ni una
+ * U. El alfabeto excluye esos caracteres justo para que no haya ambigüedad, así
+ * que un código que los contiene no puede ser un código real; sustituirlos por
+ * el carácter más parecido significaría adivinar, y la letra adivinada sí es
+ * válida — el resultado podría ser el pack de otra persona, al que se le
+ * descontaría una entrada. Ante la duda se devuelve cadena vacía y quien atiende
+ * vuelve a mirar el cartón.
+ */
 export function normalizePackCode(input, prefix = 'RHE') {
   if (typeof input !== 'string') return '';
-  let cleaned = input.trim().toUpperCase().replace(/[\s_]+/g, '').replace(/-/g, '');
+  let cleaned = input.trim().toUpperCase().replace(/[\s_-]+/g, '');
   if (cleaned.startsWith(prefix)) cleaned = cleaned.slice(prefix.length);
-  // Confusiones típicas al teclear un código que no usa estas letras/dígitos.
-  cleaned = cleaned.replace(/O/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V');
-  cleaned = cleaned.replace(/0/g, 'Q').replace(/1/g, '7');
-  if (cleaned.length !== 8) return '';
-  if (!/^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}$/.test(cleaned)) return '';
+  if (!CODE_PATTERN.test(cleaned)) return '';
   return `${prefix}-${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
 }
 

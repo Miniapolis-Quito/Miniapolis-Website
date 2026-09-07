@@ -1,0 +1,4 @@
+# Todo el sistema está detrás de una sesión: no hay nada útil que indexar y sí
+# páginas de acceso que no conviene que aparezcan en buscadores.
+User-agent: *
+Disallow: /

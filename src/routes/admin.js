@@ -18,6 +18,7 @@ import { validatePasswordStrength } from '../lib/passwords.js';
 import { randomToken } from '../lib/ids.js';
 import { getDb } from '../db/index.js';
 import { config } from '../config.js';
+import { inicioDelDia, modificadorSqlite } from '../lib/tiempo.js';
 import * as users from '../services/users.js';
 import * as packsService from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
@@ -39,10 +40,11 @@ router.get(
   asyncHandler(async (req, res) => {
     const db = getDb();
     packsService.expireDuePacks(db);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayIso = startOfToday.toISOString();
+    // "Hoy" es el día de la pista, no el del reloj del servidor: en un VPS en
+    // UTC, sumar por fecha UTC cambiaría de día a las 19:00 de Guayaquil.
+    const todayIso = inicioDelDia(config.timezone).toISOString();
     const weekIso = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const desfaseLocal = modificadorSqlite(config.timezone);
 
     const totals = db
       .prepare(
@@ -82,12 +84,12 @@ router.get(
     // Serie de los últimos 14 días para el gráfico de actividad.
     const serie = db
       .prepare(
-        `SELECT substr(created_at, 1, 10) AS dia, COUNT(*) AS n
+        `SELECT strftime('%Y-%m-%d', created_at, ?) AS dia, COUNT(*) AS n
            FROM redemptions
           WHERE status = 'confirmed' AND created_at >= ?
           GROUP BY dia ORDER BY dia ASC`,
       )
-      .all(new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString());
+      .all(desfaseLocal, new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString());
 
     res.json({
       totals: {
@@ -108,6 +110,7 @@ router.get(
         suspended: clientes.suspendidos,
       },
       dailySeries: serie.map((r) => ({ date: r.dia, count: r.n })),
+      timezone: config.timezone,
       recent: redemptions.listRedemptions({ limit: 10 }).items,
       liveConnections: hub.connectionCount,
       integrity: packsService.checkIntegrity(),

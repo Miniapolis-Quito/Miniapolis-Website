@@ -63,12 +63,19 @@ descontada. El número grande son las entradas que le quedan.
 Pídele su código y escríbelo en **Código manual**. Con **Consultar** ves de
 quién es y cuánto le queda sin descontar nada; con **Descontar entrada** cobras.
 
+Los códigos no llevan nunca `0`, `O`, `1`, `I`, `L` ni `U`, justamente para que
+no se confundan al leerlos. Si escribes uno de esos caracteres, el sistema dirá
+que no existe el pack en lugar de adivinar: vuelve a mirar el cartón, casi
+seguro es un `Q`, un `7` o una `V`.
+
 ### Cosas que conviene saber
 
 - Si al cliente le quedan pocas entradas, sale un aviso: es buen momento para
   ofrecerle otro pack.
 - Todo lo que escaneas queda registrado con tu nombre y tu puesto.
 - Si te equivocas, avisa a administración: pueden devolver la entrada.
+- Si la cuenta del cliente está suspendida, el escáner lo dice y no descuenta
+  nada. Mándalo a recepción: es administración quien puede reactivarla.
 
 ---
 
@@ -117,6 +124,10 @@ nueva, se copia al portapapeles y se cierran sus sesiones abiertas.
 **Resumen → Exportar packs / consumos / clientes**. Los archivos abren
 directamente en Excel.
 
+Las cifras del resumen («usadas hoy», el gráfico de los últimos 14 días) van
+por el día de la pista: cambian a medianoche en Ecuador, no a la hora del
+servidor.
+
 ### Revisar que todo cuadre
 
 En **Resumen**, la tarjeta *Estado del sistema* compara el saldo de cada pack
@@ -136,7 +147,8 @@ desactivarlos si un pase se pierde).
 
 **Suspendí a un cliente pero tenía la página abierta. ¿Puede seguir usándola?**
 No. Al suspenderlo, su pantalla vuelve sola a la página de acceso en el acto.
-Lo mismo al cerrarle las sesiones desde su ficha.
+Lo mismo al cerrarle las sesiones desde su ficha. Y sus entradas dejan de poder
+cobrarse en el puesto, incluso si alguien tecleara el código del pack a mano.
 
 **Busco a un cliente y no aparece.**
 La búsqueda ignora tildes y mayúsculas, así que "maria" encuentra a María y

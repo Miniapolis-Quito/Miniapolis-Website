@@ -100,9 +100,12 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
 
   // Relectura dentro de la transacción: el estado que se valida es el que se escribe.
   const fresh = packsService.findById(pack.id, db);
-  const usable = packsService.isUsable(fresh, { now });
+  const usable = packsService.isUsable(fresh, {
+    now,
+    ownerStatus: packsService.ownerStatus(fresh, db),
+  });
   if (!usable.ok) {
-    throw conflict(usable.message, `pack_${usable.reason}`, {
+    throw conflict(usable.message, usable.code ?? `pack_${usable.reason}`, {
       pack: packsService.toPublicPack(fresh),
     });
   }
@@ -169,6 +172,8 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     redemptionId,
     remainingBefore,
     remainingAfter,
+    method,
+    deviceLabel: deviceLabel ?? null,
     pack: packsService.findById(fresh.id, db),
     createdAt: nowIso,
   };
@@ -180,6 +185,10 @@ function publishRedemption(result, owner, scanner) {
     redemptionId: result.redemptionId,
     pack: packsService.toPublicPack(result.pack),
     remaining: result.remainingAfter,
+    // El método y el puesto viajan en el evento para que la lista en vivo del
+    // escáner muestre lo que de verdad pasó y no una suposición.
+    method: result.method,
+    deviceLabel: result.deviceLabel ?? null,
     owner: { id: owner.id, fullName: owner.full_name },
     scannedBy: scanner ? { id: scanner.id, fullName: scanner.fullName } : null,
     at: result.createdAt,

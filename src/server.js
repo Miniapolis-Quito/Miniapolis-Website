@@ -3,7 +3,7 @@ import http from 'node:http';
 import { config } from './config.js';
 import { createApp } from './app.js';
 import { logger } from './lib/logger.js';
-import { closeDb, getDb } from './db/index.js';
+import { closeDb } from './db/index.js';
 import { ensureMasterAccount } from './bootstrap.js';
 import { purgeExpired } from './services/sessions.js';
 import { expireDuePacks } from './services/packs.js';
@@ -79,8 +79,5 @@ process.on('uncaughtException', (error) => {
   logger.error('Excepción no capturada', { message: error.message, stack: error.stack });
   shutdown('uncaughtException');
 });
-
-// Toca la base al arrancar para fallar rápido si el archivo no es accesible.
-getDb();
 
 export { server, app };

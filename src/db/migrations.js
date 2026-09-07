@@ -216,6 +216,21 @@ export const migrations = [
       }
     },
   },
+  {
+    name: '003-indices-de-informes',
+    up: (db) => {
+      db.exec(`
+        -- El panel cuenta consumos confirmados por fecha en cada carga; sin
+        -- este índice la consulta recorre toda la tabla de consumos.
+        CREATE INDEX IF NOT EXISTS idx_redemptions_status_created
+          ON redemptions(status, created_at DESC);
+
+        -- El teléfono se busca por la columna normalizada (search_text), así
+        -- que su índice propio solo encarecía cada alta y cada actualización.
+        DROP INDEX IF EXISTS idx_users_phone;
+      `);
+    },
+  },
 ];
 
 export default migrations;

@@ -474,8 +474,10 @@ function montarManual() {
                 customerName: datos.owner.fullName,
                 createdAt: datos.at,
                 packCode: datos.pack.code,
-                method: 'qr_dynamic',
-                deviceLabel: null,
+                // El evento trae el método y el puesto reales: darlos por
+                // supuestos hacía que un canje manual apareciera como "QR app".
+                method: datos.method,
+                deviceLabel: datos.deviceLabel,
                 remainingAfter: datos.remaining,
                 status: 'confirmed',
               },
@@ -493,15 +495,22 @@ function montarManual() {
   // Mantener la pantalla encendida durante el turno, si el navegador lo permite.
   let bloqueoPantalla = null;
   async function pedirBloqueo() {
+    if (bloqueoPantalla) return;
     try {
-      bloqueoPantalla = await navigator.wakeLock?.request('screen');
+      bloqueoPantalla = (await navigator.wakeLock?.request('screen')) ?? null;
+      // El navegador lo libera solo al ocultar la pestaña. Sin marcarlo como
+      // suelto, la comprobación de más abajo lo daría por vigente y la pantalla
+      // volvería a apagarse sola durante el resto del turno.
+      bloqueoPantalla?.addEventListener('release', () => {
+        bloqueoPantalla = null;
+      });
     } catch {
-      /* no soportado o denegado */
+      bloqueoPantalla = null; // no soportado o denegado
     }
   }
   pedirBloqueo();
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && !bloqueoPantalla) pedirBloqueo();
+    if (document.visibilityState === 'visible') pedirBloqueo();
   });
 
   window.addEventListener('pagehide', () => {

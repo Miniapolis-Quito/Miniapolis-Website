@@ -91,6 +91,55 @@ export function fecha(iso, { conHora = true } = {}) {
   });
 }
 
+/**
+ * Fecha 'YYYY-MM-DD' de un instante, en la zona de la pista.
+ *
+ * El servidor agrupa el gráfico diario por esa misma zona, así que las claves
+ * del cliente tienen que calcularse igual: usar la zona del navegador
+ * desalinearía las barras para quien mire el panel desde otro país.
+ */
+export function claveDia(valor = new Date()) {
+  // 'en-CA' formatea justamente como YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(valor instanceof Date ? valor : new Date(valor));
+}
+
+/**
+ * Instante (ISO) en que termina un día 'YYYY-MM-DD' en la zona de la pista.
+ *
+ * Un vencimiento elegido en el calendario significa "hasta el final de ese día
+ * en la pista", no en la zona horaria de quien tenga abierto el panel.
+ */
+export function finDelDiaIso(ymd) {
+  const comoUtc = new Date(`${ymd}T23:59:59Z`);
+  // Se despeja el desfase de la zona comparando cómo se ve ese instante en ella.
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(comoUtc);
+  const p = {};
+  for (const parte of partes) if (parte.type !== 'literal') p[parte.type] = Number(parte.value);
+  if (p.hour === 24) p.hour = 0;
+  const desfaseMs = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - comoUtc.getTime();
+  return new Date(comoUtc.getTime() - desfaseMs).toISOString();
+}
+
+/** Formatea un día 'YYYY-MM-DD' tal cual, sin reinterpretarlo en otra zona. */
+export function fechaDia(ymd) {
+  const [anio, mes, dia] = String(ymd ?? '').split('-');
+  return dia ? `${dia}/${mes}/${anio}` : '—';
+}
+
 export function horaCorta(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleTimeString('es-EC', { timeZone: ZONA, hour: '2-digit', minute: '2-digit' });
