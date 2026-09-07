@@ -25,6 +25,31 @@ que Excel abra bien los acentos), el formateo del código mientras se teclea
 de actividad cuando llega un evento en vivo, el aviso de espera entre dos
 escaneos y el saldo del cliente bajando sin recargar la página.
 
+Dos pasos merecen mención aparte:
+
+- **El corte de red.** Se deja que la petición llegue al servidor y se tira la
+  respuesta de vuelta: el cobro ocurrió, pero el operador ve "sin conexión".
+  Es el caso en el que un reintento descontaría dos veces si la clave de
+  idempotencia no estuviera haciendo su trabajo.
+- **El pase impreso.** Se sustituye `window.print` por una bandera y se mira lo
+  que habría salido por la impresora: el pase con su QR, y nada más —ni la
+  cabecera, ni el panel, ni el diálogo desde el que se pidió—.
+
+## `camara.mjs` — el escáner leyendo un QR de verdad
+
+```bash
+npm run test:camara
+```
+
+El trabajo diario del personal, y lo único que no se puede comprobar sin una
+cámara. Se genera un vídeo sin comprimir con el QR del pack dentro y se le da a
+Chromium como dispositivo de captura: el escáner lo lee y descuenta la entrada
+sin que nadie toque el teclado.
+
+Se recorren los dos lectores, porque en la pista conviven los dos: el nativo
+del navegador cuando existe, y el respaldo jsQR en todo lo demás (se fuerza
+quitando `BarcodeDetector` antes de que cargue la página).
+
 ## `flujo-completo.mjs` — el sistema instalado
 
 ```bash

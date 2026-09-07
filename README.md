@@ -261,6 +261,7 @@ npm run dev     # servidor con recarga automática
 npm test        # suite completa (107 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
+npm run test:camara # el escáner leyendo un QR con la cámara
 ```
 
 Las pruebas corren sobre una base en memoria y cubren todas las rutas de la API:
@@ -271,12 +272,14 @@ leyendo lo que llega y reanudándolo tras una caída), la búsqueda sin tildes, 
 camino de actualización del esquema, control de acceso por rol y las cabeceras
 de seguridad.
 
-`tests/e2e/` contiene además dos pruebas en navegador real, que no entran en
+`tests/e2e/` contiene además tres pruebas en navegador real, que no entran en
 `npm test` porque necesitan Playwright: `interfaz.mjs` levanta la aplicación en
 el propio proceso y comprueba que la interfaz hace lo que dice (descargas,
-formateo del código al teclearlo, actividad en vivo), y `flujo-completo.mjs`
-recorre el sistema ya instalado contra un servidor de verdad. El README de esa
-carpeta explica cómo ejecutarlas.
+formateo del código al teclearlo, actividad en vivo, un corte de red a mitad de
+un cobro y el pase impreso); `camara.mjs` le da a Chromium un vídeo con un QR y
+comprueba que el escáner lo lee y descuenta la entrada, con el lector nativo y
+con el respaldo jsQR; y `flujo-completo.mjs` recorre el sistema ya instalado
+contra un servidor de verdad. El README de esa carpeta explica cómo ejecutarlas.
 
 ### Estructura
 

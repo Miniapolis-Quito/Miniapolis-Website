@@ -36,7 +36,7 @@ async function cargarNavegador() {
 
 const chromium = await cargarNavegador();
 const B = await levantarServidor();
-await sembrarUsuarios();
+const { cMaster, cliente: usuarioCliente } = await sembrarUsuarios();
 
 const errores = [];
 const fallidos = [];
@@ -140,6 +140,41 @@ await paso('el detalle del pack permite poner vencimiento', async () => {
   });
 });
 
+await paso('el pase impreso sale solo, y solo él, en la hoja', async () => {
+  // Imprimir de verdad abriría un diálogo del sistema: se sustituye la llamada
+  // por una bandera y se mira lo que habría salido por la impresora.
+  await admin.addInitScript(() => {
+    window.__imprimio = false;
+    window.print = () => { window.__imprimio = true; };
+  });
+  await admin.reload({ waitUntil: 'domcontentloaded' });
+  await admin.waitForSelector('#metricas .tarjeta', { timeout: 15000 });
+  await admin.click('.pestana[data-panel=packs]');
+  await admin.waitForSelector('#tabla-packs table', { timeout: 15000 });
+  await admin.click('#tabla-packs tbody tr button');
+  await admin.waitForSelector('#dialogo-detalle[open]', { timeout: 15000 });
+
+  // El pase físico solo existe si el pack admite QR impreso.
+  await admin.locator('#dialogo-detalle button', { hasText: 'Activar QR impreso' }).click();
+  await admin.locator('#dialogo-detalle button', { hasText: 'Imprimir pase' }).waitFor({ timeout: 15000 });
+  await admin.locator('#dialogo-detalle button', { hasText: 'Imprimir pase' }).click();
+
+  await admin.waitForFunction(() => window.__imprimio === true, { timeout: 15000 });
+  const pase = admin.locator('#pase-impreso .pase');
+  if (!(await pase.locator('svg').count())) throw new Error('el pase salió sin código QR');
+  const texto = await pase.textContent();
+  if (!texto.includes(codigo)) throw new Error('el pase no lleva el código del pack');
+  if (!texto.includes('Carlos Piloto')) throw new Error('el pase no lleva el nombre del cliente');
+
+  // Con los estilos de impresión, en la hoja no cabe nada más: ni la cabecera,
+  // ni el panel, ni el diálogo desde el que se pidió.
+  await admin.emulateMedia({ media: 'print' });
+  if (await admin.locator('.barra').isVisible()) throw new Error('la cabecera saldría impresa');
+  if (await admin.locator('#dialogo-detalle').isVisible()) throw new Error('el diálogo saldría impreso');
+  if (!(await admin.locator('#pase-impreso').isVisible())) throw new Error('el pase no se vería en la hoja');
+  await admin.emulateMedia({ media: 'screen' });
+});
+
 // ---------------------------------------------------------------------------
 // Puesto de control
 // ---------------------------------------------------------------------------
@@ -196,6 +231,45 @@ await paso('el segundo intento inmediato avisa de la espera', async () => {
   await staff.waitForSelector('.resultado--alerta', { timeout: 15000 });
 });
 
+await paso('un corte de red a mitad de un cobro no descuenta dos veces', async () => {
+  // Un cliente aparte, para no mover el saldo del que se revisa más abajo.
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'corte@pista.ec', fullName: 'Piloto Del Corte', role: 'customer', password: 'Palanca-Cambios-55',
+  });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: otro.datos.user.id, size: 5 });
+  const codigoCorte = emitido.datos.pack.code;
+  const packId = emitido.datos.pack.id;
+
+  // El peor caso: la petición llega al servidor y descuenta, pero la respuesta
+  // se pierde de vuelta. El operador ve "sin conexión" sobre un cobro que sí
+  // ocurrió, y lo único que evita el doble descuento es la clave de idempotencia.
+  await staff.route('**/api/scan/manual', async (ruta) => {
+    await ruta.fetch();
+    await ruta.abort('connectionfailed');
+  });
+  await staff.fill('#codigo-manual', codigoCorte);
+  await staff.click('#form-manual button[type=submit]');
+  await staff.waitForFunction(
+    () => document.querySelector('.resultado__titulo')?.textContent.includes('Sin conexión'),
+    { timeout: 15000 },
+  );
+  await staff.unroute('**/api/scan/manual');
+
+  // Vuelve la señal y el operador toca "Reintentar", que es lo que dice el aviso.
+  await staff.click('.resultado button');
+  await staff.waitForFunction(
+    () => document.querySelector('.resultado__titulo')?.textContent.includes('Entrada registrada'),
+    { timeout: 15000 },
+  );
+  const restantes = (await staff.textContent('.resultado__restantes')).trim();
+  if (restantes !== '4') throw new Error(`esperaba 4 restantes, obtuve ${restantes}`);
+
+  // Y en la base, un solo consumo: el reintento repitió la respuesta, no el cobro.
+  const consumos = redemptions.listRedemptions({ packId });
+  if (consumos.total !== 1) throw new Error(`se registraron ${consumos.total} consumos, debería haber 1`);
+  if (packsService.findById(packId).remaining !== 4) throw new Error('el saldo no cuadra con un único consumo');
+});
+
 // ---------------------------------------------------------------------------
 // Portal del cliente
 // ---------------------------------------------------------------------------
@@ -225,8 +299,9 @@ await bajarServidor();
 
 // El navegador registra como error de consola cualquier respuesta 4xx, y esta
 // prueba provoca varias a propósito: el 401 de comprobar si hay sesión al
-// cargar, y el 409 del segundo escaneo dentro del tiempo de espera.
-const ESPERADOS = /favicon|manifest|status of (401|409)/i;
+// cargar, el 409 del segundo escaneo dentro del tiempo de espera y la conexión
+// que se corta adrede para comprobar el reintento.
+const ESPERADOS = /favicon|manifest|status of (401|409)|ERR_CONNECTION_FAILED/i;
 const relevantes = errores.filter((e) => !ESPERADOS.test(e));
 
 console.log('\n=== errores de consola/página ===');
