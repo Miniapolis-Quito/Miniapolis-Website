@@ -52,9 +52,23 @@ export function toPublicPack(row, { includeQr = false } = {}) {
   return pack;
 }
 
-/** ¿Se puede consumir una entrada de este pack ahora mismo? */
-export function isUsable(pack, { now = Date.now() } = {}) {
+/**
+ * ¿Se puede consumir una entrada de este pack ahora mismo?
+ *
+ * `owner` es opcional porque no todas las vistas lo tienen a mano, pero cuando
+ * se pasa manda: al suspender una cuenta el panel promete que esa persona «no
+ * podrá entrar ni usar sus entradas», y eso incluye el pase impreso y el
+ * ingreso manual por código, que no dependen de que ella inicie sesión.
+ */
+export function isUsable(pack, { now = Date.now(), owner = null } = {}) {
   if (!pack) return { ok: false, reason: 'no_encontrado', message: 'El pack no existe.' };
+  if (owner && owner.status !== 'active') {
+    return {
+      ok: false,
+      reason: 'cliente_suspendido',
+      message: 'La cuenta de este cliente está suspendida. Consulta en recepción.',
+    };
+  }
   if (pack.status === 'cancelled') return { ok: false, reason: 'cancelado', message: 'Este pack fue anulado.' };
   if (pack.status === 'suspended') return { ok: false, reason: 'suspendido', message: 'Este pack está suspendido. Consulta en recepción.' };
   if (pack.expires_at && Date.parse(pack.expires_at) <= now) {

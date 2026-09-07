@@ -194,7 +194,9 @@ una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
 JavaScript no puede leer. El token de refresco **rota en cada uso** y, si
 alguna vez se presenta uno ya rotado, se asume robo y se revoca la sesión
 completa. Suspender una cuenta, cambiarle el rol o cambiar la contraseña corta
-el acceso al instante, sin esperar a que caduque nada.
+el acceso al instante, sin esperar a que caduque nada. Suspenderla inutiliza
+además sus entradas —también el pase impreso y el ingreso manual por código,
+que no dependen de que esa persona inicie sesión— sin tocar su saldo.
 
 Suspender una cuenta o cerrarle las sesiones **cierra también su canal en vivo
 en el acto**: la pantalla de esa persona vuelve a la página de acceso sola, sin
@@ -255,7 +257,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (98 pruebas)
+npm test        # suite completa (99 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 ```

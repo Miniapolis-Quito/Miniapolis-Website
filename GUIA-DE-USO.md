@@ -148,6 +148,11 @@ desactivarlos si un pase se pierde).
 No. Al suspenderlo, su pantalla vuelve sola a la página de acceso en el acto.
 Lo mismo al cerrarle las sesiones desde su ficha.
 
+Sus entradas tampoco sirven mientras esté suspendido: ni su pase impreso ni el
+ingreso manual por código. Quien lo intente en la puerta ve un aviso de que la
+cuenta está suspendida, y no se descuenta nada. Al reactivarla, todo vuelve a
+funcionar con el saldo intacto.
+
 **Busco a un cliente y no aparece.**
 La búsqueda ignora tildes y mayúsculas, así que "maria" encuentra a María y
 "munoz" a Muñoz. Prueba también con el correo, el teléfono o el código del

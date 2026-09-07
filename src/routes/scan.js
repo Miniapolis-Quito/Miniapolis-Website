@@ -68,8 +68,8 @@ router.post(
     if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
 
     const verification = verifyQrPayload(parsed, pack);
-    const usable = packsService.isUsable(pack);
-    const owner = getDb().prepare('SELECT id, full_name FROM users WHERE id = ?').get(pack.user_id);
+    const owner = getDb().prepare('SELECT id, full_name, status FROM users WHERE id = ?').get(pack.user_id);
+    const usable = packsService.isUsable(pack, { owner });
 
     res.json({
       valid: verification.ok && usable.ok,
@@ -108,8 +108,8 @@ router.get(
   asyncHandler(async (req, res) => {
     const pack = packsService.findByLooseCode(req.params.code);
     if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
-    const owner = getDb().prepare('SELECT id, full_name, email FROM users WHERE id = ?').get(pack.user_id);
-    const usable = packsService.isUsable(pack);
+    const owner = getDb().prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
+    const usable = packsService.isUsable(pack, { owner });
     res.json({
       pack: packsService.toPublicPack(pack),
       customer: owner ? { id: owner.id, fullName: owner.full_name, email: owner.email } : null,

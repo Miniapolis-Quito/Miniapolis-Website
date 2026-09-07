@@ -251,6 +251,46 @@ test('varios escaneos simultáneos del mismo pack nunca dejan el saldo en negati
   assert.ok(packsService.checkIntegrity().ok);
 });
 
+test('suspender a un cliente también inutiliza sus entradas', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5, { allowStaticQr: true });
+
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'suspended' });
+
+  // Al suspender, el panel promete que esa persona no podrá entrar ni usar sus
+  // entradas. Entrar ya estaba cubierto; usarlas depende de estos tres caminos,
+  // y dos de ellos no necesitan que el cliente inicie sesión.
+  for (const [nombre, peticion] of [
+    ['código manual', () => cStaff.post('/api/scan/manual', { code: pack.code })],
+    ['QR impreso', () => cStaff.post('/api/scan', { payload: buildQrPayload(pack, { static: true }) })],
+    ['QR de la app', () => cStaff.post('/api/scan', { payload: buildQrPayload(pack) })],
+  ]) {
+    const r = await peticion();
+    assert.equal(r.status, 409, `${nombre} debería rechazarse`);
+    assert.equal(r.datos.error.code, 'cliente_suspendido', nombre);
+    assert.match(r.datos.error.message, /suspendida/i);
+  }
+
+  // Y el personal lo ve antes de intentarlo, no después.
+  const consulta = await cStaff.get(`/api/scan/lookup/${pack.code}`);
+  assert.equal(consulta.datos.usable, false);
+  assert.equal(consulta.datos.reason, 'cliente_suspendido');
+
+  const verificacion = await cStaff.post('/api/scan/verify', { payload: buildQrPayload(pack) });
+  assert.equal(verificacion.datos.valid, false);
+  assert.equal(verificacion.datos.signatureOk, true, 'el código es auténtico; lo que falla es la cuenta');
+  assert.equal(verificacion.datos.reason, 'cliente_suspendido');
+
+  // El saldo sigue intacto: suspender no gasta ni devuelve nada.
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+
+  // Al reactivar la cuenta, las entradas vuelven a servir.
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'active' });
+  const tras = await cStaff.post('/api/scan/manual', { code: pack.code });
+  assert.equal(tras.status, 200, JSON.stringify(tras.datos));
+  assert.equal(tras.datos.remaining, 4);
+});
+
 test('el máster puede anular un consumo y la entrada vuelve al cliente', async () => {
   const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
   const pack = await emitirPack(cMaster, cliente.id, 5);

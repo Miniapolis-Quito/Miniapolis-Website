@@ -100,9 +100,15 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
 
   // Relectura dentro de la transacción: el estado que se valida es el que se escribe.
   const fresh = packsService.findById(pack.id, db);
-  const usable = packsService.isUsable(fresh, { now });
+  // Si el pack desapareciera a mitad, `isUsable` ya lo cuenta como no encontrado:
+  // preguntar por el dueño de la nada solo cambiaría ese error por otro peor.
+  const dueno = fresh ? db.prepare('SELECT id, status FROM users WHERE id = ?').get(fresh.user_id) : null;
+  const usable = packsService.isUsable(fresh, { now, owner: dueno });
   if (!usable.ok) {
-    throw conflict(usable.message, `pack_${usable.reason}`, {
+    // El motivo del rechazo no siempre es del pack: si la cuenta del cliente
+    // está suspendida, el código lo dice tal cual en vez de disfrazarlo.
+    const codigo = usable.reason === 'cliente_suspendido' ? usable.reason : `pack_${usable.reason}`;
+    throw conflict(usable.message, codigo, {
       pack: packsService.toPublicPack(fresh),
     });
   }
