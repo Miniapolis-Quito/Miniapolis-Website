@@ -175,6 +175,22 @@ export function dinero(centavos, moneda = MONEDA) {
   }
 }
 
+/**
+ * Agrupa un teléfono para que se pueda leer de un vistazo.
+ * Con el prefijo de Ecuador queda "+593 99 111 2233"; cualquier otro formato se
+ * devuelve tal cual antes que arriesgarse a maquillarlo mal.
+ */
+export function telefono(valor) {
+  const texto = String(valor ?? '').trim();
+  if (!texto) return '';
+  const ecuador = /^\+593(\d{9})$/.exec(texto.replace(/[\s-]/g, ''));
+  if (ecuador) {
+    const [, digitos] = ecuador;
+    return `+593 ${digitos.slice(0, 2)} ${digitos.slice(2, 5)} ${digitos.slice(5)}`;
+  }
+  return texto;
+}
+
 export function plural(cantidad, singular, pluralForma) {
   return `${cantidad} ${cantidad === 1 ? singular : pluralForma}`;
 }

@@ -14,7 +14,8 @@
     "create-master": "node scripts/create-master.js",
     "test": "node --test \"tests/**/*.test.js\"",
     "test:watch": "node --test --watch \"tests/**/*.test.js\"",
-    "test:e2e": "node tests/e2e/flujo-completo.mjs"
+    "test:e2e": "node tests/e2e/flujo-completo.mjs",
+    "test:e2e:ficha": "node tests/e2e/ficha-cliente.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",

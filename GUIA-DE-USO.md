@@ -81,6 +81,20 @@ seguro es un `Q`, un `7` o una `V`.
 
 ## Para administración
 
+### Ver todo lo de un cliente
+
+**Clientes y personal → Abrir ficha**. Ahí está todo de esa persona: cuántas
+entradas le quedan, cuánto ha gastado, cada cuánto viene, sus packs con el
+historial de cada uno, todas sus entradas usadas con quién se las cobró, y sus
+dispositivos con sesión abierta.
+
+Desde ahí puedes venderle un pack, corregir sus datos, regalarle entradas,
+anular un cobro equivocado, restablecerle la contraseña o suspenderlo. Cada
+cambio queda firmado con tu nombre en la pestaña **Actividad**, que es adonde
+hay que ir cuando alguien reclama algo.
+
+El enlace de la ficha se puede copiar y compartir: lleva directo a esa persona.
+
 ### Vender un pack
 
 **Packs → Vender pack**. Busca al cliente por nombre o correo (si no existe,

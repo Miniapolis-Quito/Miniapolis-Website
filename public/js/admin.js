@@ -2,13 +2,21 @@
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
 import { $, $$, el, render, brindis, fecha, fechaDia, claveDia, finDelDiaIso, horaCorta, relativo, dinero,
-         plural, estadoPack, METODOS, mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga,
+         plural, telefono, estadoPack, METODOS, mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga,
          confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
+import { abrirFicha, cerrarFicha } from './ficha.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 
-const estado = { configuracion: null, panel: 'resumen', clienteSeleccionado: null };
+const estado = {
+  configuracion: null,
+  panel: 'resumen',
+  clienteSeleccionado: null,
+  /** Desde qué pestaña se abrió la ficha, para volver a ella al cerrarla. */
+  panelPrevio: null,
+  mostrandoFicha: false,
+};
 let cabecera;
 /** Lo asigna `montarDialogoPack`; evita colgar una función del objeto window. */
 let abrirDialogoPack = () => {};
@@ -34,6 +42,65 @@ const CARGADORES = {
   consumos: cargarConsumos,
   auditoria: cargarAuditoria,
 };
+
+/**
+ * Enrutado por fragmento de dirección.
+ *
+ * La ficha de un cliente es una vista propia, no un diálogo: así se puede
+ * compartir el enlace, volver con el botón del navegador y recargar sin perderla.
+ */
+function rutaActual() {
+  const coincide = /^#cliente\/([A-Za-z0-9-]+)$/.exec(window.location.hash);
+  return coincide ? { vista: 'ficha', userId: coincide[1] } : { vista: 'paneles' };
+}
+
+function aplicarRuta() {
+  const ruta = rutaActual();
+  const ficha = $('#ficha-cliente');
+  const pestanas = $('#pestanas-admin');
+
+  if (ruta.vista === 'ficha') {
+    estado.mostrandoFicha = true;
+    $('#titulo-admin').hidden = true;
+    pestanas.hidden = true;
+    for (const panel of $$('[id^="panel-"]')) panel.hidden = true;
+    ficha.hidden = false;
+    abrirFicha(ruta.userId, {
+      contenedor: ficha,
+      usuarioActual: getUsuario(),
+      alVolver: () => {
+        window.location.hash = '';
+      },
+      alCambiar: () => {
+        // El listado de fondo puede haber quedado desactualizado.
+        if (estado.panel === 'clientes') cargarUsuarios().catch(() => {});
+        if (estado.panel === 'packs') cargarPacks().catch(() => {});
+      },
+      onVenderPack: (cliente) => abrirDialogoPack(cliente),
+      onImprimirPase: (pack, propietario) => imprimirPase(pack, propietario),
+    });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return;
+  }
+
+  // Al cerrar la ficha se vuelve a la pestaña desde la que se abrió. Si se
+  // llegó por enlace directo no hay historia, y clientes es lo más útil.
+  const volviendoDeFicha = estado.mostrandoFicha;
+  estado.mostrandoFicha = false;
+
+  cerrarFicha();
+  $('#titulo-admin').hidden = false;
+  ficha.hidden = true;
+  render(ficha);
+  pestanas.hidden = false;
+  abrirPanel(volviendoDeFicha ? (estado.panelPrevio ?? 'clientes') : estado.panel);
+}
+
+/** Abre la ficha de un cliente (cambia la dirección, que dispara el enrutado). */
+function verUsuario(userId) {
+  estado.panelPrevio = estado.panel;
+  window.location.hash = `#cliente/${userId}`;
+}
 
 function abrirPanel(nombre) {
   estado.panel = nombre;
@@ -214,7 +281,7 @@ async function cargarUsuarios() {
                 'td',
                 {},
                 el('div', { class: 'pequeno' }, usuario.email),
-                usuario.phone ? el('div', { class: 'tenue-2 pequeno' }, usuario.phone) : null,
+                usuario.phone ? el('div', { class: 'tenue-2 pequeno' }, telefono(usuario.phone)) : null,
               ),
               el('td', {}, el('span', { class: 'etiqueta' }, ROLES[usuario.role] || usuario.role)),
               el(
@@ -239,7 +306,7 @@ async function cargarUsuarios() {
                 el(
                   'div',
                   { class: 'fila' },
-                  el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verUsuario(usuario.id) }, 'Ver'),
+                  el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verUsuario(usuario.id) }, 'Abrir ficha'),
                   el(
                     'button',
                     { class: 'boton boton--chico boton--principal', type: 'button', onClick: () => abrirDialogoPack(usuario) },
@@ -260,167 +327,6 @@ async function cargarUsuarios() {
 function abrirDetalle() {
   const dialogo = $('#dialogo-detalle');
   if (!dialogo.open) dialogo.showModal();
-}
-
-async function verUsuario(userId) {
-  let datos;
-  try {
-    datos = await api.get(`/api/admin/users/${userId}`);
-  } catch (error) {
-    brindis(error.message, 'error');
-    return;
-  }
-  const usuario = datos.user;
-
-  const acciones = el(
-    'div',
-    { class: 'fila mt' },
-    el(
-      'button',
-      { class: 'boton boton--chico boton--principal', type: 'button', onClick: () => abrirDialogoPack(usuario) },
-      'Vender pack',
-    ),
-    el(
-      'button',
-      {
-        class: 'boton boton--chico boton--fantasma',
-        type: 'button',
-        onClick: async () => {
-          const respuesta = await api.post(`/api/admin/users/${userId}/reset-password`, {});
-          const clave = respuesta.temporaryPassword;
-          await copiar(clave);
-          await confirmar({
-            titulo: 'Contraseña restablecida',
-            mensaje: `Nueva contraseña temporal (ya copiada al portapapeles): ${clave}`,
-            textoAceptar: 'Entendido',
-          });
-        },
-      },
-      'Restablecer contraseña',
-    ),
-    usuario.locked
-      ? el(
-          'button',
-          {
-            class: 'boton boton--chico boton--ok',
-            type: 'button',
-            onClick: async () => {
-              await api.post(`/api/admin/users/${userId}/unlock`, {});
-              brindis('Cuenta desbloqueada.', 'ok');
-              verUsuario(userId);
-            },
-          },
-          'Desbloquear',
-        )
-      : null,
-    usuario.id === getUsuario().id
-      ? null
-      : el(
-          'button',
-          {
-            class: `boton boton--chico ${usuario.status === 'active' ? 'boton--peligro' : 'boton--ok'}`,
-            type: 'button',
-            onClick: async () => {
-              const suspender = usuario.status === 'active';
-              const seguro = await confirmar({
-                titulo: suspender ? 'Suspender cuenta' : 'Reactivar cuenta',
-                mensaje: suspender
-                  ? `${usuario.fullName} no podrá entrar ni usar sus entradas hasta que la reactives.`
-                  : `${usuario.fullName} volverá a tener acceso normal.`,
-                textoAceptar: suspender ? 'Suspender' : 'Reactivar',
-                peligro: suspender,
-              });
-              if (!seguro) return;
-              try {
-                await api.patch(`/api/admin/users/${userId}`, { status: suspender ? 'suspended' : 'active' });
-                brindis(suspender ? 'Cuenta suspendida.' : 'Cuenta reactivada.', 'ok');
-                verUsuario(userId);
-                cargarUsuarios();
-              } catch (error) {
-                brindis(error.message, 'error');
-              }
-            },
-          },
-          usuario.status === 'active' ? 'Suspender' : 'Reactivar',
-        ),
-    usuario.id === getUsuario().id
-      ? null
-      : el(
-          'select',
-          {
-            class: 'selector-rol',
-            onChange: async (evento) => {
-              const nuevoRol = evento.target.value;
-              if (nuevoRol === usuario.role) return;
-              try {
-                await api.patch(`/api/admin/users/${userId}`, { role: nuevoRol });
-                brindis(`Rol cambiado a ${ROLES[nuevoRol]}.`, 'ok');
-                verUsuario(userId);
-                cargarUsuarios();
-              } catch (error) {
-                brindis(error.message, 'error');
-                evento.target.value = usuario.role;
-              }
-            },
-          },
-          Object.entries(ROLES).map(([valor, texto]) =>
-            el('option', { value: valor, selected: valor === usuario.role }, texto),
-          ),
-        ),
-  );
-
-  render(
-    $('#detalle-cuerpo'),
-    el('h2', {}, usuario.fullName),
-    el('p', { class: 'tenue sin-margen' }, usuario.email),
-    usuario.phone ? el('p', { class: 'tenue pequeno' }, usuario.phone) : null,
-    el(
-      'div',
-      { class: 'rejilla rejilla--3 mt' },
-      tarjetaMetrica(String(datos.summary.availableTickets), 'Disponibles', 'metrica--acento'),
-      tarjetaMetrica(String(datos.summary.usedTickets), 'Usadas'),
-      tarjetaMetrica(String(datos.summary.purchasedTickets), 'Compradas'),
-    ),
-    acciones,
-    el('h3', { class: 'mt-2' }, 'Packs'),
-    datos.packs.length === 0
-      ? el('p', { class: 'tenue pequeno' }, 'Sin packs.')
-      : el(
-          'ul',
-          { class: 'lista' },
-          datos.packs.map((pack) => {
-            const marca = estadoPack(pack);
-            return el(
-              'li',
-              { class: 'lista__item' },
-              el(
-                'div',
-                { class: 'crece' },
-                el('div', { class: 'mono' }, pack.code),
-                el('div', { class: 'tenue-2 pequeno' }, `${pack.remaining} de ${pack.size} · ${dinero(pack.priceCents)}`),
-              ),
-              el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto),
-              el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verPack(pack.id) }, 'Abrir'),
-            );
-          }),
-        ),
-    el('h3', { class: 'mt-2' }, 'Últimos consumos'),
-    datos.redemptions.length === 0
-      ? el('p', { class: 'tenue pequeno' }, 'Sin consumos.')
-      : el(
-          'ul',
-          { class: 'lista' },
-          datos.redemptions.slice(0, 10).map((item) =>
-            el(
-              'li',
-              { class: 'lista__item' },
-              el('div', { class: 'crece' }, el('div', { class: 'pequeno' }, fecha(item.createdAt)), el('div', { class: 'tenue-2 pequeno mono' }, item.packCode)),
-              el('span', { class: 'etiqueta' }, item.status === 'voided' ? 'Anulado' : `Quedaban ${item.remainingAfter}`),
-            ),
-          ),
-        ),
-  );
-  abrirDetalle();
 }
 
 // ---------------------------------------------------------------------------
@@ -507,7 +413,22 @@ async function verPack(packId) {
       el('h2', { class: 'sin-margen mono' }, pack.code),
       el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto),
     ),
-    el('p', { class: 'tenue sin-margen' }, `${datos.owner.fullName} · ${datos.owner.email}`),
+    el(
+      'p',
+      { class: 'tenue sin-margen' },
+      el(
+        'button',
+        {
+          class: 'boton boton--chico boton--fantasma',
+          type: 'button',
+          onClick: () => {
+            $('#dialogo-detalle').close();
+            verUsuario(datos.owner.id);
+          },
+        },
+        `Ver ficha de ${datos.owner.fullName}`,
+      ),
+    ),
     el(
       'div',
       { class: 'rejilla rejilla--3 mt' },
@@ -857,7 +778,7 @@ async function cargarAuditoria() {
                   ),
                   el(
                     'td',
-                    { class: 'pequeno tenue-2 mono' },
+                    { class: 'pequeno tenue-2 mono celda-json' },
                     registro.metadata ? JSON.stringify(registro.metadata).slice(0, 160) : '',
                   ),
                 ),
@@ -1124,9 +1045,12 @@ function montarDialogoPack() {
     brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Se encontraron diferencias.', integridad.ok ? 'ok' : 'error');
   });
 
-  abrirPanel('resumen');
+  window.addEventListener('hashchange', aplicarRuta);
+  aplicarRuta();
 
   const refrescarPanelActual = temporizador(() => {
+    // Con la ficha abierta manda ella: se refresca sola con sus propios eventos.
+    if (rutaActual().vista === 'ficha') return;
     CARGADORES[estado.panel]?.().catch(() => {});
   }, 600);
 

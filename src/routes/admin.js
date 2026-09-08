@@ -24,6 +24,7 @@ import * as packsService from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
 import * as sessions from '../services/sessions.js';
 import * as audit from '../services/audit.js';
+import * as expediente from '../services/expediente.js';
 import { hub } from '../lib/events.js';
 
 export const router = express.Router();
@@ -178,18 +179,42 @@ router.post(
   }),
 );
 
+/** Expediente completo de un cliente: la ficha del panel. */
 router.get(
   '/users/:id',
   asyncHandler(async (req, res) => {
-    const user = users.findById(req.params.id);
-    if (!user) throw notFound('Usuario no encontrado.');
-    res.json({
-      user: users.toPublicUser(user),
-      summary: packsService.summaryForUser(user.id),
-      packs: packsService.listPacksForUser(user.id),
-      redemptions: redemptions.listRedemptions({ userId: user.id, limit: 25 }).items,
-      sessions: sessions.listForUser(user.id).slice(0, 10),
-    });
+    res.set('Cache-Control', 'no-store');
+    res.json(expediente.expediente(req.params.id));
+  }),
+);
+
+/** Línea de tiempo del cliente, paginada para "ver más". */
+router.get(
+  '/users/:id/timeline',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    if (!users.findById(req.params.id)) throw notFound('Usuario no encontrado.');
+    res.json(expediente.lineaDeTiempo(req.params.id, { limit, offset }));
+  }),
+);
+
+/** Bitácora de auditoría acotada a este cliente. */
+router.get(
+  '/users/:id/audit',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    if (!users.findById(req.params.id)) throw notFound('Usuario no encontrado.');
+    res.json(expediente.auditoria(req.params.id, { limit, offset }));
+  }),
+);
+
+/** Consumos del cliente, paginados. */
+router.get(
+  '/users/:id/redemptions',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    if (!users.findById(req.params.id)) throw notFound('Usuario no encontrado.');
+    res.json(redemptions.listRedemptions({ userId: req.params.id, limit, offset }));
   }),
 );
 

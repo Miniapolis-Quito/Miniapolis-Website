@@ -32,6 +32,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   entrada al cliente.
 - Imprime pases físicos con QR fijo, para los packs donde lo habilite.
 - Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
+- **Ficha de cliente**: todo lo que se sabe de una persona en una pantalla —
+  saldo, hábitos, packs, consumos, actividad y dispositivos— con las acciones a
+  mano. Ver más abajo.
 - Bitácora de auditoría de todo lo que ocurre y exportación a CSV.
 - Verificación de integridad contable con un clic.
 
@@ -258,6 +261,32 @@ También busca por correo, por teléfono y por código de pack.
 
 ---
 
+## La ficha del cliente
+
+En **Clientes y personal**, *Abrir ficha* lleva a la pantalla donde vive todo lo
+de esa persona. Tiene dirección propia (`/admin#cliente/<id>`), así que el
+enlace se puede compartir, recargar y navegar con el botón de atrás.
+
+Arriba: quién es, cómo contactarlo, desde cuándo es cliente, su saldo, lo que ha
+usado, lo que ha comprado, lo que ha gastado, y cada cuánto vuelve. Debajo, seis
+pestañas:
+
+| Pestaña | Qué hay |
+|---|---|
+| **Resumen** | Packs con entradas, visitas por semana, qué días suele venir y lo último que pasó |
+| **Packs** | Cada pack con su historial de movimientos, y las acciones: ajustar, suspender, anular, QR impreso, imprimir pase |
+| **Consumos** | Cuándo entró, con qué pack, por qué vía, quién se lo registró y en qué puesto — con la opción de anular |
+| **Actividad** | Un solo hilo cronológico con movimientos de entradas y eventos de la cuenta, más la bitácora técnica sin interpretar |
+| **Acceso** | Estado de la cuenta, dispositivos con sesión abierta, restablecer contraseña, desbloquear, cerrar sesiones |
+| **Datos** | Editar nombre, correo, teléfono, rol y estado, con la ficha técnica completa |
+
+La línea de tiempo distingue lo que hizo el cliente de lo que hizo el personal,
+y cada movimiento muestra el saldo con el que quedó el pack. Un ajuste sin
+motivo no se puede guardar: la ficha es también el expediente que se consulta
+cuando alguien reclama.
+
+---
+
 ## Copias de seguridad
 
 Todo vive en un único archivo SQLite (`data/tickets.db`). La forma correcta de
@@ -307,7 +336,7 @@ src/
   lib/                 QR, contraseñas, tokens, límites, eventos, texto, fechas
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events
-  services/            Reglas de negocio (packs, consumos, usuarios, auditoría)
+  services/            Reglas de negocio (packs, consumos, usuarios, expediente, auditoría)
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas
 scripts/               Utilidades de terminal

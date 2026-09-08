@@ -402,9 +402,6 @@ export function voidRedemption(redemptionId, { reason, actor, ip, userAgent }) {
 
     const pack = packsService.findById(redemption.pack_id, db);
     if (!pack) throw notFound('El pack asociado ya no existe.');
-    if (pack.remaining + 1 > pack.size) {
-      throw conflict('Devolver esta entrada superaría el tamaño del pack.', 'saldo_invalido');
-    }
 
     const now = new Date().toISOString();
     db.prepare('UPDATE redemptions SET status = ?, voided_by = ?, voided_at = ?, void_reason = ? WHERE id = ?').run(
@@ -417,8 +414,13 @@ export function voidRedemption(redemptionId, { reason, actor, ip, userAgent }) {
 
     const remainingAfter = pack.remaining + 1;
     const newStatus = pack.status === 'depleted' ? 'active' : pack.status;
-    db.prepare('UPDATE packs SET remaining = ?, status = ?, updated_at = ? WHERE id = ?').run(
+    // Si al pack se le acreditaron entradas hasta llenarlo, devolver una lo
+    // haría crecer. Se agranda igual que en un ajuste manual: negarse dejaría
+    // sin salida a una corrección legítima.
+    const newSize = Math.max(pack.size, remainingAfter);
+    db.prepare('UPDATE packs SET remaining = ?, size = ?, status = ?, updated_at = ? WHERE id = ?').run(
       remainingAfter,
+      newSize,
       newStatus,
       now,
       pack.id,

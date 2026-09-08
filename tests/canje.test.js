@@ -364,3 +364,28 @@ test('escaneos simultáneos por HTTP desde varios puestos no descuentan de más'
   const historial = await cMaster.get(`/api/admin/redemptions?packId=${pack.id}`);
   assert.equal(historial.datos.total, 4, 'no debe quedar ningún consumo huérfano');
 });
+
+test('se puede anular un consumo aunque el pack haya recibido entradas de cortesía', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const consumo = await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+  assert.equal(consumo.datos.remaining, 4);
+
+  // La cortesía llena el pack hasta arriba: quedan 5 de 5 otra vez.
+  await cMaster.post(`/api/admin/packs/${pack.id}/adjust`, { delta: 1, reason: 'Cortesía por lluvia' });
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+
+  // Anular el consumo anterior sigue siendo posible: el pack crece, como con
+  // cualquier acreditación. Negarse dejaría la corrección sin salida.
+  const anulacion = await cMaster.post(`/api/admin/redemptions/${consumo.datos.redemptionId}/void`, {
+    reason: 'Se escaneó a la persona equivocada',
+  });
+  assert.equal(anulacion.status, 200);
+  assert.equal(anulacion.datos.remaining, 6);
+
+  const final = packsService.findById(pack.id);
+  assert.equal(final.remaining, 6);
+  assert.equal(final.size, 6, 'el tamaño acompaña al saldo, como en un ajuste');
+  assert.ok(packsService.checkIntegrity().ok);
+});

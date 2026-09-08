@@ -222,17 +222,31 @@ export function summaryForUser(userId) {
       `SELECT
          IFNULL(SUM(CASE WHEN usable THEN remaining ELSE 0 END), 0) AS disponibles,
          IFNULL(SUM(CASE WHEN usable THEN 1 ELSE 0 END), 0)         AS packs_activos,
-         IFNULL(SUM(size - remaining), 0)                           AS usadas,
-         IFNULL(SUM(size), 0)                                       AS compradas,
          COUNT(*)                                                   AS packs_totales
        FROM (
-         SELECT size, remaining,
+         SELECT remaining,
                 (status = 'active' AND remaining > 0
                  AND (expires_at IS NULL OR expires_at > @ahora)) AS usable
            FROM packs WHERE user_id = @userId
        )`,
     )
     .get({ userId, ahora: new Date().toISOString() });
+
+  // "Usadas" son las veces que entró de verdad, no la diferencia entre tamaño y
+  // saldo: una entrada de cortesía agranda el pack y esa resta daría cero.
+  const usadas = db
+    .prepare("SELECT COUNT(*) AS n FROM redemptions WHERE user_id = ? AND status = 'confirmed'")
+    .get(userId).n;
+
+  // "Compradas" es lo que se le vendió: los asientos de emisión. Los ajustes de
+  // cortesía suman saldo, pero no son una compra.
+  const compradas = db
+    .prepare(
+      `SELECT IFNULL(SUM(m.delta), 0) AS n
+         FROM pack_movements m JOIN packs p ON p.id = m.pack_id
+        WHERE p.user_id = ? AND m.reason = 'issue'`,
+    )
+    .get(userId).n;
   const nextExpiry = db
     .prepare(
       `SELECT expires_at FROM packs
@@ -243,8 +257,8 @@ export function summaryForUser(userId) {
   return {
     availableTickets: row.disponibles,
     activePacks: row.packs_activos,
-    usedTickets: row.usadas,
-    purchasedTickets: row.compradas,
+    usedTickets: usadas,
+    purchasedTickets: compradas,
     totalPacks: row.packs_totales,
     nextExpiryAt: nextExpiry?.expires_at ?? null,
   };

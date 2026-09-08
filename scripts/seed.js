@@ -36,6 +36,8 @@ async function asegurarUsuario({ correo, nombre, telefono, rol }) {
   return users.createUser({ email: correo, password: CLAVE_DEMO, fullName: nombre, phone: telefono, role: rol });
 }
 
+const antedatarUsuario = db.prepare('UPDATE users SET created_at = ?, updated_at = ? WHERE id = ?');
+
 const master = await asegurarUsuario({
   correo: 'admin@racinghobbies.ec', nombre: 'Administración Racing Hobbies', rol: 'master',
 });
@@ -43,7 +45,20 @@ const operador = await asegurarUsuario({
   correo: 'operador@racinghobbies.ec', nombre: 'Operador de Pista', rol: 'staff',
 });
 
-const antedatar = db.prepare('UPDATE redemptions SET created_at = ? WHERE id = ?');
+const antedatarConsumo = db.prepare('UPDATE redemptions SET created_at = ? WHERE id = ?');
+// El asiento del libro mayor lleva la misma fecha que el consumo: en la
+// operación real se escriben juntos, y la ficha del cliente los muestra en el
+// mismo hilo.
+const antedatarMovimiento = db.prepare('UPDATE pack_movements SET created_at = ? WHERE redemption_id = ?');
+const antedatarPack = db.prepare('UPDATE packs SET created_at = ?, updated_at = ? WHERE id = ?');
+const antedatarEmision = db.prepare(
+  "UPDATE pack_movements SET created_at = ? WHERE pack_id = ? AND reason = 'issue'",
+);
+
+/** Un instante al azar dentro del día indicado, contando hacia atrás desde hoy. */
+function haceDias(dias) {
+  return new Date(Date.now() - dias * 86400000 - Math.random() * 8 * 3600000);
+}
 
 let packsCreados = 0;
 let consumosCreados = 0;
@@ -52,6 +67,11 @@ for (const definicion of CLIENTES) {
   const cliente = await asegurarUsuario({
     correo: definicion.correo, nombre: definicion.nombre, telefono: definicion.telefono, rol: 'customer',
   });
+
+  // El alta va antes que su primera compra, o la ficha diría que el cliente
+  // compró un pack antes de existir.
+  const alta = haceDias(20 + Math.floor(Math.random() * 40));
+  antedatarUsuario.run(alta.toISOString(), alta.toISOString(), cliente.id);
 
   for (const tamano of definicion.packs) {
     const pack = packsService.issuePack({
@@ -63,6 +83,13 @@ for (const definicion of CLIENTES) {
     });
     packsCreados += 1;
 
+    // La compra se sitúa en el pasado para que la ficha del cliente cuente una
+    // historia coherente: primero se vende el pack y después se usa.
+    const diaCompra = 8 + Math.floor(Math.random() * 12); // entre 8 y 19 días atrás
+    const fechaCompra = haceDias(diaCompra);
+    antedatarPack.run(fechaCompra.toISOString(), fechaCompra.toISOString(), pack.id);
+    antedatarEmision.run(fechaCompra.toISOString(), pack.id);
+
     // Consume algunas entradas para que el historial y los gráficos tengan datos.
     const aConsumir = Math.floor(Math.random() * Math.min(tamano - 1, 4));
     for (let i = 0; i < aConsumir; i += 1) {
@@ -73,13 +100,12 @@ for (const definicion of CLIENTES) {
       });
       consumosCreados += 1;
 
-      // Se antedata cada consumo nada más crearlo. Además de repartir la
-      // actividad por el calendario (para que el gráfico no sea una sola barra
-      // en el día de hoy), evita que la espera entre consumos del mismo pack
-      // bloquee al siguiente de este bucle.
-      const diasAtras = 1 + Math.floor(Math.random() * 13);
-      const fecha = new Date(Date.now() - diasAtras * 86400000 - Math.random() * 8 * 3600000);
-      antedatar.run(fecha.toISOString(), resultado.body.redemptionId);
+      // Cada visita cae después de la compra. Antedatarla en el momento, además
+      // de repartir la actividad por el calendario, evita que la espera entre
+      // consumos del mismo pack bloquee al siguiente de este bucle.
+      const fechaVisita = haceDias(Math.floor(Math.random() * (diaCompra - 1)));
+      antedatarConsumo.run(fechaVisita.toISOString(), resultado.body.redemptionId);
+      antedatarMovimiento.run(fechaVisita.toISOString(), resultado.body.redemptionId);
     }
   }
 }
