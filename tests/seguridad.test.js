@@ -233,9 +233,65 @@ test('los mensajes de validación llegan en español, también cuando falta el c
 
   // Ningún texto de la librería de validación debe colarse sin traducir.
   const enIngles = mensajes.filter((m) =>
-    /\b(Required|Invalid|Expected|String must|Number must|received)\b/.test(m),
+    /\b(Required|Invalid|Expected|String must|Number must|Too small|Too big|received)\b/.test(m),
   );
   assert.deepEqual(enIngles, [], `mensajes sin traducir: ${enIngles.join(' | ')}`);
+});
+
+test('cada clase de error de validación tiene su frase en español', async () => {
+  // Una por cada rama del traductor de mensajes: si la librería de validación
+  // cambia de versión y renombra sus códigos, esto lo dice en vez de dejar que
+  // el inglés aparezca en pantalla.
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+
+  const campo = (respuesta, nombre) => respuesta.datos.error.details.fields[nombre];
+
+  const tipoNumero = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 'cinco' });
+  assert.equal(campo(tipoNumero, 'size'), 'Debe ser un número.');
+
+  const tipoBooleano = await cMaster.post('/api/admin/packs', {
+    userId: cliente.id,
+    size: 5,
+    allowStaticQr: 'sí',
+  });
+  assert.equal(campo(tipoBooleano, 'allowStaticQr'), 'Debe ser sí o no.');
+
+  const obligatorio = await cCliente.post('/api/auth/change-password', {
+    currentPassword: '',
+    newPassword: 'Chasis-Aluminio-2026',
+  });
+  assert.equal(campo(obligatorio, 'currentPassword'), 'Este dato es obligatorio.');
+
+  const textoLargo = await cStaff.post('/api/scan/manual', {
+    code: 'RHE-ABCD-EFGH',
+    deviceLabel: 'P'.repeat(61),
+  });
+  assert.equal(campo(textoLargo, 'deviceLabel'), 'No puede superar los 60 caracteres.');
+
+  const numeroGrande = await cMaster.get('/api/admin/users?limit=500');
+  assert.equal(campo(numeroGrande, 'limit'), 'Debe ser 200 o menos.');
+
+  const numeroChico = await cMaster.get('/api/admin/users?limit=0');
+  assert.equal(campo(numeroChico, 'limit'), 'Debe ser 1 o más.');
+
+  const fecha = await cMaster.post('/api/admin/packs', {
+    userId: cliente.id,
+    size: 5,
+    expiresAt: 'el sábado',
+  });
+  assert.equal(campo(fecha, 'expiresAt'), 'La fecha no tiene un formato válido.');
+
+  const opcion = await cMaster.post('/api/admin/packs', {
+    userId: cliente.id,
+    size: 5,
+    paymentMethod: 'criptomonedas',
+  });
+  assert.match(campo(opcion, 'paymentMethod'), /^Valor no permitido\. Opciones: efectivo, /);
+
+  // Y los mensajes escritos a mano en cada esquema siguen mandando sobre los
+  // genéricos, que es lo que hace que digan algo útil.
+  const aMedida = await cMaster.post('/api/admin/packs', { userId: 'no-es-uuid', size: 5 });
+  assert.equal(campo(aMedida, 'userId'), 'Selecciona un cliente válido.');
 });
 
 test('la política de seguridad de contenido cubre las rutas de página', async () => {

@@ -40,7 +40,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 
 ## Puesta en marcha
 
-Requisitos: **Node.js 20.11 o superior**.
+Requisitos: **Node.js 22 o superior** (la versión con soporte a largo plazo).
 
 ```bash
 npm install
@@ -278,7 +278,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (129 pruebas)
+npm test        # suite completa (130 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara

@@ -103,6 +103,46 @@ a  { color: var(--acento-2); }
 .barra__marca span { font-size: 1.02rem; }
 .barra__nav { display: flex; gap: 6px; flex-wrap: wrap; }
 
+/* Escena original sin texto: aporta la energía de la pista sin competir con
+   los controles ni con la legibilidad de la información importante. */
+.presentacion-pista {
+  position: relative;
+  overflow: hidden;
+  margin-top: 18px;
+  border: 1px solid rgba(255, 145, 71, .42);
+  border-radius: var(--radio);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .35);
+}
+.presentacion-pista::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(10, 13, 18, .15), transparent 56%);
+  pointer-events: none;
+}
+.presentacion-pista img { display: block; width: 100%; height: auto; }
+
+.encabezado-pista {
+  min-height: 112px;
+  padding: clamp(17px, 3vw, 25px);
+  border: 1px solid rgba(255, 145, 71, .30);
+  border-radius: var(--radio);
+  background-image:
+    linear-gradient(90deg, rgba(10, 13, 18, .96) 0%, rgba(10, 13, 18, .84) 46%, rgba(10, 13, 18, .46) 100%),
+    url('/images/racing-hobbies-pista-rc.webp');
+  background-position: center, right center;
+  background-size: cover;
+  box-shadow: var(--sombra);
+}
+.encabezado-pista--simple { display: flex; align-items: center; }
+/* Hay una foto detrás: el texto lleva su propia sombra para no depender de qué
+   toque en esa zona de la imagen. En la pista se lee a pleno sol. */
+.encabezado-pista h1,
+.encabezado-pista h2,
+.encabezado-pista p,
+.encabezado-pista label,
+.encabezado-pista span { text-shadow: 0 1px 4px rgba(4, 6, 10, .9); }
+
 .logo {
   width: 34px; height: 34px; flex: none;
   display: grid; place-items: center;
@@ -478,6 +518,12 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   .barra__interior { min-height: 56px; }
   .barra__marca span:last-child { font-size: .95rem; }
   .tarjeta { padding: 15px; }
+  .encabezado-pista {
+    min-height: 102px;
+    background-image:
+      linear-gradient(90deg, rgba(10, 13, 18, .96) 0%, rgba(10, 13, 18, .80) 67%, rgba(10, 13, 18, .52) 100%),
+      url('/images/racing-hobbies-pista-rc.webp');
+  }
 }
 
 /* En pantallas estrechas el estado de conexión se reduce al punto de color y
@@ -514,6 +560,15 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   color: #000;
   text-align: center;
   font-family: var(--fuente);
+}
+.pase__imagen {
+  display: block;
+  width: 100%;
+  height: 19mm;
+  margin: -3mm 0 4mm;
+  border-radius: 2.5mm;
+  object-fit: cover;
+  object-position: right center;
 }
 .pase__marca   { font-weight: 800; letter-spacing: -0.02em; font-size: 12pt; }
 .pase__titulo  { font-size: 10pt; margin-bottom: 4mm; }
