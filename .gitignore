@@ -18,3 +18,7 @@ data/
 npm-debug.log*
 .DS_Store
 coverage/
+
+# Artefactos de comprobación de Apple Wallet. Incluyen claves de firma locales
+# y nunca forman parte de la aplicación ni de una entrega.
+.tmp-pass/
