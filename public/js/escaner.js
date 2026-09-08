@@ -101,12 +101,21 @@ function puesto() {
   return $('#dispositivo').value.trim() || undefined;
 }
 
-async function registrarConsumo({ payload, code, clave }) {
+/**
+ * Registra un consumo. `clave` y `deviceLabel` solo llegan en un reintento: un
+ * reintento tiene que repetir la MISMA petición, porque el servidor identifica
+ * el intento por su clave de idempotencia junto con los datos enviados. Si el
+ * operador cambiara el nombre del puesto durante el corte de red, reconstruir
+ * el cuerpo con el valor nuevo haría que el servidor viera otra operación con
+ * una clave ya usada, y lo rechazaría en vez de confirmar lo que ya pasó.
+ */
+async function registrarConsumo({ payload, code, clave, deviceLabel }) {
   estado.procesando = true;
   const idempotencyKey = clave || claveIdempotencia('scan');
+  const puestoUsado = deviceLabel ?? puesto();
   const cuerpo = payload
-    ? { payload, deviceLabel: puesto() }
-    : { code, deviceLabel: puesto() };
+    ? { payload, deviceLabel: puestoUsado }
+    : { code, deviceLabel: puestoUsado };
 
   try {
     const respuesta = await api.post(payload ? '/api/scan' : '/api/scan/manual', cuerpo, { idempotencyKey });
@@ -123,7 +132,9 @@ async function registrarConsumo({ payload, code, clave }) {
     if (respuesta.remaining === 0) {
       brindis(`${respuesta.pack.code} quedó sin entradas. Ofrécele un pack nuevo.`, 'error', 7000);
     } else if (respuesta.remaining <= 2) {
-      brindis(`A ${respuesta.customer.fullName} le quedan ${respuesta.remaining} entradas.`, 'error', 6000);
+      // Aviso, no error: al cliente le queda saldo; es el momento de ofrecerle
+      // otro pack, no de alarmar a quien está en la puerta.
+      brindis(`A ${respuesta.customer.fullName} le quedan ${respuesta.remaining} entradas.`, 'alerta', 6000);
     }
     return respuesta;
   } catch (error) {
@@ -133,7 +144,7 @@ async function registrarConsumo({ payload, code, clave }) {
     if (error instanceof ErrorRed) {
       // La entrada puede haberse descontado o no: se guarda el intento con su
       // clave para poder reintentar sin riesgo de descontar dos veces.
-      estado.pendiente = { payload, code, clave: idempotencyKey };
+      estado.pendiente = { payload, code, clave: idempotencyKey, deviceLabel: puestoUsado };
       mostrarResultado({
         tipo: 'alerta',
         icono: '📶',
@@ -360,14 +371,31 @@ function montarManual() {
   const formulario = $('#form-manual');
   const entrada = $('#codigo-manual');
 
-  // Da formato al código mientras se escribe: RHE-XXXX-XXXX.
+  /**
+   * Da formato al código mientras se escribe: RHE-XXXX-XXXX.
+   *
+   * El prefijo no se añade solo: si se antepusiera al primer carácter, quien
+   * teclee el código completo ("RHE-...") acabaría escribiendo su prefijo
+   * dentro del cuerpo. Se agrupa lo que hay, con prefijo o sin él —el servidor
+   * acepta las dos formas— y así lo que se ve es siempre lo que se tecleó.
+   */
+  function formatearCodigo(valor) {
+    const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const conPrefijo = limpio.startsWith('RHE');
+    const cuerpo = (conPrefijo ? limpio.slice(3) : limpio).slice(0, 8);
+    let formateado = conPrefijo ? 'RHE' : '';
+    if (cuerpo.length) formateado += (conPrefijo ? '-' : '') + cuerpo.slice(0, 4);
+    if (cuerpo.length > 4) formateado += '-' + cuerpo.slice(4);
+    return formateado;
+  }
+
   entrada.addEventListener('input', () => {
-    const limpio = entrada.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const cuerpo = limpio.startsWith('RHE') ? limpio.slice(3) : limpio;
-    let formateado = 'RHE';
-    if (cuerpo.length) formateado += '-' + cuerpo.slice(0, 4);
-    if (cuerpo.length > 4) formateado += '-' + cuerpo.slice(4, 8);
-    entrada.value = cuerpo.length ? formateado : limpio;
+    // Reescribir el valor lleva el cursor al final, así que solo se da formato
+    // cuando ya se está escribiendo ahí; corrigiendo en medio, no se estorba.
+    const alFinal = entrada.selectionStart === entrada.value.length;
+    const formateado = formatearCodigo(entrada.value);
+    if (!alFinal || formateado === entrada.value) return;
+    entrada.value = formateado;
   });
 
   $('#btn-consultar').addEventListener('click', async () => {
@@ -436,11 +464,23 @@ function montarManual() {
   $('#subtitulo').textContent = `Operador: ${getUsuario().fullName}`;
 
   // El nombre del puesto se recuerda en este dispositivo: no es información
-  // sensible y ahorra escribirlo en cada turno.
-  const puestoGuardado = localStorage.getItem(CLAVE_DISPOSITIVO);
-  if (puestoGuardado) $('#dispositivo').value = puestoGuardado;
+  // sensible y ahorra escribirlo en cada turno. Si el navegador tiene el
+  // almacenamiento bloqueado, acceder a él lanza: recordar el puesto es una
+  // comodidad y no puede llevarse por delante el escáner entero.
+  const recordado = (() => {
+    try {
+      return localStorage.getItem(CLAVE_DISPOSITIVO);
+    } catch {
+      return null;
+    }
+  })();
+  if (recordado) $('#dispositivo').value = recordado;
   $('#dispositivo').addEventListener('change', (evento) => {
-    localStorage.setItem(CLAVE_DISPOSITIVO, evento.target.value.trim());
+    try {
+      localStorage.setItem(CLAVE_DISPOSITIVO, evento.target.value.trim());
+    } catch {
+      /* sin almacenamiento: el puesto solo dura lo que dure la pestaña */
+    }
   });
 
   $('#btn-camara').addEventListener('click', () => (estado.camaraActiva ? apagarCamara() : encenderCamara()));

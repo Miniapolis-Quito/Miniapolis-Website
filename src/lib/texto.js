@@ -23,11 +23,19 @@ export function textoBusquedaUsuario({ fullName, email, phone }) {
   return plegar([fullName, email, phone].filter(Boolean).join(' '));
 }
 
+/** Un término formado solo por dígitos y separadores de teléfono. */
+const SOLO_TELEFONO = /^[+()\s.\d-]+$/;
+
 /**
  * Prepara un término para un LIKE, escapando los comodines de SQLite.
  * Sin esto, buscar "%" devolvería todas las filas.
+ *
+ * Los teléfonos se guardan sin separadores, pero en el mostrador se teclean
+ * como cada quien los tiene anotados ("099 111 2233", "+593-99-111-2233"), así
+ * que en un término que solo trae dígitos y separadores estos se descartan.
  */
 export function patronLike(termino) {
-  const plegado = plegar(termino).replace(/[\\%_]/g, (c) => `\\${c}`);
-  return `%${plegado}%`;
+  let plegado = plegar(termino);
+  if (SOLO_TELEFONO.test(plegado)) plegado = plegado.replace(/[()\s.-]/g, '');
+  return `%${plegado.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }

@@ -7,6 +7,7 @@
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { isIP } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -85,6 +86,89 @@ function list(name, fallback = []) {
     .filter(Boolean);
 }
 
+/**
+ * Direcciones de los proxies desde los que se acepta X-Forwarded-For. Confiar
+ * en cualquier proxy permitiría que alguien que alcance Node directamente
+ * eligiera su propia IP y esquivara los límites de intentos.
+ */
+function trustedProxyIps() {
+  if (!bool('TRUST_PROXY', false)) return [];
+
+  const entries = list('TRUSTED_PROXY_IPS');
+  if (entries.length === 0) {
+    if (isProduction) {
+      throw new Error(
+        'Configuración inválida: TRUST_PROXY=true exige TRUSTED_PROXY_IPS en producción. ' +
+          'Indica la IP o red CIDR del proxy inverso (por ejemplo, "127.0.0.1,::1").',
+      );
+    }
+    // Para desarrollo, el único proxy razonable sin configuración explícita es
+    // uno local (Caddy/nginx en la misma máquina). Nunca se confía en Internet.
+    return ['127.0.0.1', '::1'];
+  }
+
+  for (const entry of entries) {
+    const [address, prefix, ...extra] = entry.split('/');
+    const family = isIP(address);
+    const maxPrefix = family === 4 ? 32 : family === 6 ? 128 : -1;
+    if (
+      extra.length > 0 ||
+      maxPrefix < 0 ||
+      (prefix !== undefined && (!/^\d+$/.test(prefix) || Number(prefix) > maxPrefix))
+    ) {
+      throw new Error(
+        `Configuración inválida: TRUSTED_PROXY_IPS contiene "${entry}". Usa una IP o una red CIDR válida.`,
+      );
+    }
+  }
+  return entries;
+}
+
+/**
+ * Catálogo de packs a la venta.
+ *
+ * Se admite una lista completa en `PACK_CATALOG` ("5:2500,10:4500,20:8000":
+ * entradas por pack y precio en centavos) para que una pista pueda cambiar sus
+ * packs sin tocar el código. Si no está, se usan las dos variables de siempre,
+ * que es lo que ya tienen las instalaciones en marcha.
+ */
+function packCatalog() {
+  const raw = (process.env.PACK_CATALOG || '').trim();
+  if (!raw) {
+    return [
+      { size: 5, priceCents: num('PACK_5_PRICE_CENTS', 2500, { min: 0 }), label: 'Pack 5 entradas' },
+      { size: 10, priceCents: num('PACK_10_PRICE_CENTS', 4500, { min: 0 }), label: 'Pack 10 entradas' },
+    ];
+  }
+
+  const invalido = (detalle) =>
+    new Error(`Configuración inválida: PACK_CATALOG ${detalle}. Formato esperado: "5:2500,10:4500".`);
+
+  const vistos = new Set();
+  const entradas = raw
+    .split(',')
+    .map((trozo) => trozo.trim())
+    .filter(Boolean)
+    .map((trozo) => {
+      const partes = trozo.split(':');
+      if (partes.length !== 2) throw invalido(`no entiende "${trozo}"`);
+      const size = Number(partes[0].trim());
+      const priceCents = Number(partes[1].trim());
+      if (!Number.isInteger(size) || size < 1 || size > 500) {
+        throw invalido(`tiene un tamaño de pack fuera de rango en "${trozo}" (1 a 500)`);
+      }
+      if (!Number.isInteger(priceCents) || priceCents < 0) {
+        throw invalido(`tiene un precio que no es un entero de centavos en "${trozo}"`);
+      }
+      if (vistos.has(size)) throw invalido(`repite el pack de ${size} entradas`);
+      vistos.add(size);
+      return { size, priceCents, label: `Pack ${size} entradas` };
+    });
+
+  if (entradas.length === 0) throw invalido('está vacío');
+  return entradas.sort((a, b) => a.size - b.size);
+}
+
 export const config = Object.freeze({
   env: NODE_ENV,
   isProduction,
@@ -138,8 +222,8 @@ export const config = Object.freeze({
     corsOrigins: list('CORS_ORIGINS', []),
     /** Marca Secure en las cookies. Por defecto activa en producción. */
     cookieSecure: bool('COOKIE_SECURE', isProduction),
-    /** Confiar en X-Forwarded-For (activar solo detrás de un proxy conocido). */
-    trustProxy: bool('TRUST_PROXY', false),
+    /** Proxies concretos autorizados a aportar X-Forwarded-For. */
+    trustedProxyIps: Object.freeze(trustedProxyIps()),
     /** Tamaño máximo del cuerpo JSON aceptado. */
     maxBodyBytes: num('MAX_BODY_BYTES', 64 * 1024, { min: 1024 }),
     /** Intentos fallidos de login antes de bloquear temporalmente la cuenta. */
@@ -159,10 +243,7 @@ export const config = Object.freeze({
   },
 
   /** Catálogo de packs vendibles. */
-  packCatalog: [
-    { size: 5, priceCents: num('PACK_5_PRICE_CENTS', 2500, { min: 0 }), label: 'Pack 5 entradas' },
-    { size: 10, priceCents: num('PACK_10_PRICE_CENTS', 4500, { min: 0 }), label: 'Pack 10 entradas' },
-  ],
+  packCatalog: Object.freeze(packCatalog().map((entrada) => Object.freeze(entrada))),
 
   logLevel: process.env.LOG_LEVEL || (isTest ? 'silent' : 'info'),
 });

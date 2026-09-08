@@ -23,9 +23,12 @@ export class ConexionEnVivo {
     this.detenida = false;
     this.estado = 'inactivo';
 
+    this.enEspera = false;
+
     this._alVolverAlFrente = () => {
       // Al volver a la pestaña o recuperar la red, reconectar de inmediato.
       if (!this.detenida && this.estado !== 'conectado' && document.visibilityState === 'visible') {
+        this.enEspera = false;
         this.intentos = 0;
         this._reconectarYa();
       }
@@ -62,8 +65,21 @@ export class ConexionEnVivo {
     this.temporizador = setTimeout(() => this._conectar(), 60);
   }
 
+  /**
+   * Deja de reintentar sin desmontar nada. Se usa cuando el servidor cierra
+   * este canal porque la persona tiene demasiadas pestañas abiertas: esta se
+   * queda en silencio y vuelve sola en cuanto alguien la mire.
+   */
+  pausar() {
+    clearTimeout(this.temporizador);
+    this.controlador?.abort();
+    this.controlador = null;
+    this.enEspera = true;
+    this._cambiarEstado('en-espera');
+  }
+
   _programarReconexion() {
-    if (this.detenida) return;
+    if (this.detenida || this.enEspera) return;
     this.intentos += 1;
     const base = Math.min(ESPERA_BASE * 2 ** (this.intentos - 1), ESPERA_MAXIMA);
     // Aleatoriedad para que muchos clientes no reconecten todos a la vez.
@@ -75,6 +91,7 @@ export class ConexionEnVivo {
 
   async _conectar() {
     if (this.detenida) return;
+    this.enEspera = false;
     this.controlador?.abort();
     const controlador = new AbortController();
     this.controlador = controlador;
@@ -170,6 +187,13 @@ export class ConexionEnVivo {
       return;
     }
 
+    // Demasiadas pestañas abiertas: el servidor se queda con la última. Esta
+    // no insiste, pero sigue atenta a que alguien vuelva a mirarla.
+    if (tipo === 'canal.reemplazado') {
+      this.pausar();
+      return;
+    }
+
     let contenido;
     try {
       contenido = JSON.parse(datos);
@@ -192,6 +216,7 @@ export function textoEstado(estado) {
       conectando: 'Conectando…',
       reconectando: 'Reconectando…',
       desconectado: 'Sin conexión',
+      'en-espera': 'En pausa (otra pestaña)',
       inactivo: 'Desconectado',
     }[estado] || estado
   );

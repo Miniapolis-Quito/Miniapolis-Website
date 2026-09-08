@@ -26,7 +26,9 @@ export function createApp() {
   // El parser simple evita por completo el análisis de objetos anidados en la
   // query string, que es donde suelen aparecer sorpresas.
   app.set('query parser', 'simple');
-  if (config.security.trustProxy) app.set('trust proxy', true);
+  if (config.security.trustedProxyIps.length > 0) {
+    app.set('trust proxy', config.security.trustedProxyIps);
+  }
 
   app.use(clientIp);
   app.use(securityHeaders);

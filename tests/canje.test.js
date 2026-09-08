@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios } from './helpers.js';
 import { getDb } from '../src/db/index.js';
 import { buildQrPayload } from '../src/lib/qr.js';
+import { normalizePackCode } from '../src/lib/ids.js';
 import * as packsService from '../src/services/packs.js';
 import * as redemptions from '../src/services/redemptions.js';
 
@@ -137,6 +138,91 @@ test('reusar una clave de idempotencia con otros datos es un conflicto', async (
   assert.equal(packsService.findById(packB.id).remaining, 5);
 });
 
+test('dos operadores pueden usar la misma clave sin interferirse', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const packA = await emitirPack(cMaster, cliente.id, 5);
+  const packB = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'clave-local-al-operador';
+
+  const primero = await cStaff.post(
+    '/api/scan',
+    { payload: buildQrPayload(packA) },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  const segundo = await cMaster.post(
+    '/api/scan',
+    { payload: buildQrPayload(packB) },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+
+  assert.equal(primero.status, 200);
+  assert.equal(segundo.status, 200);
+  assert.equal(packsService.findById(packA.id).remaining, 4);
+  assert.equal(packsService.findById(packB.id).remaining, 4);
+});
+
+test('no se aceptan claves de idempotencia contradictorias', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const r = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code, idempotencyKey: 'clave-en-cuerpo-0001' },
+    { cabeceras: { 'Idempotency-Key': 'clave-en-cabecera-01' } },
+  );
+
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'idempotencia_invalida');
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+});
+
+test('un reintento tiene que repetir la misma petición, puesto incluido', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'reintento-tras-corte-01';
+  const cuerpo = { code: pack.code, deviceLabel: 'Puerta 1' };
+
+  const primero = await cStaff.post('/api/scan/manual', cuerpo, { cabeceras: { 'Idempotency-Key': clave } });
+  assert.equal(primero.status, 200);
+  assert.equal(primero.datos.remaining, 4);
+
+  // Repetir el intento tal cual devuelve la misma respuesta sin descontar más:
+  // es lo que hace el botón "Reintentar" del escáner tras un corte de red.
+  const reintento = await cStaff.post('/api/scan/manual', cuerpo, { cabeceras: { 'Idempotency-Key': clave } });
+  assert.equal(reintento.status, 200);
+  assert.equal(reintento.datos.remaining, 4);
+  assert.equal(reintento.headers.get('idempotent-replay'), 'true');
+
+  // Cambiar el puesto y reutilizar la clave ya no es el mismo intento, y el
+  // servidor lo dice en vez de dejarlo pasar: por eso el escáner guarda el
+  // puesto junto con la clave y reintenta con él.
+  const otroPuesto = await cStaff.post(
+    '/api/scan/manual',
+    { code: pack.code, deviceLabel: 'Mostrador' },
+    { cabeceras: { 'Idempotency-Key': clave } },
+  );
+  assert.equal(otroPuesto.status, 409);
+  assert.equal(otroPuesto.datos.error.code, 'idempotencia_conflicto');
+  assert.equal(packsService.findById(pack.id).remaining, 4);
+});
+
+test('un consumo sin operador también respeta su clave de idempotencia', async () => {
+  // Los consumos que no vienen de una persona —una carga de datos de ejemplo,
+  // una tarea interna— no tienen operador. La clave tiene que guardarse y
+  // encontrarse igual, sin dejar la fila a medias.
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const clave = 'tarea-interna-0001';
+
+  const primero = redemptions.redeemByCode({ code: pack.code, scanner: null, idempotencyKey: clave });
+  assert.equal(primero.body.remaining, 4);
+
+  const repetido = redemptions.redeemByCode({ code: pack.code, scanner: null, idempotencyKey: clave });
+  assert.equal(repetido.idempotentReplay, true, 'el segundo intento debe repetir la respuesta');
+  assert.equal(repetido.body.remaining, 4);
+  assert.equal(packsService.findById(pack.id).remaining, 4, 'y no descontar de nuevo');
+});
+
 test('un pack agotado no permite más consumos y queda marcado como tal', async () => {
   const { cMaster, cStaff, cliente } = await sembrarUsuarios();
   const pack = await emitirPack(cMaster, cliente.id, 2);
@@ -185,6 +271,30 @@ test('el consumo manual por código funciona y tolera erratas al teclear', async
   assert.equal(r.datos.remaining, 4);
 });
 
+test('el código se normaliza aunque el cuerpo empiece por las letras del prefijo', () => {
+  // El alfabeto de los códigos incluye R, H y E, así que un cuerpo puede
+  // empezar por "RHE". Recortar el prefijo a ciegas lo dejaba inservible.
+  assert.equal(normalizePackCode('RHEABCDE'), 'RHE-RHEA-BCDE');
+  assert.equal(normalizePackCode('RHE-RHEA-BCDE'), 'RHE-RHEA-BCDE');
+  assert.equal(normalizePackCode('RHERHEABCDE'), 'RHE-RHEA-BCDE');
+  // Separadores de cualquier tipo, y confusiones típicas al teclear.
+  assert.equal(normalizePackCode('rhe.abcd/efgh'), 'RHE-ABCD-EFGH');
+  assert.equal(normalizePackCode('RHE-0OIL-UVWX'), 'RHE-QQ77-VVWX');
+  // Lo que no puede ser un código sigue sin serlo.
+  assert.equal(normalizePackCode('ABC'), '');
+  assert.equal(normalizePackCode(null), '');
+});
+
+test('un código dictado sin el prefijo se consume igual', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const cuerpo = pack.code.slice(4); // "XXXX-XXXX", sin "RHE-"
+
+  const r = await cStaff.post('/api/scan/manual', { code: cuerpo });
+  assert.equal(r.status, 200, JSON.stringify(r.datos));
+  assert.equal(r.datos.remaining, 4);
+});
+
 test('consultar un pack no descuenta entradas', async () => {
   const { cMaster, cStaff, cliente } = await sembrarUsuarios();
   const pack = await emitirPack(cMaster, cliente.id, 5);
@@ -224,6 +334,46 @@ test('varios escaneos simultáneos del mismo pack nunca dejan el saldo en negati
   assert.equal(final.remaining, 0);
   assert.equal(final.status, 'depleted');
   assert.ok(packsService.checkIntegrity().ok);
+});
+
+test('suspender a un cliente también inutiliza sus entradas', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5, { allowStaticQr: true });
+
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'suspended' });
+
+  // Al suspender, el panel promete que esa persona no podrá entrar ni usar sus
+  // entradas. Entrar ya estaba cubierto; usarlas depende de estos tres caminos,
+  // y dos de ellos no necesitan que el cliente inicie sesión.
+  for (const [nombre, peticion] of [
+    ['código manual', () => cStaff.post('/api/scan/manual', { code: pack.code })],
+    ['QR impreso', () => cStaff.post('/api/scan', { payload: buildQrPayload(pack, { static: true }) })],
+    ['QR de la app', () => cStaff.post('/api/scan', { payload: buildQrPayload(pack) })],
+  ]) {
+    const r = await peticion();
+    assert.equal(r.status, 409, `${nombre} debería rechazarse`);
+    assert.equal(r.datos.error.code, 'cliente_suspendido', nombre);
+    assert.match(r.datos.error.message, /suspendida/i);
+  }
+
+  // Y el personal lo ve antes de intentarlo, no después.
+  const consulta = await cStaff.get(`/api/scan/lookup/${pack.code}`);
+  assert.equal(consulta.datos.usable, false);
+  assert.equal(consulta.datos.reason, 'cliente_suspendido');
+
+  const verificacion = await cStaff.post('/api/scan/verify', { payload: buildQrPayload(pack) });
+  assert.equal(verificacion.datos.valid, false);
+  assert.equal(verificacion.datos.signatureOk, true, 'el código es auténtico; lo que falla es la cuenta');
+  assert.equal(verificacion.datos.reason, 'cliente_suspendido');
+
+  // El saldo sigue intacto: suspender no gasta ni devuelve nada.
+  assert.equal(packsService.findById(pack.id).remaining, 5);
+
+  // Al reactivar la cuenta, las entradas vuelven a servir.
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'active' });
+  const tras = await cStaff.post('/api/scan/manual', { code: pack.code });
+  assert.equal(tras.status, 200, JSON.stringify(tras.datos));
+  assert.equal(tras.datos.remaining, 4);
 });
 
 test('el máster puede anular un consumo y la entrada vuelve al cliente', async () => {

@@ -13,11 +13,13 @@
   <header class="barra" id="cabecera"></header>
 
   <main class="contenedor">
-    <h1 id="titulo-admin">Administración</h1>
-    <div id="aviso" class="aviso" role="alert" hidden></div>
+    <div class="encabezado-pista encabezado-pista--simple mb-2" id="encabezado-admin">
+      <h1 class="sin-margen">Administración</h1>
+    </div>
 
     <!-- Ficha de un cliente. Ocupa toda la vista y oculta las pestañas. -->
     <section id="ficha-cliente" hidden></section>
+    <div id="aviso" class="aviso" role="alert" hidden></div>
 
     <div class="pestanas" id="pestanas-admin" role="tablist" aria-label="Secciones de administración">
       <button class="pestana" role="tab" id="pestana-resumen" aria-controls="panel-resumen" data-panel="resumen"  aria-selected="true"  type="button">Resumen</button>
@@ -58,12 +60,12 @@
           <button class="boton boton--fantasma boton--chico" id="btn-verificar" type="button">Verificar ahora</button>
         </div>
         <div id="integridad"></div>
-        <!-- Botones, no enlaces: la exportación exige el token de acceso, que
-             viaja en una cabecera y una navegación normal no puede enviar. -->
+        <!-- Botones, no enlaces: el reporte va por la API autenticada y un enlace
+             normal lo pediría sin la cabecera de sesión (ver admin.js). -->
         <div class="fila mt">
-          <button class="boton boton--fantasma boton--chico" type="button" data-exportar="packs">Exportar packs</button>
-          <button class="boton boton--fantasma boton--chico" type="button" data-exportar="consumos">Exportar consumos</button>
-          <button class="boton boton--fantasma boton--chico" type="button" data-exportar="clientes">Exportar clientes</button>
+          <button class="boton boton--fantasma boton--chico" id="exp-packs" type="button" data-exportar="packs">Exportar packs</button>
+          <button class="boton boton--fantasma boton--chico" id="exp-consumos" type="button" data-exportar="consumos">Exportar consumos</button>
+          <button class="boton boton--fantasma boton--chico" id="exp-clientes" type="button" data-exportar="clientes">Exportar clientes</button>
         </div>
       </div>
     </section>

@@ -18,8 +18,12 @@ import * as audit from './audit.js';
 const ACTIVE_STATUSES = new Set(['active']);
 
 /** Proyección del pack para el cliente. Nunca expone `secret`. */
-export function toPublicPack(row, { includeQr = false } = {}) {
+export function toPublicPack(row, { includeQr = false, owner = null } = {}) {
   if (!row) return null;
+  // Las consultas administrativas traen el estado del dueño en la propia fila;
+  // quien llama también puede pasarlo explícitamente. Así el indicador
+  // "usable" nunca contradice al escáner cuando la cuenta está suspendida.
+  const packOwner = owner ?? (row.owner_status !== undefined ? { status: row.owner_status } : null);
   const pack = {
     id: row.id,
     code: row.code,
@@ -37,7 +41,7 @@ export function toPublicPack(row, { includeQr = false } = {}) {
     paymentReference: row.payment_reference,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    usable: isUsable(row).ok,
+    usable: isUsable(row, { owner: packOwner }).ok,
   };
   if (row.owner_name !== undefined) pack.ownerName = row.owner_name;
   if (row.owner_email !== undefined) pack.ownerEmail = row.owner_email;
@@ -55,17 +59,17 @@ export function toPublicPack(row, { includeQr = false } = {}) {
 /**
  * ¿Se puede consumir una entrada de este pack ahora mismo?
  *
- * `ownerStatus` es opcional porque no todas las pantallas conocen el estado de
- * la cuenta dueña; cuando se pasa (el consumo real siempre lo pasa), una cuenta
- * suspendida bloquea el pack: suspender a alguien promete justamente eso.
+ * `owner` es opcional porque no todas las vistas lo tienen a mano, pero cuando
+ * se pasa manda: al suspender una cuenta el panel promete que esa persona «no
+ * podrá entrar ni usar sus entradas», y eso incluye el pase impreso y el
+ * ingreso manual por código, que no dependen de que ella inicie sesión.
  */
-export function isUsable(pack, { now = Date.now(), ownerStatus = null } = {}) {
+export function isUsable(pack, { now = Date.now(), owner = null } = {}) {
   if (!pack) return { ok: false, reason: 'no_encontrado', message: 'El pack no existe.' };
-  if (ownerStatus && ownerStatus !== 'active') {
+  if (owner && owner.status !== 'active') {
     return {
       ok: false,
       reason: 'cliente_suspendido',
-      code: 'cliente_suspendido',
       message: 'La cuenta de este cliente está suspendida. Consulta en recepción.',
     };
   }
@@ -82,12 +86,6 @@ export function isUsable(pack, { now = Date.now(), ownerStatus = null } = {}) {
 
 export function findById(id, db = getDb()) {
   return db.prepare('SELECT * FROM packs WHERE id = ?').get(id) ?? null;
-}
-
-/** Estado de la cuenta dueña de un pack ('active', 'suspended' o null si no está). */
-export function ownerStatus(pack, db = getDb()) {
-  if (!pack) return null;
-  return db.prepare('SELECT status FROM users WHERE id = ?').get(pack.user_id)?.status ?? null;
 }
 
 export function findByCode(code, db = getDb()) {
@@ -195,7 +193,7 @@ export function issuePack({
 }
 
 /** Packs de un cliente, ordenados: primero los usables y los que vencen antes. */
-export function listPacksForUser(userId, { includeQr = false, includeInactive = true } = {}) {
+export function listPacksForUser(userId, { includeQr = false, includeInactive = true, owner = null } = {}) {
   const db = getDb();
   expireDuePacks(db);
   const rows = db
@@ -208,7 +206,10 @@ export function listPacksForUser(userId, { includeQr = false, includeInactive = 
                  created_at ASC`,
     )
     .all(userId);
-  return rows.map((r) => toPublicPack(r, { includeQr: includeQr && isUsable(r).ok }));
+  return rows.map((r) => {
+    const usable = isUsable(r, { owner }).ok;
+    return toPublicPack(r, { owner, includeQr: includeQr && usable });
+  });
 }
 
 /** Resumen de saldo de un cliente. */
@@ -303,6 +304,17 @@ export function updatePack(packId, changes, { actor, ip, userAgent } = {}) {
   if (changes.status !== undefined) {
     if (pack.status === 'cancelled' && changes.status !== 'cancelled') {
       throw conflict('Un pack anulado no se puede reactivar. Emite uno nuevo.', 'pack_anulado');
+    }
+    // Reactivar sin mover la fecha de vencimiento no serviría de nada: el
+    // barrido de vencidos volvería a marcarlo en la siguiente lectura y el
+    // panel diría "reactivado" sobre un pack que sigue sin funcionar.
+    const vencimiento = changes.expiresAt !== undefined ? changes.expiresAt : pack.expires_at;
+    if (changes.status === 'active' && vencimiento && Date.parse(vencimiento) <= Date.now()) {
+      throw conflict(
+        'Este pack venció. Para reactivarlo, cambia antes su fecha de vencimiento o quítala.',
+        'pack_expirado',
+        { expiresAt: vencimiento },
+      );
     }
     fields.push('status = @status');
     params.status = changes.status;
@@ -426,7 +438,7 @@ export function listPacks({ limit = 50, offset = 0, status = null, search = '', 
 
   const rows = db
     .prepare(
-      `SELECT p.*, u.full_name AS owner_name, u.email AS owner_email
+      `SELECT p.*, u.full_name AS owner_name, u.email AS owner_email, u.status AS owner_status
          FROM packs p JOIN users u ON u.id = p.user_id
          ${clause}
          ORDER BY p.created_at DESC

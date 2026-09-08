@@ -5,54 +5,59 @@ import { config } from '../config.js';
 /**
  * Mensajes de error en español para todo lo que zod genera por su cuenta.
  *
- * Sin esto, un campo que falta produce "Required" y ese texto en inglés acaba
- * en la pantalla del usuario, que ve el resto de la aplicación en español.
+ * Sin esto, un campo que falta produce "Invalid input" y ese texto en inglés
+ * acaba en la pantalla del usuario, que ve el resto de la aplicación en
+ * español. Los mensajes escritos en cada esquema mandan sobre estos, que son
+ * el respaldo para lo que nadie se molestó en redactar.
  */
-z.setErrorMap((issue, ctx) => {
-  switch (issue.code) {
-    case z.ZodIssueCode.invalid_type:
-      if (issue.received === 'undefined' || issue.received === 'null') {
-        return { message: 'Este dato es obligatorio.' };
-      }
-      if (issue.expected === 'number') return { message: 'Debe ser un número.' };
-      if (issue.expected === 'string') return { message: 'Debe ser un texto.' };
-      if (issue.expected === 'boolean') return { message: 'Debe ser sí o no.' };
-      return { message: 'El formato no es válido.' };
+z.config({
+  customError: (issue) => {
+    switch (issue.code) {
+      case 'invalid_type':
+        // El dato que falta y el que llega con otro tipo son errores distintos
+        // para quien rellena el formulario, aunque zod los junte.
+        if (issue.input === undefined || issue.input === null) return 'Este dato es obligatorio.';
+        if (issue.expected === 'number') return 'Debe ser un número.';
+        if (issue.expected === 'string') return 'Debe ser un texto.';
+        if (issue.expected === 'boolean') return 'Debe ser sí o no.';
+        return 'El formato no es válido.';
 
-    case z.ZodIssueCode.too_small:
-      if (issue.type === 'string') {
-        return issue.minimum === 1
-          ? { message: 'Este dato es obligatorio.' }
-          : { message: `Debe tener al menos ${issue.minimum} caracteres.` };
-      }
-      if (issue.type === 'number') return { message: `Debe ser ${issue.minimum} o más.` };
-      if (issue.type === 'array') return { message: `Debe tener al menos ${issue.minimum} elemento(s).` };
-      return { message: 'El valor es demasiado pequeño.' };
+      case 'too_small':
+        if (issue.origin === 'string') {
+          return issue.minimum === 1
+            ? 'Este dato es obligatorio.'
+            : `Debe tener al menos ${issue.minimum} caracteres.`;
+        }
+        if (issue.origin === 'number') return `Debe ser ${issue.minimum} o más.`;
+        if (issue.origin === 'array') return `Debe tener al menos ${issue.minimum} elemento(s).`;
+        return 'El valor es demasiado pequeño.';
 
-    case z.ZodIssueCode.too_big:
-      if (issue.type === 'string') return { message: `No puede superar los ${issue.maximum} caracteres.` };
-      if (issue.type === 'number') return { message: `Debe ser ${issue.maximum} o menos.` };
-      return { message: 'El valor es demasiado grande.' };
+      case 'too_big':
+        if (issue.origin === 'string') return `No puede superar los ${issue.maximum} caracteres.`;
+        if (issue.origin === 'number') return `Debe ser ${issue.maximum} o menos.`;
+        return 'El valor es demasiado grande.';
 
-    case z.ZodIssueCode.invalid_string:
-      if (issue.validation === 'email') return { message: 'El correo no tiene un formato válido.' };
-      if (issue.validation === 'uuid') return { message: 'El identificador no es válido.' };
-      if (issue.validation === 'datetime') return { message: 'La fecha no tiene un formato válido.' };
-      return { message: 'El formato no es válido.' };
+      case 'invalid_format':
+        if (issue.format === 'email') return 'El correo no tiene un formato válido.';
+        if (issue.format === 'uuid') return 'El identificador no es válido.';
+        if (issue.format === 'datetime') return 'La fecha no tiene un formato válido.';
+        return 'El formato no es válido.';
 
-    case z.ZodIssueCode.invalid_enum_value:
-      return { message: `Valor no permitido. Opciones: ${issue.options.join(', ')}.` };
+      case 'invalid_value':
+        return `Valor no permitido. Opciones: ${(issue.values ?? []).join(', ')}.`;
 
-    case z.ZodIssueCode.not_multiple_of:
-      return { message: `Debe ser múltiplo de ${issue.multipleOf}.` };
+      case 'not_multiple_of':
+        return `Debe ser múltiplo de ${issue.divisor}.`;
 
-    case z.ZodIssueCode.unrecognized_keys:
-      return { message: 'La petición trae campos que no se esperaban.' };
+      case 'unrecognized_keys':
+        return 'La petición trae campos que no se esperaban.';
 
-    default:
-      // Los mensajes propios de cada esquema (y los de .refine) pasan por aquí.
-      return { message: ctx.defaultError };
-  }
+      default:
+        // Devolver nada deja pasar el mensaje que traiga el propio esquema
+        // (los de `.refine`, por ejemplo), que siempre es más concreto.
+        return undefined;
+    }
+  },
 });
 
 const trimmed = (max) => z.string().trim().max(max);

@@ -45,6 +45,24 @@ test('patronLike neutraliza los comodines de SQLite', () => {
   assert.equal(patronLike('C:\\ruta'), '%c:\\\\ruta%');
 });
 
+test('patronLike ignora los separadores de un teléfono, pero no los espacios de un nombre', () => {
+  assert.equal(patronLike('+593 99 111 2233'), '%+593991112233%');
+  assert.equal(patronLike('(099) 111-2233'), '%0991112233%');
+  assert.equal(patronLike('maria chasis'), '%maria chasis%');
+});
+
+test('el teléfono se encuentra tal y como está anotado en la libreta', async () => {
+  const { cMaster } = await sembrarUsuarios();
+  await crearClientes(cMaster);
+
+  // Se guarda sin separadores; en el mostrador se teclea como cada quien lo tiene.
+  for (const termino of ['+593991112233', '+593 99 111 2233', '(593) 99-111-2233', '991112233']) {
+    const r = await cMaster.get(`/api/admin/users?search=${encodeURIComponent(termino)}`);
+    assert.equal(r.datos.items.length, 1, `"${termino}" debería encontrar a María`);
+    assert.equal(r.datos.items[0].fullName, 'María Chasís');
+  }
+});
+
 test('buscar clientes funciona con o sin tildes, en cualquier caso', async () => {
   const { cMaster } = await sembrarUsuarios();
   await crearClientes(cMaster);

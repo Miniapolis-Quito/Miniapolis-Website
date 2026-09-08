@@ -5,7 +5,7 @@
  * reinicio del proceso: si alguien está probando contraseñas, reiniciar el
  * servidor no debe regalarle una cuota nueva.
  */
-import { getDb } from '../db/index.js';
+import { getDb, inTransaction } from '../db/index.js';
 import { tooManyRequests } from './errors.js';
 
 const CLEANUP_EVERY_MS = 60_000;
@@ -28,26 +28,31 @@ function cleanup(db, nowIso) {
 export function consume(key, { limit, windowSeconds, now = Date.now() }) {
   const db = getDb();
   const nowIso = new Date(now).toISOString();
-  cleanup(db, nowIso);
+  // La lectura y el incremento deben ser indivisibles. Sin la transacción,
+  // dos procesos Node que compartan la misma base podían leer la misma cuota y
+  // ambos autorizar una petición adicional.
+  return inTransaction(() => {
+    cleanup(db, nowIso);
 
-  const row = db.prepare('SELECT count, window_start, expires_at FROM rate_limits WHERE key = ?').get(key);
+    const row = db.prepare('SELECT count, window_start, expires_at FROM rate_limits WHERE key = ?').get(key);
 
-  if (!row || row.expires_at <= nowIso) {
-    const expiresAt = new Date(now + windowSeconds * 1000).toISOString();
-    db.prepare(
-      `INSERT INTO rate_limits (key, count, window_start, expires_at) VALUES (?, 1, ?, ?)
-       ON CONFLICT(key) DO UPDATE SET count = 1, window_start = excluded.window_start, expires_at = excluded.expires_at`,
-    ).run(key, nowIso, expiresAt);
-    return { allowed: true, remaining: limit - 1, retryAfterSeconds: 0, limit };
-  }
+    if (!row || row.expires_at <= nowIso) {
+      const expiresAt = new Date(now + windowSeconds * 1000).toISOString();
+      db.prepare(
+        `INSERT INTO rate_limits (key, count, window_start, expires_at) VALUES (?, 1, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET count = 1, window_start = excluded.window_start, expires_at = excluded.expires_at`,
+      ).run(key, nowIso, expiresAt);
+      return { allowed: true, remaining: limit - 1, retryAfterSeconds: 0, limit };
+    }
 
-  const retryAfterSeconds = Math.max(1, Math.ceil((Date.parse(row.expires_at) - now) / 1000));
-  if (row.count >= limit) {
-    return { allowed: false, remaining: 0, retryAfterSeconds, limit };
-  }
+    const retryAfterSeconds = Math.max(1, Math.ceil((Date.parse(row.expires_at) - now) / 1000));
+    if (row.count >= limit) {
+      return { allowed: false, remaining: 0, retryAfterSeconds, limit };
+    }
 
-  db.prepare('UPDATE rate_limits SET count = count + 1 WHERE key = ?').run(key);
-  return { allowed: true, remaining: limit - row.count - 1, retryAfterSeconds, limit };
+    db.prepare('UPDATE rate_limits SET count = count + 1 WHERE key = ?').run(key);
+    return { allowed: true, remaining: limit - row.count - 1, retryAfterSeconds, limit };
+  });
 }
 
 export function reset(key) {

@@ -1,7 +1,7 @@
 /** Alta, consulta y mantenimiento de usuarios. */
 import { getDb, inTransaction } from '../db/index.js';
-import { newId, randomToken } from '../lib/ids.js';
-import { hashPassword, verifyPassword, needsRehash } from '../lib/passwords.js';
+import { newId } from '../lib/ids.js';
+import { hashPassword, verifyPassword, needsRehash, HASH_FICTICIO } from '../lib/passwords.js';
 import { conflict, notFound, badRequest } from '../lib/errors.js';
 import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
@@ -44,6 +44,11 @@ export function countByRole(role, db = getDb()) {
   return db.prepare('SELECT COUNT(*) AS n FROM users WHERE role = ?').get(role).n;
 }
 
+/** Número de cuentas utilizables de un rol. */
+export function countActiveByRole(role, db = getDb()) {
+  return db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = ? AND status = 'active'").get(role).n;
+}
+
 export async function createUser({ email, password, fullName, phone, role = 'customer', createdBy = null, status = 'active' }) {
   const normalized = normalizeEmail(email);
   const passwordHash = await hashPassword(password);
@@ -84,20 +89,6 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
 }
 
 /**
- * Hash señuelo con los parámetros de coste vigentes, para gastar el mismo
- * tiempo cuando el correo no existe. Se calcula una sola vez, la primera vez
- * que hace falta, sobre una contraseña aleatoria que nadie conoce.
- */
-let senueloCache = null;
-function hashSenuelo() {
-  senueloCache ??= hashPassword(randomToken(32)).catch((error) => {
-    senueloCache = null; // que un fallo puntual no deje el señuelo roto para siempre
-    throw error;
-  });
-  return senueloCache;
-}
-
-/**
  * Verifica credenciales aplicando bloqueo temporal tras varios fallos.
  * @returns {{ok:true,user:object} | {ok:false,reason:string,retryAfterSeconds?:number}}
  */
@@ -108,10 +99,9 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
 
   if (!user) {
     // Se gasta el mismo tiempo que una verificación real para no revelar por
-    // temporización si el correo existe. El señuelo se genera con los mismos
-    // parámetros de coste que los hashes reales: uno fijo con parámetros más
-    // baratos tardaría bastante menos y volvería a delatar qué correos existen.
-    await verifyPassword(password, await hashSenuelo());
+    // temporización si el correo existe. El hash ficticio lleva los parámetros
+    // vigentes, así que el costo coincide con el de una cuenta real.
+    await verifyPassword(password, HASH_FICTICIO);
     return { ok: false, reason: 'credenciales' };
   }
 

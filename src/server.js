@@ -17,7 +17,10 @@ const server = http.createServer(app);
 // pero SSE necesita conexiones largas: por eso se desactiva el timeout de
 // petición y se conserva el de cabeceras.
 server.headersTimeout = 20_000;
-server.requestTimeout = 0;
+// SSE mantiene una respuesta abierta, no una petición entrante. Un límite para
+// recibir la petición protege las rutas JSON de clientes que envían el cuerpo
+// a cuentagotas; el canal SSE no se ve afectado y ya emite latidos.
+server.requestTimeout = 30_000;
 server.keepAliveTimeout = 65_000;
 
 /** Tareas de mantenimiento periódicas. */

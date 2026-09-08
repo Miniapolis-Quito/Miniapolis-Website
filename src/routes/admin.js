@@ -16,16 +16,15 @@ import {
 } from '../lib/validate.js';
 import { validatePasswordStrength } from '../lib/passwords.js';
 import { randomToken } from '../lib/ids.js';
-import { getDb } from '../db/index.js';
 import { config } from '../config.js';
-import { inicioDelDia, modificadorSqlite } from '../lib/tiempo.js';
+import * as fechas from '../lib/fechas.js';
 import * as users from '../services/users.js';
 import * as packsService from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
 import * as sessions from '../services/sessions.js';
 import * as audit from '../services/audit.js';
+import * as panel from '../services/panel.js';
 import * as expediente from '../services/expediente.js';
-import { hub } from '../lib/events.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -39,84 +38,7 @@ const actorContext = (req) => ({ actor: req.user, ip: req.clientIp, userAgent: r
 router.get(
   '/dashboard',
   asyncHandler(async (req, res) => {
-    const db = getDb();
-    packsService.expireDuePacks(db);
-    // "Hoy" es el día de la pista, no el del reloj del servidor: en un VPS en
-    // UTC, sumar por fecha UTC cambiaría de día a las 19:00 de Guayaquil.
-    const todayIso = inicioDelDia(config.timezone).toISOString();
-    const weekIso = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-    const desfaseLocal = modificadorSqlite(config.timezone);
-
-    const totals = db
-      .prepare(
-        `SELECT
-           COUNT(*)                                                                   AS packs_totales,
-           IFNULL(SUM(CASE WHEN status='active' AND remaining>0 THEN 1 ELSE 0 END),0) AS packs_activos,
-           IFNULL(SUM(CASE WHEN status='active' THEN remaining ELSE 0 END),0)         AS entradas_pendientes,
-           IFNULL(SUM(size),0)                                                        AS entradas_emitidas,
-           IFNULL(SUM(size - remaining),0)                                            AS entradas_usadas,
-           IFNULL(SUM(price_cents),0)                                                 AS ingresos_cents
-         FROM packs WHERE status <> 'cancelled'`,
-      )
-      .get();
-
-    const consumos = db
-      .prepare(
-        `SELECT
-           IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS hoy,
-           IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS semana,
-           COUNT(*)                                                   AS total
-         FROM redemptions WHERE status = 'confirmed'`,
-      )
-      .get(todayIso, weekIso);
-
-    const clientes = db
-      .prepare(
-        `SELECT
-           COUNT(*)                                                AS total,
-           IFNULL(SUM(CASE WHEN role='customer' THEN 1 ELSE 0 END),0) AS clientes,
-           IFNULL(SUM(CASE WHEN role='staff' THEN 1 ELSE 0 END),0)    AS personal,
-           IFNULL(SUM(CASE WHEN role='master' THEN 1 ELSE 0 END),0)   AS masters,
-           IFNULL(SUM(CASE WHEN status='suspended' THEN 1 ELSE 0 END),0) AS suspendidos
-         FROM users`,
-      )
-      .get();
-
-    // Serie de los últimos 14 días para el gráfico de actividad.
-    const serie = db
-      .prepare(
-        `SELECT strftime('%Y-%m-%d', created_at, ?) AS dia, COUNT(*) AS n
-           FROM redemptions
-          WHERE status = 'confirmed' AND created_at >= ?
-          GROUP BY dia ORDER BY dia ASC`,
-      )
-      .all(desfaseLocal, new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString());
-
-    res.json({
-      totals: {
-        totalPacks: totals.packs_totales,
-        activePacks: totals.packs_activos,
-        pendingTickets: totals.entradas_pendientes,
-        issuedTickets: totals.entradas_emitidas,
-        usedTickets: totals.entradas_usadas,
-        revenueCents: totals.ingresos_cents,
-        currency: config.currency,
-      },
-      redemptions: { today: consumos.hoy, week: consumos.semana, total: consumos.total },
-      users: {
-        total: clientes.total,
-        customers: clientes.clientes,
-        staff: clientes.personal,
-        masters: clientes.masters,
-        suspended: clientes.suspendidos,
-      },
-      dailySeries: serie.map((r) => ({ date: r.dia, count: r.n })),
-      timezone: config.timezone,
-      recent: redemptions.listRedemptions({ limit: 10 }).items,
-      liveConnections: hub.connectionCount,
-      integrity: packsService.checkIntegrity(),
-      serverTime: new Date().toISOString(),
-    });
+    res.json(panel.resumen());
   }),
 );
 
@@ -179,7 +101,6 @@ router.post(
   }),
 );
 
-/** Expediente completo de un cliente: la ficha del panel. */
 router.get(
   '/users/:id',
   asyncHandler(async (req, res) => {
@@ -233,11 +154,11 @@ router.patch(
       throw forbidden('No puedes suspender tu propia cuenta.', 'auto_suspension');
     }
     if (target.role === 'master' && (data.role !== undefined && data.role !== 'master')) {
-      if (users.countByRole('master') <= 1) {
+      if (target.status === 'active' && users.countActiveByRole('master') <= 1) {
         throw conflict('Debe quedar al menos un usuario máster.', 'ultimo_master');
       }
     }
-    if (target.role === 'master' && data.status === 'suspended' && users.countByRole('master') <= 1) {
+    if (target.role === 'master' && data.status === 'suspended' && users.countActiveByRole('master') <= 1) {
       throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
     }
 
@@ -346,7 +267,7 @@ router.get(
     if (!pack) throw notFound('Pack no encontrado.');
     const owner = users.findById(pack.user_id);
     res.json({
-      pack: packsService.toPublicPack(pack),
+      pack: packsService.toPublicPack(pack, { owner }),
       owner: users.toPublicUser(owner),
       movements: packsService.movements(pack.id),
       redemptions: redemptions.listRedemptions({ packId: pack.id, limit: 50 }).items,
@@ -440,7 +361,9 @@ router.get(
       // por =, +, - o @. Un nombre de cliente no debería poder ejecutar nada al
       // abrir el reporte, así que se antepone un apóstrofo, que la hoja de
       // cálculo entiende como "esto es texto".
-      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      // Algunas hojas recortan espacios iniciales antes de interpretar la
+      // celda, por lo que " =1+1" también puede convertirse en fórmula.
+      if (/^\s*[=+\-@]/.test(text)) text = `'${text}`;
       return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const toCsv = (headers, rows) =>
@@ -472,7 +395,8 @@ router.get(
 
     audit.record({ ...actorContext(req), action: 'reporte.exportado', entityType: 'export', entityId: entity });
     res.set('Content-Type', 'text/csv; charset=utf-8');
-    res.set('Content-Disposition', `attachment; filename="${entity}-${new Date().toISOString().slice(0, 10)}.csv"`);
+    const hoy = fechas.diaLocal(new Date(), config.timezone);
+    res.set('Content-Disposition', `attachment; filename="${entity}-${hoy}.csv"`);
     res.send(csv);
   }),
 );

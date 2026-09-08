@@ -92,23 +92,6 @@ export function fecha(iso, { conHora = true } = {}) {
 }
 
 /**
- * Fecha 'YYYY-MM-DD' de un instante, en la zona de la pista.
- *
- * El servidor agrupa el gráfico diario por esa misma zona, así que las claves
- * del cliente tienen que calcularse igual: usar la zona del navegador
- * desalinearía las barras para quien mire el panel desde otro país.
- */
-export function claveDia(valor = new Date()) {
-  // 'en-CA' formatea justamente como YYYY-MM-DD.
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: ZONA,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(valor instanceof Date ? valor : new Date(valor));
-}
-
-/**
  * Instante (ISO) en que termina un día 'YYYY-MM-DD' en la zona de la pista.
  *
  * Un vencimiento elegido en el calendario significa "hasta el final de ese día
@@ -132,12 +115,6 @@ export function finDelDiaIso(ymd) {
   if (p.hour === 24) p.hour = 0;
   const desfaseMs = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - comoUtc.getTime();
   return new Date(comoUtc.getTime() - desfaseMs).toISOString();
-}
-
-/** Formatea un día 'YYYY-MM-DD' tal cual, sin reinterpretarlo en otra zona. */
-export function fechaDia(ymd) {
-  const [anio, mes, dia] = String(ymd ?? '').split('-');
-  return dia ? `${dia}/${mes}/${anio}` : '—';
 }
 
 export function horaCorta(iso) {
@@ -310,10 +287,14 @@ export function confirmar({ titulo, mensaje, textoAceptar = 'Confirmar', peligro
   });
 }
 
-/** Pide un texto (motivo de una anulación, por ejemplo). */
-export function pedirTexto({ titulo, mensaje, etiqueta, valorInicial = '', textoAceptar = 'Guardar', minimo = 3 }) {
+/**
+ * Pide un dato (el motivo de una anulación, una fecha…).
+ * Devuelve el texto escrito, o `null` si se canceló: con `minimo: 0` esos dos
+ * casos son distintos, y vaciar el campo a propósito es una respuesta válida.
+ */
+export function pedirTexto({ titulo, mensaje, etiqueta, valorInicial = '', textoAceptar = 'Guardar', minimo = 3, tipo = 'text' }) {
   return new Promise((resolver) => {
-    const entrada = el('input', { type: 'text', value: valorInicial, maxlength: '300', required: true });
+    const entrada = el('input', { type: tipo, value: valorInicial, maxlength: '300', required: minimo > 0 });
     const error = el('div', { class: 'campo__error' });
     const dialogo = el(
       'dialog',

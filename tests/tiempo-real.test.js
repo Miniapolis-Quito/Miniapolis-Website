@@ -22,10 +22,14 @@ beforeEach(limpiarBase);
  * Abre una conexión de eventos y devuelve un lector con `esperar(tipo)`.
  * Se usa fetch en streaming, igual que la interfaz real.
  */
-async function abrirCanal(token) {
+async function abrirCanal(token, { desdeEvento = null } = {}) {
   const control = new AbortController();
   const respuesta = await fetch(`${base}/api/events`, {
-    headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` },
+    headers: {
+      Accept: 'text/event-stream',
+      Authorization: `Bearer ${token}`,
+      ...(desdeEvento ? { 'Last-Event-ID': String(desdeEvento) } : {}),
+    },
     signal: control.signal,
   });
   assert.equal(respuesta.status, 200);
@@ -47,12 +51,14 @@ async function abrirCanal(token) {
           pendiente = pendiente.slice(corte + 2);
           let tipo = 'message';
           let datos = '';
+          let id = null;
           for (const linea of bloque.split('\n')) {
             if (linea.startsWith('event:')) tipo = linea.slice(6).trim();
             else if (linea.startsWith('data:')) datos += linea.slice(5).trim();
+            else if (linea.startsWith('id:')) id = Number.parseInt(linea.slice(3).trim(), 10);
           }
           if (!datos) continue;
-          const evento = { tipo, datos: JSON.parse(datos) };
+          const evento = { tipo, id, datos: JSON.parse(datos) };
           recibidos.push(evento);
           for (let i = enEspera.length - 1; i >= 0; i -= 1) {
             if (enEspera[i].tipo === tipo) enEspera.splice(i, 1)[0].resolver(evento);
@@ -111,6 +117,26 @@ test('el cliente recibe el consumo en el momento en que el personal escanea', as
     assert.equal(evento.datos.remaining, 4);
     assert.equal(evento.datos.pack.code, pack.code);
     assert.equal(evento.datos.scannedBy.fullName, 'Beto Pista');
+  } finally {
+    canal.cerrar();
+  }
+});
+
+test('el evento en vivo dice cómo y desde qué puesto se consumió la entrada', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const pack = packsService.findById(emitido.datos.pack.id);
+
+  const canal = await abrirCanal(cCliente.token);
+  try {
+    await canal.esperar('conectado');
+    // Consumo manual: si el evento no llevara el método, la actividad en vivo
+    // del escáner lo mostraría como si hubiera entrado por QR.
+    await cStaff.post('/api/scan/manual', { code: pack.code, deviceLabel: 'Mostrador' });
+
+    const evento = await canal.esperar('entrada.consumida');
+    assert.equal(evento.datos.method, 'manual_code');
+    assert.equal(evento.datos.deviceLabel, 'Mostrador');
   } finally {
     canal.cerrar();
   }
@@ -179,6 +205,75 @@ test('el personal ve la actividad de la pista, el cliente solo la suya', async (
     assert.equal(evento.datos.owner.fullName, 'Carlos Piloto');
   } finally {
     canalStaff.cerrar();
+  }
+});
+
+test('al reconectar, el canal reenvía lo que el cliente se perdió', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const pack = packsService.findById(emitido.datos.pack.id);
+
+  // Primer tramo: se recibe un consumo y se anota su id.
+  const primero = await abrirCanal(cCliente.token);
+  let ultimoId;
+  try {
+    await primero.esperar('conectado');
+    await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+    const evento = await primero.esperar('entrada.consumida');
+    ultimoId = evento.id;
+    assert.equal(Number.isInteger(ultimoId), true, 'cada evento viaja con su id');
+  } finally {
+    primero.cerrar();
+  }
+
+  // Se cae la conexión (un túnel, el ascensor de la pista) y mientras tanto
+  // pasan cosas: otro consumo y un pack nuevo.
+  await cStaff.post('/api/scan', { payload: buildQrPayload(pack) });
+  await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 10 });
+
+  // Al volver, indicando el último id recibido, llega lo perdido sin recargar.
+  const segundo = await abrirCanal(cCliente.token, { desdeEvento: ultimoId });
+  try {
+    const reenviado = await segundo.esperar('entrada.consumida');
+    assert.equal(reenviado.id > ultimoId, true, 'no se repite lo ya recibido');
+    assert.equal(reenviado.datos.remaining, 3);
+    const nuevoPack = await segundo.esperar('pack.emitido');
+    assert.equal(nuevoPack.datos.pack.size, 10);
+  } finally {
+    segundo.cerrar();
+  }
+});
+
+test('una misma persona no puede acumular conexiones sin fin', async () => {
+  const { cCliente, cliente } = await sembrarUsuarios();
+  const { hub } = await import('../src/lib/events.js');
+  const cuantasSuyas = () => [...hub.clients].filter((c) => c.userId === cliente.id).length;
+
+  // Nueve pestañas: una más del tope. La primera tiene que caerse sola.
+  const canales = [];
+  for (let i = 0; i < 9; i += 1) {
+    const canal = await abrirCanal(cCliente.token);
+    await canal.esperar('conectado');
+    canales.push(canal);
+  }
+
+  try {
+    assert.equal(cuantasSuyas(), 8, 'debería quedarse en el tope de ocho');
+
+    // La que se cierra recibe el aviso antes de que le corten: sin él se
+    // pondría a reconectar y, con más pestañas que cupo, se turnarían echándose
+    // unas a otras sin parar.
+    const aviso = await canales[0].esperar('canal.reemplazado');
+    assert.equal(aviso.datos.motivo, 'reemplazado', 'la desalojada debe saber por qué se cerró');
+
+    // Y la última en abrirse, que es la que la persona está mirando, sigue viva
+    // y recibiendo: no se sacrifica la buena por respetar el tope.
+    const ultima = canales[canales.length - 1];
+    hub.publish(`user:${cliente.id}`, 'prueba.tope', { ok: true });
+    const evento = await ultima.esperar('prueba.tope');
+    assert.equal(evento.datos.ok, true);
+  } finally {
+    for (const canal of canales) canal.cerrar();
   }
 });
 

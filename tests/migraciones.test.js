@@ -9,6 +9,11 @@ import './env.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Database from 'better-sqlite3';
+import path from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { migrations } from '../src/db/migrations.js';
 import { textoBusquedaUsuario } from '../src/lib/texto.js';
 
@@ -61,6 +66,29 @@ test('actualizar una base con datos rellena el texto de búsqueda', () => {
   db.close();
 });
 
+test('actualizar conserva las respuestas idempotentes y las asocia a su operador', () => {
+  const db = baseEn(2);
+  const ahora = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO idempotency_keys
+      (key, user_id, endpoint, request_hash, status_code, response, created_at, expires_at)
+     VALUES ('reintento-0001', 'operador-1', 'scan', 'hash', 200, '{}', ?, ?)`,
+  ).run(ahora, new Date(Date.now() + 60_000).toISOString());
+
+  migrations[2].up(db);
+  const fila = db.prepare('SELECT user_id, key FROM idempotency_keys').get();
+  assert.deepEqual(fila, { user_id: 'operador-1', key: 'reintento-0001' });
+
+  const columnasPk = db
+    .prepare('PRAGMA table_info(idempotency_keys)')
+    .all()
+    .filter((c) => c.pk > 0)
+    .sort((a, b) => a.pk - b.pk)
+    .map((c) => c.name);
+  assert.deepEqual(columnasPk, ['user_id', 'key']);
+  db.close();
+});
+
 test('aplicar todas las migraciones deja el esquema esperado', () => {
   const db = baseEn(migrations.length);
 
@@ -82,6 +110,55 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   }
 
   db.close();
+});
+
+test('una base de una versión más nueva se rechaza en vez de tocarla', async () => {
+  // Si alguien vuelve a una versión anterior del código, lo peligroso no es que
+  // falle: es que arranque y escriba sobre un esquema que no conoce.
+  const archivo = path.join(mkdtempSync(path.join(tmpdir(), 'rhe-esquema-')), 'futura.db');
+  const futura = new Database(archivo);
+  for (const migracion of migrations) migracion.up(futura);
+  futura.pragma(`user_version = ${migrations.length + 1}`);
+  futura.close();
+
+  const anterior = process.env.DATABASE_FILE;
+  process.env.DATABASE_FILE = archivo;
+  const { getDb, closeDb } = await import(`../src/db/index.js?esquema-futuro`);
+  try {
+    assert.throws(() => getDb(), /versión más nueva/i);
+  } finally {
+    closeDb();
+    process.env.DATABASE_FILE = anterior;
+    rmSync(path.dirname(archivo), { recursive: true, force: true });
+  }
+});
+
+test('si la base no se puede abrir, el error dice dónde mirar', () => {
+  // La configuración se lee una sola vez al arrancar, así que esto se comprueba
+  // como pasa de verdad: levantando el proceso con una ruta imposible. Es el
+  // tropiezo más común al instalar —la carpeta no existe o el usuario del
+  // servicio no puede escribir en ella— y el mensaje tiene que decirlo.
+  const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const resultado = spawnSync(
+    process.execPath,
+    ['--input-type=module', '-e', "const { getDb } = await import('./src/db/index.js'); getDb();"],
+    {
+      cwd: raiz,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        ENV_FILE: '/dev/null',
+        LOG_LEVEL: 'silent',
+        DATABASE_FILE: '/dev/null/imposible/tickets.db',
+      },
+    },
+  );
+
+  assert.notEqual(resultado.status, 0, 'el proceso no debería arrancar');
+  assert.match(resultado.stderr, /No se pudo abrir la base de datos/);
+  assert.match(resultado.stderr, /DATABASE_FILE/, 'debería nombrar la variable que hay que revisar');
+  assert.match(resultado.stderr, /escribir/, 'y apuntar a los permisos');
 });
 
 test('el esquema impide guardar un pack con saldo imposible', () => {

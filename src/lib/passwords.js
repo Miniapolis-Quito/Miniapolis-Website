@@ -77,6 +77,22 @@ export async function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(derived, expected);
 }
 
+/**
+ * Hash con la forma y el costo de uno real, pero que no corresponde a ninguna
+ * contraseña. Verificarlo cuesta exactamente lo mismo que verificar uno de
+ * verdad —los parámetros salen de `PARAMS`, no de una constante escrita a
+ * mano—, que es lo que impide averiguar por tiempo de respuesta si un correo
+ * está registrado.
+ */
+export const HASH_FICTICIO = [
+  'scrypt',
+  PARAMS.N,
+  PARAMS.r,
+  PARAMS.p,
+  Buffer.alloc(PARAMS.saltLength).toString('base64'),
+  Buffer.alloc(PARAMS.keyLength).toString('base64'),
+].join('$');
+
 /** Indica si un hash usa parámetros distintos a los actuales y conviene recalcularlo. */
 export function needsRehash(stored) {
   const parts = String(stored || '').split('$');

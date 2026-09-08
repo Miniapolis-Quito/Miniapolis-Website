@@ -129,6 +129,25 @@ export function isSessionActive(sessionId) {
   return row.expires_at > new Date().toISOString();
 }
 
+/**
+ * Proyección pública de una sesión, en el mismo formato para el propio usuario
+ * y para el panel máster: sin ella, cada ruta devolvía una forma distinta
+ * (`last_used_at` en una, `lastUsedAt` en otra) del mismo dato.
+ */
+export function toPublicSession(row, { currentSessionId = null } = {}) {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    lastUsedAt: row.last_used_at,
+    expiresAt: row.expires_at,
+    revokedAt: row.revoked_at,
+    revokeReason: row.revoke_reason,
+    ip: row.ip,
+    userAgent: row.user_agent,
+    current: currentSessionId !== null && row.id === currentSessionId,
+  };
+}
+
 export function listForUser(userId) {
   return getDb()
     .prepare(

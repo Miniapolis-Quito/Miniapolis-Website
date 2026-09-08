@@ -115,7 +115,7 @@ export async function refrescarSesion() {
  * Petición autenticada. Si el token caducó, lo renueva y reintenta una vez.
  */
 export async function peticion(ruta, opciones = {}) {
-  const { metodo = 'GET', cuerpo, idempotencyKey, cabeceras = {}, _reintento = false, señal } = opciones;
+  const { metodo = 'GET', cuerpo, idempotencyKey, cabeceras = {}, _reintento = false, señal, comoBlob = false } = opciones;
 
   const headers = { 'X-Requested-With': 'fetch', ...cabeceras };
   if (cuerpo !== undefined) headers['Content-Type'] = 'application/json';
@@ -152,6 +152,10 @@ export async function peticion(ruta, opciones = {}) {
   if (!respuesta.ok) {
     throw new ErrorApi(respuesta.status, await leerCuerpo(respuesta));
   }
+  // Un archivo se devuelve en crudo. Leerlo como texto no sirve: al decodificar
+  // se descarta la marca de orden de bytes del principio, que es justo lo que
+  // hace que Excel abra los acentos bien.
+  if (comoBlob) return respuesta.blob();
   if (tipo.includes('application/json')) return respuesta.json();
   return respuesta.text();
 }

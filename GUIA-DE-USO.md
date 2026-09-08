@@ -128,6 +128,16 @@ normalidad.
 Abre el pack y usa **Ajustar entradas**. Número positivo acredita, negativo
 descuenta. Siempre pide un motivo y todo queda en el historial del pack.
 
+### Cambiar o quitar el vencimiento de un pack
+
+Abre el pack y toca **Cambiar vencimiento**. Si dejas la fecha vacía, el pack
+deja de caducar.
+
+Si el pack ya venció, ponerle una fecha nueva (o quitarla) lo devuelve al
+servicio en el mismo paso. Reactivarlo sin tocar la fecha no se puede: volvería
+a vencer en el acto, y el sistema lo dice en vez de dejarte creer que quedó
+arreglado.
+
 ### Un cliente perdió su contraseña
 
 Ábrelo en **Clientes y personal → Ver → Restablecer contraseña**. Se genera una
@@ -164,6 +174,11 @@ No. Al suspenderlo, su pantalla vuelve sola a la página de acceso en el acto.
 Lo mismo al cerrarle las sesiones desde su ficha. Y sus entradas dejan de poder
 cobrarse en el puesto, incluso si alguien tecleara el código del pack a mano.
 
+Sus entradas tampoco sirven mientras esté suspendido: ni su pase impreso ni el
+ingreso manual por código. Quien lo intente en la puerta ve un aviso de que la
+cuenta está suspendida, y no se descuenta nada. Al reactivarla, todo vuelve a
+funcionar con el saldo intacto.
+
 **Busco a un cliente y no aparece.**
 La búsqueda ignora tildes y mayúsculas, así que "maria" encuentra a María y
 "munoz" a Muñoz. Prueba también con el correo, el teléfono o el código del
@@ -179,4 +194,5 @@ segundos entre escaneos del mismo pack; para un grupo, escanea uno por uno con
 pausa.
 
 **¿Las entradas caducan?**
-Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan.
+Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan. La
+fecha se puede cambiar o quitar después, desde el detalle del pack.

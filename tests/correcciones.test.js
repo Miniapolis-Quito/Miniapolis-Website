@@ -12,7 +12,6 @@ import test, { before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { levantarServidor, bajarServidor, limpiarBase, crearCliente, sembrarUsuarios } from './helpers.js';
 import { normalizePackCode } from '../src/lib/ids.js';
-import { desfaseMinutos, inicioDelDia, claveDia, modificadorSqlite } from '../src/lib/tiempo.js';
 import * as packsService from '../src/services/packs.js';
 
 before(levantarServidor);
@@ -99,97 +98,86 @@ test('reactivar la cuenta devuelve el uso normal de las entradas', async () => {
 // Códigos tecleados a mano
 // ---------------------------------------------------------------------------
 
-test('el código se normaliza sin inventarse caracteres', () => {
-  // Lo que sí se corrige: mayúsculas, espacios, guiones y el prefijo.
+test('el código tecleado se normaliza y los caracteres confundibles se traducen', () => {
+  // Lo que se corrige sin más: mayúsculas, espacios, guiones y el prefijo.
   assert.equal(normalizePackCode('rhe23456789'), 'RHE-2345-6789');
   assert.equal(normalizePackCode('  RHE 2345 6789 '), 'RHE-2345-6789');
   assert.equal(normalizePackCode('2345-6789'), 'RHE-2345-6789');
 
-  // Lo que no: el alfabeto no usa 0, O, 1, I, L ni U, así que un código que los
-  // contiene no es un código real. Sustituirlos sería adivinar, y la letra
-  // adivinada podría formar el código de otra persona.
-  for (const ambiguo of ['RHE-O345-6789', 'RHE-2345-678I', 'RHE-0000-1111', 'RHE-UUUU-2222']) {
-    assert.equal(normalizePackCode(ambiguo), '', `${ambiguo} debería rechazarse`);
-  }
+  // El alfabeto excluye 0, 1, I, L, O y U justamente porque se confunden con
+  // los caracteres que sí lo forman. Quien lee un cartón impreso teclea el que
+  // ve, así que se traducen: O y 0 a Q, I/L/1 a 7, y U a V.
+  assert.equal(normalizePackCode('RHE-O345-6789'), 'RHE-Q345-6789');
+  assert.equal(normalizePackCode('RHE-2345-678I'), 'RHE-2345-6787');
+  assert.equal(normalizePackCode('RHE-UUUU-2222'), 'RHE-VVVV-2222');
 
+  // Lo que no cuadra se rechaza en vez de resolver a medias.
   assert.equal(normalizePackCode('RHE-234-6789'), '', 'un código corto no vale');
+  assert.equal(normalizePackCode('RHE-2345-678$'), '', 'un carácter fuera del alfabeto no vale');
   assert.equal(normalizePackCode(null), '');
 });
 
-test('un código ambiguo no descuenta la entrada de otro cliente', async () => {
+test('un código que no existe no descuenta la entrada de nadie', async () => {
   const { cMaster, cStaff, cliente } = await sembrarUsuarios();
-  const pack = await emitirPack(cMaster, cliente.id, 5);
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const pack = packsService.findById(emitido.datos.pack.id);
 
-  // Se cambia un carácter del código real por su parecido ambiguo. Antes, la
-  // sustitución automática podía devolver justo este pack (u otro distinto).
-  const conAmbiguo = pack.code.replace(/Q/g, 'O').replace(/7/g, 'I');
-  if (conAmbiguo !== pack.code) {
-    const r = await cStaff.post('/api/scan/manual', { code: conAmbiguo });
-    assert.equal(r.status, 404, JSON.stringify(r.datos));
-  }
+  // Un código con el formato correcto pero que no corresponde a ningún pack.
+  const inventado = 'RHE-2222-3333';
+  assert.notEqual(inventado, pack.code);
 
-  // El código correcto sigue funcionando, escrito de cualquier forma razonable.
-  const r = await cStaff.post('/api/scan/manual', { code: pack.code.toLowerCase().replace(/-/g, ' ') });
-  assert.equal(r.status, 200, JSON.stringify(r.datos));
+  const r = await cStaff.post('/api/scan/manual', { code: inventado });
+  assert.equal(r.status, 404);
+  assert.equal(r.datos.error.code, 'pack_no_encontrado');
+  assert.equal(packsService.findById(pack.id).remaining, 5, 'ningún pack pierde entradas');
 });
 
 // ---------------------------------------------------------------------------
 // Zona horaria de los informes
 // ---------------------------------------------------------------------------
 
-test('las fechas del panel se calculan en la zona de la pista', () => {
-  // 02:30 UTC del 7 son las 21:30 del 6 en Guayaquil: para la pista sigue
-  // siendo el día anterior, y "usadas hoy" no debe reiniciarse todavía.
-  const instante = new Date('2026-09-07T02:30:00Z');
-
-  assert.equal(desfaseMinutos('America/Guayaquil', instante), -300);
-  assert.equal(claveDia('America/Guayaquil', instante), '2026-09-06');
-  assert.equal(inicioDelDia('America/Guayaquil', instante).toISOString(), '2026-09-06T05:00:00.000Z');
-  assert.equal(modificadorSqlite('America/Guayaquil', instante), '-300 minutes');
-
-  // En una zona por delante de UTC el signo se invierte.
-  assert.equal(claveDia('Europe/Madrid', instante), '2026-09-07');
-  assert.equal(modificadorSqlite('Europe/Madrid', instante), '+120 minutes');
-});
-
-test('el panel informa en qué zona están las fechas del gráfico', async () => {
-  const { cMaster } = await sembrarUsuarios();
-  const r = await cMaster.get('/api/admin/dashboard');
+test('la interfaz puede saber en qué zona horaria trabaja la pista', async () => {
+  // La interfaz formatea fechas y horas con esta zona; si no la publicara,
+  // pintaría el día del navegador de quien mira, que puede estar en otro país.
+  const anonimo = crearCliente();
+  const r = await anonimo.get('/api/config');
   assert.equal(r.status, 200);
   assert.equal(typeof r.datos.timezone, 'string');
-  assert.ok(r.datos.timezone.length > 0);
+  assert.ok(r.datos.timezone.includes('/'), `zona inesperada: ${r.datos.timezone}`);
 });
 
 // ---------------------------------------------------------------------------
 // Canales en vivo
 // ---------------------------------------------------------------------------
 
-test('un mismo usuario no puede abrir canales en vivo sin límite', async () => {
-  const { cCliente } = await sembrarUsuarios();
+test('un mismo usuario no acumula canales en vivo sin límite', async () => {
+  const { cMaster, cCliente } = await sembrarUsuarios();
+  const base = await levantarServidor();
   const abiertos = [];
 
   try {
-    let rechazado = null;
-    for (let intento = 0; intento < 8 && !rechazado; intento += 1) {
+    // Diez pestañas del mismo cliente, como una que se reconecta en bucle.
+    for (let intento = 0; intento < 10; intento += 1) {
       const controlador = new AbortController();
-      const respuesta = await fetch(`${await levantarServidor()}/api/events`, {
+      const respuesta = await fetch(`${base}/api/events`, {
         headers: { Authorization: `Bearer ${cCliente.token}`, Accept: 'text/event-stream' },
         signal: controlador.signal,
       });
-      if (respuesta.status === 429) {
-        rechazado = respuesta;
-        controlador.abort();
-      } else {
-        assert.equal(respuesta.status, 200);
-        abiertos.push(controlador);
-      }
+      assert.equal(respuesta.status, 200);
+      abiertos.push(controlador);
     }
 
-    assert.ok(rechazado, 'el servidor debería cortar tras unos pocos canales');
-    assert.ok(abiertos.length >= 1 && abiertos.length <= 6, `canales aceptados: ${abiertos.length}`);
+    // El servidor va cerrando las más antiguas: la última en llegar es la que
+    // la persona está mirando.
+    await new Promise((listo) => setTimeout(listo, 120));
+    const panel = await cMaster.get('/api/admin/dashboard');
+    assert.ok(
+      panel.datos.liveConnections < 10,
+      `quedaron ${panel.datos.liveConnections} canales abiertos: no se está aplicando el tope`,
+    );
+    assert.ok(panel.datos.liveConnections >= 1, 'al menos la última conexión debe seguir viva');
   } finally {
     for (const controlador of abiertos) controlador.abort();
-    // Se le da un instante al servidor para soltar las conexiones abortadas.
     await new Promise((listo) => setTimeout(listo, 60));
   }
 });

@@ -226,20 +226,13 @@ export function expediente(userId) {
     user: users.toPublicUser(usuario),
     summary: packsService.summaryForUser(userId),
     stats: estadisticas(userId),
-    packs: packsService.listPacksForUser(userId),
+    // Se pasa el dueño para que, con la cuenta suspendida, sus packs aparezcan
+    // como inutilizables: es lo que el panel promete al suspender a alguien.
+    packs: packsService.listPacksForUser(userId, { owner: usuario }),
     redemptions: redemptions.listRedemptions({ userId, limit: 30 }),
     timeline: lineaDeTiempo(userId, { limit: 40 }),
     audit: auditoria(userId, { limit: 30 }),
-    sessions: sessions.listForUser(userId).map((s) => ({
-      id: s.id,
-      createdAt: s.created_at,
-      lastUsedAt: s.last_used_at,
-      expiresAt: s.expires_at,
-      revokedAt: s.revoked_at,
-      revokeReason: s.revoke_reason,
-      ip: s.ip,
-      userAgent: s.user_agent,
-    })),
+    sessions: sessions.listForUser(userId).map((fila) => sessions.toPublicSession(fila)),
     currency: config.currency,
   };
 }

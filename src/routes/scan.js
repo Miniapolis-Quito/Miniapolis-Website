@@ -8,7 +8,7 @@ import { scanSchema, manualRedeemSchema, paginationSchema, parseOrThrow } from '
 import { parseQrPayload, verifyQrPayload } from '../lib/qr.js';
 import * as packsService from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
-import { getDb } from '../db/index.js';
+import * as users from '../services/users.js';
 
 export const router = express.Router();
 router.use(requireStaff);
@@ -16,7 +16,11 @@ router.use(requireStaff);
 /** La clave de idempotencia puede venir por cabecera (lo habitual) o en el cuerpo. */
 function idempotencyKey(req, body) {
   const header = req.get('Idempotency-Key');
-  const key = body.idempotencyKey || header;
+  const fromBody = body.idempotencyKey;
+  if (header && fromBody && header.trim() !== fromBody.trim()) {
+    throw badRequest('La clave de idempotencia de la cabecera no coincide con la del cuerpo.', null, 'idempotencia_invalida');
+  }
+  const key = header || fromBody;
   if (!key) return undefined;
   const value = String(key).trim();
   if (value.length < 8 || value.length > 80 || !/^[A-Za-z0-9_:-]+$/.test(value)) {
@@ -68,15 +72,15 @@ router.post(
     if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
 
     const verification = verifyQrPayload(parsed, pack);
-    const owner = getDb().prepare('SELECT id, full_name, status FROM users WHERE id = ?').get(pack.user_id);
-    const usable = packsService.isUsable(pack, { ownerStatus: owner?.status ?? null });
+    const owner = users.findById(pack.user_id);
+    const usable = packsService.isUsable(pack, { owner });
 
     res.json({
       valid: verification.ok && usable.ok,
       signatureOk: verification.ok,
       reason: verification.ok ? (usable.ok ? null : usable.reason) : verification.reason,
       message: verification.ok ? (usable.ok ? 'Código válido.' : usable.message) : 'El código no es válido o venció.',
-      pack: packsService.toPublicPack(pack),
+      pack: packsService.toPublicPack(pack, { owner }),
       customer: owner ? { id: owner.id, fullName: owner.full_name } : null,
     });
   }),
@@ -108,10 +112,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const pack = packsService.findByLooseCode(req.params.code);
     if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
-    const owner = getDb().prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(pack.user_id);
-    const usable = packsService.isUsable(pack, { ownerStatus: owner?.status ?? null });
+    const owner = users.findById(pack.user_id);
+    const usable = packsService.isUsable(pack, { owner });
     res.json({
-      pack: packsService.toPublicPack(pack),
+      pack: packsService.toPublicPack(pack, { owner }),
       customer: owner ? { id: owner.id, fullName: owner.full_name, email: owner.email } : null,
       usable: usable.ok,
       reason: usable.ok ? null : usable.reason,

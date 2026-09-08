@@ -35,25 +35,32 @@ export function newPackCode(prefix = 'RHE') {
   return `${prefix}-${randomChars(4)}-${randomChars(4)}`;
 }
 
-const CODE_PATTERN = new RegExp(`^[${CODE_ALPHABET}]{8}$`);
+/** Longitud del cuerpo de un código, sin contar el prefijo. */
+const CODE_BODY_LENGTH = 8;
+const CODE_BODY_PATTERN = new RegExp(`^[${CODE_ALPHABET}]{${CODE_BODY_LENGTH}}$`);
 
-/**
- * Normaliza un código escrito a mano: mayúsculas, sin espacios, sin guiones y
- * con el prefijo opcional.
- *
- * Deliberadamente NO intenta "arreglar" un 0, una O, un 1, una I, una L ni una
- * U. El alfabeto excluye esos caracteres justo para que no haya ambigüedad, así
- * que un código que los contiene no puede ser un código real; sustituirlos por
- * el carácter más parecido significaría adivinar, y la letra adivinada sí es
- * válida — el resultado podría ser el pack de otra persona, al que se le
- * descontaría una entrada. Ante la duda se devuelve cadena vacía y quien atiende
- * vuelve a mirar el cartón.
- */
+/** Normaliza un código escrito a mano: mayúsculas, sin separadores y con guiones. */
 export function normalizePackCode(input, prefix = 'RHE') {
   if (typeof input !== 'string') return '';
-  let cleaned = input.trim().toUpperCase().replace(/[\s_-]+/g, '');
-  if (cleaned.startsWith(prefix)) cleaned = cleaned.slice(prefix.length);
-  if (!CODE_PATTERN.test(cleaned)) return '';
+  // Se descarta cualquier separador (guiones, espacios, puntos, barras): en el
+  // mostrador el código se dicta en voz alta y cada quien lo escribe distinto.
+  let cleaned = input.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  // El prefijo solo se quita si lo que sobra tiene el largo de un cuerpo. Las
+  // letras R, H y E también forman parte del alfabeto de los códigos, así que
+  // recortarlo a ciegas destrozaría un cuerpo que empiece por "RHE" y que el
+  // cliente haya dictado sin el prefijo.
+  if (cleaned.length === prefix.length + CODE_BODY_LENGTH && cleaned.startsWith(prefix)) {
+    cleaned = cleaned.slice(prefix.length);
+  }
+
+  // Confusiones típicas al teclear un código que no usa estas letras/dígitos.
+  // El alfabeto excluye 0, 1, I, L, O y U precisamente porque se confunden con
+  // los caracteres que sí lo forman: O/0 con Q, I/L/1 con 7, y U con V.
+  cleaned = cleaned.replace(/[O0]/g, 'Q').replace(/[IL1]/g, '7').replace(/U/g, 'V');
+
+  if (cleaned.length !== CODE_BODY_LENGTH) return '';
+  if (!CODE_BODY_PATTERN.test(cleaned)) return '';
   return `${prefix}-${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
 }
 

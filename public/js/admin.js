@@ -1,13 +1,12 @@
 /**
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
-import { $, $$, el, render, brindis, fecha, fechaDia, claveDia, finDelDiaIso, horaCorta, relativo, dinero,
-         plural, telefono, estadoPack, METODOS, mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga,
-         confirmar, pedirTexto, copiar } from './ui.js';
+import { $, $$, el, render, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, telefono, estadoPack, METODOS,
+         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
-import { abrirFicha, cerrarFicha } from './ficha.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
+import { abrirFicha, cerrarFicha } from './ficha.js';
 
 const estado = {
   configuracion: null,
@@ -22,6 +21,15 @@ let cabecera;
 let abrirDialogoPack = () => {};
 
 const ROLES = { customer: 'Cliente', staff: 'Personal', master: 'Máster' };
+
+/**
+ * Envuelve una acción de un botón para que un fallo se vea en pantalla.
+ * Sin esto, una consulta que falla (sin señal, permisos revocados) dejaba el
+ * panel exactamente igual, sin abrir nada y sin decir por qué.
+ */
+function alPulsar(accion) {
+  return () => Promise.resolve(accion()).catch((error) => brindis(error.message, 'error'));
+}
 
 function temporizador(fn, ms) {
   let id;
@@ -58,10 +66,11 @@ function aplicarRuta() {
   const ruta = rutaActual();
   const ficha = $('#ficha-cliente');
   const pestanas = $('#pestanas-admin');
+  const encabezado = $('#encabezado-admin');
 
   if (ruta.vista === 'ficha') {
     estado.mostrandoFicha = true;
-    $('#titulo-admin').hidden = true;
+    encabezado.hidden = true;
     pestanas.hidden = true;
     for (const panel of $$('[id^="panel-"]')) panel.hidden = true;
     ficha.hidden = false;
@@ -89,17 +98,11 @@ function aplicarRuta() {
   estado.mostrandoFicha = false;
 
   cerrarFicha();
-  $('#titulo-admin').hidden = false;
+  encabezado.hidden = false;
   ficha.hidden = true;
   render(ficha);
   pestanas.hidden = false;
   abrirPanel(volviendoDeFicha ? (estado.panelPrevio ?? 'clientes') : estado.panel);
-}
-
-/** Abre la ficha de un cliente (cambia la dirección, que dispara el enrutado). */
-function verUsuario(userId) {
-  estado.panelPrevio = estado.panel;
-  window.location.hash = `#cliente/${userId}`;
 }
 
 function abrirPanel(nombre) {
@@ -116,6 +119,15 @@ function abrirPanel(nombre) {
 // ---------------------------------------------------------------------------
 // Resumen
 // ---------------------------------------------------------------------------
+
+/**
+ * Un día del calendario ("2026-09-06") como instante, para poder darle formato.
+ * Se toma el mediodía UTC a propósito: es la única hora que cae en ese mismo
+ * día en cualquier zona horaria, así que la fecha mostrada nunca se corre.
+ */
+function mediodiaDe(dia) {
+  return `${dia}T12:00:00Z`;
+}
 
 function tarjetaMetrica(valor, etiqueta, modificador = '') {
   return el(
@@ -145,27 +157,22 @@ async function cargarResumen() {
     tarjetaMetrica(String(datos.users.staff), 'Personal de pista'),
   );
 
-  // Gráfico de barras de los últimos 14 días.
-  const porDia = new Map(datos.dailySeries.map((d) => [d.date, d.count]));
-  const dias = [];
-  for (let i = 13; i >= 0; i -= 1) {
-    // Las claves se calculan en la zona de la pista, igual que las del
-    // servidor: con fechas UTC las barras se desplazarían un día.
-    const dia = claveDia(new Date(Date.now() - i * 86400000));
-    dias.push({ dia, total: porDia.get(dia) ?? 0 });
-  }
-  const maximo = Math.max(1, ...dias.map((d) => d.total));
+  // Gráfico de barras de los últimos 14 días. El calendario lo arma el
+  // servidor, que es quien conoce la zona horaria de la pista: aquí solo se
+  // dibuja lo que llega.
+  const dias = datos.dailySeries;
+  const maximo = Math.max(1, ...dias.map((d) => d.count));
   render(
     $('#grafico'),
     dias.map((d) =>
       el('div', {
         class: 'grafico__barra',
-        style: `height:${Math.max(3, (d.total / maximo) * 100)}%`,
-        title: `${d.dia}: ${plural(d.total, 'entrada', 'entradas')}`,
+        style: `height:${Math.max(3, (d.count / maximo) * 100)}%`,
+        title: `${fecha(mediodiaDe(d.date), { conHora: false })}: ${plural(d.count, 'entrada', 'entradas')}`,
       }),
     ),
   );
-  $('#grafico-desde').textContent = fechaDia(dias[0].dia);
+  $('#grafico-desde').textContent = fecha(mediodiaDe(dias[0].date), { conHora: false });
 
   $('#conexiones-vivas').textContent = `${plural(datos.liveConnections, 'pantalla conectada', 'pantallas conectadas')}`;
 
@@ -281,7 +288,7 @@ async function cargarUsuarios() {
                 'td',
                 {},
                 el('div', { class: 'pequeno' }, usuario.email),
-                usuario.phone ? el('div', { class: 'tenue-2 pequeno' }, telefono(usuario.phone)) : null,
+                usuario.phone ? el('div', { class: 'tenue-2 pequeno' }, usuario.phone) : null,
               ),
               el('td', {}, el('span', { class: 'etiqueta' }, ROLES[usuario.role] || usuario.role)),
               el(
@@ -309,7 +316,7 @@ async function cargarUsuarios() {
                   el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verUsuario(usuario.id) }, 'Abrir ficha'),
                   el(
                     'button',
-                    { class: 'boton boton--chico boton--principal', type: 'button', onClick: () => abrirDialogoPack(usuario) },
+                    { class: 'boton boton--chico boton--principal', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
                     'Vender',
                   ),
                 ),
@@ -323,10 +330,10 @@ async function cargarUsuarios() {
   );
 }
 
-/** Abre el diálogo de detalle; si ya estaba abierto solo se refresca su contenido. */
-function abrirDetalle() {
-  const dialogo = $('#dialogo-detalle');
-  if (!dialogo.open) dialogo.showModal();
+/** Abre la ficha de un cliente cambiando la dirección, que dispara el enrutado. */
+function verUsuario(userId) {
+  estado.panelPrevio = estado.panel;
+  window.location.hash = `#cliente/${userId}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -379,7 +386,7 @@ async function cargarPacks() {
               el('td', { class: 'num' }, el('strong', {}, String(pack.remaining)), ` / ${pack.size}`),
               el('td', {}, el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto)),
               el('td', { class: 'pequeno tenue' }, fecha(pack.createdAt, { conHora: false })),
-              el('td', {}, el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verPack(pack.id) }, 'Abrir')),
+              el('td', {}, el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: alPulsar(() => verPack(pack.id)) }, 'Abrir')),
             );
           }),
         ),
@@ -390,13 +397,7 @@ async function cargarPacks() {
 }
 
 async function verPack(packId) {
-  let datos;
-  try {
-    datos = await api.get(`/api/admin/packs/${packId}`);
-  } catch (error) {
-    brindis(error.message, 'error');
-    return;
-  }
+  const datos = await api.get(`/api/admin/packs/${packId}`);
   const pack = datos.pack;
   const marca = estadoPack(pack);
 
@@ -413,22 +414,7 @@ async function verPack(packId) {
       el('h2', { class: 'sin-margen mono' }, pack.code),
       el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto),
     ),
-    el(
-      'p',
-      { class: 'tenue sin-margen' },
-      el(
-        'button',
-        {
-          class: 'boton boton--chico boton--fantasma',
-          type: 'button',
-          onClick: () => {
-            $('#dialogo-detalle').close();
-            verUsuario(datos.owner.id);
-          },
-        },
-        `Ver ficha de ${datos.owner.fullName}`,
-      ),
-    ),
+    el('p', { class: 'tenue sin-margen' }, `${datos.owner.fullName} · ${datos.owner.email}`),
     el(
       'div',
       { class: 'rejilla rejilla--3 mt' },
@@ -484,9 +470,13 @@ async function verPack(packId) {
               type: 'button',
               onClick: async () => {
                 const suspender = pack.status !== 'suspended';
-                await api.patch(`/api/admin/packs/${packId}`, { status: suspender ? 'suspended' : 'active' });
-                brindis(suspender ? 'Pack suspendido.' : 'Pack reactivado.', 'ok');
-                recargar();
+                try {
+                  await api.patch(`/api/admin/packs/${packId}`, { status: suspender ? 'suspended' : 'active' });
+                  brindis(suspender ? 'Pack suspendido.' : 'Pack reactivado.', 'ok');
+                  recargar();
+                } catch (error) {
+                  brindis(error.message, 'error');
+                }
               },
             },
             pack.status === 'suspended' ? 'Reactivar pack' : 'Suspender pack',
@@ -506,9 +496,13 @@ async function verPack(packId) {
                   peligro: true,
                 });
                 if (!seguro) return;
-                await api.patch(`/api/admin/packs/${packId}`, { status: 'cancelled' });
-                brindis('Pack anulado.', 'ok');
-                recargar();
+                try {
+                  await api.patch(`/api/admin/packs/${packId}`, { status: 'cancelled' });
+                  brindis('Pack anulado.', 'ok');
+                  recargar();
+                } catch (error) {
+                  brindis(error.message, 'error');
+                }
               },
             },
             'Anular pack',
@@ -520,20 +514,59 @@ async function verPack(packId) {
           class: 'boton boton--chico boton--fantasma',
           type: 'button',
           onClick: async () => {
-            await api.patch(`/api/admin/packs/${packId}`, { allowStaticQr: !pack.allowStaticQr });
-            brindis(pack.allowStaticQr ? 'QR impreso desactivado.' : 'QR impreso activado.', 'ok');
-            recargar();
+            try {
+              await api.patch(`/api/admin/packs/${packId}`, { allowStaticQr: !pack.allowStaticQr });
+              brindis(pack.allowStaticQr ? 'QR impreso desactivado.' : 'QR impreso activado.', 'ok');
+              recargar();
+            } catch (error) {
+              brindis(error.message, 'error');
+            }
           },
         },
         pack.allowStaticQr ? 'Desactivar QR impreso' : 'Activar QR impreso',
       ),
+      pack.status !== 'cancelled'
+        ? el(
+            'button',
+            {
+              class: 'boton boton--chico boton--fantasma',
+              type: 'button',
+              onClick: alPulsar(async () => {
+                const elegida = await pedirTexto({
+                  titulo: 'Cambiar vencimiento',
+                  mensaje: 'Déjalo vacío para que el pack no caduque.',
+                  etiqueta: 'Vence el',
+                  tipo: 'date',
+                  valorInicial: pack.expiresAt ? pack.expiresAt.slice(0, 10) : '',
+                  textoAceptar: 'Guardar fecha',
+                  minimo: 0,
+                });
+                if (elegida === null) return;
+                // La fecha elegida vale hasta el final de ese día.
+                const expiresAt = elegida ? finDelDiaIso(elegida) : null;
+                const cambios = { expiresAt };
+                // Darle fecha nueva a un pack vencido es, en el mostrador,
+                // devolverlo al servicio: se hace en un solo movimiento.
+                const seguiraVigente = expiresAt === null || Date.parse(expiresAt) > Date.now();
+                if (pack.status === 'expired' && seguiraVigente) cambios.status = 'active';
+                await api.patch(`/api/admin/packs/${packId}`, cambios);
+                brindis(
+                  expiresAt ? `El pack vence el ${fecha(expiresAt, { conHora: false })}.` : 'El pack ya no caduca.',
+                  'ok',
+                );
+                recargar();
+              }),
+            },
+            pack.expiresAt ? 'Cambiar vencimiento' : 'Poner vencimiento',
+          )
+        : null,
       pack.allowStaticQr
         ? el(
             'button',
             {
               class: 'boton boton--chico boton--fantasma',
               type: 'button',
-              onClick: () => imprimirPase(pack, datos.owner),
+              onClick: alPulsar(() => imprimirPase(pack, datos.owner)),
             },
             'Imprimir pase',
           )
@@ -579,7 +612,7 @@ async function verPack(packId) {
       ? el('p', { class: 'tenue pequeno' }, 'Sin consumos.')
       : el('ul', { class: 'lista' }, datos.redemptions.map((item) => filaConsumo(item, recargar))),
   );
-  abrirDetalle();
+  $('#dialogo-detalle').showModal();
 }
 
 /**
@@ -593,11 +626,20 @@ async function imprimirPase(pack, propietario) {
   const zona = $('#pase-impreso');
   try {
     const svg = await api.get(`/api/packs/${pack.id}/qr.svg?mode=static`);
+    const imagenPista = el('img', {
+      class: 'pase__imagen',
+      src: '/images/racing-hobbies-pase-rc.webp',
+      alt: '',
+      width: '1200',
+      height: '500',
+      decoding: 'sync',
+    });
     render(
       zona,
       el(
         'div',
         { class: 'pase' },
+        imagenPista,
         el('div', { class: 'pase__marca' }, estado.configuracion?.brandName || 'Racing Hobbies Ecuador'),
         el('div', { class: 'pase__titulo' }, `Pase de ${pack.size} entradas`),
         el('div', { class: 'pase__qr', html: svg }),
@@ -613,6 +655,15 @@ async function imprimirPase(pack, propietario) {
       ),
     );
     zona.hidden = false;
+
+    // Espera la franja visual para que el pase físico no se imprima incompleto
+    // en una carga inicial lenta.
+    if (!imagenPista.complete) {
+      await new Promise((resolver) => {
+        imagenPista.addEventListener('load', resolver, { once: true });
+        imagenPista.addEventListener('error', resolver, { once: true });
+      });
+    }
     document.body.classList.add('imprimiendo-pase');
 
     // La limpieza se hace al terminar de imprimir, no justo después de llamar a
@@ -778,7 +829,7 @@ async function cargarAuditoria() {
                   ),
                   el(
                     'td',
-                    { class: 'pequeno tenue-2 mono celda-json' },
+                    { class: 'pequeno tenue-2 mono' },
                     registro.metadata ? JSON.stringify(registro.metadata).slice(0, 160) : '',
                   ),
                 ),
@@ -791,37 +842,29 @@ async function cargarAuditoria() {
 }
 
 // ---------------------------------------------------------------------------
-// Exportación a CSV
+// Exportación de reportes
 // ---------------------------------------------------------------------------
 
-const ETIQUETA_EXPORT = { packs: 'packs', consumos: 'consumos', clientes: 'clientes' };
-
 /**
- * Descarga un reporte.
+ * Descarga un reporte CSV.
  *
- * No puede ser un enlace normal: la ruta exige el token de acceso, que vive en
- * memoria y viaja en la cabecera Authorization, y una navegación del navegador
- * no envía cabeceras propias. Así que se pide con fetch autenticado y el
- * resultado se entrega como archivo.
+ * No puede ser un enlace: la API se autentica con la cabecera `Authorization`
+ * y el token vive solo en memoria, así que una navegación normal llegaría sin
+ * sesión y devolvería un 401 en vez del archivo. Se pide con `fetch` y se
+ * entrega al navegador como archivo local.
  */
-async function descargarCsv(entidad, boton) {
-  await conCarga(boton, async () => {
-    try {
-      const csv = await api.get(`/api/admin/export/${entidad}.csv`);
-      const enlace = el('a', {
-        href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })),
-        download: `${ETIQUETA_EXPORT[entidad] || entidad}-${new Date().toISOString().slice(0, 10)}.csv`,
-      });
-      document.body.append(enlace);
-      enlace.click();
-      enlace.remove();
-      // Se libera en el siguiente turno: revocar antes cancelaría la descarga.
-      setTimeout(() => URL.revokeObjectURL(enlace.href), 30_000);
-      brindis('Reporte descargado.', 'ok');
-    } catch (error) {
-      brindis(`No se pudo exportar: ${error.message}`, 'error');
-    }
-  });
+async function descargarReporte(entidad) {
+  const archivo = await api.get(`/api/admin/export/${entidad}.csv`, { comoBlob: true });
+  const nombre = `${entidad}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const url = URL.createObjectURL(archivo);
+  const enlace = el('a', { href: url, download: nombre });
+  document.body.append(enlace);
+  enlace.click();
+  enlace.remove();
+  // La URL temporal se libera después: revocarla en el mismo instante deja la
+  // descarga a medias en algunos navegadores.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return nombre;
 }
 
 // ---------------------------------------------------------------------------
@@ -977,8 +1020,8 @@ function montarDialogoPack() {
     };
     const vence = $('#pack-vence').value;
     if (vence) {
-      // La fecha elegida vale hasta el final de ese día en la pista, no en la
-      // zona horaria del navegador desde el que se emite el pack.
+      // La fecha elegida vale hasta el final de ese día.
+      // Vale hasta el final de ese día en la pista.
       cuerpo.expiresAt = finDelDiaIso(vence);
     }
     for (const clave of Object.keys(cuerpo)) if (cuerpo[clave] === undefined) delete cuerpo[clave];
@@ -1034,16 +1077,28 @@ function montarDialogoPack() {
   $('#filtro-pack-estado').addEventListener('change', () => cargarPacks());
 
   for (const boton of $$('[data-exportar]')) {
-    boton.addEventListener('click', () => descargarCsv(boton.dataset.exportar, boton));
+    boton.addEventListener('click', () =>
+      conCarga(boton, async () => {
+        try {
+          const nombre = await descargarReporte(boton.dataset.exportar);
+          brindis(`Reporte ${nombre} descargado.`, 'ok');
+        } catch (error) {
+          brindis(`No se pudo exportar: ${error.message}`, 'error');
+        }
+      }),
+    );
   }
 
   $('#btn-recargar-consumos').addEventListener('click', () => cargarConsumos());
   $('#btn-recargar-auditoria').addEventListener('click', () => cargarAuditoria());
-  $('#btn-verificar').addEventListener('click', async () => {
-    const integridad = await api.get('/api/admin/integrity');
-    pintarIntegridad(integridad);
-    brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Se encontraron diferencias.', integridad.ok ? 'ok' : 'error');
-  });
+  $('#btn-verificar').addEventListener(
+    'click',
+    alPulsar(async () => {
+      const integridad = await api.get('/api/admin/integrity');
+      pintarIntegridad(integridad);
+      brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Se encontraron diferencias.', integridad.ok ? 'ok' : 'error');
+    }),
+  );
 
   window.addEventListener('hashchange', aplicarRuta);
   aplicarRuta();

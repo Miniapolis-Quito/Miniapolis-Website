@@ -285,17 +285,9 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     res.json({
-      items: sessions.listForUser(req.user.id).map((s) => ({
-        id: s.id,
-        createdAt: s.created_at,
-        lastUsedAt: s.last_used_at,
-        expiresAt: s.expires_at,
-        revokedAt: s.revoked_at,
-        revokeReason: s.revoke_reason,
-        ip: s.ip,
-        userAgent: s.user_agent,
-        current: s.id === req.user.sessionId,
-      })),
+      items: sessions
+        .listForUser(req.user.id)
+        .map((fila) => sessions.toPublicSession(fila, { currentSessionId: req.user.sessionId })),
     });
   }),
 );

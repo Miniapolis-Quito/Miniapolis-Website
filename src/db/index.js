@@ -53,11 +53,21 @@ export function getDb() {
 
   const file = config.databaseFile;
   const memory = file === ':memory:';
-  if (!memory) {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
+
+  try {
+    if (!memory) fs.mkdirSync(path.dirname(file), { recursive: true });
+    db = new Database(file);
+  } catch (error) {
+    // El tropiezo más común al instalar: la carpeta no existe o el usuario del
+    // servicio no puede escribir en ella. Sin este mensaje, lo que aparece es
+    // un error de la librería nativa que no dice dónde mirar.
+    throw new Error(
+      `No se pudo abrir la base de datos en "${file}": ${error.message}. ` +
+        `Comprueba que la ruta de DATABASE_FILE existe y que el usuario que ejecuta el servicio puede escribir en ella.`,
+      { cause: error },
+    );
   }
 
-  db = new Database(file);
   applyPragmas(db, { memory });
   runMigrations(db);
   return db;

@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { hub, channels } from '../lib/events.js';
 import { summaryForUser } from '../services/packs.js';
 import { isSessionActive } from '../services/sessions.js';
-import { getDb } from '../db/index.js';
+import * as users from '../services/users.js';
 import { logger } from '../lib/logger.js';
 
 export const router = express.Router();
@@ -19,12 +19,11 @@ const HEARTBEAT_MS = 25_000;
 /** Cada cuánto se revisa que la sesión que abrió el canal siga siendo válida. */
 const REVALIDACION_MS = 10_000;
 /**
- * Canales simultáneos por usuario. Cada conexión SSE ocupa un socket y un
- * temporizador durante horas; sin tope, una pestaña con un bucle de reconexión
- * (o alguien probando) podría dejar el servidor sin descriptores. Cinco cubre
- * de sobra el uso real: teléfono, tablet del puesto y un par de pestañas.
+ * Conexiones en vivo que se le permiten a la vez a una misma persona. Da de
+ * sobra para varias pestañas y el teléfono a la vez, y evita que una pestaña
+ * enganchada en un bucle de reconexión acumule sockets sin fin.
  */
-const MAX_CANALES_POR_USUARIO = 5;
+const MAXIMO_POR_USUARIO = 8;
 
 /** Canales a los que puede suscribirse cada rol. */
 function channelsFor(user) {
@@ -43,7 +42,7 @@ function channelsFor(user) {
  */
 function sesionSigueViva(usuario) {
   if (!isSessionActive(usuario.sessionId)) return false;
-  const fila = getDb().prepare('SELECT status, role FROM users WHERE id = ?').get(usuario.id);
+  const fila = users.findById(usuario.id);
   return Boolean(fila) && fila.status === 'active' && fila.role === usuario.role;
 }
 
@@ -55,15 +54,6 @@ function writeEvent(res, { id, type, data }) {
 
 router.get('/', requireAuth, (req, res) => {
   const subscribed = channelsFor(req.user);
-
-  if (hub.countForUser(req.user.id) >= MAX_CANALES_POR_USUARIO) {
-    return res.status(429).set('Retry-After', '30').json({
-      error: {
-        code: 'demasiados_canales',
-        message: 'Ya tienes demasiadas pantallas abiertas. Cierra alguna e inténtalo de nuevo.',
-      },
-    });
-  }
 
   res.status(200).set({
     'Content-Type': 'text/event-stream; charset=utf-8',
@@ -79,8 +69,20 @@ router.get('/', requireAuth, (req, res) => {
   req.socket.setNoDelay(true);
   req.socket.setKeepAlive(true);
 
-  const client = { userId: req.user.id, role: req.user.role, connectedAt: Date.now() };
+  const client = {
+    userId: req.user.id,
+    role: req.user.role,
+    connectedAt: Date.now(),
+    // El hub la usa para cerrar las conexiones sobrantes de este mismo usuario.
+    cerrar: ({ motivo } = {}) => {
+      if (motivo === 'reemplazado') {
+        writeEvent(res, { id: 0, type: 'canal.reemplazado', data: { motivo } });
+      }
+      cleanup();
+    },
+  };
   const unregister = hub.registerClient(client);
+  hub.limitarPorUsuario(req.user.id, MAXIMO_POR_USUARIO);
 
   // Estado inicial, para que la interfaz pinte datos correctos sin otra petición.
   writeEvent(res, {

@@ -66,9 +66,13 @@ try {
 
   if (existente) {
     await users.setPassword(existente.id, password);
-    if (existente.role !== 'master' || existente.status !== 'active') {
-      users.updateUser(existente.id, { role: 'master', status: 'active' });
-    }
+    // El nombre solo se toca si se indicó: repararla no debería renombrar a
+    // nadie por omisión, pero pasar --nombre y que se ignore sería peor.
+    const cambios = {};
+    if (existente.role !== 'master') cambios.role = 'master';
+    if (existente.status !== 'active') cambios.status = 'active';
+    if (typeof opciones.nombre === 'string' && nombre !== existente.full_name) cambios.fullName = nombre;
+    if (Object.keys(cambios).length > 0) users.updateUser(existente.id, cambios);
     users.unlockUser(existente.id);
     audit.record({ actor: null, action: 'sistema.master_reparado', entityType: 'user', entityId: existente.id });
     process.stdout.write(`\n  Cuenta actualizada: ${email}\n  Rol: máster · Sesiones anteriores cerradas\n`);

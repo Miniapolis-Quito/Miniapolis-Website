@@ -11,8 +11,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 
 **Para el cliente**
 - Ve cuántas entradas le quedan, en tiempo real y sin recargar la página.
-- Muestra un QR que se renueva solo cada 30 segundos, así una captura de
-  pantalla ajena deja de servir enseguida.
+- Muestra un QR que se renueva solo cada 30 segundos y caduca a los dos
+  minutos, así que una captura de pantalla ajena sirve de poco — y de nada en
+  cuanto ese código se usa una vez.
 - Consulta su historial: cuándo usó cada entrada, en qué pack y con qué saldo
   quedó.
 - Si se queda sin señal, su código de pack (`RHE-XXXX-XXXX`) sigue sirviendo:
@@ -42,7 +43,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 
 ## Puesta en marcha
 
-Requisitos: **Node.js 20.11 o superior**.
+Requisitos: **Node.js 22 o superior** (la versión con soporte a largo plazo).
 
 ```bash
 npm install
@@ -106,27 +107,42 @@ entradas.racinghobbies.ec {
 }
 ```
 
-Con nginx, además del bloque TLS habitual, hay que desactivar el búfer en el
-canal de tiempo real:
+Con nginx hay que pasarle tres cabeceras —el nombre del sitio, el protocolo y
+la IP de quien llama— y desactivar el búfer en el canal de tiempo real. Sin
+`Host` y `X-Forwarded-Proto`, la aplicación cree estar sirviendo en
+`http://localhost:3000` y rechaza por seguridad las peticiones del propio
+sitio, que es exactamente lo que parece un ataque desde otro origen:
 
 ```nginx
+# Ojo: un bloque que declara sus propias cabeceras deja de heredar las de
+# fuera, así que se repiten en los dos en vez de ponerlas una sola vez.
 location /api/events {
     proxy_pass http://localhost:3000;
     proxy_http_version 1.1;
-    proxy_set_header Connection '';
+    proxy_set_header Connection        '';
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
     proxy_buffering off;
     proxy_read_timeout 24h;
 }
 
 location / {
     proxy_pass http://localhost:3000;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
 }
 ```
 
-Con proxy delante hay que poner `TRUST_PROXY=true` y `COOKIE_SECURE=true` en
-`.env`. **`TRUST_PROXY=true` sin un proxy real es peligroso**: permitiría a
-cualquiera falsificar su dirección IP y esquivar los límites de intentos.
+Caddy manda esas tres por su cuenta, así que el bloque de arriba basta tal cual.
+
+Con proxy delante hay que poner `TRUST_PROXY=true`,
+`TRUSTED_PROXY_IPS=127.0.0.1,::1` (si Caddy/nginx vive en la misma máquina) y
+`COOKIE_SECURE=true` en `.env`. Para un proxy remoto, usa su IP o su red CIDR
+en `TRUSTED_PROXY_IPS` y bloquea el acceso directo al puerto de Node. Así solo
+un proxy conocido puede aportar `X-Forwarded-For`; aceptar esa cabecera desde
+cualquier conexión permitiría falsificar IPs y esquivar los límites.
 
 ### Que el servicio se levante solo
 
@@ -191,45 +207,26 @@ deja un asiento con su saldo resultante. El panel máster verifica que ambos
 coincidan, y las pruebas comprueban que una alteración directa de la base se
 detecta.
 
-**Contra el uso de una cuenta suspendida.** Suspender a alguien no solo le
-impide entrar: sus entradas dejan de poder consumirse en el acto, aunque el
-pack siga activo y aunque el operador teclee el código a mano. La consulta del
-pack en el puesto lo dice con esas palabras, para que en el mostrador se sepa
-que hay que pasar por administración.
-
-**Contra el código tecleado de más.** El alfabeto de los códigos evita a
-propósito los caracteres que se confunden (`0`, `O`, `1`, `I`, `L`, `U`). Si
-alguien teclea uno de ellos, el sistema **no adivina** cuál quiso escribir: el
-carácter más parecido también es válido y podría formar el código de otro
-cliente, al que se le descontaría una entrada. Se responde «no existe ningún
-pack con ese código» y quien atiende vuelve a mirar el cartón.
-
 **Sesiones.** La contraseña se guarda con scrypt (N=2¹⁶, r=8, p=1). El token de
 acceso vive 15 minutos y solo en memoria del navegador; la sesión persiste con
 una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
 JavaScript no puede leer. El token de refresco **rota en cada uso** y, si
 alguna vez se presenta uno ya rotado, se asume robo y se revoca la sesión
 completa. Suspender una cuenta, cambiarle el rol o cambiar la contraseña corta
-el acceso al instante, sin esperar a que caduque nada.
+el acceso al instante, sin esperar a que caduque nada. Suspenderla inutiliza
+además sus entradas —también el pase impreso y el ingreso manual por código,
+que no dependen de que esa persona inicie sesión— sin tocar su saldo.
 
 Suspender una cuenta o cerrarle las sesiones **cierra también su canal en vivo
 en el acto**: la pantalla de esa persona vuelve a la página de acceso sola, sin
-esperar a que falle su siguiente petición. Cada usuario puede tener hasta cinco
-canales en vivo abiertos a la vez; a partir de ahí el servidor los rechaza, para
-que una pestaña con un bucle de reconexión no se lleve por delante los sockets
-de los demás.
-
-Cuando el correo tecleado no existe, el login gasta el mismo tiempo que una
-comprobación real (con los mismos parámetros de coste), de modo que cronometrar
-las respuestas no revela qué correos están dados de alta.
+esperar a que falle su siguiente petición.
 
 **Lo demás.** Límites de intentos persistidos en base (sobreviven a un
 reinicio), bloqueo temporal de cuenta tras 8 fallos, política de seguridad de
 contenido sin `unsafe-inline` ni `unsafe-eval`, consultas siempre
 parametrizadas, validación de entrada con esquemas y mensajes en español,
-cabeceras de seguridad, `robots.txt` que pide no indexar nada, protección
-contra fórmulas en los CSV exportados, y bitácora de auditoría de cada acción
-con su autor, hora y dirección IP.
+cabeceras de seguridad, protección contra fórmulas en los CSV exportados, y
+bitácora de auditoría de cada acción con su autor, hora y dirección IP.
 
 ---
 
@@ -239,6 +236,11 @@ con su autor, hora y dirección IP.
 (o se le crea antes en *Clientes y personal*), se elige el tamaño, se ajusta el
 precio si hubo descuento y se registra la forma de pago. El cliente ve el pack
 aparecer en su teléfono en el momento, sin recargar.
+
+Los packs a la venta salen de `.env`: de fábrica son el de 5 y el de 10, y con
+`PACK_CATALOG=5:2500,10:4500,20:8000` se venden los que haga falta, sin tocar
+el código. Un tamaño fuera del catálogo se puede emitir igual, escribiendo su
+precio a mano.
 
 **Cobrar la entrada.** El operador abre `/escanear`, escribe el nombre de su
 puesto una vez (queda guardado en ese teléfono) y enciende la cámara. Cada
@@ -251,10 +253,6 @@ devuelve la entrada al cliente y queda registrado quién lo hizo y por qué.
 **Cierre de caja.** Administración → Resumen → *Exportar packs / consumos /
 clientes*. Los CSV abren directamente en Excel con los acentos correctos.
 
-Las cifras del panel («usadas hoy», gráfico de los últimos 14 días) se calculan
-en la zona horaria de la pista (`TZ_DISPLAY`), no en la del servidor: el día
-cambia a medianoche en Ecuador aunque el servidor esté en UTC.
-
 **Buscar a alguien.** La búsqueda de clientes y de packs ignora tildes y
 mayúsculas: "maria" encuentra a *María Chasís*, y "munoz" a *Andrés Muñoz*.
 También busca por correo, por teléfono y por código de pack.
@@ -265,10 +263,10 @@ También busca por correo, por teléfono y por código de pack.
 
 En **Clientes y personal**, *Abrir ficha* lleva a la pantalla donde vive todo lo
 de esa persona. Tiene dirección propia (`/admin#cliente/<id>`), así que el
-enlace se puede compartir, recargar y navegar con el botón de atrás.
+enlace se comparte, se recarga y funciona con el botón de atrás.
 
 Arriba: quién es, cómo contactarlo, desde cuándo es cliente, su saldo, lo que ha
-usado, lo que ha comprado, lo que ha gastado, y cada cuánto vuelve. Debajo, seis
+usado, lo que ha comprado, lo que ha gastado y cada cuánto vuelve. Debajo, seis
 pestañas:
 
 | Pestaña | Qué hay |
@@ -309,20 +307,34 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (100 pruebas)
+npm test        # suite completa (160 pruebas)
 npm run seed    # datos de demostración
+npm run test:ui # la interfaz en un navegador real (necesita Playwright)
+npm run test:camara # el escáner leyendo un QR con la cámara
 ```
 
-Las pruebas corren sobre una base en memoria y cubren autenticación y rotación
-de sesiones, emisión y ajuste de packs, las tres barreras contra el doble
-descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo y
-leyendo lo que llega), la búsqueda sin tildes, el camino de actualización del
-esquema, control de acceso por rol y las cabeceras de seguridad. `npm ci &&
-npm test` se ejecuta también en cada empujón desde `.github/workflows/`.
+Las pruebas corren sobre una base en memoria y cubren todas las rutas de la API:
+autenticación y rotación de sesiones, desbloqueo y restablecimiento de
+contraseñas, emisión y ajuste de packs, las tres barreras contra el doble
+descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo,
+leyendo lo que llega y reanudándolo tras una caída), la búsqueda sin tildes, el
+camino de actualización del esquema, el expediente del cliente, control de
+acceso por rol y las cabeceras de seguridad. `npm ci && npm test` se ejecuta
+también en cada empujón desde `.github/workflows/`.
 
-`tests/e2e/` contiene además una prueba en navegador real que recorre el flujo
-completo. No entra en `npm test` porque necesita Playwright; su README explica
-cómo ejecutarla.
+Como la interfaz no pasa por ningún compilador, hay además comprobaciones
+estáticas que hacen ese trabajo: que toda importación exista, que no se use una
+función sin importarla, que cada `#identificador` que busca el JavaScript esté
+en el HTML, y que no haya clases de CSS sin definir.
+
+`tests/e2e/` contiene además tres pruebas en navegador real, que no entran en
+`npm test` porque necesitan Playwright: `interfaz.mjs` levanta la aplicación en
+el propio proceso y comprueba que la interfaz hace lo que dice (descargas,
+formateo del código al teclearlo, actividad en vivo, un corte de red a mitad de
+un cobro y el pase impreso); `camara.mjs` le da a Chromium un vídeo con un QR y
+comprueba que el escáner lo lee y descuenta la entrada, con el lector nativo y
+con el respaldo jsQR; y `flujo-completo.mjs` recorre el sistema ya instalado
+contra un servidor de verdad. El README de esa carpeta explica cómo ejecutarlas.
 
 ### Estructura
 
@@ -333,10 +345,12 @@ src/
   server.js            Arranque, mantenimiento y apagado ordenado
   bootstrap.js         Creación de la cuenta máster inicial
   db/                  Conexión SQLite y migraciones incrementales
-  lib/                 QR, contraseñas, tokens, límites, eventos, texto, fechas
+  lib/                 QR, contraseñas, tokens, límites, eventos en vivo,
+                       texto y días del calendario
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events
-  services/            Reglas de negocio (packs, consumos, usuarios, expediente, auditoría)
+  services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
+                       expediente del cliente, auditoría y cifras del panel)
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas
 scripts/               Utilidades de terminal

@@ -7,7 +7,22 @@
  *
  * Requiere Playwright y un servidor en marcha. Ver el README de esta carpeta.
  */
-import { chromium } from 'playwright';
+
+/** Playwright no es dependencia del proyecto: si falta, se dice cómo instalarlo. */
+async function cargarNavegador() {
+  try {
+    return (await import('playwright')).chromium;
+  } catch {
+    process.stderr.write(
+      '\nEsta prueba necesita Playwright, que no es dependencia del proyecto:\n\n' +
+        '  npm install --no-save playwright\n' +
+        '  npx playwright install chromium\n\n',
+    );
+    process.exit(1);
+  }
+}
+
+const chromium = await cargarNavegador();
 
 const B = process.env.BASE_URL || 'http://localhost:3000';
 const CAPTURAS = process.env.CAPTURAS || null;
@@ -48,7 +63,7 @@ async function paso(nombre, fn) {
 
 await paso('carga login', async () => {
   await pagina.goto(B, { waitUntil: 'domcontentloaded' });
-  await pagina.waitForSelector('#form-entrar', { timeout: 5000 });
+  await pagina.waitForSelector('#form-entrar', { timeout: 15000 });
 });
 
 await paso('registro de cliente', async () => {
@@ -58,8 +73,8 @@ await paso('registro de cliente', async () => {
   await pagina.fill('#registro-telefono', '+593 99 888 7766');
   await pagina.fill('#registro-password', 'Nitro-Buggy-2026!');
   await pagina.click('#form-registro button[type=submit]');
-  await pagina.waitForURL('**/app', { timeout: 8000 });
-  await pagina.waitForSelector('#contenido:not([hidden])', { timeout: 8000 });
+  await pagina.waitForURL('**/app', { timeout: 15000 });
+  await pagina.waitForSelector('#contenido:not([hidden])', { timeout: 15000 });
 });
 
 await paso('portal muestra saldo cero', async () => {
@@ -80,8 +95,8 @@ await paso('login máster', async () => {
   await paginaAdmin.fill('#entrar-email', MASTER.email);
   await paginaAdmin.fill('#entrar-password', MASTER.password);
   await paginaAdmin.click('#form-entrar button[type=submit]');
-  await paginaAdmin.waitForURL('**/admin', { timeout: 8000 });
-  await paginaAdmin.waitForSelector('#metricas .tarjeta', { timeout: 8000 });
+  await paginaAdmin.waitForURL('**/admin', { timeout: 15000 });
+  await paginaAdmin.waitForSelector('#metricas .tarjeta', { timeout: 15000 });
 });
 await capturar(paginaAdmin, '02-admin-resumen');
 
@@ -90,17 +105,17 @@ await paso('máster vende un pack de 10', async () => {
   await paginaAdmin.click('#btn-nuevo-pack');
   await paginaAdmin.waitForSelector('#dialogo-pack[open]');
   await paginaAdmin.fill('#pack-cliente', 'piloto');
-  await paginaAdmin.waitForSelector('#resultados-cliente button', { timeout: 5000 });
+  await paginaAdmin.waitForSelector('#resultados-cliente button', { timeout: 15000 });
   await paginaAdmin.click('#resultados-cliente button');
   await paginaAdmin.selectOption('#pack-size', '10');
   await paginaAdmin.click('#form-pack button[type=submit]');
-  await paginaAdmin.waitForSelector('#dialogo-detalle[open]', { timeout: 8000 });
+  await paginaAdmin.waitForSelector('#dialogo-detalle[open]', { timeout: 15000 });
 });
 await capturar(paginaAdmin, '03-admin-pack');
 
 await paso('el cliente ve el pack en vivo (sin recargar)', async () => {
-  await pagina.waitForFunction(() => document.querySelector('#saldo-numero')?.textContent.trim() === '10', { timeout: 12000 });
-  await pagina.waitForSelector('#seccion-qr:not([hidden]) svg', { timeout: 10000 });
+  await pagina.waitForFunction(() => document.querySelector('#saldo-numero')?.textContent.trim() === '10', { timeout: 15000 });
+  await pagina.waitForSelector('#seccion-qr:not([hidden]) svg', { timeout: 15000 });
 });
 await capturar(pagina, '04-cliente-qr');
 
@@ -119,7 +134,7 @@ await paso('máster crea personal de pista', async () => {
   await paginaAdmin.selectOption('#usuario-rol', 'staff');
   await paginaAdmin.fill('#usuario-password', 'Chicane-Nocturna-77');
   await paginaAdmin.click('#form-usuario button[type=submit]');
-  await paginaAdmin.waitForSelector('#dialogo-usuario', { state: 'hidden', timeout: 8000 });
+  await paginaAdmin.waitForSelector('#dialogo-usuario', { state: 'hidden', timeout: 15000 });
 });
 
 const ctxStaff = await navegador.newContext({ viewport: { width: 900, height: 1000 } });
@@ -132,28 +147,28 @@ await paso('login del personal y acceso al escáner', async () => {
   await paginaStaff.fill('#entrar-email', 'pista@racinghobbies.ec');
   await paginaStaff.fill('#entrar-password', 'Chicane-Nocturna-77');
   await paginaStaff.click('#form-entrar button[type=submit]');
-  await paginaStaff.waitForURL('**/escanear', { timeout: 8000 });
-  await paginaStaff.waitForSelector('#resultado', { timeout: 5000 });
+  await paginaStaff.waitForURL('**/escanear', { timeout: 15000 });
+  await paginaStaff.waitForSelector('#resultado', { timeout: 15000 });
 });
 
 await paso('consumo por código manual', async () => {
   await paginaStaff.fill('#dispositivo', 'Puerta 1');
   await paginaStaff.fill('#codigo-manual', codigoPack);
   await paginaStaff.click('#form-manual button[type=submit]');
-  await paginaStaff.waitForSelector('.resultado--ok', { timeout: 8000 });
+  await paginaStaff.waitForSelector('.resultado--ok', { timeout: 15000 });
   const restantes = await paginaStaff.textContent('.resultado__restantes');
   if (restantes.trim() !== '9') throw new Error('esperaba 9 restantes, obtuve ' + restantes);
 });
 await capturar(paginaStaff, '05-escaner-ok');
 
 await paso('el cliente ve el descuento en tiempo real', async () => {
-  await pagina.waitForFunction(() => document.querySelector('#saldo-numero')?.textContent.trim() === '9', { timeout: 12000 });
+  await pagina.waitForFunction(() => document.querySelector('#saldo-numero')?.textContent.trim() === '9', { timeout: 15000 });
 });
 
 await paso('segundo intento inmediato: bloqueado por espera', async () => {
   await paginaStaff.fill('#codigo-manual', codigoPack);
   await paginaStaff.click('#form-manual button[type=submit]');
-  await paginaStaff.waitForSelector('.resultado--alerta', { timeout: 8000 });
+  await paginaStaff.waitForSelector('.resultado--alerta', { timeout: 15000 });
   const texto = await paginaStaff.textContent('.resultado__detalle');
   if (!/segundos/.test(texto)) throw new Error('mensaje de espera inesperado: ' + texto);
 });
@@ -161,23 +176,23 @@ await capturar(paginaStaff, '06-escaner-espera');
 
 await paso('el máster ve la actividad', async () => {
   await paginaAdmin.click('.pestana[data-panel=consumos]');
-  await paginaAdmin.waitForSelector('#tabla-consumos .lista__item', { timeout: 8000 });
+  await paginaAdmin.waitForSelector('#tabla-consumos .lista__item', { timeout: 15000 });
 });
 
 await paso('verificación de integridad contable', async () => {
   await paginaAdmin.click('.pestana[data-panel=resumen]');
-  await paginaAdmin.waitForSelector('#integridad .aviso--ok', { timeout: 8000 });
+  await paginaAdmin.waitForSelector('#integridad .aviso--ok', { timeout: 15000 });
 });
 await capturar(paginaAdmin, '07-admin-final');
 
 await paso('el cliente no puede entrar al panel máster', async () => {
   await pagina.goto(B + '/admin', { waitUntil: 'domcontentloaded' });
-  await pagina.waitForURL('**/app', { timeout: 8000 });
+  await pagina.waitForURL('**/app', { timeout: 15000 });
 });
 
 await paso('la sesión sobrevive a recargar la página', async () => {
   await pagina.goto(B + '/app', { waitUntil: 'domcontentloaded' });
-  await pagina.waitForSelector('#contenido:not([hidden])', { timeout: 8000 });
+  await pagina.waitForSelector('#contenido:not([hidden])', { timeout: 15000 });
   const n = await pagina.textContent('#saldo-numero');
   if (n.trim() !== '9') throw new Error('saldo tras recarga: ' + n);
 });

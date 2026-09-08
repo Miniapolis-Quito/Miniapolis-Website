@@ -116,6 +116,38 @@ test('un ajuste no puede dejar el saldo en negativo', async () => {
   assert.ok(packs.checkIntegrity().ok);
 });
 
+test('reactivar un pack vencido pide antes cambiar la fecha', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', {
+    userId: cliente.id,
+    size: 5,
+    expiresAt: new Date(Date.now() + 1500).toISOString(),
+  });
+  const packId = emitido.datos.pack.id;
+  await new Promise((listo) => setTimeout(listo, 1700));
+
+  // El barrido lo marca como vencido en la siguiente lectura.
+  assert.equal((await cMaster.get(`/api/admin/packs?limit=200`)).datos.items.find((p) => p.id === packId).status, 'expired');
+
+  // Ponerlo "activo" a secas no serviría: volvería a vencer en el acto.
+  const fallido = await cMaster.patch(`/api/admin/packs/${packId}`, { status: 'active' });
+  assert.equal(fallido.status, 409);
+  assert.equal(fallido.datos.error.code, 'pack_expirado');
+
+  // Con una fecha nueva, sí: es lo que hace el panel en un solo movimiento.
+  const nuevaFecha = new Date(Date.now() + 86400000).toISOString();
+  const ok = await cMaster.patch(`/api/admin/packs/${packId}`, { status: 'active', expiresAt: nuevaFecha });
+  assert.equal(ok.status, 200, JSON.stringify(ok.datos));
+  assert.equal(ok.datos.pack.status, 'active');
+  assert.equal(ok.datos.pack.usable, true);
+
+  // Y quitarle la fecha del todo también lo deja en servicio.
+  const sinFecha = await cMaster.patch(`/api/admin/packs/${packId}`, { status: 'active', expiresAt: null });
+  assert.equal(sinFecha.status, 200, JSON.stringify(sinFecha.datos));
+  assert.equal(sinFecha.datos.pack.expiresAt, null);
+  assert.equal(sinFecha.datos.pack.usable, true);
+});
+
 test('un pack anulado no se puede reactivar ni ajustar', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
   const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
@@ -190,6 +222,77 @@ test('la exportación a CSV incluye cabeceras y marca de codificación', async (
   });
   const bytes = new Uint8Array(await crudo.arrayBuffer());
   assert.deepEqual([bytes[0], bytes[1], bytes[2]], [0xef, 0xbb, 0xbf], 'Excel necesita la marca de orden de bytes');
+});
+
+test('el cliente pide el contenido de su QR y el historial de su pack', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const packId = emitido.datos.pack.id;
+
+  // Contenido del QR en texto, para un cliente que no es un navegador (un tótem
+  // en la pista, por ejemplo) y dibuja el código por su cuenta.
+  const qr = await cCliente.get(`/api/packs/${packId}/qr`);
+  assert.equal(qr.status, 200);
+  assert.match(qr.datos.payload, /^RHE1\|RHE-/);
+  assert.equal(qr.datos.code, emitido.datos.pack.code);
+  assert.equal(qr.datos.remaining, 5);
+  assert.equal(qr.datos.ttlSeconds > 0, true);
+  assert.equal(qr.headers.get('cache-control'), 'no-store', 'un QR no se guarda en caché');
+
+  // Libro mayor del pack: de momento, solo su emisión.
+  const movimientos = await cCliente.get(`/api/packs/${packId}/movements`);
+  assert.equal(movimientos.status, 200);
+  assert.equal(movimientos.datos.items.length, 1);
+  assert.equal(movimientos.datos.items[0].reason, 'issue');
+  assert.equal(movimientos.datos.items[0].delta, 5);
+  assert.equal(movimientos.datos.items[0].balanceAfter, 5);
+});
+
+test('ni el QR ni el historial de un pack ajeno se entregan a otro cliente', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'ajeno@pista.ec', fullName: 'Piloto Ajeno', role: 'customer', password: 'Palanca-Cambios-55',
+  });
+  const ajeno = await cMaster.post('/api/admin/packs', { userId: otro.datos.user.id, size: 5 });
+  const propio = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  for (const ruta of ['qr', 'qr.svg', 'movements']) {
+    const r = await cCliente.get(`/api/packs/${ajeno.datos.pack.id}/${ruta}`);
+    assert.equal(r.status, 403, `${ruta} debería negarse`);
+    assert.equal(r.datos.error.code, 'sin_permiso');
+  }
+
+  // Y el máster sí puede consultarlos, que es lo que necesita para dar soporte.
+  assert.equal((await cMaster.get(`/api/packs/${ajeno.datos.pack.id}/movements`)).status, 200);
+  // Con los propios, el cliente no encuentra ninguna puerta cerrada.
+  assert.equal((await cCliente.get(`/api/packs/${propio.datos.pack.id}/movements`)).status, 200);
+});
+
+test('el catálogo y el historial del cliente responden lo que la app muestra', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  const catalogo = await cCliente.get('/api/packs/catalog');
+  assert.equal(catalogo.status, 200);
+  assert.equal(catalogo.datos.currency, 'USD');
+  assert.deepEqual(catalogo.datos.items.map((p) => p.size), [5, 10]);
+  assert.equal(
+    catalogo.datos.items.every((p) => typeof p.priceCents === 'number' && p.label),
+    true,
+  );
+
+  const vacio = await cCliente.get('/api/packs/mine/history');
+  assert.equal(vacio.status, 200);
+  assert.equal(vacio.datos.total, 0);
+
+  await cStaff.post('/api/scan/manual', { code: emitido.datos.pack.code, deviceLabel: 'Puerta 1' });
+
+  const conUso = await cCliente.get('/api/packs/mine/history?limit=10');
+  assert.equal(conUso.datos.total, 1);
+  assert.equal(conUso.datos.items[0].packCode, emitido.datos.pack.code);
+  assert.equal(conUso.datos.items[0].method, 'manual_code');
+  assert.equal(conUso.datos.items[0].remainingAfter, 4);
+  assert.equal(conUso.datos.items[0].scannerName, 'Beto Pista');
 });
 
 test('la verificación de integridad detecta un saldo alterado a mano', async () => {
