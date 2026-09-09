@@ -14,6 +14,7 @@ const estado = {
   qrConfig: { ttlSeconds: 120, refreshSeconds: 30 },
   segundosParaRenovar: 0,
   cargandoQr: false,
+  carteras: { apple: false, google: false },
 };
 
 let cabecera;
@@ -146,12 +147,74 @@ function pintarSelectorPacks() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Cartera del teléfono
+// ---------------------------------------------------------------------------
+
+/**
+ * Botones para guardar el pack en Apple Wallet o Google Wallet.
+ *
+ * Los dos casos acaban en una navegación a un enlace, no en una descarga: es
+ * lo único que hace que el teléfono ofrezca añadir el pase a su cartera. Por
+ * eso el servidor entrega primero una dirección y aquí solo se va a ella.
+ */
+function pintarCarteras() {
+  const zona = $('#carteras');
+  const pack = estado.packSeleccionado;
+  const alguna = estado.carteras.apple || estado.carteras.google;
+  if (!pack || !alguna) {
+    zona.hidden = true;
+    render(zona);
+    return;
+  }
+
+  const abrir = async (boton, ruta, textoError) => {
+    await conCarga(boton, async () => {
+      try {
+        const { url } = await api.get(`${ruta}/${pack.id}`);
+        window.location.href = url;
+      } catch (error) {
+        brindis(error.message || textoError, 'error');
+      }
+    });
+  };
+
+  zona.hidden = false;
+  render(
+    zona,
+    el('span', { class: 'tenue pequeno' }, 'Guardar en:'),
+    estado.carteras.apple
+      ? el(
+          'button',
+          {
+            class: 'boton boton--chico boton--fantasma',
+            type: 'button',
+            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/apple/ticket', 'No se pudo preparar el pase.'),
+          },
+          'Apple Wallet',
+        )
+      : null,
+    estado.carteras.google
+      ? el(
+          'button',
+          {
+            class: 'boton boton--chico boton--fantasma',
+            type: 'button',
+            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/google/pass', 'No se pudo preparar el pase.'),
+          },
+          'Google Wallet',
+        )
+      : null,
+  );
+}
+
 async function seleccionarPack(packId) {
   const pack = estado.packs.find((p) => p.id === packId);
   if (!pack || !pack.usable) return;
   estado.packSeleccionado = pack;
   pintarPacks();
   pintarSelectorPacks();
+  pintarCarteras();
   await refrescarQr({ inmediato: true });
 }
 
@@ -295,6 +358,7 @@ async function cargarTodo({ conHistorial = true } = {}) {
   estado.packSeleccionado = elegirPackPorDefecto();
   pintarPacks();
   pintarSelectorPacks();
+  pintarCarteras();
   await refrescarQr({ inmediato: true });
   if (conHistorial) await cargarHistorial();
 }
@@ -411,7 +475,9 @@ function montarCuenta() {
 
   cabecera = montarCabecera($('#cabecera'));
   try {
-    aplicarMarca(await fetch('/api/config').then((r) => r.json()));
+    const configuracion = await fetch('/api/config').then((r) => r.json());
+    aplicarMarca(configuracion);
+    estado.carteras = configuracion.wallet ?? estado.carteras;
   } catch {
     /* opcional */
   }

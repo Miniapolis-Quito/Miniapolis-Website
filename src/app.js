@@ -13,11 +13,16 @@ import packRoutes from './routes/packs.js';
 import scanRoutes from './routes/scan.js';
 import adminRoutes from './routes/admin.js';
 import eventRoutes from './routes/events.js';
+import walletRoutes from './routes/wallet.js';
+import * as wallet from './services/wallet.js';
 
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
 export function createApp() {
   getDb(); // Abre la base y aplica migraciones antes de aceptar tráfico.
+  // Los pases de la cartera se enteran de los cambios por el mismo canal en
+  // vivo que la pantalla del cliente, sin tocar el camino del consumo.
+  wallet.escucharCambios();
 
   const app = express();
 
@@ -80,6 +85,9 @@ export function createApp() {
       allowSelfRegistration: config.security.allowSelfRegistration,
       minPasswordLength: config.security.minPasswordLength,
       qr: { ttlSeconds: config.qr.ttlSeconds, refreshSeconds: config.qr.refreshSeconds },
+      // La interfaz solo ofrece guardar el pase en las carteras que estén
+      // configuradas de verdad.
+      wallet: wallet.disponible(),
     });
   });
 
@@ -88,6 +96,7 @@ export function createApp() {
   app.use('/api/scan', scanRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/events', eventRoutes);
+  app.use('/api/wallet', walletRoutes);
 
   app.use('/api', notFoundHandler);
 

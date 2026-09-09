@@ -27,6 +27,15 @@ foto a tu pantalla, esa foto no le sirve para entrar.
 Debajo del QR aparece tu código: `RHE-XXXX-XXXX`. Dícelo al personal y lo
 ingresa a mano. Funciona igual.
 
+### Guardarlo en la cartera del teléfono
+
+Si el botón aparece bajo el QR, puedes guardar tu pack en **Apple Wallet** o en
+**Google Wallet**. Ahí ves cuántas entradas te quedan sin abrir nada, y el
+número baja solo cada vez que usas una: no hace falta que hagas nada.
+
+Para entrar a la pista sigue siendo mejor el QR de la app, que cambia cada
+pocos segundos. El pase de la cartera es para llevar la cuenta.
+
 ### Consejos
 
 - Guarda la página en la pantalla de inicio del celular para abrirla más rápido.
@@ -192,6 +201,12 @@ los packs en papel y descuéntalos después con el ingreso manual.
 Sí: el pack es del cliente y él decide. Ten en cuenta la espera de unos
 segundos entre escaneos del mismo pack; para un grupo, escanea uno por uno con
 pausa.
+
+**Un cliente pregunta si puede llevar sus entradas en la cartera del teléfono.**
+Sí, si el sistema tiene configuradas las carteras: bajo su QR le aparece el
+botón para guardarlas. El saldo del pase se actualiza solo cada vez que le
+descuentas una entrada. Para entrar sigue mostrando el QR de la app; el pase de
+la cartera solo lleva código si le habilitaste el QR impreso a ese pack.
 
 **¿Las entradas caducan?**
 Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan. La

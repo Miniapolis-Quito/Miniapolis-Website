@@ -294,6 +294,26 @@ await paso('el cliente ve bajar su saldo en vivo, sin recargar', async () => {
   });
 });
 
+await paso('la app ofrece guardar el pase cuando hay carteras configuradas', async () => {
+  // Las credenciales de Apple y Google las emite el negocio, así que aquí se
+  // finge la respuesta de configuración: lo que se comprueba es que la app
+  // ofrece los botones justo cuando el sistema dice que puede.
+  await cliente.route('**/api/config', async (ruta) => {
+    const original = await ruta.fetch();
+    const datos = await original.json();
+    await ruta.fulfill({ json: { ...datos, wallet: { apple: true, google: true } } });
+  });
+  await cliente.reload({ waitUntil: 'domcontentloaded' });
+  await cliente.waitForSelector('#seccion-qr:not([hidden]) svg', { timeout: 15000 });
+
+  const zona = cliente.locator('#carteras');
+  await zona.waitFor({ timeout: 15000 });
+  const botones = await zona.locator('button').allTextContents();
+  if (!botones.some((t) => /Apple/i.test(t))) throw new Error(`sin botón de Apple: ${botones.join(' | ')}`);
+  if (!botones.some((t) => /Google/i.test(t))) throw new Error(`sin botón de Google: ${botones.join(' | ')}`);
+  await cliente.unroute('**/api/config');
+});
+
 await navegador.close();
 await bajarServidor();
 

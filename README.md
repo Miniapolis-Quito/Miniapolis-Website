@@ -18,6 +18,8 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   quedó.
 - Si se queda sin señal, su código de pack (`RHE-XXXX-XXXX`) sigue sirviendo:
   el personal puede ingresarlo a mano.
+- Puede guardar el pack en la cartera del teléfono (Apple Wallet o Google
+  Wallet) y ver ahí el saldo, que baja solo cada vez que usa una entrada.
 
 **Para el personal de pista**
 - Escáner con la cámara del teléfono, con lector nativo del navegador cuando
@@ -282,6 +284,33 @@ La línea de tiempo distingue lo que hizo el cliente de lo que hizo el personal,
 y cada movimiento muestra el saldo con el que quedó el pack. Un ajuste sin
 motivo no se puede guardar: la ficha es también el expediente que se consulta
 cuando alguien reclama.
+## Pases en la cartera del teléfono
+
+El cliente puede guardar su pack en **Apple Wallet** o **Google Wallet**. El
+pase muestra cuántas entradas le quedan y **el número baja solo**: cuando el
+personal descuenta una, el sistema avisa al teléfono y este recoge el saldo
+nuevo, sin abrir la app.
+
+Es opcional y viene apagado. Cada plataforma se enciende por su cuenta, y solo
+cuando están todas sus credenciales: sin ellas, la app no ofrece el botón y el
+resto del sistema funciona igual. Lo que hay que conseguir está explicado paso
+a paso en `.env.example`; en resumen, Apple pide una cuenta de desarrollador de
+pago (un certificado de Pass Type ID y una clave de avisos) y Google una cuenta
+de servicio con la API de Wallet activada, que es gratuita.
+
+**Sobre el código del pase.** Un pase de cartera vive en el teléfono y no puede
+renovar su QR cada treinta segundos, así que solo lleva código cuando el pack
+tiene habilitado el **QR impreso** —la misma regla que el pase de cartón: lo
+que no rota se puede copiar, y por eso lo habilita el máster pack por pack—.
+Sin esa opción el pase sigue haciendo lo que la mayoría quiere: enseñar el
+saldo al día. Para entrar, el cliente muestra el QR de la app.
+
+Detrás de la actualización automática hay dos caminos distintos, uno por
+plataforma: a Apple se le manda un aviso silencioso y es el teléfono quien
+vuelve a pedir el pase (`/api/wallet/apple/v1/...`, el servicio web que define
+Apple); a Google se le envía el saldo directamente a su API. En los dos casos
+el disparador es el mismo canal en vivo que ya mueve la pantalla del cliente,
+así que el camino del cobro no se toca.
 
 ---
 
@@ -307,7 +336,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (160 pruebas)
+npm test        # suite completa (PENDIENTE pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
@@ -346,11 +375,13 @@ src/
   bootstrap.js         Creación de la cuenta máster inicial
   db/                  Conexión SQLite y migraciones incrementales
   lib/                 QR, contraseñas, tokens, límites, eventos en vivo,
-                       texto y días del calendario
+                       texto, días del calendario y pases de cartera
   middleware/          Seguridad, autenticación, manejo de errores
-  routes/              auth · packs · scan · admin · events
+  routes/              auth · packs · scan · admin · events · wallet
   services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
-                       expediente del cliente, auditoría y cifras del panel)
+                       expediente del cliente, auditoría, cifras del panel
+                       y pases de cartera)
+assets/                Iconos del pase de cartera
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas
 scripts/               Utilidades de terminal

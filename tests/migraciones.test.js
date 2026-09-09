@@ -99,13 +99,16 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   assert.deepEqual(tablas, [
     'audit_log', 'idempotency_keys', 'pack_movements', 'packs',
     'rate_limits', 'redemptions', 'sessions', 'used_nonces', 'users',
+    'wallet_devices', 'wallet_passes',
   ]);
 
   assert.equal(db.pragma('user_version', { simple: true }), migrations.length);
 
   // Índices que sostienen las garantías del sistema.
   const indices = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((r) => r.name);
-  for (const necesario of ['idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack']) {
+  for (const necesario of [
+    'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
+  ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }
 

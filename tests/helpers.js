@@ -41,6 +41,7 @@ export function limpiarBase() {
   const db = getDb();
   db.pragma('foreign_keys = OFF');
   for (const tabla of [
+    'wallet_devices', 'wallet_passes',
     'pack_movements', 'redemptions', 'packs', 'sessions', 'audit_log',
     'used_nonces', 'rate_limits', 'idempotency_keys', 'users',
   ]) {
@@ -54,7 +55,7 @@ export function crearCliente() {
   const cookies = new Map();
   let token = null;
 
-  async function pedir(ruta, { metodo = 'GET', cuerpo, cabeceras = {} } = {}) {
+  async function pedir(ruta, { metodo = 'GET', cuerpo, cabeceras = {}, binario = false } = {}) {
     const headers = { ...cabeceras };
     if (cuerpo !== undefined) headers['Content-Type'] = 'application/json';
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -78,9 +79,13 @@ export function crearCliente() {
     }
 
     const tipo = respuesta.headers.get('content-type') || '';
-    const datos = tipo.includes('application/json')
-      ? await respuesta.json()
-      : await respuesta.text();
+    // Un pase de cartera o cualquier otro archivo llega en binario: leerlo como
+    // texto lo destrozaría al decodificarlo.
+    const datos = binario
+      ? Buffer.from(await respuesta.arrayBuffer())
+      : tipo.includes('application/json')
+        ? await respuesta.json()
+        : await respuesta.text();
 
     return { status: respuesta.status, datos, headers: respuesta.headers };
   }

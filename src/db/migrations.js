@@ -263,6 +263,38 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '005-pases-en-la-cartera',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Pases en la cartera del teléfono (Apple Wallet / Google Wallet)
+        --
+        -- El número de serie es opaco a propósito: viaja en la URL que el
+        -- teléfono consulta y en los registros del proxy, mientras que el
+        -- código del pack sirve para consumir entradas en el mostrador.
+        -- ---------------------------------------------------------------
+        CREATE TABLE wallet_passes (
+          pack_id          TEXT PRIMARY KEY REFERENCES packs(id) ON DELETE CASCADE,
+          serial           TEXT NOT NULL UNIQUE,
+          auth_token       TEXT NOT NULL,
+          created_at       TEXT NOT NULL,
+          updated_at       TEXT NOT NULL,
+          google_synced_at TEXT
+        );
+
+        -- Cada teléfono que guardó el pase de Apple y espera avisos de cambio.
+        CREATE TABLE wallet_devices (
+          device_id  TEXT NOT NULL,
+          serial     TEXT NOT NULL REFERENCES wallet_passes(serial) ON DELETE CASCADE,
+          push_token TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (device_id, serial)
+        );
+        CREATE INDEX idx_wallet_devices_serial ON wallet_devices(serial);
+      `);
+    },
+  },
 ];
 
 export default migrations;

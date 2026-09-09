@@ -125,6 +125,63 @@ function trustedProxyIps() {
 }
 
 /**
+ * Lee un secreto que puede venir en la variable o en un archivo apuntado por
+ * ella. Los certificados y las claves privadas se guardan en disco, con sus
+ * permisos, y no pegados en el entorno.
+ */
+function secretoOArchivo(nombre) {
+  const valor = (process.env[nombre] || '').trim();
+  if (!valor) return '';
+  // Una clave en PEM empieza por "-----BEGIN"; cualquier otra cosa es una ruta.
+  if (valor.startsWith('-----BEGIN')) return valor.replace(/\\n/g, '\n');
+  try {
+    return fs.readFileSync(path.resolve(ROOT_DIR, valor), 'utf8');
+  } catch (error) {
+    throw new Error(`Configuración inválida: no se pudo leer ${nombre} desde "${valor}": ${error.message}`);
+  }
+}
+
+/**
+ * Pases para la cartera del teléfono (Apple Wallet y Google Wallet).
+ *
+ * Cada plataforma se activa por su cuenta y solo si están todos sus datos: sin
+ * credenciales la función queda apagada y el resto del sistema no se entera.
+ * Las credenciales las emite el negocio —Apple pide una cuenta de desarrollador
+ * y Google una cuenta de servicio—, así que no hay valores por defecto que
+ * puedan colarse en producción.
+ */
+function wallet() {
+  const apple = {
+    passTypeId: process.env.APPLE_PASS_TYPE_ID || '',
+    teamId: process.env.APPLE_TEAM_ID || '',
+    certificate: secretoOArchivo('APPLE_PASS_CERTIFICATE'),
+    key: secretoOArchivo('APPLE_PASS_KEY'),
+    keyPassword: process.env.APPLE_PASS_KEY_PASSWORD || '',
+    wwdrCertificate: secretoOArchivo('APPLE_WWDR_CERTIFICATE'),
+    apnsKeyId: process.env.APPLE_APNS_KEY_ID || '',
+    apnsKey: secretoOArchivo('APPLE_APNS_KEY'),
+    apnsHost: process.env.APPLE_APNS_HOST || 'api.push.apple.com',
+  };
+  apple.enabled = Boolean(
+    apple.passTypeId && apple.teamId && apple.certificate && apple.key && apple.wwdrCertificate,
+  );
+  // El envío push es opcional: sin él el pase se crea igual, pero el saldo solo
+  // se actualiza cuando el teléfono lo consulta por su cuenta.
+  apple.pushEnabled = Boolean(apple.enabled && apple.apnsKeyId && apple.apnsKey && apple.teamId);
+
+  const google = {
+    issuerId: process.env.GOOGLE_WALLET_ISSUER_ID || '',
+    serviceAccountEmail: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT || '',
+    privateKey: secretoOArchivo('GOOGLE_WALLET_PRIVATE_KEY'),
+    classSuffix: process.env.GOOGLE_WALLET_CLASS || 'entradas',
+  };
+  google.enabled = Boolean(google.issuerId && google.serviceAccountEmail && google.privateKey);
+  google.classId = google.enabled ? `${google.issuerId}.${google.classSuffix}` : '';
+
+  return { apple, google, enabled: apple.enabled || google.enabled };
+}
+
+/**
  * Catálogo de packs a la venta.
  *
  * Se admite una lista completa en `PACK_CATALOG` ("5:2500,10:4500,20:8000":
@@ -241,6 +298,15 @@ export const config = Object.freeze({
     masterPassword: process.env.MASTER_PASSWORD || '',
     masterName: process.env.MASTER_NAME || 'Administrador',
   },
+
+  /**
+   * Dirección pública del sistema. El pase de la cartera lleva dentro la URL a
+   * la que el teléfono pedirá el saldo actualizado, y tiene que ser absoluta.
+   */
+  publicUrl: (process.env.PUBLIC_URL || '').trim().replace(/\/+$/, ''),
+
+  /** Pases para la cartera del teléfono. */
+  wallet: wallet(),
 
   /** Catálogo de packs vendibles. */
   packCatalog: Object.freeze(packCatalog().map((entrada) => Object.freeze(entrada))),
