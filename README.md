@@ -336,7 +336,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (PENDIENTE pruebas)
+npm test        # suite completa (171 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
