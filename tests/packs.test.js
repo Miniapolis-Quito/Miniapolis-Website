@@ -1,6 +1,6 @@
 import test, { before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios } from './helpers.js';
+import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios, crearCliente } from './helpers.js';
 import * as packs from '../src/services/packs.js';
 import { getDb } from '../src/db/index.js';
 
@@ -293,6 +293,24 @@ test('el catálogo y el historial del cliente responden lo que la app muestra', 
   assert.equal(conUso.datos.items[0].method, 'manual_code');
   assert.equal(conUso.datos.items[0].remainingAfter, 4);
   assert.equal(conUso.datos.items[0].scannerName, 'Beto Pista');
+});
+
+test('los reportes solo los descarga el máster, y uno inventado no existe', async () => {
+  const { cMaster, cStaff } = await sembrarUsuarios();
+  const anonimo = crearCliente();
+
+  for (const entidad of ['packs', 'consumos', 'clientes']) {
+    assert.equal((await anonimo.get(`/api/admin/export/${entidad}.csv`)).status, 401);
+    assert.equal((await cStaff.get(`/api/admin/export/${entidad}.csv`)).status, 403);
+
+    const r = await cMaster.get(`/api/admin/export/${entidad}.csv`);
+    assert.equal(r.status, 200, `${entidad} debería exportarse`);
+    assert.match(r.headers.get('content-type'), /text\/csv/);
+    assert.match(r.headers.get('content-disposition'), /attachment; filename=/);
+  }
+
+  // Un reporte que no existe se dice, en vez de entregar un archivo vacío.
+  assert.equal((await cMaster.get('/api/admin/export/inventado.csv')).status, 404);
 });
 
 test('la verificación de integridad detecta un saldo alterado a mano', async () => {

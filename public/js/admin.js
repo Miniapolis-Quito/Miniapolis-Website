@@ -1,12 +1,13 @@
 /**
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
-import { $, $$, el, render, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, telefono, estadoPack, METODOS,
-         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
+import { $, $$, el, render, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
+         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 import { abrirFicha, cerrarFicha } from './ficha.js';
+import { botonesDePack, anularConsumo } from './acciones.js';
 
 const estado = {
   configuracion: null,
@@ -129,32 +130,20 @@ function mediodiaDe(dia) {
   return `${dia}T12:00:00Z`;
 }
 
-function tarjetaMetrica(valor, etiqueta, modificador = '') {
-  return el(
-    'div',
-    { class: 'tarjeta' },
-    el(
-      'div',
-      { class: `metrica ${modificador}` },
-      el('div', { class: 'metrica__valor' }, valor),
-      el('div', { class: 'metrica__etiqueta' }, etiqueta),
-    ),
-  );
-}
 
 async function cargarResumen() {
   const datos = await api.get('/api/admin/dashboard');
 
   render(
     $('#metricas'),
-    tarjetaMetrica(String(datos.totals.pendingTickets), 'Entradas por usar', 'metrica--acento'),
-    tarjetaMetrica(String(datos.redemptions.today), 'Entradas usadas hoy', 'metrica--ok'),
-    tarjetaMetrica(String(datos.totals.activePacks), 'Packs activos'),
-    tarjetaMetrica(dinero(datos.totals.revenueCents, datos.totals.currency), 'Ingresos registrados'),
-    tarjetaMetrica(String(datos.users.customers), 'Clientes'),
-    tarjetaMetrica(String(datos.redemptions.week), 'Usadas esta semana'),
-    tarjetaMetrica(String(datos.totals.issuedTickets), 'Entradas emitidas'),
-    tarjetaMetrica(String(datos.users.staff), 'Personal de pista'),
+    metrica(String(datos.totals.pendingTickets), 'Entradas por usar', 'metrica--acento'),
+    metrica(String(datos.redemptions.today), 'Entradas usadas hoy', 'metrica--ok'),
+    metrica(String(datos.totals.activePacks), 'Packs activos'),
+    metrica(dinero(datos.totals.revenueCents, datos.totals.currency), 'Ingresos registrados'),
+    metrica(String(datos.users.customers), 'Clientes'),
+    metrica(String(datos.redemptions.week), 'Usadas esta semana'),
+    metrica(String(datos.totals.issuedTickets), 'Entradas emitidas'),
+    metrica(String(datos.users.staff), 'Personal de pista'),
   );
 
   // Gráfico de barras de los últimos 14 días. El calendario lo arma el
@@ -418,159 +407,14 @@ async function verPack(packId) {
     el(
       'div',
       { class: 'rejilla rejilla--3 mt' },
-      tarjetaMetrica(String(pack.remaining), 'Restantes', 'metrica--acento'),
-      tarjetaMetrica(String(pack.used), 'Usadas'),
-      tarjetaMetrica(dinero(pack.priceCents, pack.currency), 'Precio'),
+      metrica(String(pack.remaining), 'Restantes', 'metrica--acento'),
+      metrica(String(pack.used), 'Usadas'),
+      metrica(dinero(pack.priceCents, pack.currency), 'Precio'),
     ),
     el(
       'div',
       { class: 'fila mt' },
-      el(
-        'button',
-        {
-          class: 'boton boton--chico boton--fantasma',
-          type: 'button',
-          onClick: async () => {
-            const motivo = await pedirTexto({
-              titulo: 'Ajustar entradas',
-              mensaje: 'Usa números positivos para acreditar y negativos para descontar. Todo ajuste queda registrado.',
-              etiqueta: 'Cantidad (por ejemplo: 2 o -1)',
-              textoAceptar: 'Siguiente',
-              minimo: 1,
-            });
-            if (motivo === null) return;
-            const delta = Number.parseInt(motivo, 10);
-            if (!Number.isInteger(delta) || delta === 0) {
-              brindis('Ingresa un número entero distinto de cero.', 'error');
-              return;
-            }
-            const razon = await pedirTexto({
-              titulo: 'Motivo del ajuste',
-              mensaje: `Se ${delta > 0 ? 'acreditarán' : 'descontarán'} ${Math.abs(delta)} entrada(s).`,
-              etiqueta: 'Motivo',
-              textoAceptar: 'Aplicar ajuste',
-            });
-            if (!razon) return;
-            try {
-              await api.post(`/api/admin/packs/${packId}/adjust`, { delta, reason: razon });
-              brindis('Ajuste aplicado.', 'ok');
-              recargar();
-            } catch (error) {
-              brindis(error.message, 'error');
-            }
-          },
-        },
-        'Ajustar entradas',
-      ),
-      pack.status !== 'cancelled'
-        ? el(
-            'button',
-            {
-              class: `boton boton--chico ${pack.status === 'suspended' ? 'boton--ok' : 'boton--fantasma'}`,
-              type: 'button',
-              onClick: async () => {
-                const suspender = pack.status !== 'suspended';
-                try {
-                  await api.patch(`/api/admin/packs/${packId}`, { status: suspender ? 'suspended' : 'active' });
-                  brindis(suspender ? 'Pack suspendido.' : 'Pack reactivado.', 'ok');
-                  recargar();
-                } catch (error) {
-                  brindis(error.message, 'error');
-                }
-              },
-            },
-            pack.status === 'suspended' ? 'Reactivar pack' : 'Suspender pack',
-          )
-        : null,
-      pack.status !== 'cancelled'
-        ? el(
-            'button',
-            {
-              class: 'boton boton--chico boton--peligro',
-              type: 'button',
-              onClick: async () => {
-                const seguro = await confirmar({
-                  titulo: 'Anular pack',
-                  mensaje: 'El pack quedará inutilizable de forma permanente. Esta acción no se puede revertir.',
-                  textoAceptar: 'Anular pack',
-                  peligro: true,
-                });
-                if (!seguro) return;
-                try {
-                  await api.patch(`/api/admin/packs/${packId}`, { status: 'cancelled' });
-                  brindis('Pack anulado.', 'ok');
-                  recargar();
-                } catch (error) {
-                  brindis(error.message, 'error');
-                }
-              },
-            },
-            'Anular pack',
-          )
-        : null,
-      el(
-        'button',
-        {
-          class: 'boton boton--chico boton--fantasma',
-          type: 'button',
-          onClick: async () => {
-            try {
-              await api.patch(`/api/admin/packs/${packId}`, { allowStaticQr: !pack.allowStaticQr });
-              brindis(pack.allowStaticQr ? 'QR impreso desactivado.' : 'QR impreso activado.', 'ok');
-              recargar();
-            } catch (error) {
-              brindis(error.message, 'error');
-            }
-          },
-        },
-        pack.allowStaticQr ? 'Desactivar QR impreso' : 'Activar QR impreso',
-      ),
-      pack.status !== 'cancelled'
-        ? el(
-            'button',
-            {
-              class: 'boton boton--chico boton--fantasma',
-              type: 'button',
-              onClick: alPulsar(async () => {
-                const elegida = await pedirTexto({
-                  titulo: 'Cambiar vencimiento',
-                  mensaje: 'Déjalo vacío para que el pack no caduque.',
-                  etiqueta: 'Vence el',
-                  tipo: 'date',
-                  valorInicial: pack.expiresAt ? pack.expiresAt.slice(0, 10) : '',
-                  textoAceptar: 'Guardar fecha',
-                  minimo: 0,
-                });
-                if (elegida === null) return;
-                // La fecha elegida vale hasta el final de ese día.
-                const expiresAt = elegida ? finDelDiaIso(elegida) : null;
-                const cambios = { expiresAt };
-                // Darle fecha nueva a un pack vencido es, en el mostrador,
-                // devolverlo al servicio: se hace en un solo movimiento.
-                const seguiraVigente = expiresAt === null || Date.parse(expiresAt) > Date.now();
-                if (pack.status === 'expired' && seguiraVigente) cambios.status = 'active';
-                await api.patch(`/api/admin/packs/${packId}`, cambios);
-                brindis(
-                  expiresAt ? `El pack vence el ${fecha(expiresAt, { conHora: false })}.` : 'El pack ya no caduca.',
-                  'ok',
-                );
-                recargar();
-              }),
-            },
-            pack.expiresAt ? 'Cambiar vencimiento' : 'Poner vencimiento',
-          )
-        : null,
-      pack.allowStaticQr
-        ? el(
-            'button',
-            {
-              class: 'boton boton--chico boton--fantasma',
-              type: 'button',
-              onClick: alPulsar(() => imprimirPase(pack, datos.owner)),
-            },
-            'Imprimir pase',
-          )
-        : null,
+      botonesDePack(pack, { alCambiar: recargar, alImprimir: (p) => imprimirPase(p, datos.owner) }),
     ),
     pack.expiresAt ? el('p', { class: 'tenue pequeno mt' }, `Vence el ${fecha(pack.expiresAt, { conHora: false })}`) : null,
     pack.note ? el('p', { class: 'tenue pequeno' }, `Nota: ${pack.note}`) : null,
@@ -717,22 +561,7 @@ function filaConsumo(item, alCambiar) {
           {
             class: 'boton boton--chico boton--peligro',
             type: 'button',
-            onClick: async () => {
-              const motivo = await pedirTexto({
-                titulo: 'Anular consumo',
-                mensaje: 'La entrada se devolverá al pack del cliente y quedará registrado quién lo hizo.',
-                etiqueta: 'Motivo de la anulación',
-                textoAceptar: 'Anular y devolver',
-              });
-              if (!motivo) return;
-              try {
-                await api.post(`/api/admin/redemptions/${item.id}/void`, { reason: motivo });
-                brindis('Entrada devuelta al cliente.', 'ok');
-                alCambiar?.();
-              } catch (error) {
-                brindis(error.message, 'error');
-              }
-            },
+            onClick: () => anularConsumo(item, alCambiar),
           },
           'Anular',
         )
@@ -773,22 +602,7 @@ async function cargarConsumos() {
                   {
                     class: 'boton boton--chico boton--peligro',
                     type: 'button',
-                    onClick: async () => {
-                      const motivo = await pedirTexto({
-                        titulo: 'Anular consumo',
-                        mensaje: `Se devolverá una entrada a ${item.customerName}.`,
-                        etiqueta: 'Motivo de la anulación',
-                        textoAceptar: 'Anular y devolver',
-                      });
-                      if (!motivo) return;
-                      try {
-                        await api.post(`/api/admin/redemptions/${item.id}/void`, { reason: motivo });
-                        brindis('Entrada devuelta.', 'ok');
-                        cargarConsumos();
-                      } catch (error) {
-                        brindis(error.message, 'error');
-                      }
-                    },
+                    onClick: () => anularConsumo(item, cargarConsumos),
                   },
                   'Anular',
                 )

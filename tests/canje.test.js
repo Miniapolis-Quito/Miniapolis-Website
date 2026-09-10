@@ -271,16 +271,30 @@ test('el consumo manual por código funciona y tolera erratas al teclear', async
   assert.equal(r.datos.remaining, 4);
 });
 
-test('el código se normaliza aunque el cuerpo empiece por las letras del prefijo', () => {
-  // El alfabeto de los códigos incluye R, H y E, así que un cuerpo puede
-  // empezar por "RHE". Recortar el prefijo a ciegas lo dejaba inservible.
+test('el código tecleado se normaliza y los caracteres confundibles se traducen', () => {
+  // Lo que se corrige sin más: mayúsculas, espacios, separadores y el prefijo.
+  assert.equal(normalizePackCode('rhe23456789'), 'RHE-2345-6789');
+  assert.equal(normalizePackCode('  RHE 2345 6789 '), 'RHE-2345-6789');
+  assert.equal(normalizePackCode('2345-6789'), 'RHE-2345-6789');
+  assert.equal(normalizePackCode('rhe.abcd/efgh'), 'RHE-ABCD-EFGH');
+
+  // El alfabeto excluye 0, 1, I, L, O y U justamente porque se confunden con
+  // los caracteres que sí lo forman. Quien lee un cartón impreso teclea el que
+  // ve, así que se traducen: O y 0 a Q, I/L/1 a 7, y U a V.
+  assert.equal(normalizePackCode('RHE-O345-6789'), 'RHE-Q345-6789');
+  assert.equal(normalizePackCode('RHE-2345-678I'), 'RHE-2345-6787');
+  assert.equal(normalizePackCode('RHE-UUUU-2222'), 'RHE-VVVV-2222');
+  assert.equal(normalizePackCode('RHE-0OIL-UVWX'), 'RHE-QQ77-VVWX');
+
+  // El alfabeto incluye R, H y E, así que un cuerpo puede empezar por "RHE":
+  // recortar el prefijo a ciegas dejaba ese código inservible.
   assert.equal(normalizePackCode('RHEABCDE'), 'RHE-RHEA-BCDE');
   assert.equal(normalizePackCode('RHE-RHEA-BCDE'), 'RHE-RHEA-BCDE');
   assert.equal(normalizePackCode('RHERHEABCDE'), 'RHE-RHEA-BCDE');
-  // Separadores de cualquier tipo, y confusiones típicas al teclear.
-  assert.equal(normalizePackCode('rhe.abcd/efgh'), 'RHE-ABCD-EFGH');
-  assert.equal(normalizePackCode('RHE-0OIL-UVWX'), 'RHE-QQ77-VVWX');
-  // Lo que no puede ser un código sigue sin serlo.
+
+  // Lo que no cuadra se rechaza en vez de resolver a medias.
+  assert.equal(normalizePackCode('RHE-234-6789'), '', 'un código corto no vale');
+  assert.equal(normalizePackCode('RHE-2345-678$'), '', 'un carácter fuera del alfabeto no vale');
   assert.equal(normalizePackCode('ABC'), '');
   assert.equal(normalizePackCode(null), '');
 });
@@ -427,18 +441,25 @@ test('cada consumo deja rastro en el libro mayor y en la auditoría', async () =
   assert.equal(auditoria.datos.items[0].metadata.deviceLabel, 'Puerta 2');
 });
 
-test('un código inventado o basura no rompe nada', async () => {
-  const { cStaff } = await sembrarUsuarios();
+test('un código inventado o basura no rompe nada ni descuenta de otro pack', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
 
   const basura = await cStaff.post('/api/scan', { payload: 'hola soy un texto cualquiera' });
   assert.equal(basura.status, 400);
   assert.equal(basura.datos.error.code, 'qr_invalido');
 
-  const inexistente = await cStaff.post('/api/scan/manual', { code: 'RHE-2222-3333' });
+  // Un código con el formato correcto pero que no es de nadie.
+  const inventado = 'RHE-2222-3333';
+  assert.notEqual(inventado, pack.code);
+  const inexistente = await cStaff.post('/api/scan/manual', { code: inventado });
   assert.equal(inexistente.status, 404);
+  assert.equal(inexistente.datos.error.code, 'pack_no_encontrado');
 
   const vacio = await cStaff.post('/api/scan', { payload: '' });
   assert.equal(vacio.status, 400);
+
+  assert.equal(packsService.findById(pack.id).remaining, 5, 'ningún pack pierde entradas');
 });
 
 test('la misma clave de idempotencia en otra operación se rechaza sin romper nada', async () => {

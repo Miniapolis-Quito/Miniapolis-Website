@@ -168,6 +168,20 @@ export function telefono(valor) {
   return texto;
 }
 
+/** Tarjeta con un número grande y su etiqueta; la usan el panel y la ficha. */
+export function metrica(valor, etiqueta, modificador = '') {
+  return el(
+    'div',
+    { class: 'tarjeta' },
+    el(
+      'div',
+      { class: `metrica ${modificador}` },
+      el('div', { class: 'metrica__valor' }, valor),
+      el('div', { class: 'metrica__etiqueta' }, etiqueta),
+    ),
+  );
+}
+
 export function plural(cantidad, singular, pluralForma) {
   return `${cantidad} ${cantidad === 1 ? singular : pluralForma}`;
 }

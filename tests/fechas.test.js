@@ -10,7 +10,7 @@
 import './env-utc.js';
 import test, { before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios } from './helpers.js';
+import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios, crearCliente } from './helpers.js';
 import { getDb } from '../src/db/index.js';
 import { config } from '../src/config.js';
 import * as fechas from '../src/lib/fechas.js';
@@ -67,6 +67,15 @@ test('el día siguiente se calcula sobre el calendario, no sumando 24 horas', ()
   const empieza = fechas.inicioDelDia('2026-10-25', 'Europe/Madrid');
   const acaba = fechas.inicioDelDia(fechas.siguienteDia('2026-10-25'), 'Europe/Madrid');
   assert.equal((acaba - empieza) / 3600_000, 25);
+});
+
+test('la interfaz sabe en qué zona horaria trabaja la pista', async () => {
+  // La interfaz formatea fechas y horas con esta zona; si no la publicara,
+  // pintaría el día del navegador de quien mira, que puede estar en otro país.
+  const r = await crearCliente().get('/api/config');
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.timezone, config.timezone);
+  assert.ok(r.datos.timezone.includes('/'), `zona inesperada: ${r.datos.timezone}`);
 });
 
 test('una entrada usada por la tarde cuenta en el día de la pista', async () => {

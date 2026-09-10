@@ -7,10 +7,11 @@
  * sobreviva a recargar la página.
  */
 import {
-  $, el, render, brindis, fecha, relativo, dinero, plural, telefono, estadoPack, METODOS,
+  $, el, render, brindis, fecha, relativo, dinero, plural, metrica, telefono, estadoPack, METODOS,
   mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar,
 } from './ui.js';
 import { api } from './api.js';
+import { botonesDePack, anularConsumo } from './acciones.js';
 
 const ROLES = { customer: 'Cliente', staff: 'Personal de pista', master: 'Máster' };
 
@@ -51,18 +52,6 @@ function iniciales(nombre) {
   return partes.map((p) => p[0]?.toUpperCase() ?? '').join('') || '?';
 }
 
-function metrica(valor, etiqueta, modificador = '') {
-  return el(
-    'div',
-    { class: 'tarjeta' },
-    el(
-      'div',
-      { class: `metrica ${modificador}` },
-      el('div', { class: 'metrica__valor' }, valor),
-      el('div', { class: 'metrica__etiqueta' }, etiqueta),
-    ),
-  );
-}
 
 function seccion(titulo, ...contenido) {
   return el('section', { class: 'tarjeta' }, el('div', { class: 'tarjeta__titulo' }, el('h2', {}, titulo)), ...contenido);
@@ -501,105 +490,23 @@ function tarjetaPackDetallada(pack) {
     el(
       'div',
       { class: 'fila mt' },
-      el(
-        'button',
-        { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: (e) => alternarMovimientos(e.currentTarget) },
-        'Ver movimientos',
-      ),
-      el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => ajustarPack(pack) }, 'Ajustar entradas'),
-      pack.status !== 'cancelled'
-        ? el(
+      botonesDePack(pack, {
+        alCambiar: recargar,
+        alImprimir: (elegido) => estado.opciones.onImprimirPase(elegido, estado.datos.user),
+        extra: [
+          el(
             'button',
-            {
-              class: `boton boton--chico ${pack.status === 'suspended' ? 'boton--ok' : 'boton--fantasma'}`,
-              type: 'button',
-              onClick: async () => {
-                const suspender = pack.status !== 'suspended';
-                await api.patch(`/api/admin/packs/${pack.id}`, { status: suspender ? 'suspended' : 'active' });
-                brindis(suspender ? 'Pack suspendido.' : 'Pack reactivado.', 'ok');
-                recargar();
-              },
-            },
-            pack.status === 'suspended' ? 'Reactivar' : 'Suspender',
-          )
-        : null,
-      el(
-        'button',
-        {
-          class: 'boton boton--chico boton--fantasma',
-          type: 'button',
-          onClick: async () => {
-            await api.patch(`/api/admin/packs/${pack.id}`, { allowStaticQr: !pack.allowStaticQr });
-            brindis(pack.allowStaticQr ? 'QR impreso desactivado.' : 'QR impreso activado.', 'ok');
-            recargar();
-          },
-        },
-        pack.allowStaticQr ? 'Desactivar QR impreso' : 'Activar QR impreso',
-      ),
-      pack.allowStaticQr
-        ? el(
-            'button',
-            { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => estado.opciones.onImprimirPase(pack, estado.datos.user) },
-            'Imprimir pase',
-          )
-        : null,
-      pack.status !== 'cancelled'
-        ? el('button', { class: 'boton boton--chico boton--peligro', type: 'button', onClick: () => anularPack(pack) }, 'Anular pack')
-        : null,
+            { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: (e) => alternarMovimientos(e.currentTarget) },
+            'Ver movimientos',
+          ),
+        ],
+      }),
     ),
     movimientos,
   );
 }
 
-async function ajustarPack(pack) {
-  const cantidad = await pedirTexto({
-    titulo: `Ajustar entradas de ${pack.code}`,
-    mensaje: 'Un número positivo acredita entradas y uno negativo las descuenta. El ajuste queda registrado con tu nombre.',
-    etiqueta: 'Cantidad (por ejemplo: 2 o -1)',
-    textoAceptar: 'Siguiente',
-    minimo: 1,
-  });
-  if (cantidad === null) return;
 
-  const delta = Number.parseInt(cantidad, 10);
-  if (!Number.isInteger(delta) || delta === 0) {
-    brindis('Escribe un número entero distinto de cero.', 'error');
-    return;
-  }
-
-  const motivo = await pedirTexto({
-    titulo: 'Motivo del ajuste',
-    mensaje: `Se ${delta > 0 ? 'acreditarán' : 'descontarán'} ${Math.abs(delta)} entrada(s) en ${pack.code}.`,
-    etiqueta: 'Motivo',
-    textoAceptar: 'Aplicar ajuste',
-  });
-  if (!motivo) return;
-
-  try {
-    await api.post(`/api/admin/packs/${pack.id}/adjust`, { delta, reason: motivo });
-    brindis('Ajuste aplicado.', 'ok');
-    recargar();
-  } catch (error) {
-    brindis(error.message, 'error');
-  }
-}
-
-async function anularPack(pack) {
-  const seguro = await confirmar({
-    titulo: `Anular ${pack.code}`,
-    mensaje: `El pack quedará inutilizable de forma permanente y el cliente perderá sus ${pack.remaining} entrada(s) restantes. Esto no se puede deshacer.`,
-    textoAceptar: 'Anular pack',
-    peligro: true,
-  });
-  if (!seguro) return;
-  try {
-    await api.patch(`/api/admin/packs/${pack.id}`, { status: 'cancelled' });
-    brindis('Pack anulado.', 'ok');
-    recargar();
-  } catch (error) {
-    brindis(error.message, 'error');
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Pestaña: Consumos
@@ -665,7 +572,7 @@ function panelConsumos() {
                         item.status === 'confirmed'
                           ? el(
                               'button',
-                              { class: 'boton boton--chico boton--peligro', type: 'button', onClick: () => anularConsumo(item) },
+                              { class: 'boton boton--chico boton--peligro', type: 'button', onClick: () => anularConsumo(item, recargar) },
                               'Anular',
                             )
                           : el(
@@ -712,22 +619,6 @@ function panelConsumos() {
   return seccion('Historial de consumos', contenedor);
 }
 
-async function anularConsumo(item) {
-  const motivo = await pedirTexto({
-    titulo: 'Anular consumo',
-    mensaje: `Se devolverá una entrada al pack ${item.packCode}. Queda registrado quién lo hizo y por qué.`,
-    etiqueta: 'Motivo de la anulación',
-    textoAceptar: 'Anular y devolver',
-  });
-  if (!motivo) return;
-  try {
-    await api.post(`/api/admin/redemptions/${item.id}/void`, { reason: motivo });
-    brindis('Entrada devuelta al cliente.', 'ok');
-    recargar();
-  } catch (error) {
-    brindis(error.message, 'error');
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Pestaña: Actividad (línea de tiempo + auditoría)
