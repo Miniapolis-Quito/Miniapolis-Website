@@ -126,9 +126,9 @@ export function contenidoApple(pack, dueno, pase) {
     organizationName: config.brandName,
     description: `Entradas de ${config.brandShort}`,
     logoText: config.brandShort,
-    backgroundColor: 'rgb(10, 13, 18)',
-    foregroundColor: 'rgb(238, 242, 248)',
-    labelColor: 'rgb(255, 145, 71)',
+    backgroundColor: 'rgb(0, 0, 0)',
+    foregroundColor: 'rgb(246, 246, 242)',
+    labelColor: 'rgb(61, 254, 64)',
     webServiceURL: `${config.publicUrl}/api/wallet/apple`,
     authenticationToken: pase.auth_token,
     ...(config.wallet.apple.associatedAppIdentifier
@@ -201,7 +201,7 @@ export function claseGoogle() {
       },
     },
     enableSmartTap: false,
-    hexBackgroundColor: '#0a0d12',
+    hexBackgroundColor: '#000000',
   };
 }
 
@@ -214,7 +214,14 @@ export function objetoGoogle(pack, dueno, pase) {
     id: `${config.wallet.google.issuerId}.${pase.serial}`,
     classId: config.wallet.google.classId,
     state: usable ? 'ACTIVE' : 'INACTIVE',
-    hexBackgroundColor: '#0a0d12',
+    hexBackgroundColor: '#000000',
+    ...(config.publicUrl
+      ? {
+          logo: {
+            sourceUri: { uri: `${config.publicUrl}/images/racing-hobbies-logo-oficial.png` },
+          },
+        }
+      : {}),
     cardTitle: { defaultValue: { language: 'es-EC', value: config.brandName } },
     subheader: { defaultValue: { language: 'es-EC', value: 'Entradas disponibles' } },
     header: { defaultValue: { language: 'es-EC', value: String(pack.remaining) } },

@@ -115,6 +115,8 @@ test('el cliente descarga un pase firmado con su saldo dentro', async () => {
   assert.equal(pase.storeCard.primaryFields[0].value, pack.code);
   assert.equal(pase.passTypeIdentifier, 'pass.ec.prueba.entradas');
   assert.equal(pase.webServiceURL, 'https://entradas.example/api/wallet/apple');
+  assert.equal(pase.backgroundColor, 'rgb(0, 0, 0)');
+  assert.equal(pase.labelColor, 'rgb(61, 254, 64)');
   assert.ok(pase.authenticationToken, 'sin contraseña el teléfono no podría pedir el pase');
 
   // El manifiesto tiene que describir de verdad lo que va dentro: si no, el
@@ -311,6 +313,8 @@ test('el pase de Google lleva el saldo y va firmado por la cuenta de servicio', 
   const objeto = wallet.objetoGoogle(pack, dueno, pase);
   assert.equal(objeto.id, `3388000000000000000.${pase.serial}`);
   assert.equal(objeto.state, 'ACTIVE');
+  assert.equal(objeto.hexBackgroundColor, '#000000');
+  assert.match(objeto.logo.sourceUri.uri, /\/images\/racing-hobbies-logo-oficial\.png$/);
   assert.equal(objeto.header.defaultValue.value, '5');
   assert.equal(objeto.textModulesData.find((t) => t.id === 'restantes').body, '5 de 5');
   assert.equal(objeto.barcode.value.startsWith('RHE1|'), true);
