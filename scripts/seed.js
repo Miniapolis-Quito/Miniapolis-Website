@@ -30,19 +30,21 @@ const CLIENTES = [
 
 const db = getDb();
 
-async function asegurarUsuario({ correo, nombre, telefono, rol }) {
+async function asegurarUsuario({ correo, nombre, telefono, rol, escaner = false }) {
   const existente = users.findByEmail(correo);
   if (existente) return existente;
-  return users.createUser({ email: correo, password: CLAVE_DEMO, fullName: nombre, phone: telefono, role: rol });
+  return users.createUser({
+    email: correo, password: CLAVE_DEMO, fullName: nombre, phone: telefono, role: rol, scanEnabled: escaner,
+  });
 }
 
 const antedatarUsuario = db.prepare('UPDATE users SET created_at = ?, updated_at = ? WHERE id = ?');
 
 const master = await asegurarUsuario({
-  correo: 'admin@racinghobbies.ec', nombre: 'Administración Racing Hobbies', rol: 'master',
+  correo: 'admin@racinghobbies.ec', nombre: 'Administración Racing Hobbies', rol: 'master', escaner: true,
 });
 const operador = await asegurarUsuario({
-  correo: 'operador@racinghobbies.ec', nombre: 'Operador de Pista', rol: 'staff',
+  correo: 'operador@racinghobbies.ec', nombre: 'Operador de Pista', rol: 'staff', escaner: true,
 });
 
 const antedatarConsumo = db.prepare('UPDATE redemptions SET created_at = ? WHERE id = ?');

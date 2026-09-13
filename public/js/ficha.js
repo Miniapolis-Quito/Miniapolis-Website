@@ -31,6 +31,8 @@ const ACCIONES_CUENTA = {
   'usuario.desbloqueado': 'Cuenta desbloqueada',
   'usuario.password_restablecida': 'Contraseña restablecida por administración',
   'usuario.sesiones_revocadas': 'Sesiones cerradas por administración',
+  'usuario.escaneo_autorizado': 'Autorizada para escanear en la puerta',
+  'usuario.escaneo_revocado': 'Se le retiró el permiso para escanear',
   'perfil.actualizado': 'Actualizó sus datos',
   'password.cambiada': 'Cambió su contraseña',
   'login.exitoso': 'Inició sesión',
@@ -161,6 +163,7 @@ function cabecera(user, esUnoMismo) {
         'div',
         { class: 'ficha__etiquetas' },
         el('span', { class: 'etiqueta etiqueta--info' }, ROLES[user.role] || user.role),
+        user.scanEnabled ? el('span', { class: 'etiqueta etiqueta--ok' }, 'Escáner') : null,
         el(
           'span',
           { class: `etiqueta etiqueta--${user.status === 'active' ? 'ok' : 'error'}` },
@@ -714,6 +717,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     'perfil.actualizado': '✏️', 'usuario.actualizado': '✏️',
     'cuenta.registrada': '🎉', 'usuario.creado': '🎉',
     'usuario.desbloqueado': '🔓', 'usuario.sesiones_revocadas': '🚪',
+    'usuario.escaneo_autorizado': '📷', 'usuario.escaneo_revocado': '🔒',
     'escaneo.rechazado': '⛔',
   };
 
@@ -953,6 +957,28 @@ function panelDatos() {
   const esUnoMismo = user.id === estado.opciones.usuarioActual?.id;
   const aviso = el('div', { class: 'aviso', hidden: true });
 
+  // Permiso para escanear. Va en su propio elemento porque una casilla sin
+  // marcar no aparece en los datos del formulario, y aquí "no marcada" es una
+  // respuesta con significado: quitar el permiso.
+  const casillaEscaner = el('input', {
+    type: 'checkbox',
+    id: 'ficha-escaner',
+    checked: user.scanEnabled || null,
+  });
+  const campoEscaner = el(
+    'div',
+    { class: 'campo', hidden: user.role === 'customer' },
+    el('label', { class: 'campo--linea sin-margen-todo', for: 'ficha-escaner' },
+       casillaEscaner, el('span', {}, 'Puede escanear entradas en la puerta')),
+    el(
+      'div',
+      { class: 'campo__ayuda' },
+      'Sin esto, la cuenta entra al sistema pero no puede descontarle una entrada a nadie. ' +
+        'Quitarlo cierra sus sesiones al instante.',
+    ),
+    el('div', { class: 'campo__error' }),
+  );
+
   const formulario = el(
     'form',
     {
@@ -970,6 +996,12 @@ function panelDatos() {
         if ((datos.phone || '') !== (user.phone || '')) cambios.phone = datos.phone || '';
         if (datos.role !== user.role) cambios.role = datos.role;
         if (datos.status !== user.status) cambios.status = datos.status;
+        // Un cliente no puede llevar el permiso, así que al bajar el rol no se
+        // manda: el servidor lo retira solo y mandarlo sería un error.
+        const quedaComoPersonal = (cambios.role ?? user.role) !== 'customer';
+        if (quedaComoPersonal && casillaEscaner.checked !== Boolean(user.scanEnabled)) {
+          cambios.scanEnabled = casillaEscaner.checked;
+        }
 
         if (Object.keys(cambios).length === 0) {
           mostrarAviso(aviso, 'No hay cambios que guardar.', 'alerta');
@@ -978,12 +1010,15 @@ function panelDatos() {
 
         // Cambiar rol, correo o estado cierra las sesiones del cliente: conviene
         // avisarlo antes y no después.
-        if (cambios.role || cambios.email || cambios.status) {
+        const retiraEscaner = cambios.scanEnabled === false;
+        if (cambios.role || cambios.email || cambios.status || retiraEscaner) {
           const seguro = await confirmar({
             titulo: 'Confirmar cambios',
-            mensaje:
-              'Modificar el rol, el correo o el estado cierra las sesiones abiertas de esta persona, ' +
-              'que tendrá que volver a entrar. ¿Seguimos?',
+            mensaje: retiraEscaner
+              ? 'Al quitar el escáner se cierran las sesiones abiertas de esta persona: si tiene el ' +
+                'escáner abierto en un teléfono, dejará de funcionar ahí mismo. ¿Seguimos?'
+              : 'Modificar el rol, el correo o el estado cierra las sesiones abiertas de esta persona, ' +
+                'que tendrá que volver a entrar. ¿Seguimos?',
             textoAceptar: 'Guardar cambios',
           });
           if (!seguro) return;
@@ -1035,7 +1070,16 @@ function panelDatos() {
         el('label', { for: 'ficha-rol' }, 'Rol'),
         el(
           'select',
-          { id: 'ficha-rol', name: 'role', disabled: esUnoMismo },
+          {
+            id: 'ficha-rol',
+            name: 'role',
+            disabled: esUnoMismo,
+            onChange: (evento) => {
+              const esPersonal = evento.target.value !== 'customer';
+              campoEscaner.hidden = !esPersonal;
+              if (!esPersonal) casillaEscaner.checked = false;
+            },
+          },
           Object.entries(ROLES).map(([valor, texto]) => el('option', { value: valor, selected: valor === user.role }, texto)),
         ),
         el(
@@ -1043,10 +1087,11 @@ function panelDatos() {
           { class: 'campo__ayuda' },
           esUnoMismo
             ? 'No puedes cambiarte el rol a ti mismo.'
-            : 'El personal puede escanear y consultar. El máster puede todo.',
+            : 'El personal consulta packs; el máster puede todo. Escanear se autoriza aparte.',
         ),
         el('div', { class: 'campo__error' }),
       ),
+      campoEscaner,
       el(
         'div',
         { class: 'campo' },

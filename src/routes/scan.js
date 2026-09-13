@@ -1,9 +1,9 @@
 /** Rutas del personal de pista: escanear, consultar y consumir entradas. */
 import express from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { requireStaff } from '../middleware/auth.js';
+import { requireScanner } from '../middleware/auth.js';
 import { rateLimit } from '../lib/rateLimit.js';
-import { badRequest, notFound } from '../lib/errors.js';
+import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { scanSchema, manualRedeemSchema, paginationSchema, parseOrThrow } from '../lib/validate.js';
 import { parseQrPayload, verifyQrPayload } from '../lib/qr.js';
 import * as packsService from '../services/packs.js';
@@ -11,7 +11,9 @@ import * as redemptions from '../services/redemptions.js';
 import * as users from '../services/users.js';
 
 export const router = express.Router();
-router.use(requireStaff);
+// Todo lo que cuelga de aquí toca packs de clientes, así que exige el permiso
+// explícito de escaneo, no solo el rol de personal.
+router.use(requireScanner);
 
 /** La clave de idempotencia puede venir por cabecera (lo habitual) o en el cuerpo. */
 function idempotencyKey(req, body) {
@@ -116,7 +118,11 @@ router.get(
     const usable = packsService.isUsable(pack, { owner });
     res.json({
       pack: packsService.toPublicPack(pack, { owner }),
-      customer: owner ? { id: owner.id, fullName: owner.full_name, email: owner.email } : null,
+      // En la puerta basta con el nombre para confirmar de quién es el pack.
+      // El correo solo lo ve el máster, que es quien da soporte.
+      customer: owner
+        ? { id: owner.id, fullName: owner.full_name, email: req.user.role === 'master' ? owner.email : undefined }
+        : null,
       usable: usable.ok,
       reason: usable.ok ? null : usable.reason,
       message: usable.ok ? 'Pack disponible.' : usable.message,
@@ -125,12 +131,20 @@ router.get(
   }),
 );
 
-/** Últimos escaneos hechos por este dispositivo o por todo el personal. */
+/**
+ * Últimos escaneos. Cada operador ve los suyos; el historial de todo el
+ * personal es del máster, para que nadie pueda reconstruir desde la puerta el
+ * movimiento de clientes que no atendió.
+ */
 router.get(
   '/history',
   asyncHandler(async (req, res) => {
     const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
-    const scannerId = req.query.scope === 'todos' ? null : req.user.id;
+    const quiereTodos = req.query.scope === 'todos';
+    if (quiereTodos && req.user.role !== 'master') {
+      throw forbidden('Solo el máster puede ver los escaneos de todo el personal.', 'alcance_no_permitido');
+    }
+    const scannerId = quiereTodos ? null : req.user.id;
     res.json(redemptions.listRedemptions({ scannerId, limit, offset }));
   }),
 );

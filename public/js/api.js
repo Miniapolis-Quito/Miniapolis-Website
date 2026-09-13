@@ -202,12 +202,17 @@ export async function cerrarSesion() {
  * Restaura la sesión al cargar una página. Devuelve el usuario o null.
  * Si `rolesPermitidos` se indica y el usuario no cumple, redirige.
  */
-export async function iniciarPagina({ rolesPermitidos = null, redirigirSiAnonimo = '/' } = {}) {
+export async function iniciarPagina({ rolesPermitidos = null, exigirEscaner = false, redirigirSiAnonimo = '/' } = {}) {
   try {
     const datos = await refrescarSesion();
     if (rolesPermitidos && !rolesPermitidos.includes(datos.user.role)) {
-      window.location.replace(destinoPorRol(datos.user.role));
+      window.location.replace(destinoPorRol(datos.user));
       return null;
+    }
+    // El permiso de escaneo no redirige: la página lo explica en pantalla, que
+    // es más útil que devolver a alguien a su inicio sin decirle por qué.
+    if (exigirEscaner && !puedeEscanear(datos.user)) {
+      return { ...datos, sinPermisoDeEscaneo: true };
     }
     return datos;
   } catch (error) {
@@ -243,8 +248,20 @@ export function redirigirAlPerderSesion() {
   });
 }
 
-export function destinoPorRol(rol) {
-  if (rol === 'master') return '/admin';
-  if (rol === 'staff') return '/escanear';
+/**
+ * Página de inicio de cada persona.
+ *
+ * El escáner solo es destino si la cuenta tiene permiso para usarlo: mandar
+ * allí a alguien del personal sin autorizar lo dejaría mirando una pantalla
+ * que no puede usar.
+ */
+export function destinoPorRol(usuario) {
+  if (usuario?.role === 'master') return '/admin';
+  if (usuario?.role === 'staff') return puedeEscanear(usuario) ? '/escanear' : '/app';
   return '/app';
+}
+
+/** ¿Esta cuenta puede usar el escáner de la puerta? */
+export function puedeEscanear(usuario = getUsuario()) {
+  return Boolean(usuario) && usuario.scanEnabled === true && (usuario.role === 'staff' || usuario.role === 'master');
 }

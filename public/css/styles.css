@@ -512,6 +512,7 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
 .pequeno { font-size: .85rem; }
 .centrado { text-align: center; }
 .sin-margen { margin: 0; }
+.mt-mini { margin-top: 4px; }
 .mt { margin-top: 14px; }
 .mt-2 { margin-top: 24px; }
 

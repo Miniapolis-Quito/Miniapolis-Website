@@ -10,10 +10,12 @@ const pestanaEntrar = $('#pestana-entrar');
 const pestanaRegistro = $('#pestana-registro');
 
 /** Vuelve a la página que el usuario intentaba abrir, si es una ruta interna. */
-function destino(rol) {
+function destino(usuario) {
   const volver = new URLSearchParams(window.location.search).get('volver');
-  if (volver && /^\/(app|escanear|admin)$/.test(volver)) return volver;
-  return destinoPorRol(rol);
+  // No se devuelve a nadie al escáner si su cuenta no puede usarlo.
+  const permitido = volver === '/escanear' ? usuario?.scanEnabled === true : true;
+  if (volver && permitido && /^\/(app|escanear|admin)$/.test(volver)) return volver;
+  return destinoPorRol(usuario);
 }
 
 function seleccionarPestana(cual) {
@@ -52,7 +54,7 @@ formEntrar.addEventListener('submit', async (evento) => {
   await conCarga(formEntrar.querySelector('button[type="submit"]'), async () => {
     try {
       const sesion = await iniciarSesion(datos.email, datos.password);
-      window.location.replace(destino(sesion.user.role));
+      window.location.replace(destino(sesion.user));
     } catch (error) {
       manejarError(error, formEntrar);
     }
@@ -69,7 +71,7 @@ formRegistro.addEventListener('submit', async (evento) => {
   await conCarga(formRegistro.querySelector('button[type="submit"]'), async () => {
     try {
       const sesion = await registrarse(datos);
-      window.location.replace(destino(sesion.user.role));
+      window.location.replace(destino(sesion.user));
     } catch (error) {
       manejarError(error, formRegistro);
     }
@@ -95,7 +97,7 @@ formRegistro.addEventListener('submit', async (evento) => {
   // Si ya hay una sesión válida en la cookie, se entra directo.
   try {
     const sesion = await refrescarSesion();
-    window.location.replace(destino(sesion.user.role));
+    window.location.replace(destino(sesion.user));
   } catch {
     $('#entrar-email')?.focus();
   }

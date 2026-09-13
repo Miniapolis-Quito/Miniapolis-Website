@@ -295,6 +295,34 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '006-permiso-de-escaneo',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Permiso explícito para usar el escáner de la puerta
+        --
+        -- Tener el rol de personal ya no basta: el máster autoriza cuenta
+        -- por cuenta quién puede descontar entradas. Así, si a alguien se le
+        -- presta un teléfono o se le crea un usuario para otra tarea, no
+        -- puede tocar el saldo de nadie.
+        --
+        -- Las cuentas que ya existían se dan por autorizadas: quitarles el
+        -- permiso al actualizar dejaría la puerta sin operadores a mitad de
+        -- una jornada. De aquí en adelante, toda cuenta nueva nace sin él.
+        -- ---------------------------------------------------------------
+        ALTER TABLE users ADD COLUMN scan_enabled INTEGER NOT NULL DEFAULT 0;
+
+        UPDATE users
+           SET scan_enabled = 1
+         WHERE role IN ('master','staff');
+
+        -- La lista de "quién puede escanear" se consulta en la pantalla de
+        -- personal cada vez que se abre la administración.
+        CREATE INDEX idx_users_scan_enabled ON users(scan_enabled) WHERE scan_enabled = 1;
+      `);
+    },
+  },
 ];
 
 export default migrations;

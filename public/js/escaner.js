@@ -451,7 +451,7 @@ function montarManual() {
 // ---------------------------------------------------------------------------
 
 (async () => {
-  const sesion = await iniciarPagina({ rolesPermitidos: ['staff', 'master'] });
+  const sesion = await iniciarPagina({ rolesPermitidos: ['staff', 'master'], exigirEscaner: true });
   if (!sesion) return;
 
   cabecera = montarCabecera($('#cabecera'));
@@ -461,7 +461,21 @@ function montarManual() {
     /* opcional */
   }
 
+  // Cuenta del personal sin permiso para escanear: se explica y se para aquí.
+  // Nada de cámara, nada de peticiones al puesto; el servidor las rechazaría.
+  if (sesion.sinPermisoDeEscaneo) {
+    $('#subtitulo').textContent = 'Esta cuenta no está autorizada para descontar entradas.';
+    $('#sin-permiso').hidden = false;
+    $('#puesto').hidden = true;
+    $('#seccion-actividad').hidden = true;
+    redirigirAlPerderSesion();
+    return;
+  }
+
   $('#subtitulo').textContent = `Operador: ${getUsuario().fullName}`;
+
+  // El historial de todo el personal es del máster; para el resto ni aparece.
+  if (getUsuario().role === 'master') $('#etiqueta-todos').hidden = false;
 
   // El nombre del puesto se recuerda en este dispositivo: no es información
   // sensible y ahorra escribirlo en cada turno. Si el navegador tiene el

@@ -12,6 +12,17 @@ export function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+/**
+ * Solo el personal y el máster pueden llevar el permiso de escaneo.
+ *
+ * Se decide aquí, y no en la ruta, para que ninguna vía de entrada (alta,
+ * edición, semilla o script) pueda dejar a un cliente con permiso para
+ * descontar entradas ajenas.
+ */
+export function puedeLlevarPermisoDeEscaneo(role) {
+  return role === 'master' || role === 'staff';
+}
+
 /** Proyección pública de un usuario (nunca incluye el hash de contraseña). */
 export function toPublicUser(row) {
   if (!row) return null;
@@ -22,6 +33,7 @@ export function toPublicUser(row) {
     phone: row.phone,
     role: row.role,
     status: row.status,
+    scanEnabled: Boolean(row.scan_enabled),
     lastLoginAt: row.last_login_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -49,7 +61,7 @@ export function countActiveByRole(role, db = getDb()) {
   return db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = ? AND status = 'active'").get(role).n;
 }
 
-export async function createUser({ email, password, fullName, phone, role = 'customer', createdBy = null, status = 'active' }) {
+export async function createUser({ email, password, fullName, phone, role = 'customer', createdBy = null, status = 'active', scanEnabled = false }) {
   const normalized = normalizeEmail(email);
   const passwordHash = await hashPassword(password);
   const now = new Date().toISOString();
@@ -61,6 +73,9 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
     phone: phone || null,
     role,
     status,
+    // Una cuenta nace sin permiso para escanear salvo que se pida
+    // explícitamente: el permiso se concede, nunca se hereda del rol.
+    scan_enabled: scanEnabled && puedeLlevarPermisoDeEscaneo(role) ? 1 : 0,
     password_hash: passwordHash,
     password_changed_at: now,
     created_by: createdBy,
@@ -72,10 +87,10 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
   try {
     getDb()
       .prepare(
-        `INSERT INTO users (id, email, email_normalized, full_name, phone, role, status, password_hash,
-                            password_changed_at, created_by, created_at, updated_at, search_text)
-         VALUES (@id, @email, @email_normalized, @full_name, @phone, @role, @status, @password_hash,
-                 @password_changed_at, @created_by, @created_at, @updated_at, @search_text)`,
+        `INSERT INTO users (id, email, email_normalized, full_name, phone, role, status, scan_enabled,
+                            password_hash, password_changed_at, created_by, created_at, updated_at, search_text)
+         VALUES (@id, @email, @email_normalized, @full_name, @phone, @role, @status, @scan_enabled,
+                 @password_hash, @password_changed_at, @created_by, @created_at, @updated_at, @search_text)`,
       )
       .run(user);
   } catch (error) {
@@ -194,13 +209,29 @@ export function updateUser(userId, changes, db = getDb()) {
     fields.push('status = @status');
     params.status = changes.status;
   }
+
+  // El permiso de escaneo y el rol se resuelven juntos: si alguien deja de ser
+  // personal, pierde el permiso en la misma operación. Dejarlo para una
+  // segunda llamada abriría una ventana en la que un cliente podría escanear.
+  const rolResultante = changes.role ?? user.role;
+  const permisoPedido = changes.scanEnabled;
+  const permisoResultante = permisoPedido === undefined ? Boolean(user.scan_enabled) : permisoPedido;
+  const permisoFinal = permisoResultante && puedeLlevarPermisoDeEscaneo(rolResultante);
+  if (permisoFinal !== Boolean(user.scan_enabled)) {
+    fields.push('scan_enabled = @scan_enabled');
+    params.scan_enabled = permisoFinal ? 1 : 0;
+  }
   if (changes.email !== undefined) {
     fields.push('email = @email', 'email_normalized = @email_normalized');
     params.email = String(changes.email).trim();
     params.email_normalized = normalizeEmail(changes.email);
   }
-  // Cambiar rol, suspender o cambiar el correo debe invalidar los tokens vivos.
-  const invalidates = changes.role !== undefined || changes.status !== undefined || changes.email !== undefined;
+  // Cambiar rol, suspender, cambiar el correo o retirar el permiso de escaneo
+  // debe invalidar los tokens vivos: quien esté con el escáner abierto en la
+  // puerta tiene que volver a identificarse, no seguir con lo que ya tenía.
+  const pierdePermiso = Boolean(user.scan_enabled) && !permisoFinal;
+  const invalidates =
+    changes.role !== undefined || changes.status !== undefined || changes.email !== undefined || pierdePermiso;
   if (invalidates) fields.push('token_version = token_version + 1');
 
   // El texto de búsqueda se recalcula a partir del estado resultante, no del

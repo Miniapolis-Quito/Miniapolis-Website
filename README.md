@@ -28,9 +28,13 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   pack, y aviso cuando el cliente se está quedando sin entradas.
 - Consulta un pack sin descontar nada, e ingreso manual por código.
 - No puede emitir packs, ajustar saldos ni ver la administración.
+- Solo escanea quien está autorizado por su nombre: el rol de personal abre la
+  pantalla, pero descontar entradas exige un permiso que el máster concede
+  cuenta por cuenta y puede retirar en cualquier momento.
 
 **Para el usuario máster**
 - Vende packs, da de alta clientes y personal, y asigna roles.
+- Decide quién puede escanear, de uno en uno, y se lo quita cuando quiera.
 - Ajusta saldos, suspende o anula packs, y anula un consumo devolviendo la
   entrada al cliente.
 - Imprime pases físicos con QR fijo, para los packs donde lo habilite.
@@ -89,7 +93,7 @@ servidor.
 |-------------|-----------------------|----------|
 | `/`         | cualquiera            | Entrar o crear cuenta |
 | `/app`      | cualquier cuenta      | Saldo, QR e historial del cliente |
-| `/escanear` | personal y máster     | Control de acceso en la puerta |
+| `/escanear` | cuentas autorizadas   | Control de acceso en la puerta |
 | `/admin`    | solo máster           | Administración completa |
 
 ---
@@ -209,6 +213,28 @@ deja un asiento con su saldo resultante. El panel máster verifica que ambos
 coincidan, y las pruebas comprueban que una alteración directa de la base se
 detecta.
 
+**Quién puede descontar entradas.** Tocar el saldo de un cliente exige un
+permiso explícito por cuenta, no un rol. El personal y el máster entran al
+sistema por su rol, pero `/api/scan` —escanear, consultar por código, consumo
+manual e historial del puesto— rechaza a cualquier cuenta sin ese permiso, lo
+tenga quien lo tenga: un máster sin autorizar tampoco escanea. El permiso solo
+puede existir en cuentas de personal o máster; si a alguien se le baja a
+cliente, lo pierde en la misma operación. Retirarlo **cierra sus sesiones en el
+acto**, así que un teléfono que quedó abierto en la puerta deja de servir sin
+esperar a que caduque nada, y su canal en vivo se corta con él. Cada concesión
+y cada retirada queda en la bitácora con su propio nombre
+(`usuario.escaneo_autorizado` y `usuario.escaneo_revocado`), de modo que
+"¿quién podía escanear el sábado?" se responde mirando el registro.
+
+**Cada quien en lo suyo.** Un cliente solo alcanza sus propios packs: su QR, sus
+movimientos, su historial y sus pases de cartera se comprueban contra el dueño
+del pack, y pedir los de otro devuelve un error, no datos. El personal
+autorizado ve de quién es el pack que tiene delante y su saldo —lo que hace
+falta en la puerta— pero no el correo del cliente ni los escaneos de sus
+compañeros; el conjunto es del máster. El canal en vivo reparte por cuenta: el
+cliente recibe lo suyo, y el movimiento de la pista solo llega a quien está
+autorizado a escanear.
+
 **Sesiones.** La contraseña se guarda con scrypt (N=2¹⁶, r=8, p=1). El token de
 acceso vive 15 minutos y solo en memoria del navegador; la sesión persiste con
 una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
@@ -244,10 +270,23 @@ Los packs a la venta salen de `.env`: de fábrica son el de 5 y el de 10, y con
 el código. Un tamaño fuera del catálogo se puede emitir igual, escribiendo su
 precio a mano.
 
+**Autorizar a un operador.** Administración → Clientes y personal. Al crear la
+cuenta se marca *Puede escanear entradas en la puerta*; si ya existe, la fila
+tiene el botón *Dar escáner* / *Quitar escáner*. Una cuenta de personal recién
+creada **no** puede escanear hasta que se le active: es a propósito, para que
+prestar un usuario no sea prestar el saldo de los clientes. Las cuentas que ya
+existían antes de esta versión conservan el permiso, para que actualizar no
+deje la puerta sin operadores.
+
+Al quitarlo, esa persona sale del sistema en el acto y su pantalla vuelve a la
+página de acceso. Al final del turno, o si un teléfono se pierde, quitar el
+permiso es más rápido que cambiar contraseñas.
+
 **Cobrar la entrada.** El operador abre `/escanear`, escribe el nombre de su
 puesto una vez (queda guardado en ese teléfono) y enciende la cámara. Cada
 escaneo válido muestra en grande cuántas entradas quedan y avisa cuando el
-cliente baja de tres.
+cliente baja de tres. Si su cuenta no está autorizada, la pantalla se lo dice
+en lugar de encender la cámara.
 
 **Corregir un error.** Administración → Consumos → *Anular*. Pide el motivo,
 devuelve la entrada al cliente y queda registrado quién lo hizo y por qué.
@@ -336,7 +375,7 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (164 pruebas)
+npm test        # suite completa (182 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
@@ -347,8 +386,9 @@ autenticación y rotación de sesiones, desbloqueo y restablecimiento de
 contraseñas, emisión y ajuste de packs, las tres barreras contra el doble
 descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo,
 leyendo lo que llega y reanudándolo tras una caída), la búsqueda sin tildes, el
-camino de actualización del esquema, el expediente del cliente, control de
-acceso por rol y las cabeceras de seguridad. `npm ci && npm test` se ejecuta
+camino de actualización del esquema, el expediente del cliente, el control de
+acceso —por rol y por el permiso de escaneo, incluido lo que ve cada quien y lo
+que no— y las cabeceras de seguridad. `npm ci && npm test` se ejecuta
 también en cada empujón desde `.github/workflows/`.
 
 Como la interfaz no pasa por ningún compilador, hay además comprobaciones

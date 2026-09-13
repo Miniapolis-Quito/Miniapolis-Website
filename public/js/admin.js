@@ -279,7 +279,14 @@ async function cargarUsuarios() {
                 el('div', { class: 'pequeno' }, usuario.email),
                 usuario.phone ? el('div', { class: 'tenue-2 pequeno' }, usuario.phone) : null,
               ),
-              el('td', {}, el('span', { class: 'etiqueta' }, ROLES[usuario.role] || usuario.role)),
+              el(
+                'td',
+                {},
+                el('span', { class: 'etiqueta' }, ROLES[usuario.role] || usuario.role),
+                usuario.scanEnabled
+                  ? el('div', { class: 'mt-mini' }, el('span', { class: 'etiqueta etiqueta--ok' }, 'Escáner'))
+                  : null,
+              ),
               el(
                 'td',
                 { class: 'num' },
@@ -308,6 +315,18 @@ async function cargarUsuarios() {
                     { class: 'boton boton--chico boton--principal', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
                     'Vender',
                   ),
+                  // Conceder o retirar el escáner, solo donde el permiso puede existir.
+                  usuario.role === 'customer'
+                    ? null
+                    : el(
+                        'button',
+                        {
+                          class: `boton boton--chico ${usuario.scanEnabled ? 'boton--peligro' : 'boton--fantasma'}`,
+                          type: 'button',
+                          onClick: alPulsar(() => cambiarPermisoDeEscaneo(usuario)),
+                        },
+                        usuario.scanEnabled ? 'Quitar escáner' : 'Dar escáner',
+                      ),
                 ),
               ),
             ),
@@ -317,6 +336,32 @@ async function cargarUsuarios() {
     ),
     el('p', { class: 'tenue-2 pequeno mt' }, `${total} usuario(s) en total.`),
   );
+}
+
+/**
+ * Concede o retira el permiso para escanear en la puerta.
+ *
+ * Retirarlo cierra las sesiones de esa cuenta: si el teléfono se quedó abierto
+ * en el escáner, deja de servir en el acto y no al caducar el token.
+ */
+async function cambiarPermisoDeEscaneo(usuario) {
+  const quitar = Boolean(usuario.scanEnabled);
+  const propio = usuario.id === getUsuario()?.id;
+
+  const confirmado = await confirmar({
+    titulo: quitar ? 'Quitar el escáner' : 'Autorizar el escáner',
+    mensaje: quitar
+      ? `${usuario.fullName} dejará de poder descontar entradas y se cerrará su sesión.` +
+        (propio ? ' Es tu propia cuenta: tendrás que volver a entrar y autorizarte otra vez.' : '')
+      : `${usuario.fullName} podrá descontar entradas a cualquier cliente desde la puerta.`,
+    textoAceptar: quitar ? 'Quitar permiso' : 'Autorizar',
+    peligro: quitar,
+  });
+  if (!confirmado) return;
+
+  await api.patch(`/api/admin/users/${usuario.id}`, { scanEnabled: !quitar });
+  brindis(quitar ? `${usuario.fullName} ya no puede escanear.` : `${usuario.fullName} ya puede escanear.`, 'ok');
+  await cargarUsuarios();
 }
 
 /** Abre la ficha de un cliente cambiando la dirección, que dispara el enrutado. */
@@ -689,8 +734,23 @@ function montarDialogoUsuario() {
   const dialogo = $('#dialogo-usuario');
   const formulario = $('#form-usuario');
 
+  const selectorRol = $('#usuario-rol');
+  const casillaEscaner = $('#usuario-escaner');
+
+  // La casilla solo tiene sentido para quien está detrás del mostrador; al
+  // volver a "Cliente" se desmarca, para no crear a nadie con un permiso que
+  // el servidor rechazaría de todos modos.
+  function ajustarCasillaEscaner() {
+    const esPersonal = selectorRol.value === 'staff' || selectorRol.value === 'master';
+    $('#campo-escaner').hidden = !esPersonal;
+    if (!esPersonal) casillaEscaner.checked = false;
+  }
+  selectorRol.addEventListener('change', ajustarCasillaEscaner);
+
   $('#btn-nuevo-usuario').addEventListener('click', () => {
     formulario.reset();
+    casillaEscaner.checked = false;
+    ajustarCasillaEscaner();
     mostrarErroresCampo(formulario, {});
     mostrarAviso($('#aviso-usuario'), '');
     dialogo.showModal();
@@ -702,6 +762,9 @@ function montarDialogoUsuario() {
     const datos = datosFormulario(formulario);
     if (!datos.phone) delete datos.phone;
     if (!datos.password) delete datos.password;
+    // Una casilla sin marcar no aparece en el formulario, así que el permiso
+    // se lee del elemento y viaja siempre como booleano explícito.
+    datos.scanEnabled = casillaEscaner.checked;
 
     await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
       try {

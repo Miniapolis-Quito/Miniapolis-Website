@@ -116,13 +116,19 @@ export const CLAVES = {
   cliente: 'Diferencial-Rojo-91',
 };
 
-/** Crea el trío de usuarios habitual y devuelve clientes ya autenticados. */
+/**
+ * Crea el trío de usuarios habitual y devuelve clientes ya autenticados.
+ *
+ * El máster y el operador llegan con el permiso de escaneo puesto, que es la
+ * configuración normal de una pista en marcha. Las pruebas del permiso lo
+ * quitan o crean cuentas sin él a propósito.
+ */
 export async function sembrarUsuarios() {
   const master = await users.createUser({
-    email: 'master@pista.ec', password: CLAVES.master, fullName: 'Ana Máster', role: 'master',
+    email: 'master@pista.ec', password: CLAVES.master, fullName: 'Ana Máster', role: 'master', scanEnabled: true,
   });
   const staff = await users.createUser({
-    email: 'staff@pista.ec', password: CLAVES.staff, fullName: 'Beto Pista', role: 'staff',
+    email: 'staff@pista.ec', password: CLAVES.staff, fullName: 'Beto Pista', role: 'staff', scanEnabled: true,
   });
   const cliente = await users.createUser({
     email: 'cliente@pista.ec', password: CLAVES.cliente, fullName: 'Carlos Piloto', role: 'customer',

@@ -54,6 +54,10 @@ pocos segundos. El pase de la cartera es para llevar la cuenta.
    guardado en ese teléfono.
 3. Toca **Encender cámara** y acepta el permiso.
 
+Si en lugar del escáner te sale *Tu cuenta no puede escanear*, es que todavía
+no te han habilitado. No es un fallo: el permiso se da cuenta por cuenta.
+Pídeselo a administración y vuelve a entrar.
+
 ### Cobrar una entrada
 
 Apunta al QR del cliente. Cuando suena y aparece el recuadro verde, ya está
@@ -82,6 +86,10 @@ seguro es un `Q`, un `7` o una `V`.
 - Si al cliente le quedan pocas entradas, sale un aviso: es buen momento para
   ofrecerle otro pack.
 - Todo lo que escaneas queda registrado con tu nombre y tu puesto.
+- Escaneas con **tu** cuenta, no con la del teléfono. No la prestes: lo que se
+  descuente con ella queda a tu nombre.
+- En *Actividad reciente* ves tus escaneos. Los del resto del personal son cosa
+  de administración.
 - Si te equivocas, avisa a administración: pueden devolver la entrada.
 - Si la cuenta del cliente está suspendida, el escáner lo dice y no descuenta
   nada. Mándalo a recepción: es administración quien puede reactivarla.
@@ -114,8 +122,30 @@ hiciste descuento y registra cómo pagó. El cliente lo ve al instante.
 
 **Clientes y personal → Nuevo usuario**, con rol **Personal de pista**. El
 sistema genera una contraseña temporal y la copia al portapapeles: pásasela y
-pídele que la cambie al entrar. El personal puede escanear y consultar, pero no
-vender packs ni ver la administración.
+pídele que la cambie al entrar. El personal consulta packs, pero no vende ni ve
+la administración.
+
+Marca **Puede escanear entradas en la puerta** si esa persona va a cobrar
+entradas. Sin esa casilla la cuenta entra al sistema pero no puede descontarle
+una entrada a nadie — que es justo lo que quieres para un usuario de prueba, el
+de alguien que solo consulta, o mientras decides.
+
+### Quién puede escanear
+
+En **Clientes y personal**, las cuentas autorizadas llevan la etiqueta
+**Escáner**. En cada fila tienes *Dar escáner* o *Quitar escáner*.
+
+Quitarlo tiene efecto inmediato: a esa persona se le cierra la sesión y, si
+tenía el escáner abierto en un teléfono, deja de funcionar ahí mismo. Es la
+forma más rápida de cerrar una puerta — al terminar un turno, cuando alguien
+deja de trabajar contigo o si se pierde un teléfono.
+
+Todo queda en la bitácora: quién autorizó a quién, cuándo, y cuándo se lo
+quitó. Si algún día hay que revisar un cobro raro, la lista de quién podía
+escanear ese día está ahí.
+
+Tu propia cuenta de máster también necesita el permiso para escanear, y puedes
+dártelo o quitártelo desde la misma lista.
 
 ### Devolver una entrada cobrada por error
 

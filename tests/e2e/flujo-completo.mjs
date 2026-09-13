@@ -123,7 +123,7 @@ const codigoPack = (await pagina.textContent('#qr-codigo')).trim();
 console.log('   código del pack:', codigoPack);
 
 // --- puesto de escaneo (personal) ---
-await paso('máster crea personal de pista', async () => {
+await paso('máster crea personal de pista y lo autoriza a escanear', async () => {
   await paginaAdmin.click('#dialogo-detalle [data-cerrar]');
   await paginaAdmin.waitForSelector('#dialogo-detalle', { state: 'hidden' });
   await paginaAdmin.click('.pestana[data-panel=clientes]');
@@ -132,6 +132,9 @@ await paso('máster crea personal de pista', async () => {
   await paginaAdmin.fill('#usuario-nombre', 'Operador Pista');
   await paginaAdmin.fill('#usuario-email', 'pista@racinghobbies.ec');
   await paginaAdmin.selectOption('#usuario-rol', 'staff');
+  // El rol abre la pantalla del escáner; la casilla es la que deja descontar.
+  await paginaAdmin.waitForSelector('#campo-escaner:not([hidden])');
+  await paginaAdmin.check('#usuario-escaner');
   await paginaAdmin.fill('#usuario-password', 'Chicane-Nocturna-77');
   await paginaAdmin.click('#form-usuario button[type=submit]');
   await paginaAdmin.waitForSelector('#dialogo-usuario', { state: 'hidden', timeout: 15000 });
