@@ -161,6 +161,11 @@ await paso('el pase impreso sale solo, y solo él, en la hoja', async () => {
 
   await admin.waitForFunction(() => window.__imprimio === true, { timeout: 15000 });
   const pase = admin.locator('#pase-impreso .pase');
+  const logo = pase.locator('img.pase__logo');
+  if ((await logo.count()) !== 1) throw new Error('el pase no lleva el logo oficial');
+  if (!(await logo.getAttribute('src'))?.endsWith('/images/racing-hobbies-logo-oficial.png')) {
+    throw new Error('el pase no usa el logo oficial de Racing Hobbies');
+  }
   if (!(await pase.locator('svg').count())) throw new Error('el pase salió sin código QR');
   const texto = await pase.textContent();
   if (!texto.includes(codigo)) throw new Error('el pase no lleva el código del pack');
