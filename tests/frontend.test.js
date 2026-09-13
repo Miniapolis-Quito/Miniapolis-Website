@@ -174,3 +174,15 @@ test('cada página carga los módulos que sus scripts necesitan', () => {
     }
   }
 });
+
+test('las pantallas usan el lienzo negro de la identidad Racing Hobbies', () => {
+  const paginas = [...Object.keys(PAGINAS), 'public/404.html'];
+  for (const html of paginas) {
+    const src = leer(html);
+    assert.match(src, /<meta name="theme-color" content="#000000">/, `${html} debe declarar el negro de marca`);
+    assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/, `${html} debe cargar los estilos de marca`);
+  }
+  const manifest = JSON.parse(leer('public/manifest.webmanifest'));
+  assert.equal(manifest.background_color, '#000000');
+  assert.equal(manifest.theme_color, '#000000');
+});

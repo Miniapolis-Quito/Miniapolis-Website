@@ -56,7 +56,17 @@ export function montarCabecera(contenedor, { marca = 'Racing Hobbies' } = {}) {
             // pantallas estrechas, así que el enlace lleva su propio nombre.
             'aria-label': `${marca} — inicio`,
           },
-          el('span', { class: 'logo', 'aria-hidden': 'true' }, 'RH'),
+          el(
+            'span',
+            { class: 'marca__sello', 'aria-hidden': 'true' },
+            el('img', {
+              class: 'marca__logo',
+              src: '/images/racing-hobbies-logo-oficial.png',
+              width: '1600',
+              height: '434',
+              alt: '',
+            }),
+          ),
           el('span', {}, marca),
         ),
         nav,
