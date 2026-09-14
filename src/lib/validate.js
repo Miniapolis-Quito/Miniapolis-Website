@@ -164,16 +164,41 @@ export const updatePackSchema = z
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'No hay cambios que aplicar.');
 
-export const scanSchema = z.object({
-  payload: z.string().trim().min(1, 'El código está vacío.').max(512),
-  deviceLabel: trimmed(60).optional(),
-  idempotencyKey: trimmed(80).optional(),
-});
+/**
+ * Hora de una lectura que el escáner guardó sin conexión. Las dos marcas son
+ * del reloj del teléfono y el servidor solo usa su diferencia, así que van
+ * juntas o no van.
+ */
+const lecturaDiferida = {
+  capturedAt: z.string().datetime({ offset: true, message: 'La hora de lectura no es una fecha válida.' }).optional(),
+  sentAt: z.string().datetime({ offset: true, message: 'La hora de envío no es una fecha válida.' }).optional(),
+};
+const conHorasJuntas = (esquema) =>
+  esquema.refine((v) => (v.capturedAt === undefined) === (v.sentAt === undefined), {
+    message: 'La hora de lectura y la de envío deben ir juntas.',
+    path: ['capturedAt'],
+  });
 
-export const manualRedeemSchema = z.object({
-  code: trimmed(40).min(4, 'Ingresa el código del pack.'),
-  deviceLabel: trimmed(60).optional(),
-  idempotencyKey: trimmed(80).optional(),
+export const scanSchema = conHorasJuntas(
+  z.object({
+    payload: z.string().trim().min(1, 'El código está vacío.').max(512),
+    deviceLabel: trimmed(60).optional(),
+    idempotencyKey: trimmed(80).optional(),
+    ...lecturaDiferida,
+  }),
+);
+
+export const manualRedeemSchema = conHorasJuntas(
+  z.object({
+    code: trimmed(40).min(4, 'Ingresa el código del pack.'),
+    deviceLabel: trimmed(60).optional(),
+    idempotencyKey: trimmed(80).optional(),
+    ...lecturaDiferida,
+  }),
+);
+
+export const resolveOfflineRejectionSchema = z.object({
+  note: trimmed(300).min(3, 'Explica cómo se resolvió.'),
 });
 
 export const voidRedemptionSchema = z.object({

@@ -324,6 +324,17 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '007-lecturas-sin-conexion',
+    up: (db) => {
+      db.exec(`
+        -- Cuándo llegó al servidor un consumo que el escáner leyó sin
+        -- conexión. created_at es la hora de la lectura (cuándo entró la
+        -- persona); esta columna queda nula en los consumos hechos en línea.
+        ALTER TABLE redemptions ADD COLUMN synced_at TEXT;
+      `);
+    },
+  },
 ];
 
 export default migrations;

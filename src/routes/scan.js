@@ -37,7 +37,12 @@ const scanLimiter = rateLimit({
   message: 'Se registraron demasiados escaneos seguidos desde este dispositivo. Espera un momento.',
 });
 
-/** Consume una entrada a partir del QR del cliente. */
+/**
+ * Consume una entrada a partir del QR del cliente.
+ *
+ * Con `capturedAt` y `sentAt`, es una lectura que el escáner guardó sin
+ * conexión y envía ahora: se cobra con la hora en que se leyó.
+ */
 router.post(
   '/',
   scanLimiter,
@@ -47,6 +52,8 @@ router.post(
       payload: data.payload,
       scanner: req.user,
       deviceLabel: data.deviceLabel,
+      capturedAt: data.capturedAt,
+      sentAt: data.sentAt,
       idempotencyKey: idempotencyKey(req, data),
       ip: req.clientIp,
       userAgent: req.get('user-agent'),
@@ -86,7 +93,7 @@ router.post(
   }),
 );
 
-/** Consumo manual por código, para cuando la cámara no coopera. */
+/** Consumo manual por código, para cuando la cámara no coopera. Admite lecturas diferidas igual que el QR. */
 router.post(
   '/manual',
   scanLimiter,
@@ -96,6 +103,8 @@ router.post(
       code: data.code,
       scanner: req.user,
       deviceLabel: data.deviceLabel,
+      capturedAt: data.capturedAt,
+      sentAt: data.sentAt,
       idempotencyKey: idempotencyKey(req, data),
       ip: req.clientIp,
       userAgent: req.get('user-agent'),

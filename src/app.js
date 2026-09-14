@@ -95,6 +95,14 @@ export function createApp() {
       allowSelfRegistration: config.security.allowSelfRegistration,
       minPasswordLength: config.security.minPasswordLength,
       qr: { ttlSeconds: config.qr.ttlSeconds, refreshSeconds: config.qr.refreshSeconds },
+      // El escáner decide con esto si guarda lecturas cuando se cae la red, y
+      // descarta en el teléfono lo que el servidor rechazaría igual: una
+      // lectura demasiado vieja o un doble disparo sobre el mismo pack.
+      offlineScan: {
+        enabled: config.offlineScan.enabled,
+        maxAgeSeconds: config.offlineScan.maxAgeSeconds,
+        cooldownSeconds: config.redemption.cooldownSeconds,
+      },
       // La interfaz solo ofrece guardar el pase en las carteras que estén
       // configuradas de verdad.
       wallet: wallet.disponible(),

@@ -14,6 +14,7 @@ import { config } from '../config.js';
 import * as fechas from '../lib/fechas.js';
 import * as packsService from './packs.js';
 import * as redemptions from './redemptions.js';
+import * as sinConexion from './sinConexion.js';
 import { hub } from '../lib/events.js';
 
 const DIAS_DEL_GRAFICO = 14;
@@ -119,6 +120,9 @@ export function resumen({ ahora = new Date() } = {}) {
     recent: redemptions.listRedemptions({ limit: 10 }).items,
     liveConnections: hub.connectionCount,
     integrity: packsService.checkIntegrity(),
+    // Personas que entraron con el escáner sin conexión y cuya entrada no se
+    // pudo cobrar después. Siguen aquí hasta que alguien las resuelva.
+    offlineRejections: sinConexion.pendientes(),
     serverTime: ahora.toISOString(),
   };
 }

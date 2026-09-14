@@ -370,6 +370,16 @@ export const config = Object.freeze({
     cooldownSeconds: num('REDEEM_COOLDOWN_SECONDS', 20, { min: 0, max: 3600 }),
   },
 
+  offlineScan: (() => {
+    /**
+     * Horas que puede pasar una lectura guardada en el escáner sin conexión
+     * antes de que el servidor deje de aceptarla. Con 0 el escáner no guarda
+     * lecturas para después y solo se admite lo que tarda un reintento de red.
+     */
+    const horas = num('OFFLINE_SCAN_MAX_HOURS', 24, { min: 0, max: 168 });
+    return Object.freeze({ enabled: horas > 0, maxAgeSeconds: Math.round(horas * 3600) });
+  })(),
+
   security: {
     /** Orígenes permitidos para CORS. Vacío = solo mismo origen. */
     corsOrigins: list('CORS_ORIGINS', []),
