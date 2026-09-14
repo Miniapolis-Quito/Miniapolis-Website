@@ -1,0 +1,23 @@
+# Dependabot propone actualizaciones una vez por semana. Las de seguridad las
+# abre en cuanto se publica el aviso, sin esperar al lunes (se activa en los
+# ajustes del repositorio, junto con las alertas de vulnerabilidades).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: Dependencias
+
+  # Las acciones de GitHub van fijadas a un commit; Dependabot mantiene al día
+  # el commit y el comentario con la versión.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: Acciones

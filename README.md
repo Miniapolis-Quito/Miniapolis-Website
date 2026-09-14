@@ -237,6 +237,18 @@ datos se crea legible solo por el usuario del servicio, la contraseña de la
 clave de Apple Wallet nunca viaja en la línea de órdenes, y el servicio web que
 consultan los teléfonos valida cada identificador y tiene su propio límite.
 
+**Carga y configuración.** Las verificaciones de contraseña (cada una ocupa
+unos 64 MB) tienen un tope de cuántas corren y cuántas esperan: una avalancha
+de intentos desde muchas direcciones recibe «servidor ocupado» en vez de dejar
+al servidor sin memoria, y ese rechazo nunca cuenta como intento fallido. En
+producción la aplicación no arranca con los secretos o la contraseña de los
+archivos de ejemplo, ni con un mismo secreto para dos usos.
+
+**El repositorio.** `main` no admite empujones forzados ni borrado, Dependabot
+avisa y corrige dependencias vulnerables, las acciones de GitHub van fijadas a
+un commit y cada empujón comprueba que no se haya versionado ningún secreto.
+El detalle está en `SECURITY.md`.
+
 ---
 
 ## Recuperar la contraseña

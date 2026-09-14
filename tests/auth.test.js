@@ -354,3 +354,44 @@ test('los intentos simultáneos no esquivan el bloqueo de la cuenta', async () =
   const correcta = await crearCliente().post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente });
   assert.equal(correcta.status, 429, 'ocho fallos simultáneos deben bloquear igual que ocho seguidos');
 });
+
+test('una avalancha de verificaciones de contraseña se frena en vez de agotar el servidor', async () => {
+  const { MAXIMO_HASHES_EN_CURSO, MAXIMO_HASHES_EN_ESPERA } = await import('../src/lib/passwords.js');
+  const sobrantes = 5;
+  const total = MAXIMO_HASHES_EN_CURSO + MAXIMO_HASHES_EN_ESPERA + sobrantes;
+
+  const resultados = await Promise.allSettled(Array.from({ length: total }, () => verifyPassword('x', HASH_FICTICIO)));
+  const rechazadas = resultados.filter((r) => r.status === 'rejected');
+  assert.equal(rechazadas.length, sobrantes, 'solo se rechaza lo que no cabe en la cola');
+  assert.ok(rechazadas.every((r) => r.reason.status === 503 && r.reason.code === 'servidor_ocupado'));
+  assert.ok(resultados.filter((r) => r.status === 'fulfilled').every((r) => r.value === false));
+
+  // Con la cola vacía vuelve a atender con normalidad.
+  assert.equal(await verifyPassword('x', HASH_FICTICIO), false);
+  assert.equal(await verifyPassword(CLAVES.cliente, await hashPassword(CLAVES.cliente)), true);
+});
+
+test('con el servidor ocupado el login no cuenta como intento fallido', async () => {
+  const { MAXIMO_HASHES_EN_CURSO, MAXIMO_HASHES_EN_ESPERA } = await import('../src/lib/passwords.js');
+  await sembrarUsuarios();
+
+  // Se llena la cola y, sin esperar a que se vacíe, se intenta entrar: la
+  // comprobación del turno es síncrona, así que la cola está llena seguro.
+  const ocupacion = Promise.allSettled(
+    Array.from({ length: MAXIMO_HASHES_EN_CURSO + MAXIMO_HASHES_EN_ESPERA }, () => verifyPassword('x', HASH_FICTICIO)),
+  );
+  const intentos = await Promise.allSettled([
+    users.authenticate('cliente@pista.ec', 'mala-clave-1'),
+    users.authenticate('nadie@pista.ec', 'mala-clave-1'),
+  ]);
+  await ocupacion;
+
+  for (const intento of intentos) {
+    assert.equal(intento.status, 'rejected');
+    assert.equal(intento.reason.status, 503);
+    assert.equal(intento.reason.code, 'servidor_ocupado');
+  }
+  // Ni la cuenta real ni el correo sin cuenta suman un fallo por la carga.
+  assert.equal(users.findByEmail('cliente@pista.ec').failed_logins, 0);
+  assert.equal(getDb().prepare("SELECT COUNT(*) AS n FROM rate_limits WHERE key LIKE 'login-fantasma:%'").get().n, 0);
+});

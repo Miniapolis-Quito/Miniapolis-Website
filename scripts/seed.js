@@ -91,7 +91,10 @@ for (const definicion of CLIENTES) {
     antedatarEmision.run(fechaCompra.toISOString(), pack.id);
 
     // Consume algunas entradas para que el historial y los gráficos tengan datos.
-    const aConsumir = Math.floor(Math.random() * Math.min(tamano - 1, 4));
+    // Al menos una: si el reparto al azar dejaba a un cliente sin ningún consumo
+    // (una vez de cada dieciséis para el de dos packs), su ficha no tenía nada
+    // que anular y la prueba de la ficha fallaba por pura mala suerte.
+    const aConsumir = Math.max(1, Math.floor(Math.random() * Math.min(tamano - 1, 4)));
     for (let i = 0; i < aConsumir; i += 1) {
       const resultado = redemptions.redeemByCode({
         code: pack.code,

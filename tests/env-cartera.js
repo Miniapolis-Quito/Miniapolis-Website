@@ -50,8 +50,16 @@ process.env.APPLE_WWDR_CERTIFICATE = ruta('wwdr.pem');
 process.env.APPLE_APNS_KEY_ID = 'CLAVEAPNS1';
 process.env.APPLE_APNS_KEY = apns.privateKey;
 // Los avisos van a un APNs de mentira que la prueba levanta en esta dirección.
-process.env.APPLE_APNS_HOST = '127.0.0.1:38443';
-export const PUERTO_APNS = 38443;
+// El puerto se elige libre al arrancar. Con uno fijo, dos suites a la vez (otra
+// copia del proyecto, otra rama) chocaban y la segunda fallaba con EADDRINUSE.
+const puertoLibre = Number(
+  execFileSync(process.execPath, [
+    '-e',
+    "const s = require('node:net').createServer().listen(0, '127.0.0.1', () => { process.stdout.write(String(s.address().port)); s.close(); });",
+  ]).toString(),
+);
+process.env.APPLE_APNS_HOST = `127.0.0.1:${puertoLibre}`;
+export const PUERTO_APNS = puertoLibre;
 export const CERTIFICADO_APNS = { cert: ruta('pase.pem'), key: ruta('pase-key.pem') };
 process.env.GOOGLE_WALLET_ISSUER_ID = '3388000000000000000';
 process.env.GOOGLE_WALLET_SERVICE_ACCOUNT = 'pases@proyecto.iam.gserviceaccount.com';

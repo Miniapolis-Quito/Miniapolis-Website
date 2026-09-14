@@ -6,6 +6,7 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import { config } from '../config.js';
+import { AppError } from './errors.js';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -20,17 +21,59 @@ const PARAMS = {
 // scrypt necesita maxmem > 128*N*r; se deja margen.
 const maxmem = 256 * PARAMS.N * PARAMS.r;
 
+/**
+ * Cuántos cálculos de scrypt corren a la vez y cuántos pueden esperar turno.
+ *
+ * Cada uno ocupa unos 64 MB. Node los reparte en su grupo de hilos (4 por
+ * defecto), pero sin tope la cola crece sin límite: una avalancha de intentos de
+ * entrada desde muchas direcciones —cada una por debajo de su propio límite—
+ * dejaba al servidor sin memoria o respondiendo a todo con minutos de retraso,
+ * también a quien solo quería escanear una entrada. Lo que no cabe se rechaza
+ * con «servidor ocupado» en el acto, sin contar como intento fallido.
+ */
+export const MAXIMO_HASHES_EN_CURSO = Math.max(1, Number(process.env.UV_THREADPOOL_SIZE) || 4);
+export const MAXIMO_HASHES_EN_ESPERA = 100;
+
+let hashesEnCurso = 0;
+const hashesEnEspera = [];
+
+async function conTurno(tarea) {
+  if (hashesEnCurso >= MAXIMO_HASHES_EN_CURSO) {
+    if (hashesEnEspera.length >= MAXIMO_HASHES_EN_ESPERA) {
+      throw new AppError(
+        503,
+        'servidor_ocupado',
+        'Hay muchas personas entrando a la vez. Inténtalo de nuevo en unos segundos.',
+      );
+    }
+    // El turno lo cede directamente quien termina: así nadie que llegue justo
+    // entonces puede colarse y superar el tope.
+    await new Promise((listo) => hashesEnEspera.push(listo));
+  } else {
+    hashesEnCurso += 1;
+  }
+  try {
+    return await tarea();
+  } finally {
+    const siguiente = hashesEnEspera.shift();
+    if (siguiente) siguiente();
+    else hashesEnCurso -= 1;
+  }
+}
+
 export async function hashPassword(password) {
   if (typeof password !== 'string' || password.length === 0) {
     throw new TypeError('La contraseña debe ser un texto no vacío.');
   }
   const salt = crypto.randomBytes(PARAMS.saltLength);
-  const derived = await scrypt(password.normalize('NFKC'), salt, PARAMS.keyLength, {
-    N: PARAMS.N,
-    r: PARAMS.r,
-    p: PARAMS.p,
-    maxmem,
-  });
+  const derived = await conTurno(() =>
+    scrypt(password.normalize('NFKC'), salt, PARAMS.keyLength, {
+      N: PARAMS.N,
+      r: PARAMS.r,
+      p: PARAMS.p,
+      maxmem,
+    }),
+  );
   return [
     'scrypt',
     PARAMS.N,
@@ -63,17 +106,17 @@ export async function verifyPassword(password, stored) {
   }
   if (salt.length === 0 || expected.length === 0) return false;
 
-  let derived;
-  try {
-    derived = await scrypt(password.normalize('NFKC'), salt, expected.length, {
+  // El «servidor ocupado» sale de `conTurno` y no se traga: convertirlo en
+  // `false` lo contaría como contraseña incorrecta y acabaría bloqueando cuentas.
+  const derived = await conTurno(() =>
+    scrypt(password.normalize('NFKC'), salt, expected.length, {
       N,
       r,
       p,
       maxmem: Math.max(maxmem, 256 * N * r),
-    });
-  } catch {
-    return false;
-  }
+    }).catch(() => null),
+  );
+  if (!derived) return false;
   return crypto.timingSafeEqual(derived, expected);
 }
 

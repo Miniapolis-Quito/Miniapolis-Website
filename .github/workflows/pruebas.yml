@@ -29,6 +29,23 @@ jobs:
           node-version: '22'
           cache: npm
 
+      # GitHub no ofrece el escaneo de secretos en este repositorio privado. Esta
+      # comprobación hace lo esencial: falla si se versiona un archivo que nunca
+      # debe estar (configuración real, base de datos, certificados, pases) o
+      # un secreto con forma reconocible (claves privadas, tokens de GitHub, AWS,
+      # Slack, Google, SendGrid o Stripe). Los ejemplos y las pruebas no llevan
+      # secretos reales y no se revisan por nombre, sí por contenido.
+      - name: Busca secretos versionados
+        run: |
+          prohibidos=$(git ls-files | grep -E '(^|/)\.env$|\.(pem|p12|p8|key|db|sqlite|pkpass)$' || true)
+          if [ -n "$prohibidos" ]; then
+            echo "::error::Archivos que nunca deben versionarse:"; echo "$prohibidos"; exit 1
+          fi
+          patron='BEGIN [A-Z ]*PRIVATE KEY|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{35}|SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}|sk_live_[0-9A-Za-z]{24,}'
+          if git grep -I -n -E "$patron" -- ':!package-lock.json' ':!.github/workflows/pruebas.yml'; then
+            echo "::error::Hay algo con forma de secreto en el repositorio."; exit 1
+          fi
+
       - run: npm ci
 
       # Las pruebas se ejecutan contra una base en memoria; no hace falta nada más.

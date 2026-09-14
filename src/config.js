@@ -45,8 +45,42 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const isProduction = NODE_ENV === 'production';
 const isTest = NODE_ENV === 'test';
 
+/**
+ * Valores publicados en los archivos de ejemplo de este repositorio. Cumplen la
+ * longitud mínima, así que sin esta lista una instalación que copiara
+ * `.env.development.example` arrancaría en producción con secretos y una
+ * contraseña de administrador que conoce cualquiera con acceso al código.
+ */
+const VALORES_DE_EJEMPLO = new Set([
+  'desarrollo-access-cambiame-por-uno-de-verdad-00',
+  'desarrollo-refresh-cambiame-por-uno-de-verdad-0',
+  'desarrollo-qr-cambiame-por-uno-de-verdad-000000',
+  'Pista-RC-Master-2026',
+  'Pista-Demo-2026',
+]);
+
+function rechazarValorDeEjemplo(name, value) {
+  if (!isProduction || !value) return;
+  if (VALORES_DE_EJEMPLO.has(value) || /c[aá]mbiame|changeme/i.test(value)) {
+    throw new Error(
+      `Configuración inválida: ${name} tiene un valor de ejemplo publicado en el repositorio. ` +
+        'Genera uno propio con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"',
+    );
+  }
+}
+
+/** Qué secreto se usó ya para qué: cada uso debe tener el suyo. */
+const secretosUsados = new Map();
+
 function requiredSecret(name, minLength = 32) {
   const value = process.env[name];
+  rechazarValorDeEjemplo(name, value);
+  if (isProduction && value && secretosUsados.has(value)) {
+    // Un mismo secreto para firmar sesiones y QR haría que filtrar uno
+    // comprometiera los dos.
+    throw new Error(`Configuración inválida: ${name} repite el valor de ${secretosUsados.get(value)}. Cada secreto debe ser distinto.`);
+  }
+  if (value) secretosUsados.set(value, name);
   if (value && value.length >= minLength) return value;
   if (isProduction) {
     throw new Error(
@@ -357,7 +391,10 @@ export const config = Object.freeze({
   /** Cuenta máster inicial creada en el primer arranque, si se define. */
   bootstrap: {
     masterEmail: process.env.MASTER_EMAIL || '',
-    masterPassword: process.env.MASTER_PASSWORD || '',
+    masterPassword: (() => {
+      rechazarValorDeEjemplo('MASTER_PASSWORD', process.env.MASTER_PASSWORD);
+      return process.env.MASTER_PASSWORD || '';
+    })(),
     masterName: process.env.MASTER_NAME || 'Administrador',
   },
 
