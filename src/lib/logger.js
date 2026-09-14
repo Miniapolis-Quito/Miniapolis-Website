@@ -23,14 +23,26 @@ const SENSITIVE = new Set([
   'qrPayload',
   'payload',
   'ticket',
-]);
+  'temporaryPassword',
+  'masterPassword',
+  'pushToken',
+  'push_token',
+  'auth_token',
+  'authToken',
+  'authenticationToken',
+  'keyPassword',
+  'privateKey',
+  'apnsKey',
+  'secretKey',
+  'idempotencyKey',
+].map((clave) => clave.toLowerCase()));
 
 function redact(value, depth = 0) {
   if (depth > 4 || value === null || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.slice(0, 50).map((v) => redact(v, depth + 1));
   const out = {};
   for (const [key, val] of Object.entries(value)) {
-    out[key] = SENSITIVE.has(key) ? '[redactado]' : redact(val, depth + 1);
+    out[key] = SENSITIVE.has(key.toLowerCase()) ? '[redactado]' : redact(val, depth + 1);
   }
   return out;
 }

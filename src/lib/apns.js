@@ -15,6 +15,9 @@ import { logger } from './logger.js';
 /** El token de APNs vale una hora; se renueva antes para no apurar el margen. */
 const VIDA_DEL_TOKEN_MS = 50 * 60 * 1000;
 
+/** Un token de APNs es hexadecimal; el largo exacto lo decide Apple. */
+export const PUSH_TOKEN_VALIDO = /^[0-9A-Fa-f]{32,200}$/;
+
 let tokenEnUso = null;
 let tokenCreadoEn = 0;
 
@@ -52,6 +55,14 @@ export function olvidarToken() {
  */
 export function avisar(pushToken, { apnsKeyId, apnsKey, teamId, passTypeId, apnsHost }) {
   return new Promise((resolver) => {
+    // El token acaba dentro de la ruta de la petición a Apple, firmada con la
+    // clave del negocio. Uno con "/", "?" o ".." apuntaría a otra ruta; se trata
+    // como un token inválido para que se dé de baja.
+    if (typeof pushToken !== 'string' || !PUSH_TOKEN_VALIDO.test(pushToken)) {
+      resolver({ ok: false, status: 0, motivo: 'BadDeviceToken' });
+      return;
+    }
+
     let sesion;
     try {
       sesion = http2.connect(`https://${apnsHost}`);

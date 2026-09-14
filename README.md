@@ -211,8 +211,9 @@ detecta.
 
 **Sesiones.** La contraseña se guarda con scrypt (N=2¹⁶, r=8, p=1). El token de
 acceso vive 15 minutos y solo en memoria del navegador; la sesión persiste con
-una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
-JavaScript no puede leer. El token de refresco **rota en cada uso** y, si
+una cookie `httpOnly`, `Secure`, `SameSite=Strict` que JavaScript no puede
+leer; con HTTPS lleva el prefijo `__Host-`, así que nadie en la red ni en otro
+subdominio puede plantar una propia. El token de refresco **rota en cada uso** y, si
 alguna vez se presenta uno ya rotado, se asume robo y se revoca la sesión
 completa. Suspender una cuenta, cambiarle el rol o cambiar la contraseña corta
 el acceso al instante, sin esperar a que caduque nada. Suspenderla inutiliza
@@ -224,11 +225,17 @@ en el acto**: la pantalla de esa persona vuelve a la página de acceso sola, sin
 esperar a que falle su siguiente petición.
 
 **Lo demás.** Límites de intentos persistidos en base (sobreviven a un
-reinicio), bloqueo temporal de cuenta tras 8 fallos, política de seguridad de
+reinicio), bloqueo temporal de cuenta tras 8 fallos —contado por la base, así
+que ni una ráfaga de intentos simultáneos lo esquiva, y aplicado también a los
+correos sin cuenta para no delatar cuáles están registrados—, política de seguridad de
 contenido sin `unsafe-inline` ni `unsafe-eval`, consultas siempre
 parametrizadas, validación de entrada con esquemas y mensajes en español,
 cabeceras de seguridad, protección contra fórmulas en los CSV exportados, y
 bitácora de auditoría de cada acción con su autor, hora y dirección IP.
+Las respuestas de la API no se guardan en la caché del navegador, la base de
+datos se crea legible solo por el usuario del servicio, la contraseña de la
+clave de Apple Wallet nunca viaja en la línea de órdenes, y el servicio web que
+consultan los teléfonos valida cada identificador y tiene su propio límite.
 
 ---
 

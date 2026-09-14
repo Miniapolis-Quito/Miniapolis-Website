@@ -129,9 +129,11 @@ router.post(
       throw unauthorized('Correo o contraseña incorrectos.', 'credenciales_invalidas');
     }
 
-    // Login correcto: se devuelve la cuota consumida para no penalizar al usuario legítimo.
+    // Login correcto: se devuelve la cuota de la cuenta para no penalizar a su
+    // dueño. La de la conexión no se toca: si un acierto la vaciara, bastaría
+    // con entrar de vez en cuando a una cuenta propia para seguir probando
+    // contraseñas ajenas sin límite desde la misma IP.
     resetRateLimit(`login-cuenta:${data.email}`);
-    if (req.rateLimitKey) resetRateLimit(req.rateLimitKey);
 
     const { accessToken, refreshToken } = sessions.issueSession(result.user, {
       ip: req.clientIp,

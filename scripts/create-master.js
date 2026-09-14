@@ -9,8 +9,7 @@
  * máster: es la salida de emergencia cuando nadie puede entrar al panel.
  */
 import { getDb, closeDb } from '../src/db/index.js';
-import { randomToken } from '../src/lib/ids.js';
-import { validatePasswordStrength } from '../src/lib/passwords.js';
+import { validatePasswordStrength, generarPasswordTemporal } from '../src/lib/passwords.js';
 import * as users from '../src/services/users.js';
 import * as audit from '../src/services/audit.js';
 
@@ -50,7 +49,7 @@ const nombre = typeof opciones.nombre === 'string' ? opciones.nombre : 'Administ
 let password = typeof opciones.password === 'string' ? opciones.password : null;
 let generada = false;
 if (!password) {
-  password = randomToken(12);
+  password = generarPasswordTemporal(12);
   generada = true;
 }
 

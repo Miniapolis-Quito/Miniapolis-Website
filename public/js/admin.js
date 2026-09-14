@@ -470,22 +470,27 @@ async function imprimirPase(pack, propietario) {
   const zona = $('#pase-impreso');
   try {
     const svg = await api.get(`/api/packs/${pack.id}/qr.svg?mode=static`);
-    const imagenPista = el('img', {
-      class: 'pase__imagen',
-      src: '/images/racing-hobbies-pase-rc.webp',
-      alt: '',
-      width: '1200',
-      height: '500',
-      decoding: 'sync',
-    });
     render(
       zona,
       el(
         'div',
         { class: 'pase' },
-        imagenPista,
-        el('div', { class: 'pase__marca' }, estado.configuracion?.brandName || 'Racing Hobbies Ecuador'),
-        el('div', { class: 'pase__titulo' }, `Pase de ${pack.size} entradas`),
+        el(
+          'header',
+          { class: 'pase__cabecera' },
+          el(
+            'div',
+            { class: 'pase__marca' },
+            el('img', {
+              class: 'pase__logo',
+              src: '/images/racing-hobbies-logo-oficial.png',
+              width: '1600',
+              height: '434',
+              alt: 'Racing Hobbies Ecuador',
+            }),
+          ),
+          el('div', { class: 'pase__titulo' }, `Pase de ${pack.size} entradas`),
+        ),
         el('div', { class: 'pase__qr', html: svg }),
         el('div', { class: 'pase__codigo' }, pack.code),
         el('div', { class: 'pase__cliente' }, propietario?.fullName || ''),
@@ -500,14 +505,6 @@ async function imprimirPase(pack, propietario) {
     );
     zona.hidden = false;
 
-    // Espera la franja visual para que el pase físico no se imprima incompleto
-    // en una carga inicial lenta.
-    if (!imagenPista.complete) {
-      await new Promise((resolver) => {
-        imagenPista.addEventListener('load', resolver, { once: true });
-        imagenPista.addEventListener('error', resolver, { once: true });
-      });
-    }
     document.body.classList.add('imprimiendo-pase');
 
     // La limpieza se hace al terminar de imprimir, no justo después de llamar a

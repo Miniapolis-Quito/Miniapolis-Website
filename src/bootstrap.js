@@ -4,8 +4,7 @@
  */
 import { config } from './config.js';
 import { logger } from './lib/logger.js';
-import { randomToken } from './lib/ids.js';
-import { validatePasswordStrength } from './lib/passwords.js';
+import { validatePasswordStrength, generarPasswordTemporal } from './lib/passwords.js';
 import * as users from './services/users.js';
 import * as audit from './services/audit.js';
 
@@ -23,7 +22,7 @@ export async function ensureMasterAccount() {
   let password = config.bootstrap.masterPassword;
   let generated = null;
   if (!password) {
-    generated = randomToken(12);
+    generated = generarPasswordTemporal(12);
     password = generated;
   }
 

@@ -4,21 +4,34 @@
    contraste, tipografía grande y objetivos táctiles amplios.
    ========================================================================== */
 
+@font-face {
+  font-family: 'Anton';
+  src: url('/fonts/anton-400.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/archivo-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
-  --fondo: #0a0d12;
-  --fondo-2: #111721;
-  --superficie: #161d29;
-  --superficie-2: #1d2635;
-  --borde: #2a3446;
-  --borde-fuerte: #3b4860;
+  --fondo: #000;
+  --fondo-2: #101010;
+  --superficie: #171717;
+  --superficie-2: #242424;
+  --borde: #353535;
+  --borde-fuerte: #626262;
 
-  --texto: #eef2f8;
-  --texto-2: #a6b3c6;
-  --texto-3: #6f7f96;
+  --texto: #f6f6f2;
+  --texto-2: #c5c5bf;
+  --texto-3: #969690;
 
-  --acento: #ff6a1a;
-  --acento-2: #ff9147;
-  --acento-suave: rgba(255, 106, 26, 0.14);
+  --acento: #3dfe40;
+  --acento-2: #3dfe40;
+  --acento-suave: rgba(61, 254, 64, 0.14);
 
   --ok: #2fd07a;
   --ok-suave: rgba(47, 208, 122, 0.14);
@@ -26,14 +39,15 @@
   --alerta-suave: rgba(255, 197, 61, 0.14);
   --error: #ff5566;
   --error-suave: rgba(255, 85, 102, 0.14);
-  --info: #4aa8ff;
+  --info: #3dfe40;
 
-  --radio: 14px;
-  --radio-s: 9px;
+  --radio: 8px;
+  --radio-s: 4px;
   --sombra: 0 10px 30px rgba(0, 0, 0, 0.45);
   --transicion: 160ms ease;
 
-  --fuente: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fuente: 'Archivo', system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --fuente-display: 'Anton', 'Archivo', Impact, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -52,10 +66,7 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background:
-    radial-gradient(1100px 620px at 12% -12%, rgba(255, 106, 26, 0.10), transparent 62%),
-    radial-gradient(900px 520px at 100% 0%, rgba(74, 168, 255, 0.07), transparent 55%),
-    var(--fondo);
+  background: var(--fondo);
   color: var(--texto);
   font-family: var(--fuente);
   font-size: 16px;
@@ -63,7 +74,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { line-height: 1.2; margin: 0 0 .4em; letter-spacing: -0.02em; }
+h1, h2, h3 { font-family: var(--fuente-display); line-height: 1.08; margin: 0 0 .4em; letter-spacing: .015em; text-transform: uppercase; }
 h1 { font-size: clamp(1.5rem, 4vw, 2rem); }
 h2 { font-size: clamp(1.15rem, 3vw, 1.4rem); }
 h3 { font-size: 1.02rem; }
@@ -81,7 +92,7 @@ a  { color: var(--acento-2); }
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(10, 13, 18, 0.86);
+  background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--borde);
 }
@@ -95,12 +106,14 @@ a  { color: var(--acento-2); }
 }
 .barra__marca {
   display: flex; align-items: center; gap: 10px;
-  font-weight: 800; letter-spacing: -0.03em;
+  font-weight: 800; letter-spacing: .02em;
   margin-right: auto;
   flex: 0 0 auto;      /* la marca no se comprime ni parte en dos líneas */
   white-space: nowrap;
 }
 .barra__marca span { font-size: 1.02rem; }
+.marca__sello { display: grid; flex: none; place-items: center; width: 102px; height: 38px; overflow: hidden; background: #3cfe3f; border-radius: 3px; }
+.marca__logo { display: block; width: 96px; height: 32px; object-fit: contain; }
 .barra__nav { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* Escena original sin texto: aporta la energía de la pista sin competir con
@@ -109,7 +122,7 @@ a  { color: var(--acento-2); }
   position: relative;
   overflow: hidden;
   margin-top: 18px;
-  border: 1px solid rgba(255, 145, 71, .42);
+  border: 1px solid rgba(61, 254, 64, .48);
   border-radius: var(--radio);
   box-shadow: 0 14px 34px rgba(0, 0, 0, .35);
 }
@@ -117,7 +130,7 @@ a  { color: var(--acento-2); }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(10, 13, 18, .15), transparent 56%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, .18), transparent 56%);
   pointer-events: none;
 }
 .presentacion-pista img { display: block; width: 100%; height: auto; }
@@ -125,10 +138,10 @@ a  { color: var(--acento-2); }
 .encabezado-pista {
   min-height: 112px;
   padding: clamp(17px, 3vw, 25px);
-  border: 1px solid rgba(255, 145, 71, .30);
+  border: 1px solid rgba(61, 254, 64, .34);
   border-radius: var(--radio);
   background-image:
-    linear-gradient(90deg, rgba(10, 13, 18, .96) 0%, rgba(10, 13, 18, .84) 46%, rgba(10, 13, 18, .46) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, .97) 0%, rgba(0, 0, 0, .86) 46%, rgba(0, 0, 0, .42) 100%),
     url('/images/racing-hobbies-pista-rc.webp');
   background-position: center, right center;
   background-size: cover;
@@ -143,14 +156,10 @@ a  { color: var(--acento-2); }
 .encabezado-pista label,
 .encabezado-pista span { text-shadow: 0 1px 4px rgba(4, 6, 10, .9); }
 
-.logo {
-  width: 34px; height: 34px; flex: none;
-  display: grid; place-items: center;
-  border-radius: 10px;
-  background: linear-gradient(140deg, var(--acento), #ff3d6e);
-  color: #fff; font-weight: 900; font-size: .82rem;
-  box-shadow: 0 4px 14px rgba(255, 106, 26, 0.35);
-}
+.brand-lockup { display: inline-grid; place-items: center; padding: 9px 13px; background: #3cfe3f; border-radius: 4px; }
+.brand-lockup__logo { display: block; width: min(390px, 78vw); height: auto; }
+.brand-lockup--compact { padding: 5px 9px; }
+.brand-lockup--compact .brand-lockup__logo { width: min(180px, 42vw); }
 
 main { padding-block: clamp(18px, 3.5vw, 34px) 90px; }
 
@@ -201,8 +210,8 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 90px; }
   gap: 2px;
   padding: clamp(20px, 5vw, 34px);
   border-radius: var(--radio);
-  background: linear-gradient(160deg, rgba(255, 106, 26, 0.16), rgba(255, 61, 110, 0.06));
-  border: 1px solid rgba(255, 106, 26, 0.32);
+  background: linear-gradient(145deg, rgba(61, 254, 64, 0.16), rgba(61, 254, 64, 0.035));
+  border: 1px solid rgba(61, 254, 64, 0.46);
   text-align: center;
 }
 .saldo__numero {
@@ -212,7 +221,8 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 90px; }
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
   color: #fff;
-  text-shadow: 0 5px 26px rgba(255, 106, 26, 0.45);
+  color: var(--acento);
+  text-shadow: 0 5px 26px rgba(61, 254, 64, 0.3);
 }
 .saldo__texto { color: var(--texto-2); font-size: 1rem; }
 .saldo--vacio { background: linear-gradient(160deg, rgba(255,85,102,.14), rgba(255,85,102,.04)); border-color: rgba(255,85,102,.34); }
@@ -246,7 +256,7 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 90px; }
 .boton:hover:not(:disabled) { filter: brightness(1.14); }
 .boton:active:not(:disabled) { transform: translateY(1px); }
 .boton:disabled { opacity: .5; cursor: not-allowed; }
-.boton--principal { --bg: linear-gradient(135deg, var(--acento), #ff3d6e); --fg: #fff; --bd: transparent; box-shadow: 0 5px 18px rgba(255, 106, 26, .3); }
+.boton--principal { --bg: var(--acento); --fg: #000; --bd: var(--acento); box-shadow: none; }
 .boton--fantasma { --bg: transparent; --bd: var(--borde-fuerte); }
 .boton--peligro { --bg: transparent; --fg: var(--error); --bd: rgba(255,85,102,.5); }
 .boton--ok { --bg: transparent; --fg: var(--ok); --bd: rgba(47,208,122,.5); }
@@ -323,7 +333,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .etiqueta--ok { color: var(--ok); border-color: rgba(47,208,122,.45); background: var(--ok-suave); }
 .etiqueta--alerta { color: var(--alerta); border-color: rgba(255,197,61,.45); background: var(--alerta-suave); }
 .etiqueta--error { color: var(--error); border-color: rgba(255,85,102,.45); background: var(--error-suave); }
-.etiqueta--info { color: var(--info); border-color: rgba(74,168,255,.45); background: rgba(74,168,255,.12); }
+.etiqueta--info { color: var(--info); border-color: rgba(61,254,64,.55); background: rgba(61,254,64,.12); }
 
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--texto-3); flex: none; }
 .punto--vivo { background: var(--ok); box-shadow: 0 0 0 0 rgba(47,208,122,.6); animation: pulsoPunto 2.1s infinite; }
@@ -533,7 +543,7 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   .encabezado-pista {
     min-height: 102px;
     background-image:
-      linear-gradient(90deg, rgba(10, 13, 18, .96) 0%, rgba(10, 13, 18, .80) 67%, rgba(10, 13, 18, .52) 100%),
+      linear-gradient(90deg, rgba(0, 0, 0, .96) 0%, rgba(0, 0, 0, .80) 67%, rgba(0, 0, 0, .52) 100%),
       url('/images/racing-hobbies-pista-rc.webp');
   }
 }
@@ -577,25 +587,34 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
 .pase {
   width: 86mm;
   margin: 0 auto;
-  padding: 8mm 6mm;
-  border: 2px solid #000;
-  border-radius: 4mm;
+  padding: 0 6mm 7mm;
+  overflow: hidden;
+  border: 1.5px solid #000;
+  border-radius: 2mm;
   background: #fff;
   color: #000;
   text-align: center;
   font-family: var(--fuente);
 }
-.pase__imagen {
+.pase__cabecera {
+  margin: 0 -6mm 5mm;
+  padding: 5mm 6mm 4mm;
+  background: #000;
+  border-bottom: 2mm solid #3dfe40;
+}
+.pase__marca {
+  display: grid;
+  place-items: center;
+  padding: 2mm 3mm;
+  background: #3cfe3f;
+}
+.pase__logo {
   display: block;
   width: 100%;
-  height: 19mm;
-  margin: -3mm 0 4mm;
-  border-radius: 2.5mm;
-  object-fit: cover;
-  object-position: right center;
+  max-width: 66mm;
+  height: auto;
 }
-.pase__marca   { font-weight: 800; letter-spacing: -0.02em; font-size: 12pt; }
-.pase__titulo  { font-size: 10pt; margin-bottom: 4mm; }
+.pase__titulo  { margin-top: 3.5mm; color: #fff; font-family: var(--fuente-display); font-size: 13pt; line-height: 1; letter-spacing: .08em; text-transform: uppercase; }
 .pase__qr svg  { width: 55mm; height: 55mm; display: block; margin: 0 auto; }
 .pase__codigo  { font-family: var(--mono); font-size: 13pt; font-weight: 700; letter-spacing: .1em; margin-top: 3mm; }
 .pase__cliente { font-size: 10pt; margin-top: 1mm; }
@@ -638,7 +657,7 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
 .columna > *     { min-width: 0; }
 .lista-scroll    { max-height: 190px; overflow-y: auto; }
 
-.logo--grande { width: 60px; height: 60px; font-size: 1.3rem; margin: 0 auto 14px; }
+.brand-lockup--entrada { margin: 0 auto 16px; }
 .cargando--grande { width: 30px; height: 30px; border-width: 3px; }
 
 .separador { border: 0; border-top: 1px solid var(--borde); margin: 22px 0; }
@@ -680,7 +699,7 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   border-radius: var(--radio);
   border: 1px solid var(--borde);
   background:
-    radial-gradient(600px 200px at 0% 0%, rgba(255, 106, 26, .10), transparent 70%),
+    radial-gradient(600px 200px at 0% 0%, rgba(61, 254, 64, .10), transparent 70%),
     linear-gradient(180deg, var(--superficie), var(--fondo-2));
   box-shadow: var(--sombra);
 }
@@ -690,12 +709,12 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   display: grid; place-items: center;
   border-radius: 18px;
   font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em;
-  color: #fff;
-  background: linear-gradient(140deg, var(--acento), #ff3d6e);
-  box-shadow: 0 6px 20px rgba(255, 106, 26, .32);
+  color: #000;
+  background: var(--acento);
+  box-shadow: none;
 }
-.avatar--staff  { background: linear-gradient(140deg, #4aa8ff, #6b5bff); box-shadow: 0 6px 20px rgba(74,168,255,.3); }
-.avatar--master { background: linear-gradient(140deg, #2fd07a, #17a2b8); box-shadow: 0 6px 20px rgba(47,208,122,.3); }
+.avatar--staff  { background: #d8d8d2; box-shadow: none; }
+.avatar--master { background: var(--acento); box-shadow: none; }
 
 .ficha__identidad { display: grid; gap: 4px; min-width: 220px; flex: 1 1 260px; }
 .ficha__nombre { font-size: clamp(1.3rem, 3.4vw, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
@@ -736,7 +755,7 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   font-size: .95rem;
 }
 .tiempo__icono--suma  { border-color: rgba(47,208,122,.55); background: var(--ok-suave); }
-.tiempo__icono--resta { border-color: rgba(255,106,26,.5);  background: var(--acento-suave); }
+.tiempo__icono--resta { border-color: rgba(61,254,64,.55);  background: var(--acento-suave); }
 .tiempo__icono--aviso { border-color: rgba(255,197,61,.5);  background: var(--alerta-suave); }
 .tiempo__cuerpo { display: grid; gap: 2px; align-content: start; min-width: 0; }
 .tiempo__titulo { font-weight: 650; }

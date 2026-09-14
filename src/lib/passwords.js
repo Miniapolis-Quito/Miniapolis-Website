@@ -93,6 +93,18 @@ export const HASH_FICTICIO = [
   Buffer.alloc(PARAMS.keyLength).toString('base64'),
 ].join('$');
 
+/**
+ * Contraseña temporal aleatoria, en base64url.
+ *
+ * Nunca es más corta que `MIN_PASSWORD_LENGTH`: con un mínimo configurado por
+ * encima de lo que daban los bytes fijos, generar una fallaba la validación de
+ * robustez y el alta sin contraseña devolvía un error.
+ */
+export function generarPasswordTemporal(bytesMinimos = 9) {
+  const bytes = Math.max(bytesMinimos, Math.ceil((config.security.minPasswordLength * 3) / 4));
+  return crypto.randomBytes(bytes).toString('base64url');
+}
+
 /** Indica si un hash usa parámetros distintos a los actuales y conviene recalcularlo. */
 export function needsRehash(stored) {
   const parts = String(stored || '').split('$');
