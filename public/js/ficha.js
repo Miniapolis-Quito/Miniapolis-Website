@@ -33,6 +33,9 @@ const ACCIONES_CUENTA = {
   'usuario.sesiones_revocadas': 'Sesiones cerradas por administración',
   'perfil.actualizado': 'Actualizó sus datos',
   'password.cambiada': 'Cambió su contraseña',
+  'password.recuperacion_solicitada': 'Pidió un enlace para recuperar su contraseña',
+  'password.restablecida_por_correo': 'Restableció su contraseña con el enlace del correo',
+  'password.cambio_bloqueado': 'Sesión cerrada por fallar la contraseña actual al cambiarla',
   'login.exitoso': 'Inició sesión',
   'login.fallido': 'Intento de acceso fallido',
   logout: 'Cerró sesión',
@@ -711,6 +714,8 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
   const iconosCuenta = {
     'login.exitoso': '🔑', 'login.fallido': '⚠️', logout: '🚪', 'logout.todos': '🚪',
     'password.cambiada': '🔒', 'usuario.password_restablecida': '🔒',
+    'password.recuperacion_solicitada': '✉️', 'password.restablecida_por_correo': '🔒',
+    'password.cambio_bloqueado': '⛔',
     'perfil.actualizado': '✏️', 'usuario.actualizado': '✏️',
     'cuenta.registrada': '🎉', 'usuario.creado': '🎉',
     'usuario.desbloqueado': '🔓', 'usuario.sesiones_revocadas': '🚪',

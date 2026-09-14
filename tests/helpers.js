@@ -41,7 +41,7 @@ export function limpiarBase() {
   const db = getDb();
   db.pragma('foreign_keys = OFF');
   for (const tabla of [
-    'wallet_devices', 'wallet_passes',
+    'password_resets', 'wallet_devices', 'wallet_passes',
     'pack_movements', 'redemptions', 'packs', 'sessions', 'audit_log',
     'used_nonces', 'rate_limits', 'idempotency_keys', 'users',
   ]) {

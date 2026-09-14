@@ -97,7 +97,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
     .all()
     .map((r) => r.name);
   assert.deepEqual(tablas, [
-    'audit_log', 'idempotency_keys', 'pack_movements', 'packs',
+    'audit_log', 'idempotency_keys', 'pack_movements', 'packs', 'password_resets',
     'rate_limits', 'redemptions', 'sessions', 'used_nonces', 'users',
     'wallet_devices', 'wallet_passes',
   ]);
@@ -108,6 +108,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   const indices = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((r) => r.name);
   for (const necesario of [
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
+    'idx_password_resets_expiry',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }

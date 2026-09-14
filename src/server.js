@@ -7,6 +7,7 @@ import { closeDb } from './db/index.js';
 import { ensureMasterAccount } from './bootstrap.js';
 import { purgeExpired } from './services/sessions.js';
 import { expireDuePacks } from './services/packs.js';
+import { purgar as purgarRecuperaciones } from './services/recuperacion.js';
 
 const app = createApp();
 await ensureMasterAccount();
@@ -29,7 +30,10 @@ const maintenance = setInterval(
     try {
       const expired = expireDuePacks();
       const purged = purgeExpired();
-      if (expired || purged) logger.info('Mantenimiento', { packsVencidos: expired, sesionesPurgadas: purged });
+      const enlaces = purgarRecuperaciones();
+      if (expired || purged || enlaces) {
+        logger.info('Mantenimiento', { packsVencidos: expired, sesionesPurgadas: purged, enlacesPurgados: enlaces });
+      }
     } catch (error) {
       logger.error('Fallo en la tarea de mantenimiento', { message: error.message });
     }

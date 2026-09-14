@@ -24,6 +24,7 @@ import * as sessions from '../services/sessions.js';
 import * as audit from '../services/audit.js';
 import * as panel from '../services/panel.js';
 import * as expediente from '../services/expediente.js';
+import * as recuperacion from '../services/recuperacion.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -192,6 +193,9 @@ router.post(
     }
 
     await users.setPassword(target.id, password);
+    // La persona se entera aunque no haya sido ella quien lo pidió. El aviso
+    // nunca lleva la contraseña: esa se entrega en mano.
+    recuperacion.avisarCambio(target, { via: 'administracion' });
     audit.record({
       ...actorContext(req),
       action: 'usuario.password_restablecida',

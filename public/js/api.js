@@ -186,6 +186,51 @@ export async function registrarse(datos) {
   return guardarSesion(respuesta);
 }
 
+/**
+ * Cambio de contraseña hecho desde esta pestaña.
+ *
+ * Al cambiar la contraseña el servidor cierra todas las sesiones y avisa por el
+ * canal en vivo para que las demás pantallas vuelvan a la de acceso. Ese aviso
+ * también le llega a la pestaña que hizo el cambio —a veces antes que la
+ * respuesta con su sesión nueva—, y la echaba a la página de acceso justo
+ * después de decirle «contraseña cambiada». Por eso se deja constancia del
+ * cambio en curso: el canal en vivo espera a que termine y, si salió bien,
+ * sigue con la sesión nueva en vez de cerrar.
+ */
+const MARGEN_CAMBIO_PROPIO_MS = 30_000;
+let cambioPropio = null;
+
+export async function cambiarPassword(currentPassword, newPassword) {
+  const peticionCambio = peticion('/api/auth/change-password', {
+    metodo: 'POST',
+    cuerpo: { currentPassword, newPassword },
+  }).then(guardarSesion);
+  const registro = { salioBien: peticionCambio.then(() => true, () => false), hasta: Infinity };
+  cambioPropio = registro;
+  try {
+    const datos = await peticionCambio;
+    registro.hasta = Date.now() + MARGEN_CAMBIO_PROPIO_MS;
+    return datos;
+  } catch (error) {
+    if (cambioPropio === registro) cambioPropio = null;
+    throw error;
+  }
+}
+
+/**
+ * Si esta pestaña está cambiando su contraseña o acaba de hacerlo, devuelve una
+ * promesa que dice si salió bien. Si no, `null`: el aviso de sesión invalidada
+ * vino de otro sitio y hay que hacerle caso.
+ */
+export function cambioDePasswordPropio() {
+  if (!cambioPropio) return null;
+  if (Date.now() > cambioPropio.hasta) {
+    cambioPropio = null;
+    return null;
+  }
+  return cambioPropio.salioBien;
+}
+
 export async function cerrarSesion() {
   // Marca la salida como voluntaria para que el vigilante de sesión no añada
   // un "volver a esta página" al enlace de acceso.

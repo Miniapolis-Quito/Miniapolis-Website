@@ -113,6 +113,19 @@ export function revokeAllForUser(userId, reason = 'admin') {
 }
 
 /**
+ * Revoca una sesión y todas las renovaciones de su familia: el token de acceso
+ * deja de valer en la siguiente petición y la cookie de refresco ya no renueva.
+ */
+export function revokeSessionFamily(sessionId, reason) {
+  const db = getDb();
+  const fila = db.prepare('SELECT family_id FROM sessions WHERE id = ?').get(sessionId);
+  if (!fila) return 0;
+  return db
+    .prepare('UPDATE sessions SET revoked_at = ?, revoke_reason = ? WHERE family_id = ? AND revoked_at IS NULL')
+    .run(new Date().toISOString(), reason, fila.family_id).changes;
+}
+
+/**
  * Avisa por el canal en vivo a las pantallas de ese usuario para que vuelvan a
  * la página de acceso en el acto, en lugar de seguir mostrando datos hasta que
  * la siguiente petición falle.

@@ -7,7 +7,7 @@
  * implementar la reconexión a mano: espera exponencial con algo de aleatoriedad
  * y reanudación desde el último evento recibido.
  */
-import { tokenActual, refrescarSesion, limpiarSesion } from './api.js';
+import { tokenActual, refrescarSesion, limpiarSesion, cambioDePasswordPropio } from './api.js';
 
 const ESPERA_BASE = 1000;
 const ESPERA_MAXIMA = 30_000;
@@ -24,10 +24,17 @@ export class ConexionEnVivo {
     this.estado = 'inactivo';
 
     this.enEspera = false;
+    /** Esperando a que termine un cambio de contraseña hecho desde esta pestaña. */
+    this.esperandoCambio = false;
 
     this._alVolverAlFrente = () => {
       // Al volver a la pestaña o recuperar la red, reconectar de inmediato.
-      if (!this.detenida && this.estado !== 'conectado' && document.visibilityState === 'visible') {
+      if (
+        !this.detenida &&
+        !this.esperandoCambio &&
+        this.estado !== 'conectado' &&
+        document.visibilityState === 'visible'
+      ) {
         this.enEspera = false;
         this.intentos = 0;
         this._reconectarYa();
@@ -182,6 +189,27 @@ export class ConexionEnVivo {
     // rol cambiado o sesión cerrada desde otro sitio): no tiene sentido
     // reintentar, hay que volver a entrar.
     if (tipo === 'sesion.invalida') {
+      const cambioPropio = cambioDePasswordPropio();
+      if (cambioPropio) {
+        // Esta pestaña acaba de cambiar su contraseña: el aviso es para las
+        // demás pantallas. El canal abierto sigue atado a la sesión anterior,
+        // así que se corta y, cuando el cambio termina bien, se vuelve a abrir
+        // con la sesión nueva. Si el cambio falló, el aviso vino de otro sitio.
+        this.esperandoCambio = true;
+        this.pausar();
+        cambioPropio.then((salioBien) => {
+          this.esperandoCambio = false;
+          if (this.detenida) return;
+          if (salioBien) {
+            this.intentos = 0;
+            this._reconectarYa();
+          } else {
+            this.detener();
+            limpiarSesion();
+          }
+        });
+        return;
+      }
       this.detener();
       limpiarSesion();
       return;

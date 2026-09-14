@@ -45,6 +45,25 @@
           <div class="campo__error"></div>
         </div>
         <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
+        <p class="centrado mt sin-margen" id="zona-olvido" hidden>
+          <button class="boton boton--fantasma boton--chico" id="btn-olvido" type="button">¿Olvidaste tu contraseña?</button>
+        </p>
+      </form>
+
+      <!-- Recuperar la contraseña -->
+      <form id="form-recuperar" aria-labelledby="titulo-recuperar" novalidate hidden>
+        <h2 id="titulo-recuperar">Recuperar tu contraseña</h2>
+        <p class="tenue pequeno">
+          Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.
+        </p>
+        <div class="campo">
+          <label for="recuperar-email">Correo electrónico</label>
+          <input id="recuperar-email" name="email" type="email" autocomplete="username" inputmode="email"
+                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+          <div class="campo__error"></div>
+        </div>
+        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Enviarme el enlace</button>
+        <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
       </form>
 
       <!-- Registro -->

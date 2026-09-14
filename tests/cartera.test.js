@@ -48,7 +48,13 @@ before(async () => {
     flujo.respond({ ':status': 200 });
     flujo.end();
   });
-  await new Promise((listo) => apnsFalso.listen(PUERTO_APNS, '127.0.0.1', listo));
+  // Si el puerto está ocupado (otra suite corriendo a la vez), `listen` no llama
+  // a su callback sino que emite `error`: sin escucharlo, la prueba se quedaba
+  // esperando para siempre en vez de fallar diciendo por qué.
+  await new Promise((listo, fallo) => {
+    apnsFalso.once('error', fallo);
+    apnsFalso.listen(PUERTO_APNS, '127.0.0.1', listo);
+  });
 });
 
 after(async () => {

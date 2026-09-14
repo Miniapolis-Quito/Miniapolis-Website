@@ -18,6 +18,7 @@ const PAGINAS = {
   'public/app.html': ['cliente.js'],
   'public/scan.html': ['escaner.js'],
   'public/admin.html': ['admin.js', 'ficha.js'],
+  'public/restablecer.html': ['restablecer.js'],
 };
 /** Módulos que carga toda página autenticada. */
 const COMUNES = ['shell.js', 'ui.js', 'api.js', 'realtime.js'];

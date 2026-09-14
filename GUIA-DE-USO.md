@@ -42,6 +42,11 @@ pocos segundos. El pase de la cartera es para llevar la cuenta.
 - Si compras un segundo pack, se usa primero el que vence antes. Puedes elegir
   otro con los botones bajo el QR.
 - En **Mi cuenta** cambias tu contraseña y cierras sesión en otros dispositivos.
+- ¿Olvidaste la contraseña? En la página de acceso toca **¿Olvidaste tu
+  contraseña?**, escribe tu correo y abre el enlace que te llega. Vale media hora
+  y sirve una sola vez. Si no pediste ese correo, ignóralo: tu contraseña sigue
+  igual. Cada vez que tu contraseña cambia te llega un aviso; si no fuiste tú,
+  recupérala en el acto y avisa en recepción.
 
 ---
 
@@ -149,8 +154,17 @@ arreglado.
 
 ### Un cliente perdió su contraseña
 
-Ábrelo en **Clientes y personal → Ver → Restablecer contraseña**. Se genera una
-nueva, se copia al portapapeles y se cierran sus sesiones abiertas.
+Si el sistema tiene correo configurado, puede recuperarla él mismo desde la
+página de acceso con **¿Olvidaste tu contraseña?**. Nunca le pidas el enlace ni
+el código que le llega: es la llave de su cuenta.
+
+Si no tiene acceso a su correo, ábrelo en **Clientes y personal → Ver →
+Restablecer contraseña**. Se genera una nueva, se copia al portapapeles y se
+cierran sus sesiones abiertas. Le llega un aviso por correo del cambio, sin la
+contraseña: esa se la das tú en mano.
+
+El personal y el máster cambian su propia contraseña desde el botón
+**Contraseña** de la cabecera.
 
 ### Cierre de caja
 

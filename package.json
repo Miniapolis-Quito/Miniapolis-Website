@@ -16,12 +16,14 @@
     "test:watch": "node --test --watch \"tests/**/*.test.js\"",
     "test:e2e": "node tests/e2e/flujo-completo.mjs",
     "test:e2e:ficha": "node tests/e2e/ficha-cliente.mjs",
+    "test:e2e:recuperacion": "node tests/e2e/recuperacion.mjs",
     "test:ui": "node tests/e2e/interfaz.mjs",
     "test:camara": "node tests/e2e/camara.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "express": "^5.2.1",
+    "nodemailer": "^10.0.10",
     "qrcode": "^1.5.4",
     "zod": "^4.5.4"
   },

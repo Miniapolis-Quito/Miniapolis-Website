@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.js';
 import eventRoutes from './routes/events.js';
 import walletRoutes from './routes/wallet.js';
 import * as wallet from './services/wallet.js';
+import * as recuperacion from './services/recuperacion.js';
 
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
@@ -97,6 +98,9 @@ export function createApp() {
       // La interfaz solo ofrece guardar el pase en las carteras que estén
       // configuradas de verdad.
       wallet: wallet.disponible(),
+      // La página de acceso solo ofrece «¿Olvidaste tu contraseña?» si hay
+      // correo con que mandar el enlace.
+      passwordRecovery: recuperacion.disponible(),
     });
   });
 
@@ -144,6 +148,13 @@ export function createApp() {
   app.get('/app', page('app.html'));
   app.get('/escanear', page('scan.html'));
   app.get('/admin', page('admin.html'));
+  // La página del enlace de recuperación no manda Referer a ninguna parte. El
+  // token viaja en el fragmento y la página lo borra, pero no cuesta nada
+  // cerrar también esta vía.
+  app.get('/restablecer', (req, res) => {
+    res.set('Referrer-Policy', 'no-referrer');
+    page('restablecer.html')(req, res);
+  });
 
   app.use((req, res) => {
     res.status(404).set('Cache-Control', 'no-cache').sendFile(path.join(PUBLIC_DIR, '404.html'));
