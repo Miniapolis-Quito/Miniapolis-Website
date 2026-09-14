@@ -86,7 +86,7 @@ queda en la ficha.
 
 - Si el navegador ya sabe que no hay red, o el último intento falló por red,
   la lectura se guarda al instante, sin esperar a que falle otra petición.
-- Si hay red, se intenta en línea con un límite de 5 s. Si falla por red o por
+- Si hay red, se intenta en línea con un límite de 6 s. Si falla por red o por
   tiempo, se guarda **con la misma clave de idempotencia**.
 
 Antes de guardar se comprueba lo que se puede comprobar sin el servidor: que el
@@ -125,9 +125,9 @@ Si la página arranca sin red y en ese teléfono hubo una sesión de personal en
 las últimas `OFFLINE_SCAN_MAX_HOURS` que no se cerró con *Salir*, el escáner
 abre en modo sin conexión con el nombre de esa persona. Esa identidad se borra
 al entrar con cualquier cuenta, al salir desde cualquier página y cuando el
-servidor da la sesión por perdida. En cuanto vuelve la red se renueva la sesión de verdad; si ya no es
-válida, se va a la página de acceso y las lecturas esperan a que esa persona
-vuelva a entrar.
+servidor da la sesión por perdida. En cuanto vuelve la red se renueva la sesión
+de verdad; si ya no es válida, se va a la página de acceso y las lecturas
+esperan a que esa persona vuelva a entrar.
 
 ## Seguridad
 
