@@ -2,7 +2,7 @@
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
 import { $, $$, el, render, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
-         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar } from './ui.js';
+         mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
@@ -190,6 +190,87 @@ async function cargarResumen() {
   );
 
   pintarIntegridad(datos.integrity);
+  pintarNoCobradas(datos.offlineRejections);
+}
+
+/** Motivos de rechazo más frecuentes, dichos como los diría recepción. */
+const MOTIVOS_NO_COBRADA = {
+  pack_sin_entradas: 'El pack ya no tenía entradas',
+  pack_expirado: 'El pack estaba vencido',
+  pack_suspendido: 'El pack estaba suspendido',
+  pack_cancelado: 'El pack estaba anulado',
+  cliente_suspendido: 'La cuenta estaba suspendida',
+  qr_expirado: 'Mostró un QR vencido',
+  qr_ya_usado: 'El QR ya se había usado',
+  qr_firma: 'El QR no era auténtico',
+  espera_activa: 'Lectura repetida del mismo pack',
+  pack_no_encontrado: 'El código no existe',
+  lectura_vencida: 'Se envió demasiado tarde',
+};
+
+/**
+ * Entradas que el escáner dejó pasar sin conexión y no se pudieron cobrar
+ * después. Es dinero que se escapa: la tarjeta solo aparece si hay alguna, y
+ * cada una se cierra con una nota que queda en la ficha del cliente.
+ */
+function pintarNoCobradas(lecturas) {
+  const tarjeta = $('#tarjeta-no-cobradas');
+  tarjeta.hidden = !lecturas?.count;
+  if (tarjeta.hidden) return;
+
+  $('#contador-no-cobradas').textContent = plural(lecturas.count, 'pendiente', 'pendientes');
+  render(
+    $('#lista-no-cobradas'),
+    el(
+      'ul',
+      { class: 'lista' },
+      lecturas.items.map((lectura) =>
+        el(
+          'li',
+          { class: 'lista__item' },
+          el('span', { class: 'icono-lista' }, '⛔'),
+          el(
+            'div',
+            { class: 'crece' },
+            lectura.customerId
+              ? el('a', { href: `#cliente/${lectura.customerId}` }, lectura.customerName || 'Cliente')
+              : el('div', {}, 'Cliente desconocido'),
+            el(
+              'div',
+              { class: 'tenue-2 pequeno' },
+              [fecha(lectura.capturedAt), lectura.packCode, lectura.scannerName, lectura.deviceLabel].filter(Boolean).join(' · '),
+            ),
+            el('div', { class: 'pequeno' }, MOTIVOS_NO_COBRADA[lectura.reason] || lectura.message),
+          ),
+          el(
+            'button',
+            {
+              class: 'boton boton--chico boton--fantasma',
+              type: 'button',
+              onClick: alPulsar(() => resolverNoCobrada(lectura)),
+            },
+            'Marcar resuelta',
+          ),
+        ),
+      ),
+    ),
+    lecturas.count > lecturas.items.length
+      ? el('p', { class: 'tenue-2 pequeno mt' }, `Se muestran las ${lecturas.items.length} más recientes.`)
+      : null,
+  );
+}
+
+async function resolverNoCobrada(lectura) {
+  const nota = await pedirTexto({
+    titulo: 'Marcar como resuelta',
+    mensaje: `${lectura.customerName || 'Cliente desconocido'} · ${lectura.packCode || 'sin código'}. Explica qué se hizo: queda en su ficha.`,
+    etiqueta: 'Cómo se resolvió',
+    textoAceptar: 'Marcar resuelta',
+  });
+  if (!nota) return;
+  await api.post(`/api/admin/offline-rejections/${encodeURIComponent(lectura.id)}/resolve`, { note: nota });
+  brindis('Entrada marcada como resuelta.', 'ok');
+  await cargarResumen();
 }
 
 function pintarIntegridad(integridad) {
@@ -590,6 +671,9 @@ async function cargarConsumos() {
                 { class: 'tenue-2 pequeno' },
                 `${fecha(item.createdAt)} · ${item.packCode} · ${METODOS[item.method] || item.method} · ${item.scannerName || 'sistema'}`,
               ),
+              item.syncedAt
+                ? el('div', { class: 'tenue-2 pequeno' }, `Leída sin conexión; cobrada el ${fecha(item.syncedAt)}`)
+                : null,
               item.voidReason ? el('div', { class: 'tenue-2 pequeno' }, `Anulado: ${item.voidReason}`) : null,
             ),
             el('span', { class: 'etiqueta' }, `Quedaban ${item.remainingAfter}`),

@@ -246,8 +246,9 @@ await paso('un corte de red a mitad de un cobro no descuenta dos veces', async (
   const packId = emitido.datos.pack.id;
 
   // El peor caso: la petición llega al servidor y descuenta, pero la respuesta
-  // se pierde de vuelta. El operador ve "sin conexión" sobre un cobro que sí
-  // ocurrió, y lo único que evita el doble descuento es la clave de idempotencia.
+  // se pierde de vuelta. El escáner no sabe si cobró, así que guarda la lectura
+  // para enviarla después, y lo único que evita el doble descuento es que la
+  // guarda con la misma clave de idempotencia.
   await staff.route('**/api/scan/manual', async (ruta) => {
     await ruta.fetch();
     await ruta.abort('connectionfailed');
@@ -255,21 +256,16 @@ await paso('un corte de red a mitad de un cobro no descuenta dos veces', async (
   await staff.fill('#codigo-manual', codigoCorte);
   await staff.click('#form-manual button[type=submit]');
   await staff.waitForFunction(
-    () => document.querySelector('.resultado__titulo')?.textContent.includes('Sin conexión'),
+    () => document.querySelector('.resultado__titulo')?.textContent.includes('Guardada sin conexión'),
     { timeout: 15000 },
   );
   await staff.unroute('**/api/scan/manual');
 
-  // Vuelve la señal y el operador toca "Reintentar", que es lo que dice el aviso.
-  await staff.click('.resultado button');
-  await staff.waitForFunction(
-    () => document.querySelector('.resultado__titulo')?.textContent.includes('Entrada registrada'),
-    { timeout: 15000 },
-  );
-  const restantes = (await staff.textContent('.resultado__restantes')).trim();
-  if (restantes !== '4') throw new Error(`esperaba 4 restantes, obtuve ${restantes}`);
+  // Vuelve la señal y el operador toca "Enviar ahora" (o espera: se envía sola).
+  await staff.click('#btn-enviar-guardadas');
+  await staff.waitForSelector('#tarjeta-sin-conexion', { state: 'hidden', timeout: 15000 });
 
-  // Y en la base, un solo consumo: el reintento repitió la respuesta, no el cobro.
+  // Y en la base, un solo consumo: el envío repitió la respuesta, no el cobro.
   const consumos = redemptions.listRedemptions({ packId });
   if (consumos.total !== 1) throw new Error(`se registraron ${consumos.total} consumos, debería haber 1`);
   if (packsService.findById(packId).remaining !== 4) throw new Error('el saldo no cuadra con un único consumo');

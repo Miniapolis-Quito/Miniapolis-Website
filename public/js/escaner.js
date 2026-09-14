@@ -5,15 +5,31 @@
  * coste de CPU) y con jsQR en cualquier otro navegador. Cada consumo lleva su
  * propia clave de idempotencia, de modo que un reintento tras un corte de red
  * nunca descuenta dos entradas.
+ *
+ * Si se cae la red, el puesto no se detiene: cada lectura se guarda en el
+ * teléfono con su hora y su clave, y se cobra sola en cuanto vuelve la señal.
+ * La página misma abre sin conexión gracias a un service worker, con el nombre
+ * de quien trabajaba en ese teléfono.
  */
-import { $, el, render, brindis, horaCorta, METODOS, claveIdempotencia,
+import { $, el, render, brindis, horaCorta, plural, METODOS, claveIdempotencia,
          mostrarAviso, mostrarErroresCampo, conCarga, vibrar } from './ui.js';
-import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion, ErrorRed } from './api.js';
+import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion, ErrorRed, estaAutenticado,
+         refrescarSesion, onSesion, usarSesionSinConexion, alCerrarSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
+import { AlmacenLecturas, ColaSinConexion } from './cola-sin-conexion.js';
 
 const CLAVE_DISPOSITIVO = 'rh_puesto';
 const ESPERA_MISMO_CODIGO_MS = 2500;
+
+/** Lo que se espera a la red en la puerta antes de guardar la lectura para después. */
+const ESPERA_EN_LINEA_MS = 6000;
+/** Plazo de cada lectura guardada al enviarse. */
+const ESPERA_ENVIO_MS = 10_000;
+/** Cada cuánto se comprueba si volvió la red mientras no hay conexión. */
+const SONDEO_MS = 10_000;
+/** Cada cuánto se reintenta enviar lo guardado cuando sí hay conexión. */
+const REENVIO_MS = 20_000;
 
 const estado = {
   camaraActiva: false,
@@ -25,8 +41,16 @@ const estado = {
   ultimoCodigo: null,
   ultimoCodigoEn: 0,
   procesando: false,
-  pendiente: null, // consumo que falló por red y se puede reintentar
+  pendiente: null, // consumo que falló por red y se puede reintentar (modo sin conexión apagado)
   actividad: [],
+  /** Configuración del servidor, o la última conocida si se arrancó sin red. */
+  config: null,
+  /** La red está caída: las lecturas se guardan sin esperar a que falle otra petición. */
+  sinConexion: false,
+  /** La página arrancó sin red y todavía no tiene sesión de verdad. */
+  arranqueSinConexion: false,
+  /** Hora del servidor menos la del teléfono, medida la última vez que hubo red. */
+  desfaseMs: null,
 };
 
 let cabecera;
@@ -34,27 +58,65 @@ let bucle = null;
 let lienzo = null;
 let contexto = null;
 
+const almacen = new AlmacenLecturas();
+const cola = new ColaSinConexion({
+  almacen,
+  enviar: (ruta, cuerpo, clave) => api.post(ruta, cuerpo, { idempotencyKey: clave, señal: conPlazo(ESPERA_ENVIO_MS) }),
+});
+
+/** Señal que aborta una petición pasado un plazo. */
+function conPlazo(ms) {
+  if (typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
+  const controlador = new AbortController();
+  setTimeout(() => controlador.abort(new DOMException('Tiempo agotado', 'TimeoutError')), ms);
+  return controlador.signal;
+}
+
+/** ¿El fallo significa que no se sabe si la petición llegó? */
+function esFalloDeRed(error) {
+  return error instanceof ErrorRed || error?.name === 'TimeoutError' || error?.name === 'AbortError';
+}
+
+function modoSinConexion() {
+  return Boolean(estado.config?.offlineScan?.enabled);
+}
+
 // ---------------------------------------------------------------------------
 // Sonido de confirmación (generado, sin archivos externos)
 // ---------------------------------------------------------------------------
 
 let audio = null;
-function pitar(exito) {
+
+/**
+ * `true` es un cobro, `false` un error y `'guardada'` una lectura guardada sin
+ * conexión: dos toques cortos, para que el operador distinga sin mirar que esa
+ * entrada todavía no está cobrada.
+ */
+function pitar(tipo) {
   if (!$('#chk-sonido').checked) return;
+  const tonos =
+    tipo === 'guardada'
+      ? [{ frecuencia: 660, duracion: 0.09, retraso: 0 }, { frecuencia: 660, duracion: 0.09, retraso: 0.15 }]
+      : tipo
+        ? [{ frecuencia: 880, duracion: 0.16, retraso: 0 }]
+        : [{ frecuencia: 240, duracion: 0.34, retraso: 0 }];
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
     if (audio.state === 'suspended') audio.resume();
-    const oscilador = audio.createOscillator();
-    const ganancia = audio.createGain();
-    oscilador.connect(ganancia);
-    ganancia.connect(audio.destination);
-    oscilador.type = 'sine';
-    oscilador.frequency.value = exito ? 880 : 240;
-    ganancia.gain.setValueAtTime(0.0001, audio.currentTime);
-    ganancia.gain.exponentialRampToValueAtTime(0.18, audio.currentTime + 0.01);
-    ganancia.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + (exito ? 0.16 : 0.34));
-    oscilador.start();
-    oscilador.stop(audio.currentTime + (exito ? 0.18 : 0.36));
+    for (const { frecuencia, duracion, retraso } of tonos) {
+      const inicio = audio.currentTime + retraso;
+      const oscilador = audio.createOscillator();
+      const ganancia = audio.createGain();
+      oscilador.connect(ganancia);
+      ganancia.connect(audio.destination);
+      oscilador.type = 'sine';
+      oscilador.frequency.value = frecuencia;
+      ganancia.gain.setValueAtTime(0.0001, inicio);
+      ganancia.gain.exponentialRampToValueAtTime(0.18, inicio + 0.01);
+      ganancia.gain.exponentialRampToValueAtTime(0.0001, inicio + duracion);
+      oscilador.start(inicio);
+      oscilador.stop(inicio + duracion + 0.02);
+    }
   } catch {
     /* el sonido es un extra: si el navegador lo bloquea, no pasa nada */
   }
@@ -79,7 +141,7 @@ function mostrarResultado({ tipo, icono, titulo, detalle, restantes, acciones })
 
   const mira = $('#mira');
   mira.classList.remove('escaner__mira--ok', 'escaner__mira--error');
-  if (tipo === 'ok') mira.classList.add('escaner__mira--ok');
+  if (tipo === 'ok' || tipo === 'guardada') mira.classList.add('escaner__mira--ok');
   if (tipo === 'error') mira.classList.add('escaner__mira--error');
   setTimeout(() => mira.classList.remove('escaner__mira--ok', 'escaner__mira--error'), 1400);
 }
@@ -108,18 +170,35 @@ function puesto() {
  * operador cambiara el nombre del puesto durante el corte de red, reconstruir
  * el cuerpo con el valor nuevo haría que el servidor viera otra operación con
  * una clave ya usada, y lo rechazaría en vez de confirmar lo que ya pasó.
+ *
+ * Con el modo sin conexión, la lectura se guarda en vez de intentarse si ya se
+ * sabe que no hay red, y también si el intento en línea falla por red: con la
+ * misma clave, así que si el servidor llegó a cobrarla, al enviarla recibe la
+ * respuesta original en lugar de descontar otra vez.
  */
 async function registrarConsumo({ payload, code, clave, deviceLabel }) {
-  estado.procesando = true;
+  const capturadaEn = Date.now();
   const idempotencyKey = clave || claveIdempotencia('scan');
   const puestoUsado = deviceLabel ?? puesto();
+
+  if (modoSinConexion() && !clave && (estado.sinConexion || !estaAutenticado() || navigator.onLine === false)) {
+    return guardarSinConexion({ payload, code, clave: idempotencyKey, capturadaEn, puesto: puestoUsado });
+  }
+
+  estado.procesando = true;
   const cuerpo = payload
     ? { payload, deviceLabel: puestoUsado }
     : { code, deviceLabel: puestoUsado };
 
   try {
-    const respuesta = await api.post(payload ? '/api/scan' : '/api/scan/manual', cuerpo, { idempotencyKey });
+    const respuesta = await api.post(payload ? '/api/scan' : '/api/scan/manual', cuerpo, {
+      idempotencyKey,
+      // En la puerta no se espera a una red que no contesta: pasado el plazo,
+      // la lectura se guarda y el cliente pasa.
+      señal: modoSinConexion() ? conPlazo(ESPERA_EN_LINEA_MS) : undefined,
+    });
     estado.pendiente = null;
+    marcarEnLinea();
     pitar(true);
     vibrar(60);
     mostrarResultado({
@@ -138,6 +217,11 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
     }
     return respuesta;
   } catch (error) {
+    if (modoSinConexion() && esFalloDeRed(error)) {
+      marcarSinConexion();
+      return guardarSinConexion({ payload, code, clave: idempotencyKey, capturadaEn, puesto: puestoUsado });
+    }
+
     pitar(false);
     vibrar([70, 50, 70]);
 
@@ -178,6 +262,321 @@ async function reintentarPendiente() {
   const intento = estado.pendiente;
   mostrarResultado({ tipo: 'neutro', icono: '⏳', titulo: 'Reintentando…', detalle: 'Confirmando con el servidor.' });
   await registrarConsumo(intento);
+}
+
+// ---------------------------------------------------------------------------
+// Sin conexión
+// ---------------------------------------------------------------------------
+
+let avisoNoPersistente = false;
+
+/** Guarda una lectura para cobrarla al volver la señal y se lo dice al operador. */
+function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoUsado }) {
+  const usuario = getUsuario();
+  const resultado = cola.guardar(
+    { tipo: payload ? 'qr' : 'codigo', payload, code, clave, capturadaEn, puesto: puestoUsado, operador: usuario },
+    {
+      desfaseMs: estado.desfaseMs,
+      ttlSeconds: estado.config.qr?.ttlSeconds ?? 120,
+      cooldownSeconds: estado.config.offlineScan.cooldownSeconds ?? 0,
+    },
+  );
+
+  if (!resultado.ok) {
+    if (resultado.tono !== 'neutro') {
+      pitar(false);
+      vibrar([70, 50, 70]);
+    }
+    mostrarResultado({
+      tipo: resultado.tono === 'neutro' ? 'neutro' : resultado.tono,
+      icono: resultado.tono === 'alerta' ? '⏳' : resultado.tono === 'neutro' ? '📥' : '⛔',
+      titulo: resultado.tono === 'neutro' ? 'Ya estaba guardada' : 'No se guardó',
+      detalle: resultado.mensaje,
+    });
+    return null;
+  }
+
+  pitar('guardada');
+  vibrar([40, 50, 40]);
+  // El nombre solo se conoce si este puesto vio ese pack hoy: el teléfono no
+  // guarda datos de clientes, y sin red no hay a quién preguntar.
+  const conocido = estado.actividad.find((item) => item.packCode === resultado.lectura.codigo)?.customerName;
+  mostrarResultado({
+    tipo: 'guardada',
+    icono: '📥',
+    titulo: 'Guardada sin conexión',
+    detalle:
+      `${resultado.lectura.codigo}${conocido ? ` · ${conocido}` : ''}. ` +
+      'Puede pasar: la entrada se cobrará sola cuando vuelva la señal.',
+  });
+  if (!resultado.persistente && !avisoNoPersistente) {
+    avisoNoPersistente = true;
+    brindis('Este navegador no deja guardar datos: no cierres esta pestaña hasta que vuelva la señal.', 'alerta', 9000);
+  }
+  pintarSinConexion();
+  return { guardada: true, lectura: resultado.lectura };
+}
+
+function marcarSinConexion() {
+  if (!modoSinConexion()) return;
+  if (!estado.sinConexion) {
+    estado.sinConexion = true;
+    pintarSinConexion();
+  }
+  programarSondeo();
+}
+
+function marcarEnLinea() {
+  if (!estado.sinConexion) return;
+  estado.sinConexion = false;
+  clearTimeout(temporizadorSondeo);
+  pintarSinConexion();
+}
+
+/**
+ * Pregunta al servidor si está ahí y, de paso, mide la diferencia entre su
+ * reloj y el de este teléfono. Con esa diferencia el teléfono sabe, sin red, si
+ * un QR ya venció: el QR lleva la hora del servidor.
+ */
+async function medirServidor() {
+  const antes = Date.now();
+  try {
+    const respuesta = await fetch('/api/health', { cache: 'no-store', signal: conPlazo(4000) });
+    if (!respuesta.ok) return false;
+    const { time } = await respuesta.json();
+    const desfase = Date.parse(time) - (antes + Date.now()) / 2;
+    if (Number.isFinite(desfase)) {
+      estado.desfaseMs = desfase;
+      almacen.recordar('desfase', desfase);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let temporizadorSondeo = null;
+function programarSondeo(ms = SONDEO_MS) {
+  clearTimeout(temporizadorSondeo);
+  temporizadorSondeo = setTimeout(() => sondear(), ms);
+}
+
+let sondeando = false;
+async function sondear() {
+  if (sondeando || !modoSinConexion()) return;
+  sondeando = true;
+  clearTimeout(temporizadorSondeo);
+  try {
+    if (!(await medirServidor())) {
+      marcarSinConexion();
+      return;
+    }
+    if (!estaAutenticado()) {
+      try {
+        await refrescarSesion();
+      } catch (error) {
+        // Sin red todavía, se sigue esperando. Si la sesión ya no vale, el
+        // vigilante de sesión lleva a la página de acceso; las lecturas se
+        // quedan en el teléfono hasta que esa persona vuelva a entrar.
+        if (error instanceof ErrorRed) marcarSinConexion();
+        return;
+      }
+    }
+    marcarEnLinea();
+    await enviarGuardadas();
+  } finally {
+    sondeando = false;
+  }
+}
+
+/** Envía lo que este operador dejó guardado y cuenta el resultado. */
+async function enviarGuardadas() {
+  const usuario = getUsuario();
+  if (!usuario || !estaAutenticado() || !modoSinConexion()) return;
+  if (cola.resumen(usuario.id).pendientes.length === 0) {
+    pintarSinConexion();
+    return;
+  }
+
+  const resultado = await cola.enviarPendientes(usuario.id);
+  if (resultado.ocupada) return;
+
+  if (resultado.confirmadas.length) {
+    marcarEnLinea();
+    brindis(
+      `${plural(resultado.confirmadas.length, 'entrada guardada sin conexión ya se cobró', 'entradas guardadas sin conexión ya se cobraron')}.`,
+      'ok',
+      6000,
+    );
+    cargarActividad();
+  }
+  if (resultado.rechazadas.length) {
+    pitar(false);
+    vibrar([120, 60, 120]);
+    brindis(
+      `${plural(resultado.rechazadas.length, 'entrada guardada no se pudo cobrar', 'entradas guardadas no se pudieron cobrar')}. ` +
+        'Revísalas en «Guardadas sin conexión» y avisa en recepción.',
+      'error',
+      10_000,
+    );
+  }
+  if (resultado.detenidaPor === 'reintentar') marcarSinConexion();
+  pintarSinConexion();
+}
+
+const horaDe = (ms) => horaCorta(new Date(ms).toISOString());
+
+function filaGuardada(lectura) {
+  const via = lectura.tipo === 'qr' ? 'QR' : 'Código manual';
+  return el(
+    'li',
+    { class: 'lista__item' },
+    el('span', { class: 'icono-lista--grande' }, '📥'),
+    el(
+      'div',
+      { class: 'crece' },
+      el('div', { class: 'mono' }, lectura.codigo),
+      el('div', { class: 'tenue-2 pequeno' }, [horaDe(lectura.capturadaEn), via, lectura.puesto].filter(Boolean).join(' · ')),
+    ),
+    el('span', { class: 'etiqueta etiqueta--alerta' }, 'Por cobrar'),
+  );
+}
+
+function filaRechazada(lectura) {
+  return el(
+    'li',
+    { class: 'lista__item lista__item--rechazada' },
+    el('span', { class: 'icono-lista--grande' }, '⛔'),
+    el(
+      'div',
+      { class: 'crece' },
+      el('div', {}, `No se cobró: `, el('span', { class: 'mono' }, lectura.codigo)),
+      el('div', { class: 'pequeno' }, lectura.mensaje || 'El servidor rechazó la lectura.'),
+      el(
+        'div',
+        { class: 'tenue-2 pequeno' },
+        [`Leída a las ${horaDe(lectura.capturadaEn)}`, lectura.puesto].filter(Boolean).join(' · '),
+      ),
+    ),
+    el(
+      'button',
+      {
+        class: 'boton boton--chico boton--fantasma',
+        type: 'button',
+        onClick: () => {
+          cola.descartar(lectura.id);
+          pintarSinConexion();
+        },
+      },
+      'Entendido',
+    ),
+  );
+}
+
+/** Aviso de modo sin conexión y tarjeta con lo que está guardado en el teléfono. */
+function pintarSinConexion() {
+  $('#estado-sin-conexion').hidden = !(modoSinConexion() && estado.sinConexion);
+
+  const { pendientes, rechazadas, ajenas, nombresAjenos } = cola.resumen(getUsuario()?.id);
+  const tarjeta = $('#tarjeta-sin-conexion');
+  tarjeta.hidden = pendientes.length + rechazadas.length + ajenas.length === 0;
+  if (tarjeta.hidden) return;
+
+  const partes = [];
+  if (pendientes.length) partes.push(`${pendientes.length} por cobrar`);
+  if (rechazadas.length) partes.push(`${rechazadas.length} por revisar`);
+  $('#contador-sin-conexion').textContent = partes.join(' · ') || 'De otro operador';
+  $('#contador-sin-conexion').className = `etiqueta ${rechazadas.length ? 'etiqueta--error' : 'etiqueta--alerta'}`;
+  $('#btn-enviar-guardadas').hidden = pendientes.length === 0;
+
+  render(
+    $('#lista-sin-conexion'),
+    almacen.persistente
+      ? null
+      : el(
+          'div',
+          { class: 'aviso aviso--alerta' },
+          'Este navegador no deja guardar datos: si se cierra la pestaña antes de que vuelva la señal, estas lecturas se pierden.',
+        ),
+    rechazadas.length
+      ? el(
+          'div',
+          {},
+          el('p', { class: 'tenue pequeno sin-margen' }, 'Estas personas entraron y su entrada no se pudo cobrar. Administración ya lo ve en su resumen.'),
+          el('ul', { class: 'lista' }, rechazadas.map(filaRechazada)),
+        )
+      : null,
+    pendientes.length ? el('ul', { class: 'lista' }, pendientes.map(filaGuardada)) : null,
+    ajenas.length
+      ? el(
+          'p',
+          { class: 'tenue pequeno' },
+          `${plural(ajenas.length, 'lectura', 'lecturas')} de ${nombresAjenos.join(', ')} ` +
+            `${ajenas.length === 1 ? 'espera' : 'esperan'} a que esa persona entre en este teléfono para enviarse.`,
+        )
+      : null,
+  );
+}
+
+/** Quién trabaja en este teléfono, para poder abrir el escáner sin red. */
+function recordarOperador() {
+  const usuario = getUsuario();
+  if (!usuario) return;
+  almacen.recordar('operador', {
+    usuario: { id: usuario.id, fullName: usuario.fullName, email: usuario.email, role: usuario.role },
+    guardadoEn: Date.now(),
+  });
+}
+
+/**
+ * Sesión con la que abrir el escáner sin red: la de la última persona que
+ * trabajó en este teléfono, si no salió con «Salir» y no pasó más tiempo del
+ * que el servidor aceptaría para una lectura guardada.
+ */
+function sesionSinConexion() {
+  const operador = almacen.recuperar('operador');
+  const configuracion = almacen.recuperar('config');
+  if (!operador?.usuario?.id || !configuracion?.offlineScan?.enabled) return null;
+  if (!['staff', 'master'].includes(operador.usuario.role)) return null;
+  if (Date.now() - operador.guardadoEn > configuracion.offlineScan.maxAgeSeconds * 1000) return null;
+  usarSesionSinConexion(operador.usuario);
+  return { user: operador.usuario, sinConexion: true };
+}
+
+function mostrarSinSesionGuardada() {
+  montarCabecera($('#cabecera')).actualizarEstado('desconectado');
+  render(
+    $('main'),
+    el(
+      'section',
+      { class: 'tarjeta mt-2' },
+      el('h1', {}, 'Sin conexión'),
+      el(
+        'p',
+        { class: 'tenue' },
+        'No hay conexión con el servidor y este teléfono no tiene una sesión reciente para trabajar sin ella. ' +
+          'Abre el escáner con señal al menos una vez al empezar el turno y podrás seguir escaneando aunque se caiga.',
+      ),
+      el('button', { class: 'boton boton--principal', type: 'button', onClick: () => window.location.reload() }, 'Reintentar'),
+    ),
+  );
+}
+
+/**
+ * Registra (o retira) el service worker que permite abrir el escáner sin red.
+ * Se retira si el modo está apagado, para no dejar una copia de la página que
+ * ya no tiene sentido.
+ */
+function prepararServiceWorker() {
+  if (!('serviceWorker' in navigator) || !estado.config) return;
+  if (modoSinConexion()) {
+    navigator.serviceWorker.register('/sw-escaner.js', { scope: '/escanear' }).catch(() => {});
+  } else {
+    navigator.serviceWorker
+      .getRegistration('/escanear')
+      .then((registro) => registro?.unregister())
+      .catch(() => {});
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -340,7 +739,10 @@ function filaActividad(item, nuevo = false) {
         'div',
         { class: 'tenue-2 pequeno' },
         `${horaCorta(item.createdAt)} · ${item.packCode} · ${METODOS[item.method] || item.method}` +
-          (item.deviceLabel ? ` · ${item.deviceLabel}` : ''),
+          (item.deviceLabel ? ` · ${item.deviceLabel}` : '') +
+          // Una entrada guardada sin conexión muestra la hora en que se leyó;
+          // se indica para que no parezca que se cobró fuera de orden.
+          (item.syncedAt ? ` · sin conexión, cobrada a las ${horaCorta(item.syncedAt)}` : ''),
       ),
     ),
     el('span', { class: `etiqueta ${item.remainingAfter === 0 ? 'etiqueta--error' : ''}` }, `Quedan ${item.remainingAfter}`),
@@ -359,6 +761,7 @@ async function cargarActividad() {
     }
     render(contenedor, el('ul', { class: 'lista' }, items.map((item) => filaActividad(item))));
   } catch (error) {
+    if (esFalloDeRed(error) && estado.actividad.length) return; // se conserva lo último que se vio
     render(contenedor, el('div', { class: 'aviso aviso--alerta' }, error.message));
   }
 }
@@ -366,6 +769,17 @@ async function cargarActividad() {
 // ---------------------------------------------------------------------------
 // Código manual
 // ---------------------------------------------------------------------------
+
+function mostrarConsultaSinConexion() {
+  mostrarResultado({
+    tipo: 'alerta',
+    icono: '📶',
+    titulo: 'Sin conexión',
+    detalle:
+      'Sin red no se puede consultar el saldo. Si el cliente tiene que entrar, usa «Descontar entrada»: ' +
+      'se guardará y se cobrará al volver la señal.',
+  });
+}
 
 function montarManual() {
   const formulario = $('#form-manual');
@@ -401,9 +815,16 @@ function montarManual() {
   $('#btn-consultar').addEventListener('click', async () => {
     const codigo = entrada.value.trim();
     if (!codigo) return;
+    if (modoSinConexion() && (estado.sinConexion || !estaAutenticado())) {
+      mostrarConsultaSinConexion();
+      return;
+    }
     await conCarga($('#btn-consultar'), async () => {
       try {
-        const datos = await api.get(`/api/scan/lookup/${encodeURIComponent(codigo)}`);
+        const datos = await api.get(`/api/scan/lookup/${encodeURIComponent(codigo)}`, {
+          señal: modoSinConexion() ? conPlazo(ESPERA_EN_LINEA_MS) : undefined,
+        });
+        marcarEnLinea();
         mostrarResultado({
           tipo: datos.usable ? 'ok' : 'alerta',
           icono: datos.usable ? '🔎' : '⚠️',
@@ -426,6 +847,11 @@ function montarManual() {
             : null,
         });
       } catch (error) {
+        if (modoSinConexion() && esFalloDeRed(error)) {
+          marcarSinConexion();
+          mostrarConsultaSinConexion();
+          return;
+        }
         mostrarResultado({ tipo: 'error', icono: '⛔', titulo: 'No encontrado', detalle: error.message });
       }
     });
@@ -450,16 +876,48 @@ function montarManual() {
 // Arranque
 // ---------------------------------------------------------------------------
 
+/**
+ * La página arrancó sin red y acaba de conseguir una sesión de verdad: se
+ * completa lo que el arranque no pudo hacer y se envía lo guardado.
+ */
+async function alRecuperarSesion() {
+  recordarOperador();
+  cabecera = montarCabecera($('#cabecera'));
+  $('#subtitulo').textContent = `Operador: ${getUsuario().fullName}`;
+  marcarEnLinea();
+  await cargarActividad();
+  await enviarGuardadas();
+}
+
 (async () => {
-  const sesion = await iniciarPagina({ rolesPermitidos: ['staff', 'master'] });
+  let sesion;
+  try {
+    sesion = await iniciarPagina({ rolesPermitidos: ['staff', 'master'] });
+  } catch (error) {
+    if (!(error instanceof ErrorRed)) throw error;
+    sesion = sesionSinConexion();
+    if (!sesion) {
+      mostrarSinSesionGuardada();
+      return;
+    }
+  }
   if (!sesion) return;
+  estado.arranqueSinConexion = Boolean(sesion.sinConexion);
+
+  // Sin red se trabaja con la última configuración conocida: es la que dice si
+  // hay modo sin conexión y cuánto vale un QR.
+  try {
+    const respuesta = await fetch('/api/config');
+    if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+    estado.config = await respuesta.json();
+    almacen.recordar('config', estado.config);
+  } catch {
+    estado.config = almacen.recuperar('config');
+  }
+  estado.desfaseMs = almacen.recuperar('desfase');
 
   cabecera = montarCabecera($('#cabecera'));
-  try {
-    aplicarMarca(await fetch('/api/config').then((r) => r.json()));
-  } catch {
-    /* opcional */
-  }
+  if (estado.config) aplicarMarca(estado.config);
 
   $('#subtitulo').textContent = `Operador: ${getUsuario().fullName}`;
 
@@ -491,39 +949,83 @@ function montarManual() {
   });
   $('#btn-recargar').addEventListener('click', () => cargarActividad());
   $('#chk-todos').addEventListener('change', () => cargarActividad());
+  $('#btn-enviar-guardadas').addEventListener('click', () =>
+    conCarga($('#btn-enviar-guardadas'), async () => {
+      await sondear();
+      if (estado.sinConexion) brindis('Todavía no hay conexión. Se enviarán solas en cuanto vuelva.', 'alerta');
+    }),
+  );
 
   montarManual();
   reposar();
-  await cargarActividad();
+
+  // Cerrar sesión a propósito impide abrir el escáner sin red con esta
+  // identidad. Las lecturas guardadas no se borran: siguen siendo entradas por
+  // cobrar, y se enviarán cuando esa persona vuelva a entrar.
+  alCerrarSesion(() => almacen.olvidar('operador'));
+  onSesion((usuario) => {
+    if (usuario && estado.arranqueSinConexion && estaAutenticado()) {
+      estado.arranqueSinConexion = false;
+      alRecuperarSesion();
+    }
+  });
+
+  prepararServiceWorker();
+  pintarSinConexion();
+
+  if (sesion.sinConexion) {
+    marcarSinConexion();
+    render(
+      $('#actividad'),
+      el('div', { class: 'vacio' }, el('div', { class: 'vacio__icono' }, '📶'), el('p', { class: 'sin-margen' }, 'La actividad se verá cuando vuelva la señal.')),
+    );
+  } else {
+    recordarOperador();
+    await cargarActividad();
+    medirServidor();
+    enviarGuardadas();
+  }
 
   redirigirAlPerderSesion();
+
+  window.addEventListener('online', () => sondear());
+  window.addEventListener('offline', () => marcarSinConexion());
+  // Otra pestaña del mismo teléfono guardó o envió lecturas.
+  window.addEventListener('storage', (evento) => {
+    if (AlmacenLecturas.esClaveDeLectura(evento.key)) pintarSinConexion();
+  });
+  setInterval(() => {
+    if (!estado.sinConexion) enviarGuardadas();
+  }, REENVIO_MS);
 
   const conexion = new ConexionEnVivo({
     onEstado: (nuevo) => {
       cabecera.actualizarEstado(nuevo);
-      // Al recuperar la conexión, se reintenta lo que quedó pendiente.
-      if (nuevo === 'conectado' && estado.pendiente) reintentarPendiente();
+      if (nuevo === 'conectado') {
+        marcarEnLinea();
+        enviarGuardadas();
+        // Al recuperar la conexión, se reintenta lo que quedó pendiente.
+        if (estado.pendiente) reintentarPendiente();
+      }
     },
     onEvento: (tipo, datos) => {
       if (tipo === 'entrada.consumida' || tipo === 'entrada.anulada') {
         const lista = $('#actividad ul');
         if (lista && tipo === 'entrada.consumida') {
-          lista.prepend(
-            filaActividad(
-              {
-                customerName: datos.owner.fullName,
-                createdAt: datos.at,
-                packCode: datos.pack.code,
-                // El evento trae el método y el puesto reales: darlos por
-                // supuestos hacía que un canje manual apareciera como "QR app".
-                method: datos.method,
-                deviceLabel: datos.deviceLabel,
-                remainingAfter: datos.remaining,
-                status: 'confirmed',
-              },
-              true,
-            ),
-          );
+          const item = {
+            customerName: datos.owner.fullName,
+            createdAt: datos.at,
+            packCode: datos.pack.code,
+            // El evento trae el método y el puesto reales: darlos por
+            // supuestos hacía que un canje manual apareciera como "QR app".
+            method: datos.method,
+            deviceLabel: datos.deviceLabel,
+            remainingAfter: datos.remaining,
+            syncedAt: datos.syncedAt,
+            status: 'confirmed',
+          };
+          estado.actividad.unshift(item);
+          lista.prepend(filaActividad(item, true));
           while (lista.children.length > 25) lista.lastElementChild.remove();
         } else {
           cargarActividad();

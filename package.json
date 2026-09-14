@@ -18,7 +18,8 @@
     "test:e2e:ficha": "node tests/e2e/ficha-cliente.mjs",
     "test:e2e:recuperacion": "node tests/e2e/recuperacion.mjs",
     "test:ui": "node tests/e2e/interfaz.mjs",
-    "test:camara": "node tests/e2e/camara.mjs"
+    "test:camara": "node tests/e2e/camara.mjs",
+    "test:e2e:sin-conexion": "node tests/e2e/sin-conexion.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

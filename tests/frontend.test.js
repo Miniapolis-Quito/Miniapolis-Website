@@ -187,3 +187,41 @@ test('las pantallas usan el lienzo negro de la identidad Racing Hobbies', () => 
   assert.equal(manifest.background_color, '#000000');
   assert.equal(manifest.theme_color, '#000000');
 });
+
+test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la API', () => {
+  const sw = leer('public/sw-escaner.js');
+  const lista = sw.match(/const RECURSOS = \[([\s\S]*?)\];/);
+  assert.ok(lista, 'no se encontró la lista de recursos del service worker');
+  const guardados = new Set([...lista[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+
+  // Lo que pide la página: sus enlaces, sus scripts, los módulos que estos
+  // importan (y los que importan esos), y lo que la hoja de estilos y los
+  // módulos cargan por su cuenta.
+  const necesarios = new Set(['/escanear']);
+  const html = leer('public/scan.html');
+  for (const m of html.matchAll(/\s(?:href|src)="(\/[^"]+)"/g)) necesarios.add(m[1]);
+
+  const pendientes = [...necesarios].filter((r) => r.startsWith('/js/'));
+  const vistos = new Set();
+  while (pendientes.length) {
+    const ruta = pendientes.pop();
+    if (vistos.has(ruta)) continue;
+    vistos.add(ruta);
+    const src = leer(`public${ruta}`);
+    for (const m of src.matchAll(/from\s*'\.\/([\w.-]+)'/g)) {
+      necesarios.add(`/js/${m[1]}`);
+      pendientes.push(`/js/${m[1]}`);
+    }
+    for (const m of src.matchAll(/'(\/(?:images|fonts|vendor)\/[^']+)'/g)) necesarios.add(m[1]);
+  }
+  for (const m of leer('public/css/styles.css').matchAll(/url\('(\/[^']+)'\)/g)) necesarios.add(m[1]);
+
+  const faltan = [...necesarios].filter((r) => !guardados.has(r));
+  assert.deepEqual(faltan, [], 'el escáner no abriría sin conexión: faltan en sw-escaner.js');
+
+  for (const recurso of guardados) {
+    assert.ok(!recurso.startsWith('/api/'), `${recurso}: la API nunca se guarda en la caché`);
+    const archivo = recurso === '/escanear' ? 'public/scan.html' : `public${recurso}`;
+    assert.ok(fs.existsSync(archivo), `${recurso} está en la caché del escáner pero no existe`);
+  }
+});

@@ -1,6 +1,6 @@
 # Pruebas en navegador
 
-Cuatro pruebas, con propósitos distintos. Ninguna forma parte de `npm test`:
+Varias pruebas, con propósitos distintos. Ninguna forma parte de `npm test`:
 todas necesitan un navegador, que no es dependencia del proyecto.
 
 ```bash
@@ -63,6 +63,21 @@ sin que nadie toque el teclado.
 Se recorren los dos lectores, porque en la pista conviven los dos: el nativo
 del navegador cuando existe, y el respaldo jsQR en todo lo demás (se fuerza
 quitando `BarcodeDetector` antes de que cargue la página).
+
+## `sin-conexion.mjs` — el escáner durante un corte de red
+
+```bash
+npm run test:e2e:sin-conexion
+```
+
+Levanta la aplicación en el propio proceso y recorre una tarde sin Internet:
+con la red cortada, el operador teclea un código y la cámara lee un QR (las dos
+lecturas se guardan en el teléfono), un doble disparo no se guarda dos veces, se
+recarga la página sin señal y el escáner abre igual gracias al service worker.
+Al volver la red se comprueba en la base que todo se cobró una sola vez y con la
+hora de lectura, que la entrada que no se pudo cobrar aparece por revisar en el
+puesto y en el resumen del máster, que se resuelve con una nota que queda en la
+ficha, y que tras **Salir** el escáner ya no abre sin red con esa identidad.
 
 ## `ficha-cliente.mjs` — la ficha del panel máster
 

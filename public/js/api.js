@@ -50,6 +50,31 @@ export function limpiarSesion() {
   emitirSesion();
 }
 
+/**
+ * Deja la página funcionando con una identidad conocida pero sin token.
+ *
+ * Solo lo usa el escáner cuando arranca sin conexión: sabe quién trabajaba en
+ * ese teléfono y lo muestra, pero nada autenticado sale de la página hasta que
+ * vuelva la red y se renueve la sesión de verdad. Si para entonces la sesión ya
+ * no vale, se limpia como cualquier otra.
+ */
+export function usarSesionSinConexion(usuario) {
+  accessToken = null;
+  usuarioActual = usuario;
+  emitirSesion();
+}
+
+const oyentesCierre = new Set();
+
+/**
+ * Tareas que deben hacerse al cerrar sesión a propósito, antes de salir de la
+ * página. Son síncronas: la navegación a la página de acceso no espera a nadie.
+ */
+export function alCerrarSesion(callback) {
+  oyentesCierre.add(callback);
+  return () => oyentesCierre.delete(callback);
+}
+
 export class ErrorApi extends Error {
   constructor(status, cuerpo) {
     const mensaje = cuerpo?.error?.message || 'No pudimos completar la operación.';
@@ -235,6 +260,13 @@ export async function cerrarSesion() {
   // Marca la salida como voluntaria para que el vigilante de sesión no añada
   // un "volver a esta página" al enlace de acceso.
   cierreExplicito = true;
+  for (const callback of oyentesCierre) {
+    try {
+      callback();
+    } catch (error) {
+      console.error('Error al cerrar sesión', error);
+    }
+  }
   try {
     await peticion('/api/auth/logout', { metodo: 'POST' });
   } catch {

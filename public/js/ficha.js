@@ -41,6 +41,8 @@ const ACCIONES_CUENTA = {
   logout: 'Cerró sesión',
   'logout.todos': 'Cerró sesión en todos sus dispositivos',
   'escaneo.rechazado': 'Código rechazado en la puerta',
+  'escaneo_sin_conexion.rechazado': 'Entró durante un corte de red y su entrada no se pudo cobrar',
+  'escaneo_sin_conexion.resuelto': 'Entrada sin cobrar marcada como resuelta',
 };
 
 /** Estado de la ficha abierta. */
@@ -566,6 +568,9 @@ function panelConsumos() {
                         {},
                         el('span', { class: 'etiqueta' }, METODOS[item.method] || item.method),
                         item.deviceLabel ? el('div', { class: 'tenue-2 pequeno' }, item.deviceLabel) : null,
+                        item.syncedAt
+                          ? el('div', { class: 'tenue-2 pequeno', title: `Cobrada el ${fecha(item.syncedAt)}` }, 'Leída sin conexión')
+                          : null,
                       ),
                       el('td', { class: 'pequeno' }, item.scannerName || 'sistema'),
                       el('td', { class: 'num' }, String(item.remainingAfter)),
@@ -720,6 +725,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     'cuenta.registrada': '🎉', 'usuario.creado': '🎉',
     'usuario.desbloqueado': '🔓', 'usuario.sesiones_revocadas': '🚪',
     'escaneo.rechazado': '⛔',
+    'escaneo_sin_conexion.rechazado': '⛔', 'escaneo_sin_conexion.resuelto': '✅',
   };
 
   const titulo = esMovimiento
@@ -731,7 +737,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     ? evento.delta > 0
       ? 'tiempo__icono--suma'
       : 'tiempo__icono--resta'
-    : ['login.fallido', 'escaneo.rechazado'].includes(evento.clave)
+    : ['login.fallido', 'escaneo.rechazado', 'escaneo_sin_conexion.rechazado'].includes(evento.clave)
       ? 'tiempo__icono--aviso'
       : '';
 
@@ -743,9 +749,16 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     if (evento.actorName) detalles.push(evento.porElCliente ? 'el propio cliente' : evento.actorName);
     if (evento.estadoConsumo === 'voided') detalles.push('consumo anulado después');
   } else {
+    // Una entrada sin cobrar dice de qué pack era y por qué no se cobró; su
+    // resolución, qué se hizo. Es lo que se busca cuando alguien pregunta.
+    if (evento.metadata?.packCode && evento.clave.startsWith('escaneo_sin_conexion.')) detalles.push(evento.metadata.packCode);
     if (evento.actorName && !evento.porElCliente) detalles.push(`por ${evento.actorName}`);
     if (evento.ip) detalles.push(evento.ip);
   }
+  const notaCuenta =
+    evento.clave === 'escaneo_sin_conexion.rechazado' ? evento.metadata?.message
+    : evento.clave === 'escaneo_sin_conexion.resuelto' ? evento.metadata?.note
+    : null;
 
   return el(
     'li',
@@ -757,6 +770,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
       el('div', { class: 'tiempo__titulo' }, titulo),
       detalles.length ? el('div', { class: 'tiempo__detalle' }, detalles.join(' · ')) : null,
       evento.nota ? el('div', { class: 'tiempo__detalle' }, evento.nota) : null,
+      notaCuenta ? el('div', { class: 'tiempo__detalle' }, notaCuenta) : null,
       el('div', { class: 'tiempo__meta', title: fecha(evento.createdAt) }, relativo(evento.createdAt)),
       esMovimiento && evento.balanceAfter !== null && evento.balanceAfter !== undefined
         ? el(
