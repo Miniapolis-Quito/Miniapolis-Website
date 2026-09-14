@@ -10,6 +10,7 @@ import {
   adjustPackSchema,
   updatePackSchema,
   voidRedemptionSchema,
+  resolveOfflineRejectionSchema,
   paginationSchema,
   passwordSchema,
   parseOrThrow,
@@ -25,6 +26,7 @@ import * as audit from '../services/audit.js';
 import * as panel from '../services/panel.js';
 import * as expediente from '../services/expediente.js';
 import * as recuperacion from '../services/recuperacion.js';
+import * as sinConexion from '../services/sinConexion.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -325,6 +327,26 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
+// Lecturas sin conexión que no se pudieron cobrar
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/offline-rejections',
+  asyncHandler(async (req, res) => {
+    const { limit } = parseOrThrow(paginationSchema, req.query, badRequest);
+    res.json(sinConexion.pendientes({ limit }));
+  }),
+);
+
+router.post(
+  '/offline-rejections/:id/resolve',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(resolveOfflineRejectionSchema, req.body, badRequest);
+    res.json(sinConexion.resolver(req.params.id, { note: data.note, ...actorContext(req) }));
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // Auditoría, integridad y exportación
 // ---------------------------------------------------------------------------
 
@@ -386,8 +408,10 @@ router.get(
     } else if (entity === 'consumos') {
       const { items } = redemptions.listRedemptions({ limit: 5000 });
       csv = toCsv(
-        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'restantes', 'estado', 'dispositivo'],
-        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.remainingAfter, r.status, r.deviceLabel]),
+        // `sincronizado` va al final y solo tiene valor en lo leído sin conexión:
+        // `fecha` es cuándo entró la persona y esta, cuándo se cobró.
+        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'restantes', 'estado', 'dispositivo', 'sincronizado'],
+        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.remainingAfter, r.status, r.deviceLabel, r.syncedAt]),
       );
     } else if (entity === 'clientes') {
       const { items } = users.listUsers({ limit: 5000 });

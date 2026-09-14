@@ -190,6 +190,7 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 90px; }
   padding: clamp(15px, 2.4vw, 22px);
   box-shadow: var(--sombra);
 }
+.tarjeta--atencion { border-color: rgba(255,85,102,.55); }
 .tarjeta__titulo {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; margin-bottom: 14px;
@@ -423,6 +424,9 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .resultado--ok { border-color: var(--ok); background: var(--ok-suave); }
 .resultado--error { border-color: var(--error); background: var(--error-suave); }
 .resultado--alerta { border-color: var(--alerta); background: var(--alerta-suave); }
+/* Guardada sin conexión: la persona pasa, pero la entrada aún no está cobrada.
+   El borde discontinuo lo distingue de un cobro confirmado sin leer el texto. */
+.resultado--guardada { border-color: var(--info); border-style: dashed; background: rgba(61,254,64,.07); }
 .resultado__icono { font-size: 2.9rem; line-height: 1; }
 .resultado__titulo { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 800; }
 .resultado__detalle { color: var(--texto-2); }
@@ -464,6 +468,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border-radius: var(--radio-s);
   background: var(--fondo-2);
 }
+.lista__item--rechazada { border-color: rgba(255,85,102,.45); background: var(--error-suave); }
+.aviso--sin-conexion { margin-bottom: 14px; }
 .lista__item--nuevo { animation: aparecer 520ms ease; border-color: rgba(47,208,122,.5); }
 @keyframes aparecer { from { opacity: 0; transform: translateY(-9px); } to { opacity: 1; transform: none; } }
 

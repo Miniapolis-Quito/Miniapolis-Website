@@ -28,6 +28,9 @@
     </div>
 
     <div id="aviso" class="aviso" role="alert" hidden></div>
+    <div id="estado-sin-conexion" class="aviso aviso--alerta aviso--sin-conexion" role="status" hidden>
+      <span><strong>Sin conexión.</strong> Sigue escaneando: cada entrada se guarda en este teléfono y se cobra sola cuando vuelva la señal.</span>
+    </div>
 
     <div class="rejilla rejilla--2 alinea-arriba">
       <!-- Cámara -->
@@ -91,6 +94,18 @@
         </div>
       </section>
     </div>
+
+    <!-- Lecturas guardadas sin conexión -->
+    <section class="tarjeta mt-2" id="tarjeta-sin-conexion" aria-labelledby="titulo-sin-conexion" hidden>
+      <div class="tarjeta__titulo">
+        <h2 id="titulo-sin-conexion">Guardadas sin conexión</h2>
+        <div class="fila">
+          <span class="etiqueta etiqueta--alerta" id="contador-sin-conexion"></span>
+          <button class="boton boton--principal boton--chico" id="btn-enviar-guardadas" type="button">Enviar ahora</button>
+        </div>
+      </div>
+      <div id="lista-sin-conexion" class="columna"></div>
+    </section>
 
     <!-- Actividad reciente -->
     <section class="tarjeta mt-2">

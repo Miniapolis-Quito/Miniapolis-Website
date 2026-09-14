@@ -44,9 +44,41 @@ function guardarSesion(datos) {
   return datos;
 }
 
+/**
+ * Quién trabajaba en este teléfono, para que el escáner pueda abrir sin red
+ * (ver escaner.js). Solo vale mientras esa sesión siga siendo la de este
+ * navegador: se olvida al entrar con cualquier cuenta, al salir desde cualquier
+ * página y cuando el servidor da la sesión por perdida. El escáner la vuelve a
+ * guardar cada vez que abre con conexión.
+ */
+const CLAVE_OPERADOR_SIN_CONEXION = 'rh_escaner:operador';
+
+function olvidarOperadorSinConexion() {
+  try {
+    localStorage.removeItem(CLAVE_OPERADOR_SIN_CONEXION);
+  } catch {
+    /* almacenamiento bloqueado: no hay nada guardado que olvidar */
+  }
+}
+
 export function limpiarSesion() {
   accessToken = null;
   usuarioActual = null;
+  olvidarOperadorSinConexion();
+  emitirSesion();
+}
+
+/**
+ * Deja la página funcionando con una identidad conocida pero sin token.
+ *
+ * Solo lo usa el escáner cuando arranca sin conexión: sabe quién trabajaba en
+ * ese teléfono y lo muestra, pero nada autenticado sale de la página hasta que
+ * vuelva la red y se renueve la sesión de verdad. Si para entonces la sesión ya
+ * no vale, se limpia como cualquier otra.
+ */
+export function usarSesionSinConexion(usuario) {
+  accessToken = null;
+  usuarioActual = usuario;
   emitirSesion();
 }
 
@@ -178,11 +210,13 @@ export function tokenActual() {
 
 export async function iniciarSesion(email, password) {
   const datos = await peticion('/api/auth/login', { metodo: 'POST', cuerpo: { email, password } });
+  olvidarOperadorSinConexion();
   return guardarSesion(datos);
 }
 
 export async function registrarse(datos) {
   const respuesta = await peticion('/api/auth/register', { metodo: 'POST', cuerpo: datos });
+  olvidarOperadorSinConexion();
   return guardarSesion(respuesta);
 }
 
@@ -235,6 +269,9 @@ export async function cerrarSesion() {
   // Marca la salida como voluntaria para que el vigilante de sesión no añada
   // un "volver a esta página" al enlace de acceso.
   cierreExplicito = true;
+  // Antes de la petición: si no llega a responder, el escáner igual no debe
+  // poder abrir sin red con la sesión que se acaba de cerrar.
+  olvidarOperadorSinConexion();
   try {
     await peticion('/api/auth/logout', { metodo: 'POST' });
   } catch {

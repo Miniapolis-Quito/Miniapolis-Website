@@ -13,18 +13,131 @@
  *
  * Además, el UPDATE del saldo lleva la condición `remaining = <valor leído>`,
  * así que si dos procesos compitieran, solo uno puede ganar.
+ *
+ * Lecturas sin conexión: cuando se cae la red en la pista, el escáner guarda
+ * cada lectura con su hora y la envía al volver la señal. Esa lectura se juzga
+ * a la hora en que se hizo —vigencia del QR, vencimiento del pack y tiempo de
+ * espera—, con las mismas barreras; y si no se puede cobrar, queda registrada
+ * para que administración sepa quién entró sin que se le descontara la entrada.
  */
 import crypto from 'node:crypto';
 import { getDb, inTransaction } from '../db/index.js';
 import { newId } from '../lib/ids.js';
-import { conflict, notFound, badRequest } from '../lib/errors.js';
+import { AppError, conflict, notFound, badRequest } from '../lib/errors.js';
 import { parseQrPayload, verifyQrPayload } from '../lib/qr.js';
 import { config } from '../config.js';
 import { hub, channels } from '../lib/events.js';
 import * as packsService from './packs.js';
 import * as audit from './audit.js';
+import * as sinConexion from './sinConexion.js';
 
-const IDEMPOTENCY_TTL_SECONDS = 24 * 3600;
+/**
+ * Cuánto se recuerda la respuesta de un consumo. Al menos un día, y siempre más
+ * que la ventana en que puede llegar una lectura guardada sin conexión: esa
+ * lectura reutiliza la clave del intento en línea, y si la respuesta ya se
+ * hubiera olvidado, un código tecleado —que no tiene nonce— se cobraría dos veces.
+ */
+const IDEMPOTENCY_TTL_SECONDS = Math.max(24 * 3600, config.offlineScan.maxAgeSeconds + 3600);
+
+/**
+ * Margen para una lectura que parece enviada antes de hacerse: los dos
+ * instantes salen del mismo reloj, así que unos segundos son redondeos y más
+ * que eso es un dato inventado.
+ */
+const MARGEN_RELOJ_MS = 5000;
+
+/** Lo que tarda un reintento de red, que se admite aunque el modo esté apagado. */
+const REINTENTO_DE_RED_SECONDS = 60;
+
+/**
+ * Cuánto hace que se hizo la lectura, según el reloj del teléfono.
+ *
+ * Solo se usa la diferencia entre la hora de lectura y la de envío: un teléfono
+ * con la hora mal puesta arrastra el mismo error en las dos marcas, así que la
+ * diferencia es correcta aunque ninguna de ellas lo sea.
+ */
+function transcurridoDesdeLaLectura({ capturedAt, sentAt }) {
+  return Date.parse(sentAt) - Date.parse(capturedAt);
+}
+
+/**
+ * Instante en que se hizo la lectura, en el reloj del servidor.
+ * @returns {{diferida:boolean, at:number}}
+ */
+function horaDeLectura({ capturedAt, sentAt, now }) {
+  if (capturedAt === undefined || capturedAt === null) return { diferida: false, at: now };
+
+  const transcurrido = transcurridoDesdeLaLectura({ capturedAt, sentAt });
+  if (!Number.isFinite(transcurrido) || transcurrido < -MARGEN_RELOJ_MS) {
+    throw badRequest(
+      'La hora de la lectura es posterior a la de su envío. Revisa la fecha y hora del teléfono.',
+      null,
+      'lectura_hora_invalida',
+    );
+  }
+
+  const ventanaSegundos = config.offlineScan.enabled ? config.offlineScan.maxAgeSeconds : REINTENTO_DE_RED_SECONDS;
+  if (transcurrido > ventanaSegundos * 1000) {
+    const ventana = config.offlineScan.enabled
+      ? `${Math.round((ventanaSegundos / 3600) * 10) / 10} horas`
+      : `${ventanaSegundos} segundos`;
+    throw conflict(
+      `La lectura se hizo hace más de ${ventana} y ya no se puede cobrar desde el escáner. ` +
+        'Si la persona entró, regístralo desde administración.',
+      'lectura_vencida',
+    );
+  }
+
+  return { diferida: true, at: now - Math.max(0, transcurrido) };
+}
+
+/**
+ * ¿Es un rechazo que no se arregla reintentando? Un conflicto de concurrencia,
+ * un límite de peticiones o un fallo del servidor pueden salir bien a la
+ * siguiente; que el pack no tenga saldo, no.
+ */
+function esRechazoDefinitivo(error) {
+  return (
+    error instanceof AppError &&
+    error.status >= 400 &&
+    error.status < 500 &&
+    error.status !== 429 &&
+    error.code !== 'conflicto_concurrencia'
+  );
+}
+
+/**
+ * Ejecuta un cobro. Si la lectura llega diferida, la hora que cuenta es la de
+ * la lectura, y un rechazo definitivo queda registrado antes de devolverse.
+ */
+function cobrarLectura(datos, { codigo, via }, cobrar) {
+  const now = datos.now ?? Date.now();
+  if (datos.capturedAt === undefined || datos.capturedAt === null) return cobrar({ diferida: false, at: now }, now);
+
+  try {
+    return cobrar(horaDeLectura({ capturedAt: datos.capturedAt, sentAt: datos.sentAt, now }), now);
+  } catch (error) {
+    if (esRechazoDefinitivo(error)) {
+      try {
+        const transcurrido = transcurridoDesdeLaLectura(datos);
+        sinConexion.registrarNoCobrada({
+          error,
+          codigo: codigo(),
+          via,
+          scanner: datos.scanner,
+          lecturaId: datos.idempotencyKey,
+          capturedAt: new Date(now - (Number.isFinite(transcurrido) ? Math.max(0, transcurrido) : 0)).toISOString(),
+          deviceLabel: datos.deviceLabel,
+          ip: datos.ip,
+          userAgent: datos.userAgent,
+        });
+      } catch {
+        /* la auditoría nunca debe tapar el motivo real del rechazo */
+      }
+    }
+    throw error;
+  }
+}
 
 function hashRequest(value) {
   return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -87,30 +200,62 @@ function saveIdempotent(db, { key, userId, endpoint, requestHash, statusCode, bo
   );
 }
 
-/** Último consumo confirmado de un pack, para el control de tiempo de espera. */
-function lastConfirmedRedemption(db, packId) {
+/**
+ * Consumo confirmado del pack más cercano a `at`, dentro del tiempo de espera
+ * hacia cualquiera de los dos lados.
+ *
+ * En línea `at` es ahora y solo puede haber consumos anteriores. Una lectura
+ * diferida, en cambio, puede llegar después de otra que se hizo más tarde: el
+ * orden de llegada no decide si hubo un doble disparo, la hora de lectura sí.
+ */
+function consumoDentroDeLaEspera(db, packId, at, cooldownSeconds) {
   return db
     .prepare(
-      `SELECT * FROM redemptions
-        WHERE pack_id = ? AND status = 'confirmed'
-        ORDER BY created_at DESC, rowid DESC LIMIT 1`,
+      `SELECT created_at FROM redemptions
+        WHERE pack_id = @packId AND status = 'confirmed'
+          AND created_at > @desde AND created_at < @hasta
+        ORDER BY ABS(julianday(created_at) - julianday(@at)) ASC, rowid DESC
+        LIMIT 1`,
     )
-    .get(packId);
+    .get({
+      packId,
+      at: new Date(at).toISOString(),
+      desde: new Date(at - cooldownSeconds * 1000).toISOString(),
+      hasta: new Date(at + cooldownSeconds * 1000).toISOString(),
+    });
+}
+
+/**
+ * Un pack que venció después de la lectura seguía vigente cuando la persona
+ * entró. Se valida como estaba entonces; lo demás (anulado, suspendido, sin
+ * saldo) son decisiones o hechos que el sistema no puede fechar, y cuentan
+ * como están ahora.
+ */
+function comoEstabaAlLeer(pack, at) {
+  if (pack?.status === 'expired' && pack.expires_at && Date.parse(pack.expires_at) > at) {
+    return { ...pack, status: 'active' };
+  }
+  return pack;
 }
 
 /**
  * Núcleo del consumo: descuenta una entrada del pack indicado.
  * Debe llamarse ya dentro de una transacción.
+ *
+ * `at` es el instante de la lectura y `now` el de llegada; coinciden salvo en
+ * una lectura diferida.
  */
-function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, nonce, ip, now }) {
+function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, nonce, ip, now, lectura }) {
+  const { at, diferida } = lectura;
   const nowIso = new Date(now).toISOString();
+  const atIso = new Date(at).toISOString();
 
   // Relectura dentro de la transacción: el estado que se valida es el que se escribe.
   const fresh = packsService.findById(pack.id, db);
   // Si el pack desapareciera a mitad, `isUsable` ya lo cuenta como no encontrado:
   // preguntar por el dueño de la nada solo cambiaría ese error por otro peor.
   const dueno = fresh ? db.prepare('SELECT id, status FROM users WHERE id = ?').get(fresh.user_id) : null;
-  const usable = packsService.isUsable(fresh, { now, owner: dueno });
+  const usable = packsService.isUsable(comoEstabaAlLeer(fresh, at), { now: at, owner: dueno });
   if (!usable.ok) {
     // El motivo del rechazo no siempre es del pack: si la cuenta del cliente
     // está suspendida, el código lo dice tal cual en vez de disfrazarlo.
@@ -123,27 +268,37 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
   // Barrera 3: dos escaneos muy seguidos del mismo pack.
   const cooldown = config.redemption.cooldownSeconds;
   if (cooldown > 0) {
-    const last = lastConfirmedRedemption(db, fresh.id);
-    if (last) {
-      const elapsed = (now - Date.parse(last.created_at)) / 1000;
-      if (elapsed < cooldown) {
+    const vecino = consumoDentroDeLaEspera(db, fresh.id, at, cooldown);
+    if (vecino) {
+      const separacion = (at - Date.parse(vecino.created_at)) / 1000;
+      if (diferida) {
+        const segundos = Math.max(1, Math.round(Math.abs(separacion)));
         throw conflict(
-          `Este pack ya registró una entrada hace ${Math.max(1, Math.round(elapsed))} segundos. ` +
-            `Espera ${Math.ceil(cooldown - elapsed)} segundos si de verdad quieres descontar otra.`,
+          `Este pack ya tenía una entrada registrada ${segundos} segundos ${separacion >= 0 ? 'antes' : 'después'} ` +
+            'de esta lectura: parece la misma persona leída dos veces.',
           'espera_activa',
-          {
-            waitSeconds: Math.ceil(cooldown - elapsed),
-            lastRedemptionAt: last.created_at,
-            pack: packsService.toPublicPack(fresh),
-          },
+          { lastRedemptionAt: vecino.created_at, pack: packsService.toPublicPack(fresh) },
         );
       }
+      const transcurrido = Math.max(0, separacion);
+      throw conflict(
+        `Este pack ya registró una entrada hace ${Math.max(1, Math.round(transcurrido))} segundos. ` +
+          `Espera ${Math.ceil(cooldown - transcurrido)} segundos si de verdad quieres descontar otra.`,
+        'espera_activa',
+        {
+          waitSeconds: Math.ceil(cooldown - transcurrido),
+          lastRedemptionAt: vecino.created_at,
+          pack: packsService.toPublicPack(fresh),
+        },
+      );
     }
   }
 
   const remainingBefore = fresh.remaining;
   const remainingAfter = remainingBefore - 1;
-  const newStatus = remainingAfter === 0 ? 'depleted' : fresh.status;
+  // Un pack vencido que cobra una lectura anterior a su vencimiento sigue
+  // vencido: cobrarla no puede devolverlo al servicio.
+  const newStatus = remainingAfter === 0 && fresh.status === 'active' ? 'depleted' : fresh.status;
 
   // Guarda optimista: solo descuenta si el saldo sigue siendo el que se leyó.
   const updated = db
@@ -154,10 +309,12 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
   }
 
   const redemptionId = newId();
+  const syncedAt = diferida ? nowIso : null;
   db.prepare(
     `INSERT INTO redemptions (id, pack_id, user_id, scanned_by, device_label, method,
-                              remaining_before, remaining_after, status, idempotency_key, nonce, ip, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?)`,
+                              remaining_before, remaining_after, status, idempotency_key, nonce, ip,
+                              created_at, synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, ?)`,
   ).run(
     redemptionId,
     fresh.id,
@@ -170,7 +327,12 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     idempotencyKey ?? null,
     nonce ?? null,
     ip ?? null,
-    nowIso,
+    // El consumo lleva la hora en que entró la persona; el movimiento del
+    // libro mayor, la hora en que cambió el saldo. Así el historial del cliente
+    // y las cifras del día cuentan la visita cuando ocurrió, y el libro sigue
+    // en orden.
+    atIso,
+    syncedAt,
   );
 
   db.prepare(
@@ -185,7 +347,8 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     method,
     deviceLabel: deviceLabel ?? null,
     pack: packsService.findById(fresh.id, db),
-    createdAt: nowIso,
+    createdAt: atIso,
+    syncedAt,
   };
 }
 
@@ -203,6 +366,7 @@ function publishRedemption(result, owner, scanner) {
     method: result.method,
     deviceLabel: result.deviceLabel,
     at: result.createdAt,
+    syncedAt: result.syncedAt,
   };
   hub.publish(
     [channels.user(result.pack.user_id), channels.staff, channels.admin],
@@ -212,12 +376,45 @@ function publishRedemption(result, owner, scanner) {
 }
 
 /**
+ * Hasta cuándo hay que recordar el nonce de un QR dinámico: mientras pueda
+ * llegar una lectura de ese QR. En línea, eso es su vigencia; con el modo sin
+ * conexión, además, la ventana en que un escáner puede enviar lo que leyó.
+ * Sin esto, un QR cobrado en un puesto con señal se podía volver a cobrar con
+ * la lectura que otro puesto hizo sin conexión, en cuanto se limpiara el nonce.
+ */
+function retencionDelNonce(parsed, now) {
+  const ttl = config.qr.ttlSeconds;
+  const ventana = config.offlineScan.enabled ? config.offlineScan.maxAgeSeconds : REINTENTO_DE_RED_SECONDS;
+  return new Date(Math.max(now + (ttl + 300) * 1000, (parsed.timestamp + ttl + ventana + 300) * 1000)).toISOString();
+}
+
+/**
  * Canjea una entrada a partir del contenido de un QR.
+ *
+ * `capturedAt` y `sentAt` solo llegan con una lectura que el escáner guardó
+ * sin conexión: ver `horaDeLectura`.
  * @returns {{statusCode:number, body:object}}
  */
-export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, userAgent, now = Date.now() }) {
+export function redeemByQr(datos) {
+  return cobrarLectura(
+    datos,
+    {
+      via: 'qr',
+      codigo: () => {
+        const parsed = parseQrPayload(datos.payload);
+        return parsed.ok ? parsed.code : null;
+      },
+    },
+    (lectura, now) => canjearQr({ ...datos, now, lectura }),
+  );
+}
+
+function canjearQr({ payload, scanner, deviceLabel, idempotencyKey, ip, userAgent, now, lectura }) {
   const db = getDb();
   const endpoint = 'scan';
+  // La hora de lectura no forma parte de la huella de la petición: una lectura
+  // que se intentó en línea y se guardó al fallar la red se reenvía con la
+  // misma clave, y tiene que reconocerse como el mismo intento.
   const requestHash = hashRequest({ payload, deviceLabel });
 
   const parsed = parseQrPayload(payload);
@@ -232,24 +429,30 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
   const pack = packsService.findByCode(parsed.code, db);
   if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
 
-  const verification = verifyQrPayload(parsed, pack, { now });
+  const verification = verifyQrPayload(parsed, pack, { now: lectura.at });
   if (!verification.ok) {
     const messages = {
       firma: 'El código no es auténtico. Pide al cliente que actualice su pantalla.',
-      expirado: 'El código ya venció. Pide al cliente que muestre el QR actualizado.',
+      expirado: lectura.diferida
+        ? 'El QR ya había vencido cuando se leyó: el cliente mostraba una pantalla sin actualizar.'
+        : 'El código ya venció. Pide al cliente que muestre el QR actualizado.',
       futuro: 'El reloj del dispositivo del cliente está desfasado. Que actualice su pantalla.',
       estatico_no_permitido: 'Este pack no admite códigos impresos. Usa el QR de la app.',
     };
-    audit.record({
-      actor: scanner ? { id: scanner.id, email: scanner.email } : null,
-      action: 'escaneo.rechazado',
-      entityType: 'pack',
-      entityId: pack.id,
-      metadata: { code: pack.code, reason: verification.reason },
-      ip,
-      userAgent,
-      db,
-    });
+    // Una lectura diferida que se rechaza deja su propio registro, más
+    // completo; registrar también este sería contar dos veces el mismo hecho.
+    if (!lectura.diferida) {
+      audit.record({
+        actor: scanner ? { id: scanner.id, email: scanner.email } : null,
+        action: 'escaneo.rechazado',
+        entityType: 'pack',
+        entityId: pack.id,
+        metadata: { code: pack.code, reason: verification.reason },
+        ip,
+        userAgent,
+        db,
+      });
+    }
     throw badRequest(messages[verification.reason] || 'El código no es válido.', { reason: verification.reason }, `qr_${verification.reason}`);
   }
 
@@ -270,12 +473,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
           `INSERT INTO used_nonces (nonce, pack_id, expires_at, created_at)
            VALUES (?, ?, ?, ?) ON CONFLICT(nonce) DO NOTHING`,
         )
-        .run(
-          nonceKey,
-          pack.id,
-          new Date(now + (config.qr.ttlSeconds + 300) * 1000).toISOString(),
-          new Date(now).toISOString(),
-        );
+        .run(nonceKey, pack.id, retencionDelNonce(parsed, now), new Date(now).toISOString());
       if (inserted.changes !== 1) {
         throw conflict(
           'Ese código QR ya fue utilizado. Pide al cliente que actualice su pantalla.',
@@ -293,6 +491,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
       nonce: parsed.nonce,
       ip,
       now,
+      lectura,
     });
 
     const respuesta = {
@@ -305,6 +504,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
       pack: packsService.toPublicPack(consumo.pack),
       customer: { id: owner.id, fullName: owner.full_name },
       at: consumo.createdAt,
+      syncedAt: consumo.syncedAt,
     };
 
     saveIdempotent(db, {
@@ -334,6 +534,7 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
       remaining: result.remainingAfter,
       redemptionId: result.redemptionId,
       deviceLabel,
+      ...(lectura.diferida ? { capturedAt: result.createdAt } : {}),
     },
     ip,
     userAgent,
@@ -348,7 +549,15 @@ export function redeemByQr({ payload, scanner, deviceLabel, idempotencyKey, ip, 
  * Canje manual por código de pack, para cuando la cámara falla o el cliente no
  * trae el teléfono. Requiere personal autenticado y queda marcado como manual.
  */
-export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, userAgent, now = Date.now() }) {
+export function redeemByCode(datos) {
+  return cobrarLectura(
+    datos,
+    { via: 'codigo', codigo: () => datos.code },
+    (lectura, now) => canjearCodigo({ ...datos, now, lectura }),
+  );
+}
+
+function canjearCodigo({ code, scanner, deviceLabel, idempotencyKey, ip, userAgent, now, lectura }) {
   const db = getDb();
   const endpoint = 'manual';
   const requestHash = hashRequest({ code: normalizarCodigo(code), deviceLabel });
@@ -371,6 +580,7 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
       nonce: null,
       ip,
       now,
+      lectura,
     });
 
     const respuesta = {
@@ -383,6 +593,7 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
       pack: packsService.toPublicPack(consumo.pack),
       customer: { id: owner.id, fullName: owner.full_name },
       at: consumo.createdAt,
+      syncedAt: consumo.syncedAt,
     };
 
     saveIdempotent(db, { key: idempotencyKey, userId: scanner?.id, endpoint, requestHash, statusCode: 200, body: respuesta });
@@ -399,7 +610,13 @@ export function redeemByCode({ code, scanner, deviceLabel, idempotencyKey, ip, u
     action: 'entrada.consumida_manual',
     entityType: 'pack',
     entityId: pack.id,
-    metadata: { code: pack.code, remaining: result.remainingAfter, redemptionId: result.redemptionId, deviceLabel },
+    metadata: {
+      code: pack.code,
+      remaining: result.remainingAfter,
+      redemptionId: result.redemptionId,
+      deviceLabel,
+      ...(lectura.diferida ? { capturedAt: result.createdAt } : {}),
+    },
     ip,
     userAgent,
     db,
@@ -489,6 +706,8 @@ function mapRedemption(r) {
     voidReason: r.void_reason,
     voidedAt: r.voided_at,
     createdAt: r.created_at,
+    /** Cuándo llegó un consumo leído sin conexión; nulo si se cobró en línea. */
+    syncedAt: r.synced_at ?? null,
   };
 }
 

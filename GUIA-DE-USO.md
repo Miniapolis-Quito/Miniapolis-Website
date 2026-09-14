@@ -69,8 +69,10 @@ descontada. El número grande son las entradas que le quedan.
   cobrar otra entrada.
 - **Recuadro rojo**: algo no cuadra. El mensaje dice qué. Lo más común es un QR
   vencido: pídele al cliente que mire su pantalla, se renueva solo.
-- **"Sin conexión"**: toca **Reintentar** cuando vuelva la señal. No se
-  descuenta dos veces aunque lo toques varias veces.
+- **Recuadro con borde discontinuo, "Guardada sin conexión"**: no hay
+  Internet, pero la entrada quedó guardada en el teléfono. **Déjalo pasar**:
+  se cobrará sola cuando vuelva la señal. Suenan dos pitidos cortos en vez de
+  uno para que lo notes sin mirar.
 
 ### El cliente no trae el teléfono
 
@@ -81,6 +83,27 @@ Los códigos no llevan nunca `0`, `O`, `1`, `I`, `L` ni `U`, justamente para que
 no se confundan al leerlos. Si escribes uno de esos caracteres, el sistema dirá
 que no existe el pack en lugar de adivinar: vuelve a mirar el cartón, casi
 seguro es un `Q`, un `7` o una `V`.
+
+### Si se cae Internet
+
+Sigue trabajando igual. Arriba aparece un aviso amarillo de **Sin conexión** y
+cada entrada que cobras se guarda en el teléfono. Abajo, en **Guardadas sin
+conexión**, ves las que esperan.
+
+- No hace falta hacer nada al volver la señal: se envían solas y sale un aviso
+  con cuántas se cobraron. Si tienes prisa, toca **Enviar ahora**.
+- Si el teléfono se reinicia o se recarga la página, vuelve a abrir el
+  escáner: funciona sin señal. Para eso, ábrelo con señal al empezar el turno y
+  **no toques Salir** mientras dure el corte.
+- **Consultar** no funciona sin red: no hay forma de saber el saldo. Si el
+  cliente tiene que entrar, usa **Descontar entrada**.
+- Si su QR ya venció y su teléfono tampoco tiene señal para renovarlo, pídele el
+  código del pack y tecléalo.
+- Si una entrada guardada **no se pudo cobrar** (el pack ya no tenía saldo, por
+  ejemplo), suena la alarma y aparece en rojo con el motivo. Toca
+  **Entendido** y avisa en recepción: administración ya la tiene en su resumen.
+- Si cambias de operador en el mismo teléfono, las entradas guardadas por la
+  otra persona esperan a que ella vuelva a entrar para enviarse.
 
 ### Cosas que conviene saber
 
@@ -166,6 +189,17 @@ contraseña: esa se la das tú en mano.
 El personal y el máster cambian su propia contraseña desde el botón
 **Contraseña** de la cabecera.
 
+### Entradas sin cobrar
+
+Si en **Resumen** aparece la tarjeta roja **Entradas sin cobrar**, alguien entró
+durante un corte de Internet y su entrada no se pudo descontar después (el pack
+ya no tenía saldo, estaba anulado, la cuenta suspendida…). Cada una dice quién,
+con qué pack, en qué puesto y por qué.
+
+Toca el nombre para abrir su ficha, arréglalo como corresponda (cobrar en caja,
+venderle un pack, ajustar entradas) y toca **Marcar resuelta** con una nota de
+lo que hiciste. La nota queda en su ficha, en **Actividad**.
+
 ### Cierre de caja
 
 **Resumen → Exportar packs / consumos / clientes**. Los archivos abren
@@ -208,8 +242,10 @@ La búsqueda ignora tildes y mayúsculas, así que "maria" encuentra a María y
 pack.
 
 **¿Qué pasa si se cae Internet en la pista?**
-El escáner necesita conexión para descontar. Si se cae, anota los códigos de
-los packs en papel y descuéntalos después con el ingreso manual.
+El escáner sigue funcionando: cada entrada se guarda en el teléfono y se cobra
+sola cuando vuelve la señal, con la hora en que la persona entró. No hace falta
+anotar nada en papel. Las que no se puedan cobrar aparecen en el resumen de
+administración para resolverlas.
 
 **¿Se puede compartir un pack entre varias personas?**
 Sí: el pack es del cliente y él decide. Ten en cuenta la espera de unos

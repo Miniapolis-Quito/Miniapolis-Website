@@ -116,6 +116,33 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   db.close();
 });
 
+test('actualizar conserva los consumos y los marca como cobrados en línea', () => {
+  const indice = migrations.findIndex((m) => m.name === '007-lecturas-sin-conexion');
+  assert.ok(indice > 0, 'falta la migración de lecturas sin conexión');
+  const db = baseEn(indice);
+  const ahora = new Date().toISOString();
+
+  db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, role, password_hash, password_changed_at, created_at, updated_at)
+     VALUES ('u1', 'c@pista.ec', 'c@pista.ec', 'Cliente', 'customer', 'x', @ahora, @ahora, @ahora)`,
+  ).run({ ahora });
+  db.prepare(
+    `INSERT INTO packs (id, code, user_id, size, remaining, secret, created_at, updated_at)
+     VALUES ('p1', 'RHE-AAAA-BBBB', 'u1', 5, 4, 's', @ahora, @ahora)`,
+  ).run({ ahora });
+  db.prepare(
+    `INSERT INTO redemptions (id, pack_id, user_id, method, remaining_before, remaining_after, created_at)
+     VALUES ('r1', 'p1', 'u1', 'qr_dynamic', 5, 4, @ahora)`,
+  ).run({ ahora });
+
+  migrations[indice].up(db);
+
+  const consumo = db.prepare('SELECT * FROM redemptions WHERE id = ?').get('r1');
+  assert.equal(consumo.created_at, ahora);
+  assert.equal(consumo.synced_at, null, 'un consumo anterior se cobró en línea');
+  db.close();
+});
+
 test('una base de una versión más nueva se rechaza en vez de tocarla', async () => {
   // Si alguien vuelve a una versión anterior del código, lo peligroso no es que
   // falle: es que arranque y escriba sobre un esquema que no conoce.

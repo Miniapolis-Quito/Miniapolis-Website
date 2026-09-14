@@ -38,6 +38,20 @@
     <section id="panel-resumen" role="tabpanel" aria-labelledby="pestana-resumen">
       <div class="rejilla rejilla--metricas" id="metricas"></div>
 
+      <!-- Personas que entraron con el escáner sin conexión y cuya entrada no se
+           pudo cobrar al volver la señal. Solo aparece si hay alguna. -->
+      <div class="tarjeta tarjeta--atencion mt-2" id="tarjeta-no-cobradas" aria-labelledby="titulo-no-cobradas" hidden>
+        <div class="tarjeta__titulo">
+          <h2 id="titulo-no-cobradas">Entradas sin cobrar</h2>
+          <span class="etiqueta etiqueta--error" id="contador-no-cobradas"></span>
+        </div>
+        <p class="tenue pequeno">
+          El escáner dejó pasar a estas personas durante un corte de red y, al volver la señal, su entrada no se pudo
+          descontar. Cóbrala o regístrala como corresponda y márcala como resuelta: la nota queda en su ficha.
+        </p>
+        <div id="lista-no-cobradas"></div>
+      </div>
+
       <div class="rejilla rejilla--2 mt-2 alinea-arriba">
         <div class="tarjeta">
           <div class="tarjeta__titulo">

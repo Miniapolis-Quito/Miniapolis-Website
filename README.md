@@ -27,6 +27,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 - Confirmación grande y con sonido: cuántas entradas quedan, de quién es el
   pack, y aviso cuando el cliente se está quedando sin entradas.
 - Consulta un pack sin descontar nada, e ingreso manual por código.
+- **Sigue cobrando aunque se caiga Internet**: cada lectura se guarda en el
+  teléfono y se cobra sola al volver la señal, con la hora en que se leyó. La
+  página abre incluso sin red. Ver más abajo.
 - No puede emitir packs, ajustar saldos ni ver la administración.
 
 **Para el usuario máster**
@@ -35,6 +38,8 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   entrada al cliente.
 - Imprime pases físicos con QR fijo, para los packs donde lo habilite.
 - Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
+- Aviso de **entradas sin cobrar**: quien entró durante un corte de red y cuya
+  entrada no se pudo descontar después, para resolverlo con una nota.
 - **Ficha de cliente**: todo lo que se sabe de una persona en una pantalla —
   saldo, hábitos, packs, consumos, actividad y dispositivos— con las acciones a
   mano. Ver más abajo.
@@ -355,6 +360,62 @@ La línea de tiempo distingue lo que hizo el cliente de lo que hizo el personal,
 y cada movimiento muestra el saldo con el que quedó el pack. Un ajuste sin
 motivo no se puede guardar: la ficha es también el expediente que se consulta
 cuando alguien reclama.
+## El escáner sin conexión
+
+Si se cae Internet en la pista, el puesto no se detiene. El operador sigue
+leyendo QR y tecleando códigos: cada lectura se guarda en el teléfono y el
+recuadro lo dice con un borde discontinuo y dos pitidos cortos —**Guardada sin
+conexión: puede pasar**—. En cuanto vuelve la señal, el teléfono las envía solo,
+en orden, y avisa de cuántas se cobraron.
+
+Si alguien recarga la página o el teléfono se reinicia durante el corte, el
+escáner abre igual (lo guarda un service worker) con el nombre de quien estaba
+trabajando. Para eso basta con haber abierto el escáner con señal al empezar el
+turno y no haber tocado **Salir**.
+
+**Con las mismas reglas que en línea.** El servidor juzga cada lectura a la
+hora en que se hizo, no a la hora en que llega:
+
+- Un QR que valía cuando se leyó, vale; uno que ya había caducado, no. Una
+  captura de pantalla vieja no se cuela por llegar tarde.
+- El mismo QR leído por un puesto con señal y otro sin ella se cobra una sola
+  vez: los nonces se conservan mientras pueda llegar una lectura guardada.
+- Dos lecturas del mismo pack con segundos de diferencia siguen siendo un doble
+  disparo, lleguen juntas o en otro orden.
+- A quien entró antes del vencimiento de su pack no se le pierde la entrada
+  porque la señal volvió al día siguiente.
+- La hora del teléfono no importa: el servidor solo usa la diferencia entre
+  cuándo se leyó y cuándo se envió, que es correcta aunque el reloj no lo sea.
+- Si el cobro llegó al servidor justo antes del corte, la lectura se guarda con
+  la misma clave de idempotencia y al enviarla recibe la respuesta original.
+
+El consumo queda con la hora de lectura —es cuándo entró la persona, y así
+cuenta en las cifras del día— y con la hora en que llegó, que se muestra en
+administración como *Leída sin conexión*.
+
+**Lo que no se pudo cobrar no se pierde.** Si al llegar la lectura el pack ya no
+tenía saldo, estaba anulado o la cuenta suspendida, el teléfono la marca *por
+revisar* con el motivo, y en **Resumen** aparece la tarjeta **Entradas sin
+cobrar** con la persona, el pack, el puesto y quién la leyó. Se cierra con
+*Marcar resuelta* y una nota («pagó en efectivo»), que queda en su ficha junto
+con lo ocurrido.
+
+**Qué no hace, a propósito.** El teléfono no valida la firma del QR (el secreto
+no sale del servidor) ni descarga saldos o datos de clientes: un teléfono
+perdido no se lleva nada. Sin red solo comprueba lo que puede comprobar solo —el
+formato, que el QR no haya caducado y que no sea una lectura repetida—.
+
+```ini
+# Horas que puede esperar una lectura guardada. 0 apaga el modo: sin red, el
+# escáner vuelve a pedir que se reintente a mano.
+OFFLINE_SCAN_MAX_HOURS=24
+```
+
+El diseño completo está en
+`docs/superpowers/specs/2026-09-14-escaner-sin-conexion-design.md`.
+
+---
+
 ## Pases en la cartera del teléfono
 
 El cliente puede guardar su pack en **Apple Wallet** o **Google Wallet**. El
@@ -407,10 +468,11 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (164 pruebas)
+npm test        # suite completa (256 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
+npm run test:e2e:sin-conexion # el escáner durante un corte de red
 ```
 
 Las pruebas corren sobre una base en memoria y cubren todas las rutas de la API:
@@ -427,13 +489,15 @@ estáticas que hacen ese trabajo: que toda importación exista, que no se use un
 función sin importarla, que cada `#identificador` que busca el JavaScript esté
 en el HTML, y que no haya clases de CSS sin definir.
 
-`tests/e2e/` contiene además tres pruebas en navegador real, que no entran en
+`tests/e2e/` contiene además pruebas en navegador real, que no entran en
 `npm test` porque necesitan Playwright: `interfaz.mjs` levanta la aplicación en
 el propio proceso y comprueba que la interfaz hace lo que dice (descargas,
 formateo del código al teclearlo, actividad en vivo, un corte de red a mitad de
 un cobro y el pase impreso); `camara.mjs` le da a Chromium un vídeo con un QR y
 comprueba que el escáner lo lee y descuenta la entrada, con el lector nativo y
-con el respaldo jsQR; y `flujo-completo.mjs` recorre el sistema ya instalado
+con el respaldo jsQR; `sin-conexion.mjs` corta la red en mitad del turno,
+recarga la página sin señal y comprueba que todo se cobra al volver; y
+`flujo-completo.mjs` recorre el sistema ya instalado
 contra un servidor de verdad. El README de esa carpeta explica cómo ejecutarlas.
 
 ### Estructura
@@ -450,8 +514,8 @@ src/
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events · wallet
   services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
-                       expediente del cliente, auditoría, cifras del panel
-                       y pases de cartera)
+                       expediente del cliente, auditoría, cifras del panel,
+                       pases de cartera y lecturas sin conexión)
 assets/                Iconos del pase de cartera
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas

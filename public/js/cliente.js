@@ -1,7 +1,7 @@
 /**
  * Portal del cliente: saldo en vivo, pase con QR rotativo e historial.
  */
-import { $, el, render, brindis, fecha, dinero, plural, estadoPack, METODOS,
+import { $, el, render, brindis, fecha, horaCorta, dinero, plural, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar, vibrar } from './ui.js';
 import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, cambiarPassword, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
@@ -377,7 +377,14 @@ function manejarEvento(tipo, datos) {
 
   if (tipo === 'entrada.consumida') {
     vibrar([40, 60, 40]);
-    brindis(`Entrada registrada en ${datos.pack.code}. Te quedan ${datos.remaining}.`, 'ok');
+    // Una entrada leída durante un corte de red llega cuando vuelve la señal:
+    // se dice de qué hora es para que no parezca un cobro nuevo.
+    brindis(
+      datos.syncedAt
+        ? `Se registró tu entrada de las ${horaCorta(datos.at)} en ${datos.pack.code}. Te quedan ${datos.remaining}.`
+        : `Entrada registrada en ${datos.pack.code}. Te quedan ${datos.remaining}.`,
+      'ok',
+    );
     cargarTodo({ conHistorial: true }).catch(() => {});
     return;
   }
