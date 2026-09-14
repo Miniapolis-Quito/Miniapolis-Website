@@ -379,3 +379,40 @@ test('la base en disco solo la puede leer el usuario del servicio', { skip: proc
     rmSync(carpeta, { recursive: true, force: true });
   }
 });
+
+test('producción no arranca con los secretos de ejemplo del repositorio ni con secretos repetidos', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const bueno = (n) => `${'x'.repeat(40)}-${n}-${Math.random().toString(36).slice(2)}`;
+  const arrancar = (extra) =>
+    spawnSync(process.execPath, ['--input-type=module', '-e', "await import('./src/config.js');"], {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+      env: {
+        PATH: process.env.PATH,
+        NODE_ENV: 'production',
+        ENV_FILE: '/dev/null',
+        ACCESS_TOKEN_SECRET: bueno('a'),
+        REFRESH_TOKEN_SECRET: bueno('r'),
+        QR_SECRET: bueno('q'),
+        ...extra,
+      },
+    });
+
+  assert.equal(arrancar({}).status, 0, 'con secretos propios arranca');
+
+  const conEjemplo = arrancar({ ACCESS_TOKEN_SECRET: 'desarrollo-access-cambiame-por-uno-de-verdad-00' });
+  assert.notEqual(conEjemplo.status, 0);
+  assert.match(conEjemplo.stderr, /valor de ejemplo/);
+
+  const conMarcador = arrancar({ QR_SECRET: 'cambiame-cambiame-cambiame-cambiame-cambiame' });
+  assert.notEqual(conMarcador.status, 0);
+
+  const repetido = bueno('igual');
+  const conRepetidos = arrancar({ ACCESS_TOKEN_SECRET: repetido, QR_SECRET: repetido });
+  assert.notEqual(conRepetidos.status, 0);
+  assert.match(conRepetidos.stderr, /repite el valor/);
+
+  const conClaveDeEjemplo = arrancar({ MASTER_PASSWORD: 'Pista-RC-Master-2026' });
+  assert.notEqual(conClaveDeEjemplo.status, 0);
+  assert.match(conClaveDeEjemplo.stderr, /MASTER_PASSWORD/);
+});
