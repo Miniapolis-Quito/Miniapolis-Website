@@ -33,7 +33,16 @@ import { ROOT_DIR } from '../config.js';
 const ESPERA_DE_AVISO_MS = 1500;
 
 const CARPETA_IMAGENES = path.join(ROOT_DIR, 'assets', 'wallet');
-const IMAGENES = ['icon.png', 'icon@2x.png', 'icon@3x.png', 'logo.png', 'logo@2x.png'];
+const IMAGENES = [
+  'icon.png',
+  'icon@2x.png',
+  'icon@3x.png',
+  'logo.png',
+  'logo@2x.png',
+  'strip.png',
+  'strip@2x.png',
+  'strip@3x.png',
+];
 
 let imagenesEnMemoria = null;
 function imagenesDelPase() {
@@ -128,7 +137,10 @@ export function contenidoApple(pack, dueno, pase) {
     logoText: config.brandShort,
     backgroundColor: 'rgb(0, 0, 0)',
     foregroundColor: 'rgb(246, 246, 242)',
-    labelColor: 'rgb(61, 254, 64)',
+    labelColor: 'rgb(60, 254, 63)',
+    // El arte de la franja ya contiene el acabado Racing; Wallet no debe
+    // superponerle el brillo genérico de una tarjeta de tienda.
+    suppressStripShine: true,
     webServiceURL: `${config.publicUrl}/api/wallet/apple`,
     authenticationToken: pase.auth_token,
     ...(config.wallet.apple.associatedAppIdentifier
@@ -217,9 +229,11 @@ export function objetoGoogle(pack, dueno, pase) {
     hexBackgroundColor: '#000000',
     ...(config.publicUrl
       ? {
-          logo: {
-            sourceUri: { uri: `${config.publicUrl}/images/racing-hobbies-logo-oficial.png` },
-          },
+          // Google recorta el logo normal en círculo, por eso usa el icono
+          // cuadrado con el coche oficial. El wordmark panorámico queda para
+          // la cabecera, donde se lee entero y sin perder la silueta.
+          logo: { sourceUri: { uri: `${config.publicUrl}/images/racing-hobbies-wallet-icon.png` } },
+          wideLogo: { sourceUri: { uri: `${config.publicUrl}/images/racing-hobbies-wallet-wide-logo.png` } },
         }
       : {}),
     cardTitle: { defaultValue: { language: 'es-EC', value: config.brandName } },

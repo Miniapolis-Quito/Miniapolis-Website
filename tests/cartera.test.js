@@ -107,7 +107,19 @@ test('el cliente descarga un pase firmado con su saldo dentro', async () => {
   const archivos = leerPkpass(r.datos);
   assert.deepEqual(
     Object.keys(archivos).sort(),
-    ['icon.png', 'icon@2x.png', 'icon@3x.png', 'logo.png', 'logo@2x.png', 'manifest.json', 'pass.json', 'signature'].sort(),
+    [
+      'icon.png',
+      'icon@2x.png',
+      'icon@3x.png',
+      'logo.png',
+      'logo@2x.png',
+      'strip.png',
+      'strip@2x.png',
+      'strip@3x.png',
+      'manifest.json',
+      'pass.json',
+      'signature',
+    ].sort(),
   );
 
   const pase = JSON.parse(archivos['pass.json'].toString('utf8'));
@@ -116,7 +128,8 @@ test('el cliente descarga un pase firmado con su saldo dentro', async () => {
   assert.equal(pase.passTypeIdentifier, 'pass.ec.prueba.entradas');
   assert.equal(pase.webServiceURL, 'https://entradas.example/api/wallet/apple');
   assert.equal(pase.backgroundColor, 'rgb(0, 0, 0)');
-  assert.equal(pase.labelColor, 'rgb(61, 254, 64)');
+  assert.equal(pase.labelColor, 'rgb(60, 254, 63)');
+  assert.equal(pase.suppressStripShine, true, 'el arte del pase no debe recibir un brillo ajeno a la marca');
   assert.ok(pase.authenticationToken, 'sin contraseña el teléfono no podría pedir el pase');
 
   // El manifiesto tiene que describir de verdad lo que va dentro: si no, el
@@ -314,7 +327,8 @@ test('el pase de Google lleva el saldo y va firmado por la cuenta de servicio', 
   assert.equal(objeto.id, `3388000000000000000.${pase.serial}`);
   assert.equal(objeto.state, 'ACTIVE');
   assert.equal(objeto.hexBackgroundColor, '#000000');
-  assert.match(objeto.logo.sourceUri.uri, /\/images\/racing-hobbies-logo-oficial\.png$/);
+  assert.match(objeto.logo.sourceUri.uri, /\/images\/racing-hobbies-wallet-icon\.png$/);
+  assert.match(objeto.wideLogo.sourceUri.uri, /\/images\/racing-hobbies-wallet-wide-logo\.png$/);
   assert.equal(objeto.header.defaultValue.value, '5');
   assert.equal(objeto.textModulesData.find((t) => t.id === 'restantes').body, '5 de 5');
   assert.equal(objeto.barcode.value.startsWith('RHE1|'), true);
