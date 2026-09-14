@@ -59,7 +59,7 @@ diferencia es correcta igual.
 | Tiempo de espera | Se busca cualquier consumo confirmado del pack a menos de `REDEEM_COOLDOWN_SECONDS` de la hora de lectura, antes o después. Dos lecturas del mismo pack con 5 s de diferencia siguen siendo un doble disparo aunque lleguen juntas una hora después; dos con 30 s, no. |
 | Pack vencido | Cuenta la fecha de vencimiento a la hora de lectura: quien entró a las 23:50 del último día no pierde su entrada porque la señal volvió al día siguiente. |
 | Pack anulado o suspendido, cuenta suspendida, sin saldo | Estado actual. Son decisiones de administración y el sistema no puede saber si fueron anteriores a la lectura. |
-| Idempotencia | Igual: la clave de la lectura es la del primer intento en línea, así que si el servidor llegó a cobrarla antes del corte, la sincronización recibe la respuesta original en vez de un «QR ya usado». |
+| Idempotencia | Igual: la clave de la lectura es la del primer intento en línea, así que si el servidor llegó a cobrarla antes del corte, la sincronización recibe la respuesta original en vez de un «QR ya usado». Las respuestas se recuerdan al menos una hora más que la ventana sin conexión: un código tecleado no tiene nonce, y olvidar la respuesta antes lo cobraría dos veces. |
 
 ### Qué se guarda
 
@@ -74,9 +74,11 @@ diferencia es correcta igual.
 
 Cada rechazo definitivo de una lectura diferida deja un registro
 `escaneo_sin_conexion.rechazado` en la auditoría con el pack, el cliente, el
-motivo, la hora de lectura, el operador y el puesto. El **Resumen** del máster
-muestra una tarjeta con los de los últimos siete días: son personas que
-entraron sin pagar su entrada, y alguien tiene que llamarlas.
+motivo, la hora de lectura, el operador y el puesto, en la ficha del cliente.
+El **Resumen** del máster muestra una tarjeta con los que nadie ha resuelto: son
+personas que entraron sin que se les descontara la entrada. Se cierran con
+*Marcar resuelta* y una nota (`escaneo_sin_conexion.resuelto`), que también
+queda en la ficha.
 
 ## Teléfono del personal
 
@@ -121,8 +123,9 @@ Un service worker con alcance `/escanear` guarda la página y sus recursos
 
 Si la página arranca sin red y en ese teléfono hubo una sesión de personal en
 las últimas `OFFLINE_SCAN_MAX_HOURS` que no se cerró con *Salir*, el escáner
-abre en modo sin conexión con el nombre de esa persona. Cerrar sesión borra esa
-identidad. En cuanto vuelve la red se renueva la sesión de verdad; si ya no es
+abre en modo sin conexión con el nombre de esa persona. Esa identidad se borra
+al entrar con cualquier cuenta, al salir desde cualquier página y cuando el
+servidor da la sesión por perdida. En cuanto vuelve la red se renueva la sesión de verdad; si ya no es
 válida, se va a la página de acceso y las lecturas esperan a que esa persona
 vuelva a entrar.
 

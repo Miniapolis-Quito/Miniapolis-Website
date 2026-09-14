@@ -225,3 +225,15 @@ test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la A
     assert.ok(fs.existsSync(archivo), `${recurso} está en la caché del escáner pero no existe`);
   }
 });
+
+test('la identidad para abrir el escáner sin red se olvida con la misma clave con que se guarda', () => {
+  // api.js la borra al entrar, salir o perder la sesión; la cola la guarda como
+  // dato «operador». Si las dos claves se separan, cerrar sesión dejaría de
+  // impedir que el escáner abra sin red con esa identidad.
+  const api = leer('public/js/api.js');
+  const cola = leer('public/js/cola-sin-conexion.js');
+  const escaner = leer('public/js/escaner.js');
+  const prefijo = cola.match(/const PREFIJO_DATO = '([^']+)'/)[1];
+  assert.ok(escaner.includes("almacen.recordar('operador'"), 'el escáner guarda la identidad como «operador»');
+  assert.ok(api.includes(`'${prefijo}operador'`), `api.js debe olvidar ${prefijo}operador`);
+});

@@ -14,7 +14,7 @@
 import { $, el, render, brindis, horaCorta, plural, METODOS, claveIdempotencia,
          mostrarAviso, mostrarErroresCampo, conCarga, vibrar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion, ErrorRed, estaAutenticado,
-         refrescarSesion, onSesion, usarSesionSinConexion, alCerrarSesion } from './api.js';
+         refrescarSesion, onSesion, usarSesionSinConexion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 import { AlmacenLecturas, ColaSinConexion } from './cola-sin-conexion.js';
@@ -273,6 +273,7 @@ let avisoNoPersistente = false;
 /** Guarda una lectura para cobrarla al volver la señal y se lo dice al operador. */
 function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoUsado }) {
   const usuario = getUsuario();
+  if (!usuario) return null; // la sesión se perdió: la página ya va hacia el acceso
   const resultado = cola.guardar(
     { tipo: payload ? 'qr' : 'codigo', payload, code, clave, capturadaEn, puesto: puestoUsado, operador: usuario },
     {
@@ -349,6 +350,9 @@ async function medirServidor() {
       estado.desfaseMs = desfase;
       almacen.recordar('desfase', desfase);
     }
+    // Con sesión y servidor a la vista, la identidad para abrir sin red está al
+    // día: el plazo cuenta desde la última vez que se supo que era válida.
+    if (estaAutenticado()) recordarOperador();
     return true;
   } catch {
     return false;
@@ -575,6 +579,8 @@ function prepararServiceWorker() {
     navigator.serviceWorker
       .getRegistration('/escanear')
       .then((registro) => registro?.unregister())
+      .then(() => globalThis.caches?.keys())
+      .then((nombres) => Promise.all((nombres ?? []).filter((n) => n.startsWith('rh-escaner-')).map((n) => caches.delete(n))))
       .catch(() => {});
   }
 }
@@ -959,10 +965,9 @@ async function alRecuperarSesion() {
   montarManual();
   reposar();
 
-  // Cerrar sesión a propósito impide abrir el escáner sin red con esta
-  // identidad. Las lecturas guardadas no se borran: siguen siendo entradas por
+  // Al cerrar o perder la sesión, api.js olvida la identidad con que se abre
+  // sin red. Las lecturas guardadas no se borran: siguen siendo entradas por
   // cobrar, y se enviarán cuando esa persona vuelva a entrar.
-  alCerrarSesion(() => almacen.olvidar('operador'));
   onSesion((usuario) => {
     if (usuario && estado.arranqueSinConexion && estaAutenticado()) {
       estado.arranqueSinConexion = false;

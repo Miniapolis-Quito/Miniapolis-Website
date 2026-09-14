@@ -408,8 +408,10 @@ router.get(
     } else if (entity === 'consumos') {
       const { items } = redemptions.listRedemptions({ limit: 5000 });
       csv = toCsv(
-        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'restantes', 'estado', 'dispositivo'],
-        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.remainingAfter, r.status, r.deviceLabel]),
+        // `sincronizado` va al final y solo tiene valor en lo leído sin conexión:
+        // `fecha` es cuándo entró la persona y esta, cuándo se cobró.
+        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'restantes', 'estado', 'dispositivo', 'sincronizado'],
+        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.remainingAfter, r.status, r.deviceLabel, r.syncedAt]),
       );
     } else if (entity === 'clientes') {
       const { items } = users.listUsers({ limit: 5000 });

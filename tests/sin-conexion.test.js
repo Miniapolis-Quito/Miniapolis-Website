@@ -88,6 +88,13 @@ test('una lectura hecha sin conexión se cobra al llegar, con la hora en que se 
   const listado = await cMaster.get('/api/admin/redemptions?limit=5');
   cercaDe(listado.datos.items[0].syncedAt, Date.now());
   cercaDe(listado.datos.items[0].createdAt, leidaEn);
+
+  // Y el cierre de caja también: la fecha es la de la visita y al final va cuándo se cobró.
+  const csv = await cMaster.get('/api/admin/export/consumos.csv');
+  const [cabecera, fila] = csv.datos.replace(/^\uFEFF/, '').split('\r\n');
+  assert.equal(cabecera.split(',').at(-1), 'sincronizado');
+  cercaDe(fila.split(',').at(-1), Date.now());
+  cercaDe(fila.split(',')[0], leidaEn);
 });
 
 test('un consumo en línea no lleva hora de sincronización', async () => {
@@ -273,6 +280,13 @@ test('si el cobro llegó al servidor antes del corte, reenviarlo devuelve la res
   assert.equal(reenvio.status, 200, JSON.stringify(reenvio.datos));
   assert.equal(reenvio.headers.get('idempotent-replay'), 'true');
   assert.equal(reenvio.datos.redemptionId, enLinea.datos.redemptionId);
+
+  // La respuesta se recuerda más tiempo del que puede tardar en llegar una
+  // lectura guardada: si caducara antes, un código tecleado se cobraría dos
+  // veces (no tiene nonce que lo frene).
+  const guardada = getDb().prepare('SELECT created_at, expires_at FROM idempotency_keys WHERE key = ?').get(clave);
+  const duracion = Date.parse(guardada.expires_at) - Date.parse(guardada.created_at);
+  assert.ok(duracion > config.offlineScan.maxAgeSeconds * 1000, 'la clave debe durar más que la ventana sin conexión');
   assert.equal(packsService.findById(pack.id).remaining, 4);
   assert.deepEqual(rechazos(), []);
 });

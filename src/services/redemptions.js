@@ -31,7 +31,13 @@ import * as packsService from './packs.js';
 import * as audit from './audit.js';
 import * as sinConexion from './sinConexion.js';
 
-const IDEMPOTENCY_TTL_SECONDS = 24 * 3600;
+/**
+ * Cuánto se recuerda la respuesta de un consumo. Al menos un día, y siempre más
+ * que la ventana en que puede llegar una lectura guardada sin conexión: esa
+ * lectura reutiliza la clave del intento en línea, y si la respuesta ya se
+ * hubiera olvidado, un código tecleado —que no tiene nonce— se cobraría dos veces.
+ */
+const IDEMPOTENCY_TTL_SECONDS = Math.max(24 * 3600, config.offlineScan.maxAgeSeconds + 3600);
 
 /**
  * Margen para una lectura que parece enviada antes de hacerse: los dos
