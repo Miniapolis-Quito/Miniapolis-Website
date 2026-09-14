@@ -328,3 +328,54 @@ test('la sesión sobrevive aunque el dominio arrastre muchas cookies', async () 
   assert.equal(r.status, 200, 'la cookie de refresco tiene que seguir leyéndose');
   assert.ok(r.datos.accessToken);
 });
+
+test('las respuestas de la API no se guardan en la caché del navegador', async () => {
+  const { cCliente } = await sembrarUsuarios();
+  // Datos personales y también lo público: la regla es para toda la API.
+  for (const r of [await cCliente.get('/api/auth/me'), await cCliente.get('/api/packs/mine'), await crearCliente().get('/api/health')]) {
+    assert.equal(r.headers.get('cache-control'), 'no-store');
+  }
+});
+
+test('el CSV neutraliza fórmulas escritas con signos de ancho completo', async () => {
+  const { cMaster } = await sembrarUsuarios();
+  const alta = await cMaster.post('/api/admin/users', {
+    email: 'formula@pista.ec',
+    fullName: '＝HYPERLINK("http://malo.example","Ver")',
+  });
+  assert.equal(alta.status, 201, JSON.stringify(alta.datos));
+
+  const csv = await cMaster.get('/api/admin/export/clientes.csv');
+  assert.equal(csv.status, 200);
+  assert.ok(csv.datos.includes(`"'＝HYPERLINK`), 'la celda debe empezar por un apóstrofo');
+});
+
+test('una cookie llamada __proto__ no altera el lector de cookies', async () => {
+  const { parseCookies } = await import('../src/lib/cookies.js');
+  const cookies = parseCookies({ headers: { cookie: '__proto__=x; constructor=y; rh_refresh=abc' } });
+  assert.equal(Object.getPrototypeOf(cookies), null);
+  assert.equal(cookies.rh_refresh, 'abc');
+  assert.equal(cookies.constructor, 'y');
+});
+
+test('la base en disco solo la puede leer el usuario del servicio', { skip: process.platform === 'win32' }, async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { mkdtempSync, statSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const path = await import('node:path');
+
+  const carpeta = mkdtempSync(path.join(tmpdir(), 'rhe-permisos-'));
+  try {
+    const archivo = path.join(carpeta, 'datos', 'tickets.db');
+    const modulo = new URL('../src/db/index.js', import.meta.url).href;
+    execFileSync(
+      process.execPath,
+      ['--input-type=module', '-e', `import { getDb, closeDb } from ${JSON.stringify(modulo)}; getDb(); closeDb();`],
+      { env: { ...process.env, DATABASE_FILE: archivo, ENV_FILE: '/dev/null', LOG_LEVEL: 'silent' } },
+    );
+    assert.equal((statSync(archivo).mode & 0o777).toString(8), '600');
+    assert.equal((statSync(path.dirname(archivo)).mode & 0o777).toString(8), '700');
+  } finally {
+    rmSync(carpeta, { recursive: true, force: true });
+  }
+});

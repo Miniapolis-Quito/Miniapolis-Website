@@ -122,11 +122,23 @@ export function firmarManifiesto(manifiesto, { certificate, key, keyPassword, ww
       '-in', ruta('manifest.json'),
       '-out', ruta('signature'),
       '-outform', 'DER',
-      '-passin', keyPassword ? `pass:${keyPassword}` : 'pass:',
+      // La contraseña de la clave va por una variable de entorno del proceso
+      // hijo: en los argumentos, cualquier usuario de la máquina la leería con
+      // `ps` mientras openssl firma.
+      '-passin', 'env:RHE_CLAVE_PASE',
     ];
 
     try {
-      execFileSync('openssl', argumentos, { stdio: ['ignore', 'ignore', 'pipe'] });
+      execFileSync('openssl', argumentos, {
+        stdio: ['ignore', 'ignore', 'pipe'],
+        // Solo lo imprescindible: openssl no necesita heredar los secretos del
+        // servidor que viven en el resto del entorno.
+        env: {
+          PATH: process.env.PATH ?? '',
+          ...(process.env.SYSTEMROOT ? { SYSTEMROOT: process.env.SYSTEMROOT } : {}),
+          RHE_CLAVE_PASE: keyPassword || '',
+        },
+      });
     } catch (error) {
       const detalle = (error.stderr?.toString() || error.message).trim().split('\n').slice(-2).join(' ');
       throw new Error(

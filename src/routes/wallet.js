@@ -19,8 +19,44 @@ import { config } from '../config.js';
 import { logger } from '../lib/logger.js';
 import * as packsService from '../services/packs.js';
 import * as wallet from '../services/wallet.js';
+import { PUSH_TOKEN_VALIDO } from '../lib/apns.js';
 
 export const router = express.Router();
+
+/**
+ * Formatos de lo que llega en las rutas del servicio web de Apple. Son rutas
+ * sin sesión que cualquiera puede llamar, así que lo que no tiene la forma
+ * esperada ni siquiera se busca en la base.
+ */
+const SERIAL_VALIDO = /^[A-Za-z0-9_-]{16,64}$/;
+const DISPOSITIVO_VALIDO = /^[A-Za-z0-9._-]{1,128}$/;
+const MARCA_DE_TIEMPO_VALIDA = /^[0-9TZ:.+-]{1,40}$/;
+
+/**
+ * Cuota por conexión para el servicio web del teléfono. Es generosa porque
+ * muchos clientes con datos móviles salen por la misma IP y cada aviso hace
+ * que todos sus teléfonos vengan a por el pase a la vez.
+ */
+const limiteServicioApple = rateLimit({
+  name: 'wallet-apple-ip',
+  limit: 600,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => `ip:${req.clientIp}`,
+});
+
+/** El registro de avisos del teléfono escribe en el log: cuota mucho más corta. */
+const limiteLogApple = rateLimit({
+  name: 'wallet-apple-log-ip',
+  limit: 30,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => `ip:${req.clientIp}`,
+});
+
+/** Rechaza un identificador de teléfono con una forma que Apple no usa. */
+function exigirDispositivoValido(req, res, next) {
+  if (DISPOSITIVO_VALIDO.test(req.params.deviceId)) return next();
+  return next(badRequest('El identificador del teléfono no es válido.', null, 'dispositivo_invalido'));
+}
 
 /** Corta con un mensaje claro si esa cartera no está configurada. */
 function exigirCartera(cual) {
@@ -119,8 +155,17 @@ router.get(
 function exigirPase(req, res, next) {
   const cabecera = req.get('authorization') || '';
   const token = cabecera.startsWith('ApplePass ') ? cabecera.slice(10).trim() : '';
+  // El pase es de este tipo o no es de este sistema: un identificador de tipo
+  // ajeno no debe abrir nada aunque la serie y la contraseña coincidan.
+  if (
+    !token ||
+    req.params.passTypeId !== config.wallet.apple.passTypeId ||
+    !SERIAL_VALIDO.test(req.params.serial)
+  ) {
+    return res.status(401).end();
+  }
   const pase = wallet.paseDeSerie(req.params.serial);
-  if (!pase || !token) return res.status(401).end();
+  if (!pase) return res.status(401).end();
 
   const a = Buffer.from(token);
   const b = Buffer.from(pase.auth_token);
@@ -135,10 +180,13 @@ function exigirPase(req, res, next) {
 router.post(
   '/apple/v1/devices/:deviceId/registrations/:passTypeId/:serial',
   exigirCartera('apple'),
+  limiteServicioApple,
   exigirPase,
+  exigirDispositivoValido,
   asyncHandler(async (req, res) => {
     const pushToken = req.body?.pushToken;
-    if (typeof pushToken !== 'string' || pushToken.length < 32 || pushToken.length > 200) {
+    // Solo hexadecimal: el token acaba dentro de la ruta de la petición a Apple.
+    if (typeof pushToken !== 'string' || !PUSH_TOKEN_VALIDO.test(pushToken)) {
       throw badRequest('El identificador de avisos no es válido.', null, 'push_token_invalido');
     }
     const { yaEstaba } = wallet.registrarDispositivo({
@@ -154,7 +202,9 @@ router.post(
 router.delete(
   '/apple/v1/devices/:deviceId/registrations/:passTypeId/:serial',
   exigirCartera('apple'),
+  limiteServicioApple,
   exigirPase,
+  exigirDispositivoValido,
   asyncHandler(async (req, res) => {
     wallet.olvidarDispositivo({ deviceId: req.params.deviceId, serial: req.params.serial });
     res.status(200).end();
@@ -165,8 +215,17 @@ router.delete(
 router.get(
   '/apple/v1/devices/:deviceId/registrations/:passTypeId',
   exigirCartera('apple'),
+  limiteServicioApple,
+  exigirDispositivoValido,
   asyncHandler(async (req, res) => {
-    const desde = typeof req.query.passesUpdatedSince === 'string' ? req.query.passesUpdatedSince : null;
+    // Apple no pide contraseña en esta consulta; lo mínimo es que el tipo de
+    // pase sea el nuestro y que la marca de tiempo tenga forma de marca.
+    if (req.params.passTypeId !== config.wallet.apple.passTypeId) return res.status(404).end();
+    const marca = req.query.passesUpdatedSince;
+    if (marca !== undefined && (typeof marca !== 'string' || !MARCA_DE_TIEMPO_VALIDA.test(marca))) {
+      throw badRequest('La marca de tiempo no es válida.', null, 'marca_invalida');
+    }
+    const desde = marca || null;
     const cambios = wallet.seriesActualizadas(req.params.deviceId, desde);
     if (!cambios) return res.status(204).end();
     res.json(cambios);
@@ -177,6 +236,7 @@ router.get(
 router.get(
   '/apple/v1/passes/:passTypeId/:serial',
   exigirCartera('apple'),
+  limiteServicioApple,
   exigirPase,
   asyncHandler(async (req, res) => {
     const desde = req.get('if-modified-since');
@@ -198,12 +258,20 @@ router.get(
 /** Los avisos de error que manda el propio teléfono; ayudan a diagnosticar. */
 router.post(
   '/apple/v1/log',
-  asyncHandler(async (req, res) => {
-    for (const linea of (req.body?.logs ?? []).slice(0, 20)) {
-      logger.warn('Aviso del teléfono sobre un pase', { detalle: String(linea).slice(0, 400) });
+  exigirCartera('apple'),
+  limiteLogApple,
+  (req, res) => {
+    // Llega sin autenticar y de cualquiera: se aceptan solo textos, sin
+    // caracteres de control (que permitirían fabricar líneas falsas en el
+    // registro) y con tope de cantidad y de largo.
+    const lineas = Array.isArray(req.body?.logs) ? req.body.logs.slice(0, 20) : [];
+    for (const linea of lineas) {
+      if (typeof linea !== 'string') continue;
+      const detalle = linea.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').slice(0, 400);
+      logger.warn('Aviso del teléfono sobre un pase', { detalle });
     }
     res.status(200).end();
-  }),
+  },
 );
 
 export default router;

@@ -14,7 +14,9 @@ const COOKIE_PATH = '/api/auth';
  */
 export function parseCookies(req) {
   const header = req.headers?.cookie;
-  const out = {};
+  // Sin prototipo: una cookie llamada "__proto__" o "constructor" es una
+  // cookie más, no una propiedad heredada que se cuele en las comprobaciones.
+  const out = Object.create(null);
   if (typeof header !== 'string' || header.length === 0) return out;
   for (const part of header.split(';')) {
     const eq = part.indexOf('=');

@@ -48,7 +48,12 @@ server.listen(config.port, config.host, () => {
 });
 
 let shuttingDown = false;
-function shutdown(signal) {
+/**
+ * @param {number} codigo con qué código sale el proceso. Una señal es un cierre
+ * pedido (0); una excepción no capturada es un fallo (1), y así lo ve el
+ * supervisor —systemd con `Restart=on-failure`, Docker, pm2— para relanzarlo.
+ */
+function shutdown(signal, codigo = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
   logger.info(`Señal ${signal} recibida; cerrando ordenadamente.`);
@@ -57,7 +62,7 @@ function shutdown(signal) {
   server.close(() => {
     closeDb();
     logger.info('Servidor cerrado.');
-    process.exit(0);
+    process.exit(codigo);
   });
 
   // Si alguna conexión (por ejemplo SSE) no cierra a tiempo, se fuerza la salida.
@@ -67,7 +72,7 @@ function shutdown(signal) {
       server.closeAllConnections?.();
       closeDb();
     } finally {
-      process.exit(0);
+      process.exit(codigo);
     }
   }, 8000).unref();
 }
@@ -80,7 +85,7 @@ process.on('unhandledRejection', (reason) => {
 });
 process.on('uncaughtException', (error) => {
   logger.error('Excepción no capturada', { message: error.message, stack: error.stack });
-  shutdown('uncaughtException');
+  shutdown('uncaughtException', 1);
 });
 
 export { server, app };

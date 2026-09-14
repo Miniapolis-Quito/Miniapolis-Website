@@ -43,6 +43,15 @@ export function createApp() {
   app.use(sameOriginOnly);
   app.use(authenticate);
 
+  // Casi todo lo que responde la API es personal (saldos, códigos, sesiones,
+  // datos de clientes). Sin esto, el navegador podía guardar esas respuestas en
+  // disco y servirlas desde el historial en un equipo compartido del mostrador
+  // después de cerrar la sesión. Una ruta concreta puede cambiarlo si lo necesita.
+  app.use('/api/', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
   // Red de seguridad ante abuso o un bucle en el cliente. Se cuenta por usuario
   // cuando hay sesión: si toda la pista sale por una misma dirección IP (lo
   // normal con datos móviles), nadie debe gastar la cuota de los demás.

@@ -14,8 +14,7 @@ import {
   passwordSchema,
   parseOrThrow,
 } from '../lib/validate.js';
-import { validatePasswordStrength } from '../lib/passwords.js';
-import { randomToken } from '../lib/ids.js';
+import { validatePasswordStrength, generarPasswordTemporal } from '../lib/passwords.js';
 import { config } from '../config.js';
 import * as fechas from '../lib/fechas.js';
 import * as users from '../services/users.js';
@@ -68,7 +67,7 @@ router.post(
     const data = parseOrThrow(createUserSchema, req.body, badRequest);
 
     // Sin contraseña indicada se genera una temporal que el máster comunica al cliente.
-    const generated = data.password ? null : randomToken(9);
+    const generated = data.password ? null : generarPasswordTemporal();
     const password = data.password ?? generated;
 
     const strength = validatePasswordStrength(password, { email: data.email, fullName: data.fullName });
@@ -184,7 +183,7 @@ router.post(
     let password = req.body?.password;
     let generated = null;
     if (password === undefined || password === null || password === '') {
-      generated = randomToken(9);
+      generated = generarPasswordTemporal();
       password = generated;
     } else {
       password = parseOrThrow(passwordSchema, password, badRequest);
@@ -363,7 +362,10 @@ router.get(
       // cálculo entiende como "esto es texto".
       // Algunas hojas recortan espacios iniciales antes de interpretar la
       // celda, por lo que " =1+1" también puede convertirse en fórmula.
-      if (/^\s*[=+\-@]/.test(text)) text = `'${text}`;
+      // Un tabulador o un retorno de carro al principio también los tratan
+      // algunas hojas como el arranque de una fórmula (recomendación de OWASP),
+      // y LibreOffice acepta además las formas de ancho completo de los signos.
+      if (/^(?:[\t\r]|\s*[=+\-@\uFF1D\uFF0B\uFF0D\uFF20])/.test(text)) text = `'${text}`;
       return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const toCsv = (headers, rows) =>

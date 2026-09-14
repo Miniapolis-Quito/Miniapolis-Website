@@ -365,3 +365,119 @@ test('un pack agotado o anulado sale como inactivo en la cartera', async () => {
   const apple = wallet.contenidoApple(anulado, null, pase);
   assert.equal(apple.storeCard.secondaryFields.find((c) => c.key === 'estado').value, 'Anulado');
 });
+
+// ---------------------------------------------------------------------------
+// El servicio web del teléfono ante entradas hostiles
+// ---------------------------------------------------------------------------
+
+test('el identificador de avisos solo se acepta en hexadecimal', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+
+  // El token acaba en la ruta de la petición a Apple: nada de "/", "?" ni "..".
+  for (const pushToken of [`../../3/device/${'a'.repeat(40)}`, `${'a'.repeat(40)}?x=1`, 'g'.repeat(64)]) {
+    const { respuesta } = await registrarTelefono(pack, { pushToken });
+    assert.equal(respuesta.status, 400, pushToken);
+  }
+  assert.equal(getDb().prepare('SELECT COUNT(*) AS n FROM wallet_devices').get().n, 0);
+
+  // Y aunque uno así llegara a la base, el aviso no sale y el registro se da de baja.
+  const resultado = await apns.avisar('../../otra-ruta', {
+    apnsKeyId: 'X', apnsKey: 'no-se-usa', teamId: 'X', passTypeId: 'pass.ec.prueba.entradas', apnsHost: '127.0.0.1:38443',
+  });
+  assert.deepEqual(resultado, { ok: false, status: 0, motivo: 'BadDeviceToken' });
+  assert.equal(avisosRecibidos.length, 0);
+});
+
+test('un identificador de tipo de pase ajeno no abre el pase', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  const pase = wallet.asegurarPase(pack.id);
+  const anonimo = crearCliente();
+  const autorizacion = { Authorization: `ApplePass ${pase.auth_token}` };
+
+  const ajeno = await anonimo.get(`/api/wallet/apple/v1/passes/pass.otro.negocio/${pase.serial}`, { cabeceras: autorizacion });
+  assert.equal(ajeno.status, 401);
+  const lista = await anonimo.get('/api/wallet/apple/v1/devices/telefono/registrations/pass.otro.negocio');
+  assert.equal(lista.status, 404);
+});
+
+test('un identificador de teléfono o una marca de tiempo con forma extraña se rechazan', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+
+  const { respuesta } = await registrarTelefono(pack, { deviceId: 'tel%20con%20espacios' });
+  assert.equal(respuesta.status, 400);
+
+  const anonimo = crearCliente();
+  const marca = await anonimo.get(
+    `/api/wallet/apple/v1/devices/telefono/registrations/pass.ec.prueba.entradas?passesUpdatedSince=${encodeURIComponent("' OR 1=1 --")}`,
+  );
+  assert.equal(marca.status, 400);
+});
+
+test('el registro de avisos del teléfono aguanta cualquier cuerpo sin romperse', async () => {
+  const anonimo = crearCliente();
+  for (const cuerpo of [{ logs: 'no es una lista' }, { logs: [{ toString: 1 }, 42, null] }, { logs: ['línea\nfalsa'] }, {}]) {
+    const r = await anonimo.post('/api/wallet/apple/v1/log', cuerpo);
+    assert.equal(r.status, 200, JSON.stringify(cuerpo));
+  }
+});
+
+test('un pase no acumula teléfonos sin fin', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+
+  const total = wallet.MAXIMO_TELEFONOS_POR_PASE + 3;
+  for (let i = 0; i < total; i += 1) {
+    const { respuesta } = await registrarTelefono(pack, { deviceId: `telefono-${i}`, pushToken: i.toString(16).padStart(64, '0') });
+    assert.equal(respuesta.status, 201);
+  }
+
+  const guardados = getDb().prepare('SELECT device_id FROM wallet_devices').all().map((f) => f.device_id);
+  assert.equal(guardados.length, wallet.MAXIMO_TELEFONOS_POR_PASE);
+  // Se conserva el último en llegar, que es el teléfono que la persona está usando.
+  assert.ok(guardados.includes(`telefono-${total - 1}`));
+  assert.ok(!guardados.includes('telefono-0'));
+});
+
+test('la clave del certificado puede ir cifrada y su contraseña no viaja en los argumentos', async (t) => {
+  if (process.platform === 'win32') return t.skip('usa un openssl envuelto en un script de shell');
+  const { firmarManifiesto } = await import('../src/lib/pkpass.js');
+  const { execFileSync } = await import('node:child_process');
+  const { mkdtempSync, writeFileSync, chmodSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const path = await import('node:path');
+
+  const contrasena = 'Clave-Del-Pase-Muy-Secreta-1';
+  const credenciales = {
+    certificate: readFileSync(process.env.APPLE_PASS_CERTIFICATE, 'utf8'),
+    key: crypto
+      .createPrivateKey(readFileSync(process.env.APPLE_PASS_KEY, 'utf8'))
+      .export({ type: 'pkcs8', format: 'pem', cipher: 'aes-256-cbc', passphrase: contrasena }),
+    keyPassword: contrasena,
+    wwdrCertificate: readFileSync(process.env.APPLE_WWDR_CERTIFICATE, 'utf8'),
+  };
+
+  // Un openssl que apunta con qué argumentos lo llamaron y luego hace su trabajo.
+  const carpeta = mkdtempSync(path.join(tmpdir(), 'rhe-openssl-'));
+  const real = execFileSync('sh', ['-c', 'command -v openssl']).toString().trim();
+  const registro = path.join(carpeta, 'argumentos.txt');
+  writeFileSync(path.join(carpeta, 'openssl'), `#!/bin/sh\nprintf '%s\\n' "$*" >> '${registro}'\nexec '${real}' "$@"\n`);
+  chmodSync(path.join(carpeta, 'openssl'), 0o755);
+  const pathOriginal = process.env.PATH;
+  process.env.PATH = `${carpeta}${path.delimiter}${pathOriginal}`;
+
+  try {
+    const firma = firmarManifiesto(Buffer.from('{}'), credenciales);
+    assert.ok(firma.length > 0, 'con la contraseña correcta, firma');
+    assert.throws(() => firmarManifiesto(Buffer.from('{}'), { ...credenciales, keyPassword: 'otra' }), /No se pudo firmar/);
+
+    const argumentos = readFileSync(registro, 'utf8');
+    assert.ok(argumentos.includes('smime'), 'el openssl envuelto es el que se usó');
+    assert.ok(!argumentos.includes(contrasena), 'la contraseña no puede aparecer en la línea de órdenes');
+  } finally {
+    process.env.PATH = pathOriginal;
+    rmSync(carpeta, { recursive: true, force: true });
+  }
+});

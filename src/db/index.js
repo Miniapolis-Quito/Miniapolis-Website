@@ -28,6 +28,22 @@ function applyPragmas(handle, { memory }) {
   handle.pragma('trusted_schema = OFF');
 }
 
+/**
+ * La base guarda hashes de contraseñas, sesiones y el secreto que firma los QR
+ * de cada pack: nadie más en la máquina debe poder leerla. SQLite crea los
+ * archivos `-wal` y `-shm` con los mismos permisos que la base, así que basta
+ * con fijarlos al abrirla.
+ */
+function restringirPermisos(file) {
+  for (const archivo of [file, `${file}-wal`, `${file}-shm`]) {
+    try {
+      fs.chmodSync(archivo, 0o600);
+    } catch {
+      /* todavía no existe, o el sistema de archivos no admite permisos */
+    }
+  }
+}
+
 function runMigrations(handle) {
   const applied = handle.pragma('user_version', { simple: true });
   if (applied > migrations.length) {
@@ -55,7 +71,9 @@ export function getDb() {
   const memory = file === ':memory:';
 
   try {
-    if (!memory) fs.mkdirSync(path.dirname(file), { recursive: true });
+    // La carpeta nueva nace cerrada; una que ya existía no se toca, porque
+    // podría ser compartida (por ejemplo, /var/lib).
+    if (!memory) fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
     db = new Database(file);
   } catch (error) {
     // El tropiezo más común al instalar: la carpeta no existe o el usuario del
@@ -69,6 +87,7 @@ export function getDb() {
   }
 
   applyPragmas(db, { memory });
+  if (!memory) restringirPermisos(file);
   runMigrations(db);
   return db;
 }

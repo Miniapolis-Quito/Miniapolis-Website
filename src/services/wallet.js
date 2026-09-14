@@ -14,7 +14,7 @@
  * pidió el cliente: ver el saldo. Para entrar, se muestra el QR de la app.
  */
 import crypto from 'node:crypto';
-import { getDb } from '../db/index.js';
+import { getDb, inTransaction } from '../db/index.js';
 import { config } from '../config.js';
 import { randomToken } from '../lib/ids.js';
 import { logger } from '../lib/logger.js';
@@ -28,6 +28,14 @@ import * as users from './users.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT_DIR } from '../config.js';
+
+/**
+ * Teléfonos que pueden recibir avisos de un mismo pase. Da de sobra para quien
+ * cambia de teléfono o tiene también un reloj, y evita que quien tiene el pase
+ * registre identificadores sin fin: cada uno es una fila más y un aviso más a
+ * Apple en cada escaneo.
+ */
+export const MAXIMO_TELEFONOS_POR_PASE = 10;
 
 /** Espera antes de avisar de un cambio, para no mandar un aviso por escaneo. */
 const ESPERA_DE_AVISO_MS = 1500;
@@ -254,12 +262,13 @@ export function objetoGoogle(pack, dueno, pase) {
 // ---------------------------------------------------------------------------
 
 /**
- * Ticket de un solo uso para descargar el pase de Apple.
+ * Permiso de corta vida para descargar el pase de Apple.
  *
  * El teléfono tiene que llegar al archivo navegando —solo así iOS ofrece
  * añadirlo a la cartera—, y una navegación no lleva la cabecera de sesión. En
- * vez de abrir la descarga a cualquiera, se firma un permiso que vale un par de
- * minutos y solo para ese pack.
+ * vez de abrir la descarga a cualquiera, se firma un permiso que vale
+ * `streamTicketTtlSeconds` y solo para ese pack. No es de un solo uso a
+ * propósito: Safari puede pedir la misma dirección más de una vez.
  */
 export function firmarTicket(packId, { ahora = Date.now() } = {}) {
   const expira = Math.floor(ahora / 1000) + config.tokens.streamTicketTtlSeconds;
@@ -330,17 +339,29 @@ export function registrarDispositivo({ deviceId, serial, pushToken }) {
   const pase = paseDeSerie(serial, db);
   if (!pase) return { ok: false, motivo: 'desconocido' };
 
-  const ya = db
-    .prepare('SELECT push_token FROM wallet_devices WHERE device_id = ? AND serial = ?')
-    .get(deviceId, serial);
+  return inTransaction(() => {
+    const ya = db
+      .prepare('SELECT push_token FROM wallet_devices WHERE device_id = ? AND serial = ?')
+      .get(deviceId, serial);
 
-  db.prepare(
-    `INSERT INTO wallet_devices (device_id, serial, push_token, created_at)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(device_id, serial) DO UPDATE SET push_token = excluded.push_token`,
-  ).run(deviceId, serial, pushToken, new Date().toISOString());
+    if (!ya) {
+      // Al llegar al tope se olvida el registro más antiguo: lo normal es que
+      // sea un teléfono que la persona ya no usa.
+      db.prepare(
+        `DELETE FROM wallet_devices
+          WHERE rowid IN (SELECT rowid FROM wallet_devices WHERE serial = ?
+                          ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET ?)`,
+      ).run(serial, MAXIMO_TELEFONOS_POR_PASE - 1);
+    }
 
-  return { ok: true, yaEstaba: Boolean(ya) };
+    db.prepare(
+      `INSERT INTO wallet_devices (device_id, serial, push_token, created_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(device_id, serial) DO UPDATE SET push_token = excluded.push_token`,
+    ).run(deviceId, serial, pushToken, new Date().toISOString());
+
+    return { ok: true, yaEstaba: Boolean(ya) };
+  });
 }
 
 export function olvidarDispositivo({ deviceId, serial }) {

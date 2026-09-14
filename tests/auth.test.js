@@ -2,6 +2,7 @@ import test, { before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { levantarServidor, bajarServidor, limpiarBase, crearCliente, sembrarUsuarios, CLAVES } from './helpers.js';
 import * as users from '../src/services/users.js';
+import { getDb } from '../src/db/index.js';
 import { HASH_FICTICIO, hashPassword, needsRehash, verifyPassword } from '../src/lib/passwords.js';
 
 before(levantarServidor);
@@ -305,4 +306,43 @@ test('el perfil se puede actualizar y validar', async () => {
   const malo = await cCliente.patch('/api/auth/me', { fullName: 'X' });
   assert.equal(malo.status, 400);
   assert.ok(malo.datos.error.details.fields.fullName);
+});
+
+test('un correo sin cuenta se bloquea igual que uno registrado', async () => {
+  await sembrarUsuarios();
+
+  // Nueve intentos fallidos contra cada correo. Todas las peticiones salen de la
+  // misma IP, así que su cuota se vacía antes de cada una: lo que se compara es
+  // el bloqueo de la cuenta, no el límite por conexión.
+  const intentar = async (email) => {
+    const respuestas = [];
+    for (let i = 0; i < 9; i += 1) {
+      getDb().prepare("DELETE FROM rate_limits WHERE key LIKE 'login-ip:%'").run();
+      const r = await crearCliente().post('/api/auth/login', { email, password: `mala-clave-${i}` });
+      respuestas.push([r.status, r.datos.error.code, r.datos.error.message]);
+    }
+    return respuestas;
+  };
+
+  const registrado = await intentar('cliente@pista.ec');
+  const inexistente = await intentar('nadie-registrado@pista.ec');
+  assert.equal(registrado[7][0], 429, 'el octavo fallo bloquea la cuenta real');
+  // Si solo las cuentas reales se bloquearan, fallar unas cuantas veces bastaría
+  // para saber qué correos están registrados.
+  assert.deepEqual(inexistente, registrado);
+});
+
+test('los intentos simultáneos no esquivan el bloqueo de la cuenta', async () => {
+  await sembrarUsuarios();
+
+  // Ocho fallos a la vez: cada verificación espera a scrypt, y antes todos leían
+  // el mismo contador y escribían «uno más», con lo que la cuenta nunca se bloqueaba.
+  await Promise.all(
+    Array.from({ length: 8 }, (_, i) =>
+      crearCliente().post('/api/auth/login', { email: 'cliente@pista.ec', password: `mala-clave-${i}` }),
+    ),
+  );
+
+  const correcta = await crearCliente().post('/api/auth/login', { email: 'cliente@pista.ec', password: CLAVES.cliente });
+  assert.equal(correcta.status, 429, 'ocho fallos simultáneos deben bloquear igual que ocho seguidos');
 });

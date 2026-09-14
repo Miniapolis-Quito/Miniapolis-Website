@@ -5,6 +5,7 @@ import { hashPassword, verifyPassword, needsRehash, HASH_FICTICIO } from '../lib
 import { conflict, notFound, badRequest } from '../lib/errors.js';
 import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
+import { consume } from '../lib/rateLimit.js';
 import { notificarSesionInvalida } from './sessions.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
@@ -102,10 +103,13 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
     // temporización si el correo existe. El hash ficticio lleva los parámetros
     // vigentes, así que el costo coincide con el de una cuenta real.
     await verifyPassword(password, HASH_FICTICIO);
-    return { ok: false, reason: 'credenciales' };
+    return fallarCuentaInexistente(email, now);
   }
 
   if (user.locked_until && user.locked_until > nowIso) {
+    // También aquí se paga una verificación: si el bloqueo respondiera al
+    // instante, el tiempo de respuesta diría qué correos tienen cuenta.
+    await verifyPassword(password, HASH_FICTICIO);
     const retryAfterSeconds = Math.ceil((Date.parse(user.locked_until) - now) / 1000);
     return { ok: false, reason: 'bloqueado', retryAfterSeconds };
   }
@@ -113,18 +117,32 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
   const valid = await verifyPassword(password, user.password_hash);
 
   if (!valid) {
-    const failed = user.failed_logins + 1;
+    // El incremento lo hace la base y no JavaScript: entre la lectura de la
+    // cuenta y este punto hay un `await`, así que varios intentos simultáneos
+    // leían el mismo contador y cada uno escribía «uno más», dejando probar
+    // muchas más contraseñas de las que permite el bloqueo.
+    const { failed_logins: failed } = db
+      .prepare('UPDATE users SET failed_logins = failed_logins + 1, updated_at = ? WHERE id = ? RETURNING failed_logins')
+      .get(nowIso, user.id);
     const shouldLock = failed >= config.security.maxLoginAttempts;
-    db.prepare('UPDATE users SET failed_logins = ?, locked_until = ?, updated_at = ? WHERE id = ?').run(
-      shouldLock ? 0 : failed,
-      shouldLock ? new Date(now + config.security.lockoutSeconds * 1000).toISOString() : null,
-      nowIso,
-      user.id,
-    );
     if (shouldLock) {
+      db.prepare('UPDATE users SET failed_logins = 0, locked_until = ?, updated_at = ? WHERE id = ?').run(
+        new Date(now + config.security.lockoutSeconds * 1000).toISOString(),
+        nowIso,
+        user.id,
+      );
       return { ok: false, reason: 'bloqueado', retryAfterSeconds: config.security.lockoutSeconds };
     }
     return { ok: false, reason: 'credenciales', attemptsLeft: config.security.maxLoginAttempts - failed };
+  }
+
+  // Un intento simultáneo pudo bloquear la cuenta mientras se verificaba este:
+  // acertar la contraseña en esa carrera no debe servir para saltarse el bloqueo.
+  const actual = findById(user.id, db);
+  if (!actual) return { ok: false, reason: 'credenciales' };
+  if (actual.locked_until && actual.locked_until > new Date().toISOString()) {
+    const retryAfterSeconds = Math.ceil((Date.parse(actual.locked_until) - Date.now()) / 1000);
+    return { ok: false, reason: 'bloqueado', retryAfterSeconds };
   }
 
   if (user.status !== 'active') return { ok: false, reason: 'suspendido' };
@@ -140,6 +158,34 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
   ).run(nowIso, passwordHash, nowIso, user.id);
 
   return { ok: true, user: findById(user.id, db) };
+}
+
+/** Mientras cuenta los fallos de un correo sin cuenta, la cuota dura lo que un mes. */
+const VENTANA_FALLOS_FANTASMA_SECONDS = 30 * 24 * 3600;
+
+/**
+ * Un correo que no tiene cuenta se comporta igual que uno que sí la tiene: al
+ * llegar al máximo de intentos fallidos «se bloquea» durante el mismo tiempo.
+ * Si solo las cuentas reales se bloquearan, bastaría con fallar unas cuantas
+ * veces para saber qué correos están registrados.
+ */
+function fallarCuentaInexistente(email, now) {
+  const { maxLoginAttempts, lockoutSeconds } = config.security;
+  const clave = `login-fantasma:${normalizeEmail(email)}`;
+  const cuota = consume(clave, { limit: maxLoginAttempts, windowSeconds: VENTANA_FALLOS_FANTASMA_SECONDS, now });
+
+  if (!cuota.allowed) {
+    return { ok: false, reason: 'bloqueado', retryAfterSeconds: cuota.retryAfterSeconds };
+  }
+  if (cuota.remaining <= 0) {
+    // Igual que en una cuenta real, el bloqueo empieza con el intento que lo
+    // provoca y dura exactamente `lockoutSeconds`.
+    getDb()
+      .prepare('UPDATE rate_limits SET expires_at = ? WHERE key = ?')
+      .run(new Date(now + lockoutSeconds * 1000).toISOString(), clave);
+    return { ok: false, reason: 'bloqueado', retryAfterSeconds: lockoutSeconds };
+  }
+  return { ok: false, reason: 'credenciales' };
 }
 
 export async function changePassword(userId, currentPassword, newPassword) {
