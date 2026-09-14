@@ -211,8 +211,9 @@ detecta.
 
 **Sesiones.** La contraseña se guarda con scrypt (N=2¹⁶, r=8, p=1). El token de
 acceso vive 15 minutos y solo en memoria del navegador; la sesión persiste con
-una cookie `httpOnly`, `Secure`, `SameSite=Strict` acotada a `/api/auth`, que
-JavaScript no puede leer. El token de refresco **rota en cada uso** y, si
+una cookie `httpOnly`, `Secure`, `SameSite=Strict` que JavaScript no puede
+leer; con HTTPS lleva el prefijo `__Host-`, así que nadie en la red ni en otro
+subdominio puede plantar una propia. El token de refresco **rota en cada uso** y, si
 alguna vez se presenta uno ya rotado, se asume robo y se revoca la sesión
 completa. Suspender una cuenta, cambiarle el rol o cambiar la contraseña corta
 el acceso al instante, sin esperar a que caduque nada. Suspenderla inutiliza

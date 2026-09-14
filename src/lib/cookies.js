@@ -1,8 +1,39 @@
 /** Manejo de la cookie de refresco (httpOnly, no accesible desde JavaScript). */
 import { config } from '../config.js';
 
-export const REFRESH_COOKIE = 'rh_refresh';
-const COOKIE_PATH = '/api/auth';
+/**
+ * Nombre y ruta de la cookie de refresco.
+ *
+ * Con HTTPS lleva el prefijo `__Host-`: el navegador solo la acepta si llega con
+ * `Secure`, sin `Domain` y con `Path=/`. Sin él, alguien en la red (por HTTP) o
+ * un subdominio hermano podía plantar una cookie propia con el mismo nombre para
+ * que la víctima acabara dentro de la sesión del atacante. El prefijo obliga a
+ * la ruta raíz, pero la cookie sigue siendo `httpOnly` y `SameSite=Strict`: ni
+ * un script ni otro sitio la ven.
+ *
+ * Sin HTTPS (desarrollo, pruebas) el navegador rechazaría una cookie con prefijo,
+ * así que se conservan el nombre y la ruta de siempre.
+ */
+const CON_PREFIJO = config.security.cookieSecure;
+export const REFRESH_COOKIE = CON_PREFIJO ? '__Host-rh_refresh' : 'rh_refresh';
+const COOKIE_PATH = CON_PREFIJO ? '/' : '/api/auth';
+
+/**
+ * La cookie que dejaban las versiones anteriores. No se lee —aceptarla
+ * mantendría abierta la puerta que el prefijo cierra—, solo se borra: cada
+ * persona vuelve a entrar una vez tras actualizar.
+ */
+const COOKIE_ANTERIOR = { nombre: 'rh_refresh', ruta: '/api/auth' };
+
+function borrarCookieAnterior(res) {
+  if (!CON_PREFIJO) return;
+  res.clearCookie(COOKIE_ANTERIOR.nombre, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+    path: COOKIE_ANTERIOR.ruta,
+  });
+}
 
 /**
  * Parser mínimo de la cabecera Cookie; evita una dependencia adicional.
@@ -47,6 +78,7 @@ export function setRefreshCookie(res, token) {
     path: COOKIE_PATH,
     maxAge: config.tokens.refreshTtlSeconds * 1000,
   });
+  borrarCookieAnterior(res);
 }
 
 export function clearRefreshCookie(res) {
@@ -56,6 +88,7 @@ export function clearRefreshCookie(res) {
     sameSite: 'strict',
     path: COOKIE_PATH,
   });
+  borrarCookieAnterior(res);
 }
 
 /**
