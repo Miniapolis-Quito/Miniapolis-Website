@@ -182,6 +182,68 @@ function wallet() {
 }
 
 /**
+ * Correo saliente. Hoy lo usa la recuperación de contraseña.
+ *
+ * Con SMTP_HOST se usa SMTP; MAIL_TRANSPORT puede pedir además `memoria` (solo
+ * pruebas) o `consola` (nunca en producción). Sin nada de eso, el correo queda
+ * apagado y la recuperación no se ofrece. Una configuración a medias no
+ * arranca: es mejor enterarse al desplegar que cuando alguien pide un enlace.
+ */
+function correo() {
+  const pedido = (process.env.MAIL_TRANSPORT || '').trim().toLowerCase();
+  if (!['', 'smtp', 'memoria', 'consola'].includes(pedido)) {
+    throw new Error(`Configuración inválida: MAIL_TRANSPORT debe ser "smtp", "memoria" o "consola" (recibido "${pedido}").`);
+  }
+
+  const host = (process.env.SMTP_HOST || '').trim();
+  const port = num('SMTP_PORT', 587, { min: 1, max: 65535 });
+  const secure = bool('SMTP_SECURE', port === 465);
+  const requireTLS = secure ? false : bool('SMTP_REQUIRE_TLS', true);
+  const archivoClave = (process.env.SMTP_PASSWORD_FILE || '').trim();
+  let password = process.env.SMTP_PASSWORD || '';
+  if (archivoClave) {
+    try {
+      password = fs.readFileSync(path.resolve(ROOT_DIR, archivoClave), 'utf8').trim();
+    } catch (error) {
+      throw new Error(`Configuración inválida: no se pudo leer SMTP_PASSWORD_FILE desde "${archivoClave}": ${error.message}`);
+    }
+  }
+
+  const from = (process.env.MAIL_FROM || '').trim();
+  if (/[\r\n]/.test(from)) throw new Error('Configuración inválida: MAIL_FROM no puede tener saltos de línea.');
+
+  const modo = pedido || (host ? 'smtp' : '');
+  if (modo === 'memoria' && !isTest) {
+    throw new Error('Configuración inválida: MAIL_TRANSPORT=memoria solo existe para las pruebas.');
+  }
+  if (modo === 'consola' && isProduction) {
+    throw new Error(
+      'Configuración inválida: MAIL_TRANSPORT=consola escribe en el registro enlaces que dan acceso a cuentas; no se admite en producción.',
+    );
+  }
+  if (modo === 'smtp') {
+    if (!host) throw new Error('Configuración inválida: el correo por SMTP necesita SMTP_HOST.');
+    const direccion = from.match(/<([^<>]+)>\s*$/)?.[1] ?? from;
+    if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(direccion)) {
+      throw new Error('Configuración inválida: MAIL_FROM debe ser una dirección, por ejemplo "Racing Hobbies <entradas@tu-dominio.ec>".');
+    }
+    const local = ['localhost', '127.0.0.1', '::1'].includes(host);
+    if (!secure && !requireTLS && !local) {
+      throw new Error(
+        'Configuración inválida: SMTP_REQUIRE_TLS=false solo se admite con un relé en la propia máquina; el correo lleva enlaces que dan acceso a cuentas.',
+      );
+    }
+  }
+
+  return Object.freeze({
+    modo,
+    enabled: Boolean(modo),
+    from: from || `${process.env.BRAND_SHORT || 'Racing Hobbies'} <no-responder@localhost>`,
+    smtp: Object.freeze({ host, port, secure, requireTLS, user: (process.env.SMTP_USER || '').trim(), password }),
+  });
+}
+
+/**
  * Catálogo de packs a la venta.
  *
  * Se admite una lista completa en `PACK_CATALOG` ("5:2500,10:4500,20:8000":
@@ -307,6 +369,15 @@ export const config = Object.freeze({
 
   /** Pases para la cartera del teléfono. */
   wallet: wallet(),
+
+  /** Correo saliente. */
+  correo: correo(),
+
+  /** Recuperación de contraseña por correo. */
+  passwordReset: Object.freeze({
+    /** Cuánto vale el enlace. Corto: es una llave de la cuenta dentro de un buzón. */
+    ttlSeconds: num('PASSWORD_RESET_TTL_SECONDS', 30 * 60, { min: 5 * 60, max: 24 * 3600 }),
+  }),
 
   /** Catálogo de packs vendibles. */
   packCatalog: Object.freeze(packCatalog().map((entrada) => Object.freeze(entrada))),

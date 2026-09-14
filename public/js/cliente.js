@@ -3,7 +3,7 @@
  */
 import { $, el, render, brindis, fecha, dinero, plural, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar, vibrar } from './ui.js';
-import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, ErrorRed } from './api.js';
+import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, cambiarPassword, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 
@@ -437,9 +437,15 @@ function montarCuenta() {
     mostrarErroresCampo(formulario, {});
     await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
       try {
-        await api.post('/api/auth/change-password', datosFormulario(formulario));
+        // Sin recortar espacios: la contraseña se manda tal cual se escribió.
+        const valor = (nombre) => formulario.querySelector(`[name="${nombre}"]`).value;
+        if (valor('newPassword') !== valor('confirmPassword')) {
+          mostrarErroresCampo(formulario, { confirmPassword: 'Las dos contraseñas no coinciden.' });
+          return;
+        }
+        await cambiarPassword(valor('currentPassword'), valor('newPassword'));
         formulario.reset();
-        mostrarAviso($('#aviso-password'), 'Contraseña cambiada. Las demás sesiones se cerraron.', 'ok');
+        mostrarAviso($('#aviso-password'), 'Contraseña cambiada. Cerramos la sesión en tus demás dispositivos.', 'ok');
         brindis('Contraseña actualizada.', 'ok');
       } catch (error) {
         mostrarErroresCampo(formulario, error.campos || {});

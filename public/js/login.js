@@ -1,6 +1,6 @@
 /** Página de acceso: iniciar sesión y crear cuenta. */
 import { $, mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga } from './ui.js';
-import { iniciarSesion, registrarse, refrescarSesion, destinoPorRol, ErrorApi, ErrorRed } from './api.js';
+import { api, iniciarSesion, registrarse, refrescarSesion, destinoPorRol, ErrorApi, ErrorRed } from './api.js';
 import { aplicarMarca } from './shell.js';
 
 const aviso = $('#aviso');
@@ -8,6 +8,11 @@ const formEntrar = $('#form-entrar');
 const formRegistro = $('#form-registro');
 const pestanaEntrar = $('#pestana-entrar');
 const pestanaRegistro = $('#pestana-registro');
+const formRecuperar = $('#form-recuperar');
+const zonaOlvido = $('#zona-olvido');
+
+/** Lo decide /api/config: sin correo configurado no se ofrece. */
+let recuperacionDisponible = false;
 
 /** Vuelve a la página que el usuario intentaba abrir, si es una ruta interna. */
 function destino(rol) {
@@ -22,6 +27,8 @@ function seleccionarPestana(cual) {
   pestanaRegistro.setAttribute('aria-selected', String(!esEntrar));
   formEntrar.hidden = !esEntrar;
   formRegistro.hidden = esEntrar;
+  formRecuperar.hidden = true;
+  zonaOlvido.hidden = !esEntrar || !recuperacionDisponible;
   mostrarAviso(aviso, '');
   (esEntrar ? formEntrar : formRegistro).querySelector('input')?.focus();
 }
@@ -42,6 +49,37 @@ function manejarError(error, formulario) {
   mostrarAviso(aviso, 'Ocurrió un error inesperado. Inténtalo de nuevo.', 'error');
   console.error(error);
 }
+
+$('#btn-olvido').addEventListener('click', () => {
+  formEntrar.hidden = true;
+  formRegistro.hidden = true;
+  formRecuperar.hidden = false;
+  mostrarAviso(aviso, '');
+  mostrarErroresCampo(formRecuperar, {});
+  // Si ya escribió su correo para entrar, no hace falta repetirlo.
+  const correo = $('#entrar-email').value.trim();
+  if (correo) $('#recuperar-email').value = correo;
+  $('#recuperar-email').focus();
+});
+
+$('#btn-volver-entrar').addEventListener('click', () => seleccionarPestana('entrar'));
+
+formRecuperar.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  mostrarAviso(aviso, '');
+  mostrarErroresCampo(formRecuperar, {});
+  const datos = datosFormulario(formRecuperar);
+
+  await conCarga(formRecuperar.querySelector('button[type="submit"]'), async () => {
+    try {
+      const respuesta = await api.post('/api/auth/password/forgot', { email: datos.email });
+      formRecuperar.reset();
+      mostrarAviso(aviso, respuesta.message, 'ok');
+    } catch (error) {
+      manejarError(error, formRecuperar);
+    }
+  });
+});
 
 formEntrar.addEventListener('submit', async (evento) => {
   evento.preventDefault();
@@ -84,6 +122,8 @@ formRegistro.addEventListener('submit', async (evento) => {
     aplicarMarca(configuracion);
     $('#ayuda-password').textContent =
       `Mínimo ${configuracion.minPasswordLength} caracteres. Usa algo que solo tú recuerdes.`;
+    recuperacionDisponible = Boolean(configuracion.passwordRecovery);
+    zonaOlvido.hidden = formEntrar.hidden || !recuperacionDisponible;
     if (!configuracion.allowSelfRegistration) {
       pestanaRegistro.hidden = true;
       formRegistro.hidden = true;

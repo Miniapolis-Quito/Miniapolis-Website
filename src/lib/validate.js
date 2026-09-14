@@ -100,6 +100,20 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+/** Un token de recuperación: 32 bytes en base64url. */
+const tokenRecuperacionSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{43}$/, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
+
+export const forgotPasswordSchema = z.object({ email: emailSchema });
+
+export const resetTokenSchema = z.object({ token: tokenRecuperacionSchema });
+
+export const resetPasswordSchema = z.object({
+  token: tokenRecuperacionSchema,
+  newPassword: passwordSchema,
+});
+
 export const updateProfileSchema = z
   .object({
     fullName: nameSchema.optional(),

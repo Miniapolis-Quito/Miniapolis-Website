@@ -197,22 +197,42 @@ export async function changePassword(userId, currentPassword, newPassword) {
   return setPassword(userId, newPassword);
 }
 
+/** Deja sin efecto los enlaces de recuperación pendientes de una cuenta. */
+export function invalidarEnlacesDeRecuperacion(db, userId, motivo, ahoraIso = new Date().toISOString()) {
+  return db
+    .prepare(
+      `UPDATE password_resets SET invalidated_at = ?, invalidated_reason = ?
+        WHERE user_id = ? AND used_at IS NULL AND invalidated_at IS NULL`,
+    )
+    .run(ahoraIso, motivo, userId).changes;
+}
+
+/**
+ * Escribe un hash de contraseña nuevo y todo lo que un cambio arrastra: cierra
+ * las sesiones, invalida los tokens de acceso vivos, levanta el bloqueo por
+ * intentos y deja sin efecto los enlaces de recuperación pendientes.
+ *
+ * Es síncrona y debe llamarse dentro de una transacción: la recuperación la
+ * usa en la misma que canjea el enlace.
+ */
+export function escribirPassword(db, userId, passwordHash, { ahoraIso = new Date().toISOString(), motivo = 'password_changed' } = {}) {
+  db.prepare(
+    `UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ?,
+            token_version = token_version + 1, failed_logins = 0, locked_until = NULL
+      WHERE id = ?`,
+  ).run(passwordHash, ahoraIso, ahoraIso, userId);
+  db.prepare(
+    `UPDATE sessions SET revoked_at = ?, revoke_reason = ?
+      WHERE user_id = ? AND revoked_at IS NULL`,
+  ).run(ahoraIso, motivo, userId);
+  invalidarEnlacesDeRecuperacion(db, userId, 'password_cambiada', ahoraIso);
+}
+
 /** Cambia la contraseña e invalida todas las sesiones activas del usuario. */
 export async function setPassword(userId, newPassword) {
   const db = getDb();
   const passwordHash = await hashPassword(newPassword);
-  const now = new Date().toISOString();
-  inTransaction(() => {
-    db.prepare(
-      `UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ?,
-              token_version = token_version + 1, failed_logins = 0, locked_until = NULL
-        WHERE id = ?`,
-    ).run(passwordHash, now, now, userId);
-    db.prepare(
-      `UPDATE sessions SET revoked_at = ?, revoke_reason = 'password_changed'
-        WHERE user_id = ? AND revoked_at IS NULL`,
-    ).run(now, userId);
-  });
+  inTransaction(() => escribirPassword(db, userId, passwordHash));
   notificarSesionInvalida(userId, 'password_cambiada');
   return findById(userId, db);
 }
@@ -275,6 +295,9 @@ export function updateUser(userId, changes, db = getDb()) {
     db.prepare(
       `UPDATE sessions SET revoked_at = ?, revoke_reason = 'account_changed' WHERE user_id = ? AND revoked_at IS NULL`,
     ).run(params.updated_at, userId);
+    // Un enlace de recuperación iba a la dirección de antes, o a una cuenta
+    // que ahora está suspendida o tiene otro rol: ya no debe servir.
+    invalidarEnlacesDeRecuperacion(db, userId, 'cuenta_modificada', params.updated_at);
     notificarSesionInvalida(userId, 'cuenta_modificada');
   }
 

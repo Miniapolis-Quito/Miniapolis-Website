@@ -295,6 +295,35 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '006-recuperacion-de-contrasena',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Enlaces de recuperación de contraseña
+        --
+        -- Del token solo se guarda su HMAC: quien lea la base no puede usar
+        -- los enlaces pendientes. Un enlace sirve mientras no esté usado,
+        -- invalidado ni vencido.
+        -- ---------------------------------------------------------------
+        CREATE TABLE password_resets (
+          id                   TEXT PRIMARY KEY,
+          user_id              TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token_hash           TEXT NOT NULL UNIQUE,
+          created_at           TEXT NOT NULL,
+          expires_at           TEXT NOT NULL,
+          used_at              TEXT,
+          used_ip              TEXT,
+          invalidated_at       TEXT,
+          invalidated_reason   TEXT,
+          requested_ip         TEXT,
+          requested_user_agent TEXT
+        );
+        CREATE INDEX idx_password_resets_user   ON password_resets(user_id, created_at DESC);
+        CREATE INDEX idx_password_resets_expiry ON password_resets(expires_at);
+      `);
+    },
+  },
 ];
 
 export default migrations;

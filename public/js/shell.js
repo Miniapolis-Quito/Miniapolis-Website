@@ -2,6 +2,7 @@
 import { el, render, $, configurarFormato } from './ui.js';
 import { cerrarSesion, getUsuario } from './api.js';
 import { textoEstado } from './realtime.js';
+import { abrirCambioPassword } from './cuenta.js';
 
 const NAV_POR_ROL = {
   customer: [{ href: '/app', texto: 'Mis entradas' }],
@@ -71,6 +72,15 @@ export function montarCabecera(contenedor, { marca = 'Racing Hobbies' } = {}) {
         ),
         nav,
         el('span', { class: 'estado-conexion', title: 'Estado de la conexión en vivo' }, indicador, textoIndicador),
+        // Los clientes cambian su contraseña en «Mi cuenta»; el personal y el
+        // máster, desde aquí.
+        usuario && usuario.role !== 'customer'
+          ? el(
+              'button',
+              { class: 'boton boton--fantasma boton--chico', type: 'button', onClick: () => abrirCambioPassword() },
+              'Contraseña',
+            )
+          : null,
         usuario
           ? el(
               'button',

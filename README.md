@@ -239,6 +239,58 @@ consultan los teléfonos valida cada identificador y tiene su propio límite.
 
 ---
 
+## Recuperar la contraseña
+
+Con correo configurado, la página de acceso ofrece **¿Olvidaste tu
+contraseña?**. La persona escribe su correo, recibe un enlace y elige una
+contraseña nueva sin pasar por recepción. Sin correo, el botón no aparece y
+el camino sigue siendo el de siempre: administración la restablece.
+
+Cómo se protege (el detalle está en
+`docs/superpowers/specs/2026-09-14-recuperacion-de-contrasena-design.md`):
+
+- **No delata cuentas.** Pedir el enlace responde siempre lo mismo y antes de
+  buscar la cuenta. Las cuentas inexistentes o suspendidas no reciben nada.
+- **No sirve para bombardear a nadie.** Un correo por minuto y tres por hora
+  por dirección, en silencio, además del límite por conexión.
+- **El enlace es una llave de un solo uso.** 256 bits aleatorios; en la base
+  solo queda su HMAC. Vale `PASSWORD_RESET_TTL_SECONDS` (30 minutos) y una sola
+  vez, y pedir otro invalida el anterior. Cambiar la contraseña, el correo o el
+  estado de la cuenta invalida los pendientes.
+- **El token no se filtra.** Va en el fragmento de la dirección
+  (`/restablecer#token=…`), que el navegador no manda al servidor ni al
+  `Referer`, y la página lo borra de la barra al leerlo. El dominio del enlace
+  sale de `PUBLIC_URL`, nunca de la petición.
+- **Canjearlo cierra todo.** Se cierran las sesiones en todos los
+  dispositivos, se levanta el bloqueo por intentos y **no** se abre sesión
+  sola: se vuelve a entrar con la contraseña nueva.
+- **Siempre hay aviso.** Cada cambio de contraseña —propio, por enlace o por
+  administración— manda un correo a la persona. Nunca lleva la contraseña.
+
+Cambiar la contraseña con sesión abierta exige la actual; cinco fallos en una
+hora cierran esa sesión, para que quien robe una sesión abierta no pueda
+quedarse probando. Los clientes lo hacen en **Mi cuenta** y el personal y el
+máster desde el botón **Contraseña** de la cabecera.
+
+### Configurar el correo
+
+```ini
+PUBLIC_URL=https://entradas.racinghobbies.ec
+SMTP_HOST=smtp.tu-proveedor.com
+SMTP_PORT=587
+SMTP_USER=entradas@racinghobbies.ec
+SMTP_PASSWORD_FILE=/etc/entradas/smtp-password
+MAIL_FROM=Racing Hobbies <entradas@racinghobbies.ec>
+```
+
+El envío exige TLS con certificado válido (STARTTLS en el 587, TLS directo en
+el 465). En producción `PUBLIC_URL` debe ser HTTPS o la recuperación no se
+ofrece. Para desarrollar sin servidor de correo, `MAIL_TRANSPORT=consola`
+escribe los mensajes en la terminal; en producción está prohibido, porque el
+enlace da acceso a la cuenta.
+
+---
+
 ## Operación diaria
 
 **Vender un pack.** Administración → Packs → *Vender pack*. Se busca al cliente

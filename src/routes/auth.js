@@ -3,13 +3,16 @@ import express from 'express';
 import { config } from '../config.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
-import { rateLimit, reset as resetRateLimit } from '../lib/rateLimit.js';
-import { badRequest, forbidden, tooManyRequests, unauthorized } from '../lib/errors.js';
+import { rateLimit, consume, reset as resetRateLimit } from '../lib/rateLimit.js';
+import { badRequest, forbidden, notFound, tooManyRequests, unauthorized } from '../lib/errors.js';
 import {
   loginSchema,
   registerSchema,
   changePasswordSchema,
   updateProfileSchema,
+  forgotPasswordSchema,
+  resetTokenSchema,
+  resetPasswordSchema,
   parseOrThrow,
 } from '../lib/validate.js';
 import { validatePasswordStrength } from '../lib/passwords.js';
@@ -18,6 +21,7 @@ import * as sessions from '../services/sessions.js';
 import * as audit from '../services/audit.js';
 import { setRefreshCookie, clearRefreshCookie, readRefreshToken } from '../lib/cookies.js';
 import { summaryForUser } from '../services/packs.js';
+import * as recuperacion from '../services/recuperacion.js';
 
 export const router = express.Router();
 
@@ -215,6 +219,37 @@ router.post(
   }),
 );
 
+/** Fallos seguidos con la contraseña actual que se toleran en una hora. */
+const FALLOS_DE_PASSWORD_ACTUAL = 5;
+
+/**
+ * Cuenta un fallo con la contraseña actual. Al llegar al máximo cierra la
+ * sesión en uso: quien roba una sesión abierta no puede quedarse probando
+ * contraseñas para después cambiarla y quedarse con la cuenta.
+ */
+function registrarFalloDePasswordActual(req, res) {
+  const cuota = consume(`password-actual-fallos:${req.user.id}`, {
+    limit: FALLOS_DE_PASSWORD_ACTUAL,
+    windowSeconds: 60 * 60,
+  });
+  if (cuota.allowed && cuota.remaining > 0) return;
+
+  sessions.revokeSessionFamily(req.user.sessionId, 'password_actual_fallida');
+  clearRefreshCookie(res);
+  audit.record({
+    actor: req.user,
+    action: 'password.cambio_bloqueado',
+    entityType: 'user',
+    entityId: req.user.id,
+    ip: req.clientIp,
+    userAgent: req.get('user-agent'),
+  });
+  throw unauthorized(
+    'Demasiados intentos con la contraseña actual. Por seguridad cerramos esta sesión: vuelve a entrar.',
+    'sesion_cerrada_por_intentos',
+  );
+}
+
 router.post(
   '/change-password',
   requireAuth,
@@ -234,7 +269,13 @@ router.post(
       });
     }
 
-    await users.changePassword(req.user.id, data.currentPassword, data.newPassword);
+    try {
+      await users.changePassword(req.user.id, data.currentPassword, data.newPassword);
+    } catch (error) {
+      if (error?.code === 'password_incorrecta') registrarFalloDePasswordActual(req, res);
+      throw error;
+    }
+    resetRateLimit(`password-actual-fallos:${req.user.id}`);
 
     audit.record({
       actor: req.user,
@@ -251,7 +292,90 @@ router.post(
       userAgent: req.get('user-agent'),
     });
     setRefreshCookie(res, refreshToken);
+    recuperacion.avisarCambio(user, { via: 'cuenta', ip: req.clientIp });
     res.json({ ok: true, accessToken, ...sessionResponse(user) });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Recuperación de contraseña por correo
+// ---------------------------------------------------------------------------
+
+/** Visible: por conexión no revela nada de ninguna cuenta. */
+const recuperacionLimiter = rateLimit({
+  name: 'recuperacion-ip',
+  limit: 10,
+  windowSeconds: 60 * 60,
+  message: 'Demasiadas solicitudes desde esta conexión. Inténtalo más tarde.',
+});
+
+const canjeLimiter = rateLimit({
+  name: 'restablecer-ip',
+  limit: 30,
+  windowSeconds: 15 * 60,
+  message: 'Demasiados intentos desde esta conexión. Espera unos minutos.',
+});
+
+function exigirRecuperacion(req, res, next) {
+  if (recuperacion.disponible()) return next();
+  return next(
+    notFound(
+      'La recuperación por correo no está disponible. Acércate a recepción y te ayudamos.',
+      'recuperacion_no_disponible',
+    ),
+  );
+}
+
+/**
+ * Pide un enlace. La respuesta sale antes de buscar la cuenta y es la misma
+ * para cualquier dirección: ni su contenido ni su tiempo dicen si existe.
+ */
+router.post(
+  '/password/forgot',
+  exigirRecuperacion,
+  recuperacionLimiter,
+  asyncHandler(async (req, res) => {
+    const { email } = parseOrThrow(forgotPasswordSchema, req.body, badRequest);
+    const minutos = Math.round(config.passwordReset.ttlSeconds / 60);
+    res.status(202).json({
+      ok: true,
+      message:
+        `Si hay una cuenta con ese correo, te enviamos un enlace para elegir una contraseña nueva. ` +
+        `Vale ${minutos} minutos. Revisa también la carpeta de spam.`,
+    });
+    recuperacion.solicitarDespuesDeResponder({ email, ip: req.clientIp, userAgent: req.get('user-agent') });
+  }),
+);
+
+/** Comprueba un enlace sin gastarlo, para no pedir la contraseña en vano. */
+router.post(
+  '/password/reset/check',
+  canjeLimiter,
+  asyncHandler(async (req, res) => {
+    const { token } = parseOrThrow(resetTokenSchema, req.body, badRequest);
+    const resultado = recuperacion.comprobar(token);
+    if (!resultado.ok) throw recuperacion.enlaceInvalido();
+    res.json({ valid: true, expiresAt: resultado.fila.expires_at });
+  }),
+);
+
+/** Canjea el enlace. No abre sesión: se vuelve a entrar con la contraseña nueva. */
+router.post(
+  '/password/reset',
+  canjeLimiter,
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(resetPasswordSchema, req.body, badRequest);
+    await recuperacion.restablecer({
+      token: data.token,
+      newPassword: data.newPassword,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    clearRefreshCookie(res);
+    res.json({
+      ok: true,
+      message: 'Contraseña cambiada. Cerramos la sesión en todos tus dispositivos; entra con la nueva.',
+    });
   }),
 );
 

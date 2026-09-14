@@ -35,6 +35,20 @@ Dos pasos merecen mención aparte:
   que habría salido por la impresora: el pase con su QR, y nada más —ni la
   cabecera, ni el panel, ni el diálogo desde el que se pidió—.
 
+## `recuperacion.mjs` — recuperar y cambiar la contraseña
+
+```bash
+npm run test:e2e:recuperacion
+```
+
+Levanta la aplicación en el propio proceso con el correo en memoria y recorre
+lo que la persona ve: pedir el enlace desde la página de acceso, abrirlo, que
+el token desaparezca de la barra de direcciones, que recargar o reutilizar el
+enlace ya no sirva y que se entre con la contraseña nueva. Comprueba también
+que quien cambia su contraseña con la sesión abierta —en «Mi cuenta» o desde la
+cabecera— se queda dentro: el servidor cierra las demás sesiones y avisa por el
+canal en vivo, y ese aviso no debe echar a la pestaña que hizo el cambio.
+
 ## `camara.mjs` — el escáner leyendo un QR de verdad
 
 ```bash

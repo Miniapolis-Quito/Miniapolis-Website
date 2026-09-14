@@ -308,6 +308,14 @@ test('el perfil se puede actualizar y validar', async () => {
   assert.ok(malo.datos.error.details.fields.fullName);
 });
 
+test('sin correo configurado la recuperación no se ofrece', async () => {
+  const anonimo = crearCliente();
+  assert.equal((await anonimo.get('/api/config')).datos.passwordRecovery, false);
+  const r = await anonimo.post('/api/auth/password/forgot', { email: 'cliente@pista.ec' });
+  assert.equal(r.status, 404);
+  assert.equal(r.datos.error.code, 'recuperacion_no_disponible');
+});
+
 test('un correo sin cuenta se bloquea igual que uno registrado', async () => {
   await sembrarUsuarios();
 
