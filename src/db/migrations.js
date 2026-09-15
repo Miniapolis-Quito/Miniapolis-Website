@@ -335,6 +335,60 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '008-avisos-a-clientes',
+    up: (db) => {
+      db.exec(`
+        -- Si la persona quiere recordatorios por correo. Nace activado y se
+        -- quita con un clic; el comprobante de compra no es un recordatorio y
+        -- llega igual.
+        ALTER TABLE users ADD COLUMN email_reminders INTEGER NOT NULL DEFAULT 1
+          CHECK (email_reminders IN (0,1));
+        ALTER TABLE users ADD COLUMN email_reminders_changed_at TEXT;
+
+        -- ---------------------------------------------------------------
+        -- Ajustes que se cambian desde el panel, sin tocar el entorno.
+        -- ---------------------------------------------------------------
+        CREATE TABLE settings (
+          key        TEXT PRIMARY KEY,
+          value      TEXT NOT NULL,
+          updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        -- ---------------------------------------------------------------
+        -- Avisos a clientes: la cola de los correos automáticos y el
+        -- registro de los contactos hechos a mano.
+        --
+        -- dedupe_key es única: un aviso automático no puede crearse dos
+        -- veces, ni con dos ciclos simultáneos ni tras un reinicio. Los
+        -- contactos a mano no llevan clave.
+        -- ---------------------------------------------------------------
+        CREATE TABLE notifications (
+          id              TEXT PRIMARY KEY,
+          user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          pack_id         TEXT REFERENCES packs(id) ON DELETE SET NULL,
+          kind            TEXT NOT NULL
+                            CHECK (kind IN ('purchase','low_balance','depleted','expiring','inactive')),
+          channel         TEXT NOT NULL CHECK (channel IN ('email','whatsapp','phone')),
+          dedupe_key      TEXT UNIQUE,
+          status          TEXT NOT NULL
+                            CHECK (status IN ('pending','sending','sent','failed','discarded','logged')),
+          reason          TEXT,
+          attempts        INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at TEXT,
+          sent_at         TEXT,
+          data            TEXT,
+          actor_id        TEXT REFERENCES users(id) ON DELETE SET NULL,
+          created_at      TEXT NOT NULL,
+          updated_at      TEXT NOT NULL
+        );
+        CREATE INDEX idx_notifications_queue   ON notifications(status, next_attempt_at);
+        CREATE INDEX idx_notifications_user    ON notifications(user_id, sent_at DESC);
+        CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
+      `);
+    },
+  },
 ];
 
 export default migrations;

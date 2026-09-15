@@ -17,7 +17,8 @@ const PAGINAS = {
   'public/index.html': ['login.js'],
   'public/app.html': ['cliente.js'],
   'public/scan.html': ['escaner.js'],
-  'public/admin.html': ['admin.js', 'ficha.js'],
+  'public/admin.html': ['admin.js', 'ficha.js', 'avisos.js'],
+  'public/recordatorios.html': ['recordatorios.js'],
   'public/restablecer.html': ['restablecer.js'],
 };
 /** Módulos que carga toda página autenticada. */

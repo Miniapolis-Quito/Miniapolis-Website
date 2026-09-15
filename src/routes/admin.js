@@ -11,6 +11,10 @@ import {
   updatePackSchema,
   voidRedemptionSchema,
   resolveOfflineRejectionSchema,
+  notificationSettingsSchema,
+  notificationContactSchema,
+  notificationTestSchema,
+  notificationListSchema,
   paginationSchema,
   passwordSchema,
   parseOrThrow,
@@ -27,6 +31,7 @@ import * as panel from '../services/panel.js';
 import * as expediente from '../services/expediente.js';
 import * as recuperacion from '../services/recuperacion.js';
 import * as sinConexion from '../services/sinConexion.js';
+import * as avisos from '../services/avisos.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -164,15 +169,23 @@ router.patch(
       throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
     }
 
-    const user = users.updateUser(req.params.id, data);
-    audit.record({
-      ...actorContext(req),
-      action: 'usuario.actualizado',
-      entityType: 'user',
-      entityId: user.id,
-      metadata: data,
-    });
-    res.json({ user: users.toPublicUser(user) });
+    // Los recordatorios tienen su propio registro, que dice desde dónde se
+    // cambiaron: no se mezclan con los datos de la cuenta.
+    const { emailReminders, ...cambios } = data;
+    if (Object.values(cambios).some((valor) => valor !== undefined)) {
+      users.updateUser(req.params.id, cambios);
+      audit.record({
+        ...actorContext(req),
+        action: 'usuario.actualizado',
+        entityType: 'user',
+        entityId: target.id,
+        metadata: cambios,
+      });
+    }
+    if (emailReminders !== undefined) {
+      avisos.cambiarPreferencia(target.id, emailReminders, { via: 'administracion', ...actorContext(req) });
+    }
+    res.json({ user: users.toPublicUser(users.findById(target.id)) });
   }),
 );
 
@@ -343,6 +356,63 @@ router.post(
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(resolveOfflineRejectionSchema, req.body, badRequest);
     res.json(sinConexion.resolver(req.params.id, { note: data.note, ...actorContext(req) }));
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Avisos a clientes y clientes por recuperar
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/notifications/overview',
+  asyncHandler(async (req, res) => {
+    res.json(avisos.resumen());
+  }),
+);
+
+router.get(
+  '/notifications',
+  asyncHandler(async (req, res) => {
+    res.json(avisos.listar(parseOrThrow(notificationListSchema, req.query, badRequest)));
+  }),
+);
+
+router.put(
+  '/notifications/settings',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(notificationSettingsSchema, req.body, badRequest);
+    res.json(avisos.guardarAjustes(data, actorContext(req)));
+  }),
+);
+
+/** Revisa y envía ahora, sin esperar al siguiente ciclo. */
+router.post(
+  '/notifications/run',
+  asyncHandler(async (req, res) => {
+    res.json(await avisos.ciclo());
+  }),
+);
+
+router.post(
+  '/notifications/test',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(notificationTestSchema, req.body, badRequest);
+    res.json(await avisos.enviarPrueba({ ...data, ...actorContext(req) }));
+  }),
+);
+
+router.post(
+  '/notifications/contacts',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(notificationContactSchema, req.body, badRequest);
+    res.status(201).json(avisos.registrarContacto({ ...data, actor: req.user }));
+  }),
+);
+
+router.post(
+  '/notifications/:id/retry',
+  asyncHandler(async (req, res) => {
+    res.json(avisos.reintentar(req.params.id));
   }),
 );
 

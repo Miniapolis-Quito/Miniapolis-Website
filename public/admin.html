@@ -31,6 +31,7 @@
       <button class="pestana" role="tab" id="pestana-clientes" aria-controls="panel-clientes" data-panel="clientes" aria-selected="false" type="button">Clientes y personal</button>
       <button class="pestana" role="tab" id="pestana-packs" aria-controls="panel-packs" data-panel="packs"    aria-selected="false" type="button">Packs</button>
       <button class="pestana" role="tab" id="pestana-consumos" aria-controls="panel-consumos" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
+      <button class="pestana" role="tab" id="pestana-avisos" aria-controls="panel-avisos" data-panel="avisos" aria-selected="false" type="button">Avisos</button>
       <button class="pestana" role="tab" id="pestana-auditoria" aria-controls="panel-auditoria" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
     </div>
 
@@ -145,6 +146,50 @@
           <button class="boton boton--fantasma boton--chico" id="btn-recargar-consumos" type="button">Actualizar</button>
         </div>
         <div id="tabla-consumos"></div>
+      </div>
+    </section>
+
+    <!-- Avisos a clientes y clientes por recuperar (ver avisos.js) -->
+    <section id="panel-avisos" role="tabpanel" aria-labelledby="pestana-avisos" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Avisos automáticos</h2>
+          <div class="fila">
+            <button class="boton boton--fantasma boton--chico" id="btn-avisos-revisar" type="button" hidden>Revisar ahora</button>
+            <button class="boton boton--principal boton--chico" id="btn-avisos-ajustes" type="button">Configurar</button>
+          </div>
+        </div>
+        <p class="tenue pequeno">
+          Comprobante al vender un pack y recordatorios cuando quedan pocas entradas, se acaban, están por vencer o
+          alguien deja de venir. Cada aviso se comprueba justo antes de salir: si la situación cambió, no se envía.
+        </p>
+        <div id="avisos-estado"></div>
+      </div>
+
+      <div class="rejilla rejilla--metricas mt-2" id="avisos-metricas"></div>
+
+      <div class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>Clientes por recuperar</h2>
+          <span class="etiqueta etiqueta--info" id="avisos-en-juego"></span>
+        </div>
+        <div class="pestanas pestanas--grupos" id="avisos-grupos" role="tablist" aria-label="Grupos de clientes por recuperar"></div>
+        <div id="avisos-oportunidades"></div>
+      </div>
+
+      <div class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>Historial de avisos</h2>
+          <select id="filtro-avisos-estado" class="ancho-auto" aria-label="Filtrar por estado">
+            <option value="">Todos</option>
+            <option value="sent">Enviados</option>
+            <option value="logged">Contactos a mano</option>
+            <option value="pending">En cola</option>
+            <option value="failed">Fallidos</option>
+            <option value="discarded">Descartados</option>
+          </select>
+        </div>
+        <div id="tabla-avisos"></div>
       </div>
     </section>
 

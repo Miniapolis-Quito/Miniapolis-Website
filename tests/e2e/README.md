@@ -49,6 +49,26 @@ que quien cambia su contraseña con la sesión abierta —en «Mi cuenta» o des
 cabecera— se queda dentro: el servidor cierra las demás sesiones y avisa por el
 canal en vivo, y ese aviso no debe echar a la pestaña que hizo el cambio.
 
+## `avisos.mjs` — avisos y clientes por recuperar
+
+```bash
+npm run test:e2e:avisos
+```
+
+Levanta la aplicación en el propio proceso con el correo en memoria y un cliente
+en cada grupo. Del lado de administración comprueba que cada uno aparece en su
+grupo, que **WhatsApp** abre la conversación con el número y el mensaje bien
+armados y deja el contacto registrado, que encender los avisos pide
+confirmación, que la prueba llega al máster, que **Revisar ahora** envía solo lo
+que toca (lo anterior a encenderlos no), que el contacto aparece en la ficha y
+que en un teléfono la sección no se desborda. Del lado del cliente, el
+interruptor de **Mi cuenta** y la página del enlace de baja abierta desde un
+correo real: que borra el token de la barra, que abrirla no da de baja, y que se
+puede dar de baja y deshacerlo.
+
+Con `CAPTURAS=carpeta` guarda capturas de la sección, los ajustes, «Mi cuenta» y
+la página de baja.
+
 ## `camara.mjs` — el escáner leyendo un QR de verdad
 
 ```bash

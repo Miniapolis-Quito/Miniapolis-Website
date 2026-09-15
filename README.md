@@ -43,6 +43,10 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 - **Ficha de cliente**: todo lo que se sabe de una persona en una pantalla —
   saldo, hábitos, packs, consumos, actividad y dispositivos— con las acciones a
   mano. Ver más abajo.
+- **Avisos y clientes por recuperar**: comprobante de compra y recordatorios por
+  correo cuando quedan pocas entradas, se acaban, están por vencer o alguien
+  deja de venir; y una lista de a quién conviene escribir, con WhatsApp listo.
+  Ver más abajo.
 - Bitácora de auditoría de todo lo que ocurre y exportación a CSV.
 - Verificación de integridad contable con un clic.
 
@@ -96,6 +100,7 @@ servidor.
 | `/app`      | cualquier cuenta      | Saldo, QR e historial del cliente |
 | `/escanear` | personal y máster     | Control de acceso en la puerta |
 | `/admin`    | solo máster           | Administración completa |
+| `/recordatorios` | quien tenga el enlace | Darse de baja de los recordatorios (enlace del correo) |
 
 ---
 
@@ -306,6 +311,9 @@ ofrece. Para desarrollar sin servidor de correo, `MAIL_TRANSPORT=consola`
 escribe los mensajes en la terminal; en producción está prohibido, porque el
 enlace da acceso a la cuenta.
 
+El mismo correo sirve para los avisos a clientes (ver más abajo), que además se
+encienden desde el panel.
+
 ---
 
 ## Operación diaria
@@ -359,7 +367,68 @@ pestañas:
 La línea de tiempo distingue lo que hizo el cliente de lo que hizo el personal,
 y cada movimiento muestra el saldo con el que quedó el pack. Un ajuste sin
 motivo no se puede guardar: la ficha es también el expediente que se consulta
-cuando alguien reclama.
+cuando alguien reclama. Los correos que recibió y los contactos por WhatsApp o
+teléfono también aparecen ahí.
+
+---
+
+## Avisos y clientes por recuperar
+
+Vender una entrada es la mitad del trabajo; la otra es que el cliente vuelva.
+**Administración → Avisos** junta las dos herramientas para eso.
+
+**Avisos automáticos por correo.** Vienen apagados: una instalación que se
+actualiza no empieza a escribir a sus clientes por sorpresa. Se encienden en
+*Configurar*, donde se elige qué se envía y se puede mandar una prueba al propio
+correo antes de nada.
+
+| Aviso | Cuándo sale |
+|---|---|
+| Comprobante de compra | Al vender un pack: código, entradas, importe, forma de pago y vencimiento |
+| Quedan pocas entradas | Tras usar una, cuando le quedan 2 o menos (ajustable), con los packs a la venta |
+| Sin entradas | Cuando usa la última |
+| Entradas por vencer | 7 días antes (ajustable) de que venza un pack con saldo |
+| Hace tiempo que no viene | Con entradas y 30 días (ajustable) sin venir |
+
+Lo que hace que se puedan dejar encendidos sin vigilarlos:
+
+- **Nunca un aviso equivocado.** Cada uno se vuelve a comprobar justo antes de
+  salir: si el cliente compró otro pack, le devolvieron una entrada o el pack se
+  anuló, se descarta y el historial dice por qué.
+- **Nunca dos veces lo mismo.** Cada aviso lleva una clave única en la base; ni
+  un reinicio ni dos ciclos a la vez lo duplican.
+- **Nunca de madrugada.** Los recordatorios esperan al horario de envío (de 9 a
+  20 por defecto, en la hora de la pista). El comprobante sale en el acto.
+- **Sin agobiar.** Como mucho un recordatorio cada 48 horas por persona, y si ya
+  se le recordó algo desde su última visita no se le escribe por inactividad.
+- **Encenderlos no escribe por el pasado.** Lo vendido y usado antes no genera
+  comprobantes ni avisos de saldo; los packs que ya están por vencer y los
+  clientes que ya no vienen sí reciben su recordatorio.
+- **Si el correo falla**, se reintenta a los 5 minutos, a los 30 y a las 2 horas;
+  después queda como fallido, a la vista, con un botón para reintentar.
+- **Darse de baja es fácil.** Cada recordatorio lleva un enlace a
+  `/recordatorios` y la cabecera de baja de un clic (RFC 8058) que Gmail y
+  Outlook muestran junto al remitente. La página no da de baja al abrirse —los
+  filtros de correo abren los enlaces— sino al pulsar, y se puede deshacer. El
+  cliente también lo cambia en **Mi cuenta** y el máster en la ficha. El
+  comprobante de compra no es publicidad y llega igual.
+
+**Clientes por recuperar.** Una lista de trabajo en cuatro grupos —por vencer,
+sin entradas, no vienen y quedan pocas—, cada cliente en el más urgente, con las
+entradas pagadas que hay en juego. Cada fila tiene **WhatsApp**, que abre la
+conversación con un mensaje ya escrito según el caso, y **Llamar**. Pulsarlos
+deja registrado quién contactó a quién: la persona baja al final de la lista
+durante una semana, para que nadie del mostrador le escriba lo mismo dos veces.
+La lista funciona **aunque no haya correo configurado**.
+
+El número de WhatsApp se arma con el prefijo del país que se elige en los
+ajustes (593 de fábrica): `0991112233` pasa a `593991112233`.
+
+El diseño completo está en
+`docs/superpowers/specs/2026-09-14-avisos-y-clientes-por-recuperar-design.md`.
+
+---
+
 ## El escáner sin conexión
 
 Si se cae Internet en la pista, el puesto no se detiene. El operador sigue
@@ -468,11 +537,12 @@ inservible. Una tarea diaria basta:
 
 ```bash
 npm run dev     # servidor con recarga automática
-npm test        # suite completa (256 pruebas)
+npm test        # suite completa (295 pruebas)
 npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
 npm run test:e2e:sin-conexion # el escáner durante un corte de red
+npm run test:e2e:avisos # avisos, clientes por recuperar y enlace de baja
 ```
 
 Las pruebas corren sobre una base en memoria y cubren todas las rutas de la API:
@@ -480,7 +550,8 @@ autenticación y rotación de sesiones, desbloqueo y restablecimiento de
 contraseñas, emisión y ajuste de packs, las tres barreras contra el doble
 descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo,
 leyendo lo que llega y reanudándolo tras una caída), la búsqueda sin tildes, el
-camino de actualización del esquema, el expediente del cliente, control de
+camino de actualización del esquema, el expediente del cliente, la cola de
+avisos (duplicados, horario, reintentos, revalidación y baja), control de
 acceso por rol y las cabeceras de seguridad. `npm ci && npm test` se ejecuta
 también en cada empujón desde `.github/workflows/`.
 
@@ -496,8 +567,9 @@ formateo del código al teclearlo, actividad en vivo, un corte de red a mitad de
 un cobro y el pase impreso); `camara.mjs` le da a Chromium un vídeo con un QR y
 comprueba que el escáner lo lee y descuenta la entrada, con el lector nativo y
 con el respaldo jsQR; `sin-conexion.mjs` corta la red en mitad del turno,
-recarga la página sin señal y comprueba que todo se cobra al volver; y
-`flujo-completo.mjs` recorre el sistema ya instalado
+recarga la página sin señal y comprueba que todo se cobra al volver;
+`avisos.mjs` recorre los clientes por recuperar, el encendido de los avisos y la
+página de baja; y `flujo-completo.mjs` recorre el sistema ya instalado
 contra un servidor de verdad. El README de esa carpeta explica cómo ejecutarlas.
 
 ### Estructura
@@ -512,10 +584,10 @@ src/
   lib/                 QR, contraseñas, tokens, límites, eventos en vivo,
                        texto, días del calendario y pases de cartera
   middleware/          Seguridad, autenticación, manejo de errores
-  routes/              auth · packs · scan · admin · events · wallet
+  routes/              auth · packs · scan · admin · events · wallet · notifications
   services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
                        expediente del cliente, auditoría, cifras del panel,
-                       pases de cartera y lecturas sin conexión)
+                       pases de cartera, lecturas sin conexión y avisos a clientes)
 assets/                Iconos del pase de cartera
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas

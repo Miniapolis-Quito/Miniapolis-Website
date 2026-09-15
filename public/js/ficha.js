@@ -12,8 +12,9 @@ import {
 } from './ui.js';
 import { api } from './api.js';
 import { botonesDePack, anularConsumo } from './acciones.js';
+import { NOMBRES_DE_AVISO } from './avisos.js';
 
-const ROLES = { customer: 'Cliente', staff: 'Personal de pista', master: 'Máster' };
+const ROLES ={ customer: 'Cliente', staff: 'Personal de pista', master: 'Máster' };
 
 const RAZONES_MOVIMIENTO = {
   issue: 'Pack emitido',
@@ -43,6 +44,30 @@ const ACCIONES_CUENTA = {
   'escaneo.rechazado': 'Código rechazado en la puerta',
   'escaneo_sin_conexion.rechazado': 'Entró durante un corte de red y su entrada no se pudo cobrar',
   'escaneo_sin_conexion.resuelto': 'Entrada sin cobrar marcada como resuelta',
+  'recordatorios.activados': 'Recordatorios por correo activados',
+  'recordatorios.desactivados': 'Recordatorios por correo desactivados',
+};
+
+/** Desde dónde se cambiaron los recordatorios. */
+const VIAS_RECORDATORIOS = {
+  enlace: 'con el enlace del correo',
+  cuenta: 'desde su cuenta',
+  administracion: 'desde administración',
+};
+
+const CORREOS_RECIBIDOS = {
+  purchase: 'Recibió el comprobante de compra',
+  low_balance: 'Recibió el aviso de que le quedan pocas entradas',
+  depleted: 'Recibió el aviso de que se quedó sin entradas',
+  expiring: 'Recibió el aviso de entradas por vencer',
+  inactive: 'Recibió un recordatorio por no venir',
+};
+
+const MOTIVOS_DE_CONTACTO = {
+  low_balance: 'le quedaban pocas entradas',
+  depleted: 'se había quedado sin entradas',
+  expiring: 'tenía entradas por vencer',
+  inactive: 'llevaba tiempo sin venir',
 };
 
 /** Estado de la ficha abierta. */
@@ -161,6 +186,9 @@ function cabecera(user, esUnoMismo) {
         { class: 'ficha__contacto' },
         el('a', { href: `mailto:${user.email}` }, user.email),
         user.phone ? el('a', { href: `tel:${user.phone}` }, telefono(user.phone)) : null,
+        estado.datos.whatsappUrl
+          ? el('a', { href: estado.datos.whatsappUrl, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp')
+          : null,
       ),
       el(
         'div',
@@ -709,8 +737,44 @@ function panelActividad() {
   );
 }
 
-/** Una entrada de la línea de tiempo, ya sea un movimiento o un evento de cuenta. */
+/** Un correo que se le envió, o un contacto que alguien del mostrador registró. */
+function filaAviso(evento) {
+  const { channel, status, reason } = evento.metadata ?? {};
+  const fallido = status === 'failed';
+  const nombre = NOMBRES_DE_AVISO[evento.clave] || evento.clave;
+
+  let titulo;
+  if (fallido) titulo = `No se pudo enviar el correo: ${nombre.toLowerCase()}`;
+  else if (channel === 'email') titulo = CORREOS_RECIBIDOS[evento.clave] || nombre;
+  else titulo = channel === 'whatsapp' ? 'Contactado por WhatsApp' : 'Contactado por teléfono';
+
+  const detalles = [];
+  if (channel !== 'email' && MOTIVOS_DE_CONTACTO[evento.clave]) detalles.push(`Porque ${MOTIVOS_DE_CONTACTO[evento.clave]}`);
+  if (evento.packCode) detalles.push(evento.packCode);
+  if (evento.actorName) detalles.push(`por ${evento.actorName}`);
+
+  return el(
+    'li',
+    { class: 'tiempo__item' },
+    el(
+      'div',
+      { class: `tiempo__icono ${fallido ? 'tiempo__icono--aviso' : ''}` },
+      channel === 'email' ? '✉️' : channel === 'whatsapp' ? '💬' : '📞',
+    ),
+    el(
+      'div',
+      { class: 'tiempo__cuerpo' },
+      el('div', { class: 'tiempo__titulo' }, titulo),
+      detalles.length ? el('div', { class: 'tiempo__detalle' }, detalles.join(' · ')) : null,
+      fallido && reason ? el('div', { class: 'tiempo__detalle' }, reason) : null,
+      el('div', { class: 'tiempo__meta', title: fecha(evento.createdAt) }, relativo(evento.createdAt)),
+    ),
+  );
+}
+
+/** Una entrada de la línea de tiempo: un movimiento, un evento de cuenta o un aviso. */
 function filaTiempo(evento, { ocultarPack = false } = {}) {
+  if (evento.tipo === 'aviso') return filaAviso(evento);
   const esMovimiento = evento.tipo === 'movimiento';
 
   const iconos = {
@@ -726,6 +790,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     'usuario.desbloqueado': '🔓', 'usuario.sesiones_revocadas': '🚪',
     'escaneo.rechazado': '⛔',
     'escaneo_sin_conexion.rechazado': '⛔', 'escaneo_sin_conexion.resuelto': '✅',
+    'recordatorios.activados': '🔔', 'recordatorios.desactivados': '🔕',
   };
 
   const titulo = esMovimiento
@@ -752,6 +817,9 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     // Una entrada sin cobrar dice de qué pack era y por qué no se cobró; su
     // resolución, qué se hizo. Es lo que se busca cuando alguien pregunta.
     if (evento.metadata?.packCode && evento.clave.startsWith('escaneo_sin_conexion.')) detalles.push(evento.metadata.packCode);
+    if (evento.clave.startsWith('recordatorios.') && VIAS_RECORDATORIOS[evento.metadata?.via]) {
+      detalles.push(VIAS_RECORDATORIOS[evento.metadata.via]);
+    }
     if (evento.actorName && !evento.porElCliente) detalles.push(`por ${evento.actorName}`);
     if (evento.ip) detalles.push(evento.ip);
   }
@@ -989,6 +1057,8 @@ function panelDatos() {
         if ((datos.phone || '') !== (user.phone || '')) cambios.phone = datos.phone || '';
         if (datos.role !== user.role) cambios.role = datos.role;
         if (datos.status !== user.status) cambios.status = datos.status;
+        const recordatorios = form.querySelector('[name="emailReminders"]').checked;
+        if (recordatorios !== user.emailReminders) cambios.emailReminders = recordatorios;
 
         if (Object.keys(cambios).length === 0) {
           mostrarAviso(aviso, 'No hay cambios que guardar.', 'alerta');
@@ -1082,6 +1152,23 @@ function panelDatos() {
           esUnoMismo ? 'No puedes suspender tu propia cuenta.' : 'Una cuenta suspendida no puede entrar ni usar sus entradas.',
         ),
         el('div', { class: 'campo__error' }),
+      ),
+      el(
+        'div',
+        { class: 'campo' },
+        el('span', { class: 'campo__etiqueta' }, 'Recordatorios'),
+        el(
+          'div',
+          { class: 'campo--linea' },
+          el('input', { id: 'ficha-recordatorios', name: 'emailReminders', type: 'checkbox', checked: user.emailReminders }),
+          el('label', { for: 'ficha-recordatorios' }, 'Recibe recordatorios por correo'),
+        ),
+        el(
+          'div',
+          { class: 'campo__ayuda' },
+          (user.emailRemindersChangedAt ? `Cambiado el ${fecha(user.emailRemindersChangedAt)}. ` : '') +
+            'El comprobante de compra le llega siempre.',
+        ),
       ),
     ),
     aviso,

@@ -15,6 +15,8 @@ const estado = {
   segundosParaRenovar: 0,
   cargandoQr: false,
   carteras: { apple: false, google: false },
+  /** Si la pista manda recordatorios por correo; si no, no hay nada que elegir. */
+  recordatorios: false,
 };
 
 let cabecera;
@@ -416,9 +418,33 @@ function montarCuenta() {
   $('#btn-cuenta').addEventListener('click', () => {
     $('#perfil-nombre').value = getUsuario()?.fullName ?? '';
     $('#perfil-telefono').value = getUsuario()?.phone ?? '';
+    $('#seccion-recordatorios').hidden = !estado.recordatorios;
+    $('#perfil-recordatorios').checked = getUsuario()?.emailReminders !== false;
     mostrarAviso($('#aviso-perfil'), '');
     mostrarAviso($('#aviso-password'), '');
+    mostrarAviso($('#aviso-recordatorios'), '');
     dialogo.showModal();
+  });
+
+  $('#perfil-recordatorios').addEventListener('change', async (evento) => {
+    const casilla = evento.currentTarget;
+    const activar = casilla.checked;
+    casilla.disabled = true;
+    mostrarAviso($('#aviso-recordatorios'), '');
+    try {
+      const datos = await api.patch('/api/auth/me', { emailReminders: activar });
+      Object.assign(getUsuario() ?? {}, datos.user);
+      mostrarAviso(
+        $('#aviso-recordatorios'),
+        activar ? 'Listo: te avisaremos por correo.' : 'Listo: ya no te enviaremos recordatorios.',
+        'ok',
+      );
+    } catch (error) {
+      casilla.checked = !activar;
+      mostrarAviso($('#aviso-recordatorios'), error.message, 'error');
+    } finally {
+      casilla.disabled = false;
+    }
   });
   $('#btn-cerrar-cuenta').addEventListener('click', () => dialogo.close());
 
@@ -428,7 +454,9 @@ function montarCuenta() {
     mostrarErroresCampo(formulario, {});
     await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
       try {
-        await api.patch('/api/auth/me', datosFormulario(formulario));
+        const datos = await api.patch('/api/auth/me', datosFormulario(formulario));
+        // Sin esto, al volver a abrir «Mi cuenta» aparecían los datos de antes.
+        Object.assign(getUsuario() ?? {}, datos.user);
         mostrarAviso($('#aviso-perfil'), 'Datos guardados.', 'ok');
         brindis('Datos actualizados.', 'ok');
       } catch (error) {
@@ -491,6 +519,7 @@ function montarCuenta() {
     const configuracion = await fetch('/api/config').then((r) => r.json());
     aplicarMarca(configuracion);
     estado.carteras = configuracion.wallet ?? estado.carteras;
+    estado.recordatorios = Boolean(configuracion.emailReminders);
   } catch {
     /* opcional */
   }

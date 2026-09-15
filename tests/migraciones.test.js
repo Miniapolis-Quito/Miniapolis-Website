@@ -97,8 +97,8 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
     .all()
     .map((r) => r.name);
   assert.deepEqual(tablas, [
-    'audit_log', 'idempotency_keys', 'pack_movements', 'packs', 'password_resets',
-    'rate_limits', 'redemptions', 'sessions', 'used_nonces', 'users',
+    'audit_log', 'idempotency_keys', 'notifications', 'pack_movements', 'packs', 'password_resets',
+    'rate_limits', 'redemptions', 'sessions', 'settings', 'used_nonces', 'users',
     'wallet_devices', 'wallet_passes',
   ]);
 
@@ -108,7 +108,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   const indices = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((r) => r.name);
   for (const necesario of [
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
-    'idx_password_resets_expiry',
+    'idx_password_resets_expiry', 'idx_notifications_queue',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }
@@ -209,6 +209,33 @@ test('el esquema impide guardar un pack con saldo imposible', () => {
   assert.throws(() => insertarPack(-1, 5), /CHECK/, 'un saldo negativo debe rechazarse');
   assert.throws(() => insertarPack(6, 5), /CHECK/, 'no puede quedar más saldo que el tamaño del pack');
   assert.doesNotThrow(() => insertarPack(5, 5));
+
+  db.close();
+});
+
+test('los avisos llegan a una base con clientes, que quedan con los recordatorios activados', () => {
+  const indice = migrations.findIndex((m) => m.name === '008-avisos-a-clientes');
+  const db = baseEn(indice);
+  const ahora = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, role, password_hash, password_changed_at, created_at, updated_at)
+     VALUES ('u1', 'a@b.ec', 'a@b.ec', 'Cliente de antes', 'customer', 'x', ?, ?, ?)`,
+  ).run(ahora, ahora, ahora);
+
+  migrations[indice].up(db);
+
+  const usuario = db.prepare('SELECT full_name, email_reminders, email_reminders_changed_at FROM users').get();
+  assert.deepEqual({ ...usuario }, { full_name: 'Cliente de antes', email_reminders: 1, email_reminders_changed_at: null });
+
+  const insertarAviso = (id, clave) =>
+    db.prepare(
+      `INSERT INTO notifications (id, user_id, kind, channel, dedupe_key, status, created_at, updated_at)
+       VALUES (?, 'u1', 'inactive', 'email', ?, 'pending', ?, ?)`,
+    ).run(id, clave, ahora, ahora);
+  insertarAviso('n1', 'inactive:u1:x');
+  assert.throws(() => insertarAviso('n2', 'inactive:u1:x'), /UNIQUE/, 'la clave impide duplicar un aviso');
+  assert.doesNotThrow(() => insertarAviso('n3', null), 'los contactos a mano no llevan clave');
+  assert.throws(() => db.prepare("UPDATE users SET email_reminders = 2").run(), /CHECK/);
 
   db.close();
 });
