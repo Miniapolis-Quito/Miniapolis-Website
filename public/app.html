@@ -107,6 +107,18 @@
         <button class="boton boton--principal" type="submit">Guardar datos</button>
       </form>
 
+      <!-- Solo aparece si la pista manda recordatorios por correo. -->
+      <div id="seccion-recordatorios" hidden>
+        <hr class="separador">
+        <h3>Recordatorios</h3>
+        <div class="campo campo--linea">
+          <input type="checkbox" id="perfil-recordatorios">
+          <label for="perfil-recordatorios">Avisarme por correo cuando me queden pocas entradas, se me acaben o estén por vencer</label>
+        </div>
+        <p class="tenue-2 pequeno sin-margen">El comprobante de cada compra te llega siempre.</p>
+        <div id="aviso-recordatorios" class="aviso mt" role="status" hidden></div>
+      </div>
+
       <hr class="separador">
 
       <h3>Cambiar contraseña</h3>

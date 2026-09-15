@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Recordatorios por correo · Racing Hobbies Ecuador</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="contenedor contenedor--angosto pt-pagina">
+    <div class="centrado mb-3">
+      <div class="brand-lockup brand-lockup--entrada" aria-hidden="true">
+        <img class="brand-lockup__logo" src="/images/racing-hobbies-logo-oficial.png" width="1600" height="434" alt="">
+      </div>
+      <h1 data-marca>Racing Hobbies Ecuador</h1>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Recordatorios por correo</h2>
+
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <div id="comprobando" class="vacio">
+        <div class="cargando cargando--grande"></div>
+        <p class="mt">Comprobando el enlace…</p>
+      </div>
+
+      <div id="preferencia" hidden>
+        <p class="sin-margen" id="estado-recordatorios"></p>
+        <p class="tenue pequeno">
+          Te escribimos cuando te quedan pocas entradas, cuando se te acaban, cuando un pack está por vencer o si hace
+          tiempo que no vienes. Nunca más de un recordatorio cada dos días.
+        </p>
+        <button class="boton boton--peligro boton--bloque boton--grande" id="btn-baja" type="button" hidden>
+          No quiero recibir recordatorios
+        </button>
+        <button class="boton boton--principal boton--bloque boton--grande" id="btn-alta" type="button" hidden>
+          Volver a recibir recordatorios
+        </button>
+        <p class="tenue-2 pequeno mt sin-margen">
+          Los comprobantes de tus compras te seguirán llegando: no son recordatorios.
+        </p>
+      </div>
+
+      <div id="acciones-final" class="mt" hidden>
+        <a class="boton boton--fantasma boton--bloque" href="/">Ir a mis entradas</a>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/recordatorios.js"></script>
+</body>
+</html>

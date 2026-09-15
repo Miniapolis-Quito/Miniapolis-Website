@@ -27,6 +27,9 @@ export function toPublicUser(row) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     locked: Boolean(row.locked_until && row.locked_until > new Date().toISOString()),
+    /** Si recibe recordatorios por correo. Los comprobantes de compra llegan igual. */
+    emailReminders: row.email_reminders === undefined ? undefined : Boolean(row.email_reminders),
+    emailRemindersChangedAt: row.email_reminders_changed_at ?? null,
   };
 }
 

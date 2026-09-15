@@ -14,8 +14,10 @@ import scanRoutes from './routes/scan.js';
 import adminRoutes from './routes/admin.js';
 import eventRoutes from './routes/events.js';
 import walletRoutes from './routes/wallet.js';
+import notificationRoutes from './routes/notifications.js';
 import * as wallet from './services/wallet.js';
 import * as recuperacion from './services/recuperacion.js';
+import * as avisos from './services/avisos.js';
 
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
@@ -109,6 +111,9 @@ export function createApp() {
       // La página de acceso solo ofrece «¿Olvidaste tu contraseña?» si hay
       // correo con que mandar el enlace.
       passwordRecovery: recuperacion.disponible(),
+      // «Mi cuenta» solo ofrece el interruptor de recordatorios si la pista
+      // los manda de verdad.
+      emailReminders: avisos.recordatoriosDisponibles(),
     });
   });
 
@@ -118,6 +123,7 @@ export function createApp() {
   app.use('/api/admin', adminRoutes);
   app.use('/api/events', eventRoutes);
   app.use('/api/wallet', walletRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
   app.use('/api', notFoundHandler);
 
@@ -162,6 +168,12 @@ export function createApp() {
   app.get('/restablecer', (req, res) => {
     res.set('Referrer-Policy', 'no-referrer');
     page('restablecer.html')(req, res);
+  });
+  // El enlace de baja de los recordatorios, con el mismo cuidado: su token va
+  // en el fragmento y la página tampoco manda Referer.
+  app.get('/recordatorios', (req, res) => {
+    res.set('Referrer-Policy', 'no-referrer');
+    page('recordatorios.html')(req, res);
   });
 
   app.use((req, res) => {

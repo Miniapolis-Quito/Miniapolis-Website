@@ -8,6 +8,7 @@ import { ensureMasterAccount } from './bootstrap.js';
 import { purgeExpired } from './services/sessions.js';
 import { expireDuePacks } from './services/packs.js';
 import { purgar as purgarRecuperaciones } from './services/recuperacion.js';
+import * as avisos from './services/avisos.js';
 
 const app = createApp();
 await ensureMasterAccount();
@@ -31,8 +32,14 @@ const maintenance = setInterval(
       const expired = expireDuePacks();
       const purged = purgeExpired();
       const enlaces = purgarRecuperaciones();
-      if (expired || purged || enlaces) {
-        logger.info('Mantenimiento', { packsVencidos: expired, sesionesPurgadas: purged, enlacesPurgados: enlaces });
+      const descartados = avisos.purgar();
+      if (expired || purged || enlaces || descartados) {
+        logger.info('Mantenimiento', {
+          packsVencidos: expired,
+          sesionesPurgadas: purged,
+          enlacesPurgados: enlaces,
+          avisosDescartadosPurgados: descartados,
+        });
       }
     } catch (error) {
       logger.error('Fallo en la tarea de mantenimiento', { message: error.message });
@@ -41,6 +48,9 @@ const maintenance = setInterval(
   10 * 60 * 1000,
 );
 maintenance.unref();
+
+/** Comprobantes y recordatorios a clientes. No envían nada hasta que el máster los activa. */
+const detenerAvisos = avisos.iniciar();
 
 server.listen(config.port, config.host, () => {
   const address = server.address();
@@ -62,6 +72,7 @@ function shutdown(signal, codigo = 0) {
   shuttingDown = true;
   logger.info(`Señal ${signal} recibida; cerrando ordenadamente.`);
   clearInterval(maintenance);
+  detenerAvisos();
 
   server.close(() => {
     closeDb();

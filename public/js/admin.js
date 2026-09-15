@@ -8,6 +8,7 @@ import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca } from './shell.js';
 import { abrirFicha, cerrarFicha } from './ficha.js';
 import { botonesDePack, anularConsumo } from './acciones.js';
+import { cargarAvisos, montarAvisos } from './avisos.js';
 
 const estado = {
   configuracion: null,
@@ -49,6 +50,7 @@ const CARGADORES = {
   clientes: cargarUsuarios,
   packs: cargarPacks,
   consumos: cargarConsumos,
+  avisos: cargarAvisos,
   auditoria: cargarAuditoria,
 };
 
@@ -70,6 +72,9 @@ function aplicarRuta() {
   const encabezado = $('#encabezado-admin');
 
   if (ruta.vista === 'ficha') {
+    // Una ficha también se abre desde un enlace dentro de un panel (avisos,
+    // entradas sin cobrar): al cerrarla se vuelve a ese panel.
+    if (!estado.mostrandoFicha) estado.panelPrevio = estado.panel;
     estado.mostrandoFicha = true;
     encabezado.hidden = true;
     pestanas.hidden = true;
@@ -108,7 +113,9 @@ function aplicarRuta() {
 
 function abrirPanel(nombre) {
   estado.panel = nombre;
-  for (const pestana of $$('.pestana')) {
+  // Solo las pestañas principales: dentro de los paneles hay otras (los grupos
+  // de avisos) que no son paneles.
+  for (const pestana of $$('#pestanas-admin .pestana')) {
     pestana.setAttribute('aria-selected', String(pestana.dataset.panel === nombre));
   }
   for (const panel of $$('[id^="panel-"]')) {
@@ -952,7 +959,7 @@ function montarDialogoPack() {
     /* opcional */
   }
 
-  for (const pestana of $$('.pestana')) {
+  for (const pestana of $$('#pestanas-admin .pestana')) {
     pestana.addEventListener('click', () => abrirPanel(pestana.dataset.panel));
   }
   for (const boton of $$('[data-cerrar]')) {
@@ -961,6 +968,7 @@ function montarDialogoPack() {
 
   montarDialogoUsuario();
   montarDialogoPack();
+  montarAvisos();
 
   const buscarUsuarios = temporizador(() => cargarUsuarios().catch(() => {}), 280);
   $('#buscar-usuarios').addEventListener('input', buscarUsuarios);

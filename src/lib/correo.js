@@ -1,7 +1,8 @@
 /**
  * Envío de correo.
  *
- * Hoy lo usan la recuperación de contraseña y los avisos de cambio. Sin
+ * Lo usan la recuperación de contraseña, los avisos de cambio y los avisos a
+ * clientes (comprobantes y recordatorios). Sin
  * configuración, el envío queda apagado y quien llama lo sabe por
  * `correoDisponible()`; nunca se inventa un servidor por defecto.
  *
@@ -19,6 +20,13 @@ import { config } from '../config.js';
 
 let transporte = null;
 const buzon = [];
+
+/**
+ * Las únicas cabeceras extra que un mensaje puede llevar: las de la baja de un
+ * clic (RFC 8058) de los recordatorios. Una lista cerrada impide que algún día
+ * se cuele por aquí un `Bcc` o un `Reply-To` construido con datos de fuera.
+ */
+const CABECERAS_PERMITIDAS = new Set(['List-Unsubscribe', 'List-Unsubscribe-Post']);
 
 /** Un salto de línea en una cabecera permitiría añadir cabeceras propias. */
 const CARACTERES_DE_CONTROL = /[\r\n\u0000]/;
@@ -51,9 +59,9 @@ export function correoDisponible() {
 
 /**
  * Envía un mensaje de texto con su versión HTML.
- * @param {{para: string, asunto: string, texto: string, html?: string}} mensaje
+ * @param {{para: string, asunto: string, texto: string, html?: string, cabeceras?: Record<string, string>}} mensaje
  */
-export async function enviarCorreo({ para, asunto, texto, html }) {
+export async function enviarCorreo({ para, asunto, texto, html, cabeceras }) {
   if (!config.correo.enabled) throw new Error('El envío de correo no está configurado.');
   // Una coma o un punto y coma convertirían un solo destinatario en varios, y
   // los ángulos permitirían colar otra dirección detrás de un nombre.
@@ -63,9 +71,14 @@ export async function enviarCorreo({ para, asunto, texto, html }) {
   if (typeof asunto !== 'string' || CARACTERES_DE_CONTROL.test(asunto)) {
     throw new Error('El asunto del correo no es válido.');
   }
+  for (const [nombre, valor] of Object.entries(cabeceras ?? {})) {
+    if (!CABECERAS_PERMITIDAS.has(nombre) || typeof valor !== 'string' || CARACTERES_DE_CONTROL.test(valor)) {
+      throw new Error(`La cabecera de correo «${nombre}» no está permitida.`);
+    }
+  }
 
   if (config.correo.modo === 'memoria') {
-    buzon.push({ para, asunto, texto, html, enviadoEn: new Date().toISOString() });
+    buzon.push({ para, asunto, texto, html, cabeceras: cabeceras ?? {}, enviadoEn: new Date().toISOString() });
     return;
   }
   if (config.correo.modo === 'consola') {
@@ -79,6 +92,7 @@ export async function enviarCorreo({ para, asunto, texto, html }) {
     subject: asunto,
     text: texto,
     html,
+    headers: cabeceras,
     disableFileAccess: true,
     disableUrlAccess: true,
   });

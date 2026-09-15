@@ -20,6 +20,7 @@ import { badRequest } from '../lib/errors.js';
 import { consume, reset as resetRateLimit } from '../lib/rateLimit.js';
 import { hashPassword, verifyPassword, validatePasswordStrength } from '../lib/passwords.js';
 import { enviarCorreo } from '../lib/correo.js';
+import { escaparHtml, momento, saludo, envolverHtml, boton } from '../lib/plantillaCorreo.js';
 import * as users from './users.js';
 import * as audit from './audit.js';
 import { notificarSesionInvalida } from './sessions.js';
@@ -84,36 +85,6 @@ export async function esperarTareas() {
 // Correos
 // ---------------------------------------------------------------------------
 
-function escaparHtml(texto) {
-  return String(texto ?? '').replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  );
-}
-
-function momento(instante) {
-  return new Date(instante).toLocaleString('es-EC', {
-    timeZone: config.timezone,
-    dateStyle: 'long',
-    timeStyle: 'short',
-  });
-}
-
-function saludo(usuario) {
-  const nombre = String(usuario.full_name ?? '').trim().split(/\s+/)[0];
-  return nombre ? `Hola, ${nombre}:` : 'Hola:';
-}
-
-function envolverHtml(parrafos) {
-  const cuerpo = parrafos.map((p) => `<p style="margin:0 0 16px">${p}</p>`).join('\n');
-  return (
-    '<!doctype html><html lang="es"><body style="margin:0;padding:24px;background:#f6f6f2;' +
-    'font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#111">' +
-    `<div style="max-width:560px;margin:0 auto;background:#fff;padding:24px;border-radius:8px">${cuerpo}</div>` +
-    '</body></html>'
-  );
-}
-
 export function correoDeRecuperacion(usuario, token, { ip = null, instante = Date.now() } = {}) {
   const enlace = `${config.publicUrl}/restablecer#token=${token}`;
   const minutos = Math.round(config.passwordReset.ttlSeconds / 60);
@@ -136,8 +107,7 @@ export function correoDeRecuperacion(usuario, token, { ip = null, instante = Dat
   const html = envolverHtml([
     escaparHtml(saludo(usuario)),
     `Alguien pidió restablecer la contraseña de tu cuenta de ${escaparHtml(config.brandName)}. Si fuiste tú, usa este botón para elegir una nueva:`,
-    `<a href="${escaparHtml(enlace)}" style="display:inline-block;background:#000;color:#3cfe3f;padding:12px 20px;` +
-      'border-radius:6px;text-decoration:none;font-weight:bold">Elegir una contraseña nueva</a>',
+    boton(enlace, 'Elegir una contraseña nueva'),
     `Si el botón no funciona, copia esta dirección en tu navegador:<br><span style="word-break:break-all">${escaparHtml(enlace)}</span>`,
     `El enlace vale ${minutos} minutos y sirve una sola vez.`,
     'Si no lo pediste, ignora este correo: tu contraseña sigue siendo la misma y nadie puede cambiarla sin este enlace.',

@@ -118,6 +118,7 @@ export const updateProfileSchema = z
   .object({
     fullName: nameSchema.optional(),
     phone: phoneSchema.nullish().or(z.literal('').transform(() => null)),
+    emailReminders: z.boolean().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, 'No hay cambios que aplicar.');
 
@@ -136,6 +137,7 @@ export const updateUserSchema = z
     role: roleSchema.optional(),
     status: z.enum(['active', 'suspended']).optional(),
     email: emailSchema.optional(),
+    emailReminders: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'No hay cambios que aplicar.');
 
@@ -201,6 +203,44 @@ export const resolveOfflineRejectionSchema = z.object({
   note: trimmed(300).min(3, 'Explica cómo se resolvió.'),
 });
 
+// ---------------------------------------------------------------------------
+// Avisos a clientes
+// ---------------------------------------------------------------------------
+
+const TIPOS_DE_AVISO = ['purchase', 'low_balance', 'depleted', 'expiring', 'inactive'];
+const TIPOS_DE_RECORDATORIO = ['low_balance', 'depleted', 'expiring', 'inactive'];
+
+const entero = (minimo, maximo, mensaje) =>
+  z.number({ message: mensaje }).int(mensaje).min(minimo, mensaje).max(maximo, mensaje);
+
+export const notificationSettingsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    kinds: z.object(Object.fromEntries(TIPOS_DE_AVISO.map((tipo) => [tipo, z.boolean().optional()]))).strict().optional(),
+    lowBalanceThreshold: entero(1, 10, 'Indica entre 1 y 10 entradas.').optional(),
+    daysBeforeExpiry: entero(1, 60, 'Indica entre 1 y 60 días.').optional(),
+    inactiveDays: entero(7, 365, 'Indica entre 7 y 365 días.').optional(),
+    sendFromHour: entero(0, 23, 'Elige una hora entre 0 y 23.').optional(),
+    sendUntilHour: entero(1, 24, 'Elige una hora entre 1 y 24.').optional(),
+    whatsappCountryCode: z
+      .string()
+      .trim()
+      .regex(/^\d{1,4}$/, 'Escribe el prefijo del país con 1 a 4 dígitos y sin el signo +, por ejemplo 593.')
+      .optional(),
+  })
+  .strict()
+  .refine((v) => Object.values(v).some((x) => x !== undefined), 'No hay cambios que aplicar.');
+
+export const notificationContactSchema = z.object({
+  userId: z.string().uuid('El cliente no es válido.'),
+  channel: z.enum(['whatsapp', 'phone']),
+  kind: z.enum(TIPOS_DE_RECORDATORIO),
+});
+
+export const notificationTestSchema = z.object({
+  kind: z.enum(TIPOS_DE_AVISO).default('low_balance'),
+});
+
 export const voidRedemptionSchema = z.object({
   reason: trimmed(300).min(3, 'Explica el motivo de la anulación.'),
 });
@@ -208,6 +248,12 @@ export const voidRedemptionSchema = z.object({
 export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
+});
+
+/** Historial de avisos: la paginación de siempre y, si se pide, un estado. */
+export const notificationListSchema = paginationSchema.extend({
+  status: z.enum(['pending', 'sending', 'sent', 'failed', 'discarded', 'logged']).optional(),
+  userId: z.string().uuid('El cliente no es válido.').optional(),
 });
 
 /**

@@ -56,6 +56,11 @@ export function diaLocal(instante, zona) {
   return `${String(p.year).padStart(4, '0')}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
 }
 
+/** Hora del reloj de pared (0 a 23) de ese instante en la zona. */
+export function horaLocal(instante, zona) {
+  return partes(instante, zona).hour;
+}
+
 /**
  * Instante exacto en que empieza ese día del calendario en la zona.
  * @param {string} dia formato "AAAA-MM-DD"

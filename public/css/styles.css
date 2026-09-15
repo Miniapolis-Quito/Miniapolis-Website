@@ -818,3 +818,48 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+/* --------------------------------------------------------------------------
+   Avisos a clientes y clientes por recuperar
+   -------------------------------------------------------------------------- */
+
+/* Grupos de clientes: pestañas dentro de la tarjeta, con su recuento. */
+.pestanas--grupos { margin-bottom: 12px; }
+.pestana__cuenta {
+  display: inline-block; min-width: 1.7em; margin-left: 7px; padding: 1px 6px;
+  border: 1px solid var(--borde-fuerte); border-radius: 999px;
+  font-size: .74rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--texto-2);
+}
+.pestana[aria-selected="true"] .pestana__cuenta { border-color: rgba(61,254,64,.55); color: var(--acento-2); }
+
+.recuperar { align-items: flex-start; }
+.recuperar__nombre { font-weight: 700; color: var(--texto); text-decoration: none; }
+.recuperar__nombre:hover { color: var(--acento-2); text-decoration: underline; }
+.recuperar__contacto { margin-top: 3px; color: var(--ok); }
+.recuperar__acciones { flex: none; justify-content: flex-end; }
+/* Quien ya fue contactado hace poco sigue a la vista, pero no llama la atención. */
+.recuperar--contactado { opacity: .62; }
+.recuperar--contactado .recuperar__contacto { color: var(--texto-2); }
+
+/* Ajustes de los avisos */
+.dialogo-ancho { width: min(720px, calc(100vw - 26px)); }
+/* Tres campos cortos por fila; en un teléfono, uno debajo de otro. */
+.rejilla--ajustes { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 14px; }
+.ajustes-grupo { display: grid; gap: 8px; margin: 6px 0 18px; }
+.ajustes-grupo legend { margin-bottom: 8px; font-size: .87rem; font-weight: 600; color: var(--texto-2); }
+.opcion-aviso {
+  display: grid; grid-template-columns: 20px 1fr; gap: 11px; align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--borde); border-radius: var(--radio-s); background: var(--fondo-2);
+}
+.opcion-aviso input { margin-top: 1px; }
+.opcion-aviso label { display: grid; gap: 2px; cursor: pointer; }
+.opcion-aviso__nombre { font-weight: 650; }
+
+/* Título de un campo que no es una etiqueta de formulario (un grupo con casilla). */
+.campo__etiqueta { font-size: .87rem; font-weight: 600; color: var(--texto-2); }
+
+@media (max-width: 480px) {
+  .recuperar__acciones { width: 100%; }
+  .recuperar__acciones .boton { flex: 1 1 auto; }
+}

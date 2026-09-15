@@ -13,6 +13,7 @@ import * as users from './users.js';
 import * as packsService from './packs.js';
 import * as redemptions from './redemptions.js';
 import * as sessions from './sessions.js';
+import * as avisos from './avisos.js';
 
 /** Acciones que ya aparecen como movimiento contable; no se repiten en la línea de tiempo. */
 const ACCIONES_DUPLICADAS = [
@@ -93,7 +94,16 @@ export function lineaDeTiempo(userId, { limit = 60, offset = 0 } = {}) {
            a.metadata, a.ip
       FROM audit_log a
      WHERE (a.actor_id = @userId OR (a.entity_type = 'user' AND a.entity_id = @userId))
-       AND a.action NOT IN (${marcadores})`;
+       AND a.action NOT IN (${marcadores})
+    UNION ALL
+    -- Lo que se le envió o se le escribió. Lo pendiente y lo descartado no es
+    -- algo que le haya pasado a la persona, así que no entra en su historia.
+    SELECT 'aviso', n.id, COALESCE(n.sent_at, n.updated_at), n.kind,
+           NULL, NULL, p.code,
+           NULL, n.actor_id, NULL,
+           json_object('channel', n.channel, 'status', n.status, 'reason', n.reason), NULL
+      FROM notifications n LEFT JOIN packs p ON p.id = n.pack_id
+     WHERE n.user_id = @userId AND n.status IN ('sent', 'logged', 'failed')`;
 
   const filas = db
     .prepare(
@@ -233,6 +243,8 @@ export function expediente(userId) {
     timeline: lineaDeTiempo(userId, { limit: 40 }),
     audit: auditoria(userId, { limit: 30 }),
     sessions: sessions.listForUser(userId).map((fila) => sessions.toPublicSession(fila)),
+    // Para escribirle por WhatsApp desde la cabecera de la ficha.
+    whatsappUrl: avisos.enlaceDeWhatsapp(usuario.phone, avisos.leerAjustes().whatsappCountryCode),
     currency: config.currency,
   };
 }

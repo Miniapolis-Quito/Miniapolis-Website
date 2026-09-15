@@ -42,6 +42,11 @@ pocos segundos. El pase de la cartera es para llevar la cuenta.
 - Si compras un segundo pack, se usa primero el que vence antes. Puedes elegir
   otro con los botones bajo el QR.
 - En **Mi cuenta** cambias tu contraseña y cierras sesión en otros dispositivos.
+- Si la pista tiene los avisos encendidos, te llega un correo con el
+  comprobante de cada compra, y otro cuando te quedan pocas entradas, se te
+  acaban, están por vencer o hace tiempo que no vienes. ¿No los quieres? Toca el
+  enlace del final del correo o desmarca **Recordatorios** en **Mi cuenta**. El
+  comprobante de compra te sigue llegando.
 - ¿Olvidaste la contraseña? En la página de acceso toca **¿Olvidaste tu
   contraseña?**, escribe tu correo y abre el enlace que te llega. Vale media hora
   y sirve una sola vez. Si no pediste ese correo, ignóralo: tu contraseña sigue
@@ -199,6 +204,39 @@ con qué pack, en qué puesto y por qué.
 Toca el nombre para abrir su ficha, arréglalo como corresponda (cobrar en caja,
 venderle un pack, ajustar entradas) y toca **Marcar resuelta** con una nota de
 lo que hiciste. La nota queda en su ficha, en **Actividad**.
+
+### Clientes por recuperar
+
+**Avisos → Clientes por recuperar** es la lista de a quién conviene escribir
+hoy, en cuatro grupos:
+
+- **Por vencer**: tienen entradas pagadas que vencen pronto. Lo más urgente.
+- **Sin entradas**: se les acabaron hace poco y no han vuelto a comprar.
+- **No vienen**: tienen entradas y hace tiempo que no aparecen.
+- **Quedan pocas**: su próxima compra está cerca.
+
+Toca **WhatsApp** y se abre la conversación con un mensaje ya escrito: revísalo,
+cámbialo si quieres y envíalo. Con **Llamar** marcas desde el teléfono. En los
+dos casos queda anotado que tú lo contactaste, y esa persona baja al final de la
+lista durante una semana para que nadie más le escriba lo mismo.
+
+### Avisos automáticos por correo
+
+En **Avisos → Configurar** eliges qué correos manda el sistema solo: el
+comprobante al vender un pack y los recordatorios (quedan pocas, sin entradas,
+por vencer, no viene). También cuántas entradas son «pocas», con cuántos días
+de anticipación se avisa del vencimiento, cuántos días sin venir cuentan y en
+qué horario salen. Antes de encenderlos, usa **Enviarme una prueba** para ver
+cómo le llegan al cliente.
+
+No hace falta vigilarlos: nadie recibe más de un recordatorio cada dos días, no
+salen de noche, y si algo cambió antes de enviarse (el cliente compró otro pack,
+por ejemplo) el correo no sale. Todo lo enviado está en **Historial de avisos**
+y en la **Actividad** de la ficha de cada cliente. Si un correo falla, aparece
+como **Falló** con un botón para reintentar.
+
+Si un cliente pide no recibir más correos, ábrele la ficha y en **Datos**
+desmarca **Recibe recordatorios por correo**.
 
 ### Cierre de caja
 

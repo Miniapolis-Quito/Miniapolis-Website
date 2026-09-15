@@ -22,6 +22,7 @@ import * as audit from '../services/audit.js';
 import { setRefreshCookie, clearRefreshCookie, readRefreshToken } from '../lib/cookies.js';
 import { summaryForUser } from '../services/packs.js';
 import * as recuperacion from '../services/recuperacion.js';
+import * as avisos from '../services/avisos.js';
 
 export const router = express.Router();
 
@@ -392,17 +393,27 @@ router.patch(
   '/me',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const data = parseOrThrow(updateProfileSchema, req.body, badRequest);
-    const user = users.updateUser(req.user.id, data);
-    audit.record({
-      actor: req.user,
-      action: 'perfil.actualizado',
-      entityType: 'user',
-      entityId: req.user.id,
-      metadata: data,
-      ip: req.clientIp,
-    });
-    res.json(sessionResponse(user));
+    const { emailReminders, ...cambios } = parseOrThrow(updateProfileSchema, req.body, badRequest);
+    if (Object.values(cambios).some((valor) => valor !== undefined)) {
+      users.updateUser(req.user.id, cambios);
+      audit.record({
+        actor: req.user,
+        action: 'perfil.actualizado',
+        entityType: 'user',
+        entityId: req.user.id,
+        metadata: cambios,
+        ip: req.clientIp,
+      });
+    }
+    if (emailReminders !== undefined) {
+      avisos.cambiarPreferencia(req.user.id, emailReminders, {
+        via: 'cuenta',
+        actor: req.user,
+        ip: req.clientIp,
+        userAgent: req.get('user-agent'),
+      });
+    }
+    res.json(sessionResponse(users.findById(req.user.id)));
   }),
 );
 
