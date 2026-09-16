@@ -1,7 +1,7 @@
 /**
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
-import { $, $$, el, render, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
+import { $, $$, el, render, icono, esqueleto, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
@@ -121,6 +121,12 @@ function abrirPanel(nombre) {
   for (const panel of $$('[id^="panel-"]')) {
     panel.hidden = panel.id !== `panel-${nombre}`;
   }
+  // Si se cambia de pestaña desde el final de una lista larga, el panel nuevo
+  // empezaría fuera de la pantalla. Se sube hasta las pestañas, nunca hacia
+  // abajo: si ya se ven, no se mueve nada.
+  const pestanas = $('#pestanas-admin');
+  const desde = pestanas?.getBoundingClientRect().top ?? 0;
+  if (desde < 0) window.scrollTo({ top: window.scrollY + desde - 16, behavior: 'smooth' });
   CARGADORES[nombre]?.().catch((error) => mostrarAviso($('#aviso'), error.message, 'error'));
 }
 
@@ -158,6 +164,9 @@ async function cargarResumen() {
   // dibuja lo que llega.
   const dias = datos.dailySeries;
   const maximo = Math.max(1, ...dias.map((d) => d.count));
+  // Sin escala, una barra alta no dice nada: puede ser el día de 3 entradas o
+  // el de 30. El máximo de la quincena va junto al título.
+  $('#grafico-maximo').textContent = `Máx. ${plural(Math.max(...dias.map((d) => d.count)), 'entrada', 'entradas')}/día`;
   render(
     $('#grafico'),
     dias.map((d) =>
@@ -183,7 +192,7 @@ async function cargarResumen() {
             el(
               'li',
               { class: 'lista__item' },
-              el('span', { class: 'icono-lista' }, item.status === 'voided' ? '↩️' : '✅'),
+              el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
               el(
                 'div',
                 { class: 'crece' },
@@ -236,7 +245,7 @@ function pintarNoCobradas(lecturas) {
         el(
           'li',
           { class: 'lista__item' },
-          el('span', { class: 'icono-lista' }, '⛔'),
+          el('span', { class: 'icono-lista' }, icono('prohibido')),
           el(
             'div',
             { class: 'crece' },
@@ -288,15 +297,17 @@ function pintarIntegridad(integridad) {
       ? el(
           'div',
           { class: 'aviso aviso--ok' },
-          '✅ Contabilidad correcta: el saldo de todos los packs coincide con su historial de movimientos.',
+          icono('ok'),
+          'Contabilidad correcta: el saldo de todos los packs coincide con su historial de movimientos.',
         )
       : el(
           'div',
           { class: 'aviso aviso--error' },
+          icono('aviso'),
           el(
             'div',
             {},
-            el('strong', {}, '⚠️ Se detectaron diferencias contables.'),
+            el('strong', {}, 'Se detectaron diferencias contables.'),
             el(
               'div',
               { class: 'pequeno' },
@@ -313,7 +324,18 @@ function pintarIntegridad(integridad) {
 // Usuarios
 // ---------------------------------------------------------------------------
 
+/**
+ * Espera con forma mientras llega la primera respuesta. Solo la primera: en un
+ * refresco por un evento en vivo, cambiar la tabla por barras grises sería un
+ * parpadeo constante mientras se trabaja.
+ */
+function mostrarEspera(selector, filas = 5) {
+  const contenedor = $(selector);
+  if (contenedor && contenedor.children.length === 0) render(contenedor, esqueleto(filas));
+}
+
 async function cargarUsuarios() {
+  mostrarEspera('#tabla-usuarios');
   const parametros = new URLSearchParams({ limit: '100' });
   const busqueda = $('#buscar-usuarios').value.trim();
   if (busqueda) parametros.set('search', busqueda);
@@ -394,7 +416,7 @@ async function cargarUsuarios() {
                   el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verUsuario(usuario.id) }, 'Abrir ficha'),
                   el(
                     'button',
-                    { class: 'boton boton--chico boton--principal', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
+                    { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
                     'Vender',
                   ),
                 ),
@@ -419,6 +441,7 @@ function verUsuario(userId) {
 // ---------------------------------------------------------------------------
 
 async function cargarPacks() {
+  mostrarEspera('#tabla-packs');
   const parametros = new URLSearchParams({ limit: '100' });
   const busqueda = $('#buscar-packs').value.trim();
   if (busqueda) parametros.set('search', busqueda);
@@ -629,7 +652,7 @@ function filaConsumo(item, alCambiar) {
   return el(
     'li',
     { class: 'lista__item' },
-    el('span', { class: 'icono-lista' }, item.status === 'voided' ? '↩️' : '✅'),
+    el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
     el(
       'div',
       { class: 'crece' },
@@ -660,6 +683,7 @@ function filaConsumo(item, alCambiar) {
 // ---------------------------------------------------------------------------
 
 async function cargarConsumos() {
+  mostrarEspera('#tabla-consumos');
   const { items, total } = await api.get('/api/admin/redemptions?limit=100');
   render(
     $('#tabla-consumos'),
@@ -669,7 +693,7 @@ async function cargarConsumos() {
           el(
             'li',
             { class: 'lista__item' },
-            el('span', { class: 'icono-lista' }, item.status === 'voided' ? '↩️' : '✅'),
+            el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
             el(
               'div',
               { class: 'crece' },
@@ -704,6 +728,7 @@ async function cargarConsumos() {
 }
 
 async function cargarAuditoria() {
+  mostrarEspera('#tabla-auditoria', 6);
   const { items, total } = await api.get('/api/admin/audit?limit=100');
   render(
     $('#tabla-auditoria'),
@@ -784,6 +809,8 @@ function montarDialogoUsuario() {
     mostrarErroresCampo(formulario, {});
     mostrarAviso($('#aviso-usuario'), '');
     dialogo.showModal();
+    // Quien abre este diálogo viene a escribir un nombre: el cursor ya está ahí.
+    $('#usuario-nombre').focus();
   });
 
   formulario.addEventListener('submit', async (evento) => {
@@ -900,6 +927,8 @@ function montarDialogoPack() {
     if (cliente) seleccionarCliente(cliente);
     $('#dialogo-detalle').close();
     dialogo.showModal();
+    // Con cliente ya elegido lo siguiente es el precio; si no, hay que buscarlo.
+    (cliente ? $('#pack-precio') : buscador).focus();
   };
 
   formulario.addEventListener('submit', async (evento) => {

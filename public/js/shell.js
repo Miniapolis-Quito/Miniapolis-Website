@@ -120,6 +120,82 @@ export function saludo() {
   return usuario.fullName.split(' ')[0];
 }
 
+/**
+ * Revela los bloques de la página cuando entran en pantalla.
+ *
+ * La clase la pone este código y nunca el HTML: si el JavaScript no llega a
+ * ejecutarse, la página se ve completa igual, sin nada transparente. Cada
+ * bloque se revela una sola vez —lo que se repinta después no vuelve a
+ * aparecer— y quien pide menos movimiento no ve ninguna animación.
+ */
+/**
+ * Qué se revela: los bloques de primer nivel de la página y los del contenido
+ * del cliente, que llega después de consultar al servidor.
+ *
+ * Los paneles de pestaña quedan fuera a propósito. Su contenido se carga
+ * después de abrirlos, así que un bloque podía quedar marcado antes de tener
+ * altura, no llegar a considerarse visible y dejar la pestaña **en blanco**.
+ * Para ellos basta la animación de CSS al pasar de oculto a visible, que no
+ * depende de JavaScript ni deja nada transparente.
+ */
+const BLOQUES_REVELABLES = 'main > *, main #contenido > *';
+
+/** Si algo no llegó a revelarse, se muestra igual: nunca una pantalla en blanco. */
+const RED_DE_SEGURIDAD_MS = 2500;
+
+let observadorRevelado = null;
+
+export function revelarAlEntrar() {
+  const sinMovimiento = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (sinMovimiento || typeof IntersectionObserver !== 'function') return;
+
+  const bloques = [...document.querySelectorAll(BLOQUES_REVELABLES)].filter(
+    (nodo) =>
+      !nodo.hidden &&
+      !nodo.classList.contains('revelar') &&
+      !nodo.classList.contains('revelar--visible') &&
+      nodo.getBoundingClientRect().height > 0,
+  );
+  if (bloques.length === 0) return;
+
+  for (const bloque of bloques) bloque.classList.add('revelar');
+
+  observadorRevelado ??= new IntersectionObserver(
+    (entradas) => {
+      // Los que entran juntos se escalonan; así la página se arma de arriba
+      // abajo en vez de encenderse de golpe.
+      let retraso = 0;
+      for (const entrada of entradas) {
+        if (!entrada.isIntersecting) continue;
+        const nodo = entrada.target;
+        nodo.style.setProperty('animation-delay', `${retraso}ms`);
+        nodo.classList.add('revelar--visible');
+        observadorRevelado.unobserve(nodo);
+        retraso += 70;
+      }
+    },
+    // Se adelanta un poco a la entrada real: cuando la persona llega, el
+    // bloque ya terminó de aparecer.
+    { rootMargin: '0px 0px -8% 0px', threshold: 0.02 },
+  );
+  for (const bloque of bloques) observadorRevelado.observe(bloque);
+
+  // Si algo quedó marcado sin revelarse —porque creció fuera de la pantalla,
+  // porque el observador no disparó, porque el navegador hizo otra cosa—, se
+  // le quita la marca y se ve con normalidad. Un adorno nunca puede esconder
+  // el contenido.
+  setTimeout(() => {
+    for (const bloque of bloques) {
+      if (!bloque.classList.contains('revelar--visible')) bloque.classList.remove('revelar');
+    }
+  }, RED_DE_SEGURIDAD_MS);
+}
+
+// Lo que ya está en el HTML se revela solo. Las pantallas que pintan su
+// contenido después de consultar al servidor vuelven a llamar a
+// `revelarAlEntrar()` cuando terminan.
+requestAnimationFrame(revelarAlEntrar);
+
 /** Aplica la marca cargada del servidor a los textos de la página. */
 export async function aplicarMarca(configuracion) {
   if (!configuracion) return;

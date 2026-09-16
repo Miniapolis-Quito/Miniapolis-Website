@@ -40,6 +40,15 @@ Las tres variantes nuevas se exportaron en WebP a 1942 × 809 px y calidad alta
 para que conserven detalle en pantalla e impresión sin pesar innecesariamente
 en la conexión móvil.
 
+## Material oficial de la pista
+
+La portada pública también usa el material entregado por Miniápolis en
+`/public/images/oficial/`: las tres composiciones de marca (`miniapolis-*.webp`)
+y las 15 fotografías reales del recinto (`pista-oficial-01.webp` a
+`pista-oficial-15.webp`). Las fotografías se sirven como WebP optimizado,
+mantienen su orientación original y se cargan de forma diferida dentro de la
+galería para conservar una navegación fluida en teléfonos.
+
 ## Peso
 
 Estas imágenes las carga un teléfono en la pista, muchas veces con mala señal,

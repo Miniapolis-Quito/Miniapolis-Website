@@ -95,6 +95,26 @@ test('no se usa nada de ui.js sin haberlo importado', () => {
   assert.deepEqual(fallos, []);
 });
 
+test('ninguna utilidad de ui.js se pasa sin llamarla', () => {
+  // `el(..., icono)` en vez de `el(..., icono(nombre))` no rompe nada: el
+  // elemento acaba mostrando el código fuente de la función como texto, y solo
+  // se ve abriendo esa pantalla. Pasó al cambiar los emojis por iconos.
+  const utilidades = [...exportacionesDe('ui.js')].filter((n) => n.length >= 3);
+  const fallos = [];
+
+  for (const modulo of modulos.filter((m) => m !== 'ui.js')) {
+    const cuerpo = leer(path.join(DIR_JS, modulo)).replace(/import[\s\S]*?from\s*'[^']+';/g, '');
+    for (const utilidad of utilidades) {
+      // Como argumento suelto: precedido de coma o paréntesis y seguido de
+      // coma o cierre, sin paréntesis de llamada ni punto de propiedad.
+      if (new RegExp(`[,(]\\s*${utilidad}\\s*[,)]`).test(cuerpo)) {
+        fallos.push(`${modulo}: pasa ${utilidad} sin llamarla`);
+      }
+    }
+  }
+  assert.deepEqual(fallos, []);
+});
+
 test('los identificadores que busca el JavaScript existen en su página', () => {
   const fallos = [];
   for (const [html, propios] of Object.entries(PAGINAS)) {

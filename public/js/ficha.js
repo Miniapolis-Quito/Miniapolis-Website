@@ -7,7 +7,7 @@
  * sobreviva a recargar la página.
  */
 import {
-  $, el, render, brindis, fecha, relativo, dinero, plural, metrica, telefono, estadoPack, METODOS,
+  $, el, render, icono, brindis, fecha, relativo, dinero, plural, metrica, telefono, estadoPack, METODOS,
   mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar,
 } from './ui.js';
 import { api } from './api.js';
@@ -89,8 +89,13 @@ function seccion(titulo, ...contenido) {
   return el('section', { class: 'tarjeta' }, el('div', { class: 'tarjeta__titulo' }, el('h2', {}, titulo)), ...contenido);
 }
 
-function vacio(icono, mensaje) {
-  return el('div', { class: 'ficha__vacio' }, el('div', { class: 'vacio__icono' }, icono), el('p', { class: 'sin-margen' }, mensaje));
+function vacio(nombreIcono, mensaje) {
+  return el(
+    'div',
+    { class: 'ficha__vacio' },
+    el('div', { class: 'vacio__icono' }, icono(nombreIcono, { grande: true })),
+    el('p', { class: 'sin-margen' }, mensaje),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +303,12 @@ function pestanas() {
 
 function irAPestana(clave) {
   estado.pestana = clave;
+  // Desde el final de una pestaña larga, la siguiente empezaría fuera de la
+  // pantalla. Se sube hasta las pestañas de la ficha, nunca hacia abajo.
+  const pestanas = document.querySelector('.ficha .pestanas');
+  if (pestanas && pestanas.getBoundingClientRect().top < 0) {
+    window.scrollTo({ top: window.scrollY + pestanas.getBoundingClientRect().top - 16, behavior: 'smooth' });
+  }
   for (const boton of document.querySelectorAll('.ficha .pestana')) {
     boton.setAttribute('aria-selected', String(boton.dataset.pestana === clave));
   }
@@ -335,7 +346,7 @@ function panelResumen() {
         'Packs con entradas',
         activos.length
           ? el('div', { class: 'columna' }, activos.map((pack) => miniPack(pack)))
-          : vacio('🎟️', 'No tiene packs con entradas disponibles.'),
+          : vacio('entrada', 'No tiene packs con entradas disponibles.'),
       ),
       seccion(
         'Visitas por semana',
@@ -361,7 +372,7 @@ function panelResumen() {
                 el('span', { class: 'tenue-2 pequeno' }, 'esta semana'),
               ),
             )
-          : vacio('📅', 'Sin visitas registradas todavía.'),
+          : vacio('calendario', 'Sin visitas registradas todavía.'),
       ),
     ),
     el(
@@ -387,7 +398,7 @@ function panelResumen() {
                 ),
               ),
             )
-          : vacio('🏁', 'Aún no hay un patrón que mostrar.'),
+          : vacio('bandera', 'Aún no hay un patrón que mostrar.'),
       ),
       seccion(
         'Lo último que pasó',
@@ -402,7 +413,7 @@ function panelResumen() {
                 'Ver toda la actividad',
               ),
             )
-          : vacio('🕐', 'Sin actividad registrada.'),
+          : vacio('reloj', 'Sin actividad registrada.'),
       ),
     ),
   );
@@ -443,7 +454,7 @@ function miniPack(pack) {
 function panelPacks() {
   const { packs } = estado.datos;
   if (!packs.length) {
-    return seccion('Packs', vacio('🎟️', 'Este cliente todavía no tiene packs.'));
+    return seccion('Packs', vacio('entrada', 'Este cliente todavía no tiene packs.'));
   }
   return el('div', { class: 'columna' }, packs.map((pack) => tarjetaPackDetallada(pack)));
 }
@@ -637,7 +648,7 @@ function panelConsumos() {
                 )
               : el('p', { class: 'tenue-2 pequeno mt sin-margen' }, `${plural(total, 'consumo registrado', 'consumos registrados')}.`),
           )
-        : vacio('🏁', 'Este cliente todavía no ha usado ninguna entrada.'),
+        : vacio('bandera', 'Este cliente todavía no ha usado ninguna entrada.'),
     );
   };
 
@@ -683,7 +694,7 @@ function panelActividad() {
                 )
               : el('p', { class: 'tenue-2 pequeno mt sin-margen' }, 'Fin del historial.'),
           )
-        : vacio('🕐', 'Sin actividad registrada.'),
+        : vacio('reloj', 'Sin actividad registrada.'),
     );
   };
 
@@ -734,7 +745,7 @@ function panelActividad() {
               ),
             ),
           )
-        : vacio('📋', 'Sin registros.'),
+        : vacio('registro', 'Sin registros.'),
     ),
   );
 }
@@ -761,7 +772,7 @@ function filaAviso(evento) {
     el(
       'div',
       { class: `tiempo__icono ${fallido ? 'tiempo__icono--aviso' : ''}` },
-      channel === 'email' ? '✉️' : channel === 'whatsapp' ? '💬' : '📞',
+      icono(channel === 'email' ? 'correo' : channel === 'whatsapp' ? 'chat' : 'telefono'),
     ),
     el(
       'div',
@@ -780,27 +791,27 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
   const esMovimiento = evento.tipo === 'movimiento';
 
   const iconos = {
-    issue: '🎟️', redeem: '🏎️', void: '↩️', adjust: '⚖️', cancel: '🚫', restore: '♻️',
-    transfer_out: '📤', transfer_in: '📥',
+    issue: 'entrada', redeem: 'bandera', void: 'devolver', adjust: 'balanza', cancel: 'prohibido', restore: 'restaurar',
+    transfer_out: 'enviar', transfer_in: 'recibir',
   };
   const iconosCuenta = {
-    'login.exitoso': '🔑', 'login.fallido': '⚠️', logout: '🚪', 'logout.todos': '🚪',
-    'password.cambiada': '🔒', 'usuario.password_restablecida': '🔒',
-    'password.recuperacion_solicitada': '✉️', 'password.restablecida_por_correo': '🔒',
-    'password.cambio_bloqueado': '⛔',
-    'perfil.actualizado': '✏️', 'usuario.actualizado': '✏️',
-    'cuenta.registrada': '🎉', 'usuario.creado': '🎉',
-    'usuario.desbloqueado': '🔓', 'usuario.sesiones_revocadas': '🚪',
-    'escaneo.rechazado': '⛔',
-    'escaneo_sin_conexion.rechazado': '⛔', 'escaneo_sin_conexion.resuelto': '✅',
-    'recordatorios.activados': '🔔', 'recordatorios.desactivados': '🔕',
+    'login.exitoso': 'llave', 'login.fallido': 'aviso', logout: 'puerta', 'logout.todos': 'puerta',
+    'password.cambiada': 'candado', 'usuario.password_restablecida': 'candado',
+    'password.recuperacion_solicitada': 'correo', 'password.restablecida_por_correo': 'candado',
+    'password.cambio_bloqueado': 'prohibido',
+    'perfil.actualizado': 'lapiz', 'usuario.actualizado': 'lapiz',
+    'cuenta.registrada': 'nuevo', 'usuario.creado': 'nuevo',
+    'usuario.desbloqueado': 'candado-abierto', 'usuario.sesiones_revocadas': 'puerta',
+    'escaneo.rechazado': 'prohibido',
+    'escaneo_sin_conexion.rechazado': 'prohibido', 'escaneo_sin_conexion.resuelto': 'ok',
+    'recordatorios.activados': 'campana', 'recordatorios.desactivados': 'campana-muda',
   };
 
   const titulo = esMovimiento
     ? RAZONES_MOVIMIENTO[evento.clave] || evento.clave
     : ACCIONES_CUENTA[evento.clave] || evento.clave;
 
-  const icono = esMovimiento ? iconos[evento.clave] || '•' : iconosCuenta[evento.clave] || '•';
+  const nombreIcono = esMovimiento ? iconos[evento.clave] || 'pack' : iconosCuenta[evento.clave] || 'pack';
   const modificador = esMovimiento
     ? evento.delta > 0
       ? 'tiempo__icono--suma'
@@ -834,7 +845,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
   return el(
     'li',
     { class: 'tiempo__item' },
-    el('div', { class: `tiempo__icono ${modificador}` }, icono),
+    el('div', { class: `tiempo__icono ${modificador}` }, icono(nombreIcono)),
     el(
       'div',
       { class: 'tiempo__cuerpo' },
@@ -988,7 +999,7 @@ function panelAcceso() {
               );
             }),
           )
-        : vacio('📱', 'Nunca ha iniciado sesión.'),
+        : vacio('movil', 'Nunca ha iniciado sesión.'),
     ),
   );
 }

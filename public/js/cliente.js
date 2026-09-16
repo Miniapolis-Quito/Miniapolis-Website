@@ -1,11 +1,11 @@
 /**
  * Portal del cliente: saldo en vivo, pase con QR rotativo e historial.
  */
-import { $, el, render, brindis, fecha, horaCorta, dinero, plural, estadoPack, METODOS,
+import { $, el, render, icono, brindis, fecha, horaCorta, dinero, plural, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, copiar, vibrar } from './ui.js';
 import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, cambiarPassword, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
-import { montarCabecera, aplicarMarca } from './shell.js';
+import { montarCabecera, aplicarMarca, revelarAlEntrar } from './shell.js';
 
 const estado = {
   resumen: null,
@@ -47,9 +47,20 @@ function pintarSaldo(anterior) {
 
   const usadas = estado.resumen?.usedTickets ?? 0;
   const compradas = estado.resumen?.purchasedTickets ?? 0;
-  $('#subtitulo').textContent = compradas
-    ? `${usadas} de ${compradas} entradas usadas · ${plural(estado.resumen.activePacks, 'pack activo', 'packs activos')}`
-    : 'Todavía no tienes packs. Acércate a recepción para comprar uno.';
+  const transferidas = estado.resumen?.transferredTickets ?? 0;
+  const activos = estado.resumen?.activePacks ?? 0;
+  const totalPacks = estado.resumen?.totalPacks ?? (estado.packs?.length ?? 0);
+
+  if (compradas > 0 || disponibles > 0 || totalPacks > 0) {
+    let detalle = `${usadas} de ${compradas} entradas usadas`;
+    if (transferidas > 0) {
+      detalle += ` · ${transferidas} ${transferidas === 1 ? 'transferida' : 'transferidas'}`;
+    }
+    detalle += ` · ${plural(activos, 'pack activo', 'packs activos')}`;
+    $('#subtitulo').textContent = detalle;
+  } else {
+    $('#subtitulo').textContent = 'Todavía no tienes packs. Acércate a recepción para comprar uno.';
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -114,7 +125,7 @@ function pintarPacks() {
       el(
         'div',
         { class: 'tarjeta vacio' },
-        el('div', { class: 'vacio__icono' }, '🎟️'),
+        el('div', { class: 'vacio__icono' }, icono('entrada', { grande: true })),
         el('p', { class: 'sin-margen' }, 'Todavía no tienes packs de entradas.'),
         el('p', { class: 'pequeno sin-margen' }, 'Compra uno en recepción y aparecerá aquí al instante.'),
       ),
@@ -277,7 +288,7 @@ async function refrescarQr({ inmediato = false } = {}) {
       el(
         'div',
         { class: 'centrado' },
-        el('div', { class: 'vacio__icono' }, '📶'),
+        el('div', { class: 'vacio__icono' }, icono('senal', { grande: true })),
         el('p', { class: 'tenue sin-margen' }, 'No pudimos generar el código.'),
         el('p', { class: 'pequeno tenue-2 sin-margen' }, `Muestra tu código ${pack.code} en recepción.`),
       ),
@@ -319,7 +330,12 @@ async function cargarHistorial() {
     if (items.length === 0) {
       render(
         contenedor,
-        el('div', { class: 'vacio' }, el('div', { class: 'vacio__icono' }, '🏁'), el('p', { class: 'sin-margen' }, 'Todavía no has usado ninguna entrada.')),
+        el(
+          'div',
+          { class: 'vacio' },
+          el('div', { class: 'vacio__icono' }, icono('bandera', { grande: true })),
+          el('p', { class: 'sin-margen' }, 'Todavía no has usado ninguna entrada.'),
+        ),
       );
       return;
     }
@@ -332,7 +348,7 @@ async function cargarHistorial() {
           el(
             'li',
             { class: 'lista__item' },
-            el('span', { class: 'icono-lista--grande' }, item.status === 'voided' ? '↩️' : '🏎️'),
+            el('span', { class: 'icono-lista--grande' }, icono(item.status === 'voided' ? 'devolver' : 'bandera')),
             el(
               'div',
               { class: 'crece' },
@@ -623,6 +639,8 @@ function montarCuenta() {
 
   $('#cargando-inicial').hidden = true;
   $('#contenido').hidden = false;
+  // El contenido no existía al cargar la página: ahora sí se puede revelar.
+  revelarAlEntrar();
 
   redirigirAlPerderSesion();
 

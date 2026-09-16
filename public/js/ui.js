@@ -1,5 +1,20 @@
 /** Utilidades de interfaz compartidas por todas las páginas. */
 
+// Silenciar abortos benignos de ViewTransition del navegador en redirecciones o navegaciones rápidas
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    if (event?.message && /ViewTransition/i.test(event.message)) {
+      event.preventDefault();
+    }
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const msg = String(event?.reason?.message || event?.reason || '');
+    if (/ViewTransition/i.test(msg)) {
+      event.preventDefault();
+    }
+  });
+}
+
 /**
  * Aplica estilos usando el modelo de objetos CSS en vez del atributo `style`.
  * La política de seguridad de contenido prohíbe `style="..."`, pero sí permite
@@ -46,8 +61,93 @@ export function el(etiqueta, atributos = {}, ...hijos) {
   return nodo;
 }
 
+/**
+ * Bloque de espera: unas barras del alto de una fila que laten mientras llega
+ * la respuesta del servidor. Sin esto, una tabla aparece de golpe y la página
+ * pega un salto; con esto se ve desde el principio cuánto va a ocupar.
+ *
+ * Es decorativo: lleva `aria-hidden` porque quien usa un lector de pantalla ya
+ * sabe que la página está cargando por el propio flujo de la aplicación.
+ */
+export function esqueleto(filas = 4) {
+  return el(
+    'div',
+    { class: 'esqueleto', 'aria-hidden': 'true' },
+    Array.from({ length: filas }, () => el('div', { class: 'esqueleto__linea' })),
+  );
+}
+
 export const $ = (selector, raiz = document) => raiz.querySelector(selector);
 export const $$ = (selector, raiz = document) => [...raiz.querySelectorAll(selector)];
+
+// ---------------------------------------------------------------------------
+// Iconografía
+// ---------------------------------------------------------------------------
+
+/**
+ * Iconos propios, de un solo trazo, dibujados sobre una retícula de 24×24.
+ *
+ * Antes se usaban emojis. Cada sistema operativo los dibuja a su manera —con
+ * su color, su grosor y su estilo—, así que la misma pantalla se veía distinta
+ * en cada teléfono y ninguno combinaba con la identidad de la pista. Estos
+ * heredan el color del texto y pesan unos pocos cientos de bytes.
+ */
+const TRAZO_SVG = 'http://www.w3.org/2000/svg';
+
+const ICONOS = {
+  ok: ['M4 12.5 9.5 18 20 6.5'],
+  devolver: ['M9 14 4 9l5-5', 'M4 9h10a5 5 0 0 1 0 10h-3'],
+  entrada: ['M3 9.5V7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 0 0 5V17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2.5a2.5 2.5 0 0 0 0-5Z', 'M15 7v10'],
+  bandera: ['M5 21V4', 'M5 5h13l-2.5 4L18 13H5'],
+  reloj: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 7.5V12l3 2'],
+  aviso: ['M12 4 2.5 20h19L12 4Z', 'M12 10v4', 'M12 17.4v.2'],
+  prohibido: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M6.5 6.5l11 11'],
+  balanza: ['M12 4v16', 'M6 8h12', 'M6 8 3 14h6L6 8Z', 'M18 8l-3 6h6l-3-6Z'],
+  restaurar: ['M4 12a8 8 0 0 1 13.7-5.7L20 8', 'M20 4v4h-4', 'M20 12a8 8 0 0 1-13.7 5.7L4 16', 'M4 20v-4h4'],
+  llave: ['M8 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M11.9 11h9.1', 'M18.4 11v3.2', 'M15.4 11v2.2'],
+  puerta: ['M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4', 'M10 8l-4 4 4 4', 'M6 12h9'],
+  candado: ['M6 11h12v9H6z', 'M9 11V8a3 3 0 0 1 6 0v3'],
+  'candado-abierto': ['M6 11h12v9H6z', 'M9 11V8a3 3 0 0 1 5.9-.8'],
+  correo: ['M3 6h18v12H3z', 'm3 7 9 6 9-6'],
+  chat: ['M20 15a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z'],
+  telefono: ['M7 3h3l2 5-2.5 1.5a12 12 0 0 0 5 5L16 12l5 2v3a2 2 0 0 1-2.2 2A16 16 0 0 1 5 5.2 2 2 0 0 1 7 3Z'],
+  lapiz: ['M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4Z', 'M14.5 5.5l4 4'],
+  nuevo: ['M12 3l2.3 5.7L20 11l-5.7 2.3L12 19l-2.3-5.7L4 11l5.7-2.3L12 3Z'],
+  movil: ['M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z', 'M11 17.8h2'],
+  registro: ['M9 5h11', 'M9 12h11', 'M9 19h11', 'M4.5 5h.2', 'M4.5 12h.2', 'M4.5 19h.2'],
+  calendario: ['M4 6h16v15H4z', 'M4 10.5h16', 'M8 3v4', 'M16 3v4'],
+  campana: ['M6 16.5V11a6 6 0 1 1 12 0v5.5l2 2.5H4l2-2.5Z', 'M10 21h4'],
+  'campana-muda': ['M6 16.5V11a6 6 0 0 1 8.4-5.5', 'M18 11.5v5l2 2.5H4l2-2.5', 'M10 21h4', 'M4 3.5l16 17'],
+  camara: ['M4 8h3l2-3h6l2 3h3v12H4z', 'M12 16.5a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z'],
+  senal: ['M3.5 9.2a14 14 0 0 1 17 0', 'M7 12.6a9 9 0 0 1 10 0', 'M10.2 16a4.5 4.5 0 0 1 3.6 0', 'M12 19.6v.2'],
+  descarga: ['M12 4v10.5', 'm7.5 10.5 4.5 4.5 4.5-4.5', 'M4.5 20h15'],
+  enviar: ['M12 20V5.5', 'm6.5 6.5-6.5-6.5-6.5 6.5', 'M4.5 20.5h15'],
+  recibir: ['M12 4v14.5', 'm6.5-6.5-6.5 6.5-6.5-6.5', 'M4.5 3.5h15'],
+  buscar: ['M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z', 'm16.2 16.2 4.8 4.8'],
+  pack: ['M12 3 4 7.2v9.6L12 21l8-4.2V7.2L12 3Z', 'M4 7.2 12 11.5l8-4.3', 'M12 11.5V21'],
+  persona: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4.5 20.5a7.5 7.5 0 0 1 15 0'],
+  flecha: ['M5 12h13', 'm12.5 6 6 6-6 6'],
+};
+
+/**
+ * Icono como elemento SVG. Decorativo por definición: lo que significa siempre
+ * está escrito al lado, así que se esconde del lector de pantalla.
+ * @param {string} nombre clave de `ICONOS`
+ * @param {{grande?: boolean, clase?: string}} opciones
+ */
+export function icono(nombre, { grande = false, clase = '' } = {}) {
+  const svg = document.createElementNS(TRAZO_SVG, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('class', `icono${grande ? ' icono--grande' : ''}${clase ? ` ${clase}` : ''}`);
+  for (const d of ICONOS[nombre] ?? ICONOS.pack) {
+    const trazo = document.createElementNS(TRAZO_SVG, 'path');
+    trazo.setAttribute('d', d);
+    svg.append(trazo);
+  }
+  return svg;
+}
 
 export function vaciar(nodo) {
   while (nodo.firstChild) nodo.removeChild(nodo.firstChild);

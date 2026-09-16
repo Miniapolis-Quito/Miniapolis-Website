@@ -117,9 +117,18 @@ router.get(
   }),
 );
 
+const transferLimiter = rateLimit({
+  name: 'transfer-user',
+  limit: 20,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => req.user?.id,
+  message: 'Demasiadas transferencias en poco tiempo. Espera unos minutos.',
+});
+
 /** Transfiere entradas de un pack propio a otro cliente registrado. */
 router.post(
   '/:id/transfer',
+  transferLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(transferPackSchema, req.body, badRequest);
     const result = packs.transferTickets(req.params.id, {

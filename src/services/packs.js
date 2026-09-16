@@ -257,21 +257,32 @@ export function summaryForUser(userId) {
     )
     .get({ userId, ahora: new Date().toISOString() });
 
-  // "Usadas" son las veces que entró de verdad, no la diferencia entre tamaño y
-  // saldo: una entrada de cortesía agranda el pack y esa resta daría cero.
+  // "Usadas" son las veces que entró de verdad (sumando entradas individuales
+  // o grupales), no la diferencia entre tamaño y saldo: una entrada de cortesía
+  // agranda el pack y esa resta daría cero.
   const usadas = db
-    .prepare("SELECT COUNT(*) AS n FROM redemptions WHERE user_id = ? AND status = 'confirmed'")
+    .prepare("SELECT IFNULL(SUM(quantity), 0) AS n FROM redemptions WHERE user_id = ? AND status = 'confirmed'")
     .get(userId).n;
 
-  // "Compradas" es lo que se le vendió: los asientos de emisión. Los ajustes de
-  // cortesía suman saldo, pero no son una compra.
-  const compradas = db
+  // "Adquiridas" es lo que recibió el cliente: los asientos de emisión y las
+  // entradas recibidas por transferencia.
+  const adquiridas = db
     .prepare(
       `SELECT IFNULL(SUM(m.delta), 0) AS n
          FROM pack_movements m JOIN packs p ON p.id = m.pack_id
-        WHERE p.user_id = ? AND m.reason = 'issue'`,
+        WHERE p.user_id = ? AND m.reason IN ('issue', 'transfer_in')`,
     )
     .get(userId).n;
+
+  // Entradas transferidas a otros clientes desde packs propios.
+  const transferidas = db
+    .prepare(
+      `SELECT IFNULL(SUM(ABS(m.delta)), 0) AS n
+         FROM pack_movements m JOIN packs p ON p.id = m.pack_id
+        WHERE p.user_id = ? AND m.reason = 'transfer_out'`,
+    )
+    .get(userId).n;
+
   const nextExpiry = db
     .prepare(
       `SELECT expires_at FROM packs
@@ -283,7 +294,8 @@ export function summaryForUser(userId) {
     availableTickets: row.disponibles,
     activePacks: row.packs_activos,
     usedTickets: usadas,
-    purchasedTickets: compradas,
+    purchasedTickets: adquiridas,
+    transferredTickets: transferidas,
     totalPacks: row.packs_totales,
     nextExpiryAt: nextExpiry?.expires_at ?? null,
   };
@@ -467,13 +479,14 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
 
     const term = String(recipient || '').trim().toLowerCase();
     const rawTerm = String(recipient || '').trim();
+    const cleanPhone = rawTerm.replace(/[\s-]/g, '');
     const targetUser = db
       .prepare(
         `SELECT id, full_name, email, phone, status, role FROM users
-          WHERE email_normalized = ? OR email = ? OR phone = ?
+          WHERE email_normalized = ? OR email = ? OR phone = ? OR phone = ?
           LIMIT 1`,
       )
-      .get(term, rawTerm, rawTerm);
+      .get(term, rawTerm, rawTerm, cleanPhone);
 
     if (!targetUser) {
       throw notFound(

@@ -13,6 +13,9 @@
  * - Red primero. Con conexión, el teléfono siempre usa la versión publicada y
  *   de paso renueva la copia; la caché solo se usa si la red falla o tarda.
  */
+/* Al cambiar el aspecto o el código del escáner hay que subir este número: la
+   copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
+   un teléfono sin conexión seguiría abriendo el diseño anterior. */
 const CACHE = 'miniapolis-escaner-v2';
 
 /** Nombres de caché propios. Incluye el prefijo anterior a la marca actual para
