@@ -914,7 +914,10 @@ fieldset { border: 0; margin: 0; padding: 0; }
   display: grid;
   gap: 8px;
   border: 0;
-  background: rgba(255, 255, 255, .03);
+  border-bottom: 1px solid var(--borde);
+  /* En reposo no hay nada que mirar: el panel está vacío y transparente. El
+     color aparece solo cuando hay un resultado que leer. */
+  background: transparent;
   transition: border-color var(--t-media) var(--curva), background-color var(--t-media) var(--curva);
 }
 /* Franja de estado: se lee el color antes que el texto, que es lo que pasa en
@@ -979,6 +982,9 @@ thead th {
 }
 tbody td { padding: 16px 14px; border-bottom: 1px solid rgba(255, 255, 255, .07); vertical-align: middle; }
 /* La primera y la última columna se alinean con el resto de la página. */
+/* La bitácora se mide en cientos de renglones: ahí el aire de las demás
+   tablas convertía la página en un desierto de kilómetros. */
+#tabla-auditoria tbody td { padding-block: 10px; }
 thead th:first-child, tbody td:first-child { padding-left: 2px; }
 thead th:last-child, tbody td:last-child { padding-right: 2px; }
 tbody tr:last-child td { border-bottom: 0; }
@@ -1125,19 +1131,19 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 }
 .brindis {
   pointer-events: auto;
-  padding: 13px 16px;
-  border-radius: var(--radio-s);
-  background: rgba(29, 29, 29, .96);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--borde-fuerte);
-  border-left: 3px solid var(--borde-fuerte);
+  padding: 14px 18px;
+  border-radius: 0;
+  background: rgba(10, 10, 10, .97);
+  backdrop-filter: blur(12px);
+  border: 0;
+  border-left: 2px solid var(--borde-campo);
   box-shadow: var(--sombra);
   font-size: .93rem;
   animation: subir var(--t-media) var(--curva);
 }
-.brindis--ok { border-color: rgba(47, 208, 122, .4); border-left-color: var(--ok); }
-.brindis--error { border-color: rgba(255, 85, 102, .4); border-left-color: var(--error); }
-.brindis--alerta { border-color: rgba(255, 197, 61, .4); border-left-color: var(--alerta); }
+.brindis--ok { border-left-color: var(--ok); }
+.brindis--error { border-left-color: var(--error); }
+.brindis--alerta { border-left-color: var(--alerta); }
 .brindis--saliendo { animation: bajar 200ms var(--curva-entrada) forwards; }
 @keyframes subir { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes bajar { to { opacity: 0; transform: translateY(10px); } }
