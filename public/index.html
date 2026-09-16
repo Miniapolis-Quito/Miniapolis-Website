@@ -7,21 +7,83 @@
   <meta name="description" content="Entradas para la pista de autos a control remoto de Miniápolis #3.">
   <title>Entrar · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 </head>
-<body>
+<body class="pagina-entrada">
   <main class="contenedor contenedor--angosto pt-pagina">
-    <div class="centrado mb-3">
-      <div class="brand-lockup brand-lockup--entrada" aria-hidden="true">
-        <img class="brand-lockup__logo" src="/images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="">
+    <header class="entrada__barra">
+      <a class="entrada__marca subrayado-no" href="./index.html" aria-label="Miniápolis #3 — inicio">
+        <span class="entrada__marca-sello" aria-hidden="true"><img src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt=""></span>
+        <span>MINIÁPOLIS #3</span>
+      </a>
+      <div class="entrada__meta" aria-label="Identificador de la pista"><span>ECUADOR</span><span class="entrada__punto" aria-hidden="true"></span><span>TRACK 03</span></div>
+      <a class="entrada__accion" href="#acceso">Acceso <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <section class="entrada__hero" aria-labelledby="titulo-entrada">
+      <div class="entrada__hero-copy">
+        <p class="entrada__kicker"><span>01</span> Sistema de entradas</p>
+        <h1 id="titulo-entrada"><span>Adrenalina</span><span>sin límites<span class="entrada__marca-registrada">™</span></span></h1>
       </div>
-      <span class="seccion-marca">Entradas de pista</span>
-      <h1 data-marca>Miniápolis #3</h1>
-      <p class="tenue">Tus entradas para la pista de autos a control remoto.</p>
+      <div class="entrada__hero-aside">
+        <p class="entrada__marca-texto">Miniápolis #3</p>
+        <p class="entrada__descripcion">Tu pase digital para vivir la pista de autos a control remoto. Entra, acelera y vuelve a la línea de salida.</p>
+        <a class="entrada__enlace" href="#acceso">Entrar al sistema <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <div class="presentacion-pista" aria-label="Bandera y emblema oficiales de Miniápolis #3">
+      <img src="./images/oficial/miniapolis-bandera-hero.webp" width="1536" height="1024" alt="Bandera a cuadros con el emblema oficial de Miniápolis #3" fetchpriority="high" decoding="async">
+      <div class="presentacion-pista__barra"><span>Racing Hobbies / Miniápolis #3</span><span>Acceso en tiempo real <i aria-hidden="true"></i></span></div>
     </div>
 
-    <div class="tarjeta">
+    <section class="entrada__pista-real" aria-labelledby="titulo-pista">
+      <div class="entrada__seccion-cabeza">
+        <h2 id="titulo-pista">Cada curva tiene<br><em>su propia historia.</em></h2>
+        <p class="entrada__seccion-descripcion">Conoce el escenario real de Miniápolis #3: una pista hecha para acelerar, competir y compartir la pasión por el radiocontrol.</p>
+      </div>
+
+      <article class="entrada__media-destacada" aria-label="Identidad visual oficial de Miniápolis #3">
+        <div class="entrada__media-destacada-copy">
+          <p class="entrada__kicker"><span>03</span> La pista real</p>
+          <h3>Diseñada para<br>vivirla a fondo.</h3>
+          <p>El pulso de la carrera empieza antes de la primera vuelta: en cada bandera, cada curva y cada detalle del paddock.</p>
+          <div class="entrada__media-meta"><span>Miniápolis #3</span><span>Racing Hobbies</span></div>
+        </div>
+        <figure class="entrada__media-marca">
+          <img src="./images/oficial/miniapolis-logo-dark.webp" width="1536" height="1024" alt="Composición oficial oscura del logotipo de Miniápolis #3" loading="lazy" decoding="async">
+        </figure>
+        <figure class="entrada__logo-firma">
+          <img src="./images/oficial/miniapolis-logo-light.webp" width="1536" height="1024" alt="Composición oficial clara del logotipo de Miniápolis #3" loading="lazy" decoding="async">
+          <span>Identidad oficial / 2026</span>
+        </figure>
+      </article>
+
+      <div class="entrada__galeria" aria-label="Fotografías oficiales de la pista">
+        <figure class="entrada__foto entrada__foto--01"><img src="./images/oficial/pista-oficial-01.webp" width="1400" height="1400" alt="Vista oficial de la pista Miniápolis #3" loading="lazy" decoding="async"><figcaption><span>01</span> Línea de salida</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--02"><img src="./images/oficial/pista-oficial-02.webp" width="1400" height="1400" alt="Detalle oficial del circuito" loading="lazy" decoding="async"><figcaption><span>02</span> Circuito</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--03"><img src="./images/oficial/pista-oficial-03.webp" width="1400" height="1400" alt="Curva de la pista Miniápolis #3" loading="lazy" decoding="async"><figcaption><span>03</span> Curva 03</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--04"><img src="./images/oficial/pista-oficial-04.webp" width="1400" height="1400" alt="Vehículo de radiocontrol en la pista" loading="lazy" decoding="async"><figcaption><span>04</span> Paddock</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--05"><img src="./images/oficial/pista-oficial-05.webp" width="1400" height="1400" alt="Zona técnica del recinto" loading="lazy" decoding="async"><figcaption><span>05</span> Zona técnica</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--06"><img src="./images/oficial/pista-oficial-06.webp" width="1400" height="1400" alt="Recta principal de Miniápolis #3" loading="lazy" decoding="async"><figcaption><span>06</span> Recta</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--07"><img src="./images/oficial/pista-oficial-07.webp" width="1400" height="1400" alt="Señalética oficial del circuito" loading="lazy" decoding="async"><figcaption><span>07</span> Señalética</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--08"><img src="./images/oficial/pista-oficial-08.webp" width="1400" height="1400" alt="Superficie de la pista" loading="lazy" decoding="async"><figcaption><span>08</span> Superficie</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--09"><img src="./images/oficial/pista-oficial-09.webp" width="1400" height="1400" alt="Peralte de la pista" loading="lazy" decoding="async"><figcaption><span>09</span> Peralte</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--10"><img src="./images/oficial/pista-oficial-10.webp" width="1400" height="1400" alt="Vista del ambiente de carreras" loading="lazy" decoding="async"><figcaption><span>10</span> Ambiente</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--11"><img src="./images/oficial/pista-oficial-11.webp" width="1400" height="1400" alt="Vehículo listo para competir" loading="lazy" decoding="async"><figcaption><span>11</span> Competición</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--12"><img src="./images/oficial/pista-oficial-12.webp" width="1400" height="1400" alt="Vista lateral del circuito" loading="lazy" decoding="async"><figcaption><span>12</span> Trazada</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--13"><img src="./images/oficial/pista-oficial-13.webp" width="1400" height="1400" alt="Escena oficial del recinto" loading="lazy" decoding="async"><figcaption><span>13</span> Escenario</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--14"><img src="./images/oficial/pista-oficial-14.webp" width="1400" height="1400" alt="Detalle de una curva del circuito" loading="lazy" decoding="async"><figcaption><span>14</span> Curva</figcaption></figure>
+        <figure class="entrada__foto entrada__foto--15"><img src="./images/oficial/pista-oficial-15.webp" width="1400" height="1400" alt="Pista Miniápolis #3 en acción" loading="lazy" decoding="async"><figcaption><span>15</span> En acción</figcaption></figure>
+      </div>
+    </section>
+
+    <div id="acceso" class="tarjeta entrada__acceso">
+      <div class="entrada__acceso-intro">
+        <p class="entrada__kicker"><span>02</span> Control de acceso</p>
+        <h2>Tu próxima<br>vuelta empieza aquí.</h2>
+      </div>
       <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
         <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
         <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
@@ -92,7 +154,7 @@
       </form>
     </div>
 
-    <p class="centrado tenue-2 pequeno mt-2">
+    <p class="entrada__pie centrado tenue-2 pequeno mt-2">
       ¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.
     </p>
   </main>

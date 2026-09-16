@@ -1775,3 +1775,217 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   border-color: var(--acento);
 }
 
+/* --------------------------------------------------------------------------
+   Portada pública Miniápolis #3
+
+   Esta capa mantiene la autenticación funcional, pero le da a la entrada una
+   composición editorial amplia y convierte el material oficial de la pista
+   en el foco visual de la experiencia.
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada {
+  --entrada-paper: #f2f4ef;
+  --entrada-ink: #171b17;
+  --entrada-muted: #697269;
+  --entrada-line: rgba(23, 27, 23, .18);
+  --entrada-green: #68b82f;
+  color-scheme: light;
+  color: var(--entrada-ink);
+  background-color: var(--entrada-paper) !important;
+  background-image: linear-gradient(rgba(23, 27, 23, .026) 1px, transparent 1px), linear-gradient(90deg, rgba(23, 27, 23, .026) 1px, transparent 1px) !important;
+  background-size: 92px 92px;
+}
+.pagina-entrada::before { display: none; }
+.pagina-entrada .contenedor--angosto {
+  width: min(1440px, 100%) !important;
+  max-width: none !important;
+  padding-inline: clamp(20px, 3.4vw, 50px) !important;
+}
+.pagina-entrada main { position: relative; z-index: 1; padding-block: 0 82px !important; }
+.pagina-entrada .entrada__barra {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-height: 82px;
+  border-bottom: 1px solid var(--entrada-line);
+}
+.pagina-entrada .entrada__marca { display: inline-flex; align-items: center; gap: 10px; color: var(--entrada-ink); }
+.pagina-entrada .entrada__marca-sello { display: grid; place-items: center; width: 94px; height: 35px; flex: 0 0 auto; overflow: hidden; }
+.pagina-entrada .entrada__marca-sello img { display: block; width: 100%; height: 100%; object-fit: contain; filter: none; }
+.pagina-entrada .entrada__marca > span:last-child { display: none; }
+.pagina-entrada .entrada__meta { display: inline-flex; align-items: center; gap: 11px; margin-left: auto; color: var(--entrada-muted); font-family: var(--mono); font-size: .64rem; letter-spacing: .13em; text-transform: uppercase; }
+.pagina-entrada .entrada__punto { background: var(--entrada-ink); box-shadow: none; }
+.pagina-entrada .entrada__accion { display: inline-flex; align-items: center; gap: 12px; padding: 10px 15px 10px 18px; color: var(--entrada-paper); background: var(--entrada-ink); border: 1px solid var(--entrada-ink); border-radius: 999px; font-size: .78rem; font-weight: 750; text-decoration: none; box-shadow: none; }
+.pagina-entrada .entrada__accion:hover { color: var(--entrada-paper); background: #2a332b; }
+
+.pagina-entrada .entrada__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr);
+  align-items: end;
+  gap: clamp(30px, 8vw, 150px);
+  min-height: 355px;
+  padding-block: clamp(70px, 10vw, 132px) clamp(38px, 5vw, 66px);
+}
+.pagina-entrada .entrada__hero-copy { min-width: 0; }
+.pagina-entrada .entrada__hero h1 {
+  max-width: 920px;
+  margin: 0;
+  color: var(--entrada-ink);
+  font-family: var(--fuente);
+  font-size: clamp(4.4rem, 10.2vw, 10.4rem);
+  font-weight: 560;
+  line-height: .82;
+  letter-spacing: -.085em;
+}
+.pagina-entrada .entrada__hero h1 span { display: block; }
+.pagina-entrada .entrada__hero h1 span + span { color: var(--entrada-green); }
+.pagina-entrada .entrada__hero h1 .entrada__marca-registrada { display: inline !important; color: var(--entrada-ink) !important; font-size: .19em; }
+.pagina-entrada .entrada__kicker { color: #4f8e2b; }
+.pagina-entrada .entrada__kicker span { color: var(--entrada-muted); }
+.pagina-entrada .entrada__hero-aside { border-left-color: var(--entrada-ink); }
+.pagina-entrada .entrada__marca-texto { color: #4f8e2b; }
+.pagina-entrada .entrada__descripcion { color: #485048; }
+.pagina-entrada .entrada__enlace { color: var(--entrada-ink); border-bottom-color: var(--entrada-ink); }
+.pagina-entrada .entrada__enlace:hover { color: #4f8e2b; }
+
+.pagina-entrada .presentacion-pista {
+  position: relative;
+  height: clamp(230px, 40vw, 500px);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--entrada-ink);
+  border-radius: 3px;
+  isolation: isolate;
+  box-shadow: 0 18px 42px rgba(23, 27, 23, .13);
+}
+.pagina-entrada .presentacion-pista::after { content: ''; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, rgba(23, 27, 23, .03) 38%, rgba(23, 27, 23, .42) 100%); pointer-events: none; }
+.pagina-entrada .presentacion-pista img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 47%; filter: saturate(.9) contrast(1.04) brightness(1.03); }
+.pagina-entrada .presentacion-pista__barra {
+  position: absolute;
+  z-index: 3;
+  right: clamp(20px, 10vw, 150px);
+  bottom: clamp(18px, 3vw, 35px);
+  left: clamp(20px, 10vw, 150px);
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px 20px;
+  color: var(--entrada-ink);
+  background: rgba(242, 244, 239, .9);
+  font-family: var(--fuente);
+  font-size: .73rem;
+  font-weight: 560;
+  letter-spacing: .02em;
+  backdrop-filter: blur(10px);
+}
+.pagina-entrada .presentacion-pista__barra i { display: inline-block; width: 5px; height: 5px; margin-left: 7px; border-radius: 50%; background: #4f8e2b; }
+
+.pagina-entrada .entrada__acceso {
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(300px, 1fr);
+  column-gap: clamp(28px, 6vw, 110px);
+  row-gap: 24px;
+  margin-top: clamp(72px, 10vw, 150px);
+  padding: clamp(28px, 4vw, 48px) 0 0;
+  border-top: 1px solid var(--entrada-line);
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.pagina-entrada .entrada__acceso-intro { grid-column: 1; grid-row: 1 / span 3; }
+.pagina-entrada .entrada__acceso-intro h2 { margin: 0; color: var(--entrada-ink); font-family: var(--fuente); font-size: clamp(2rem, 4vw, 4.2rem); line-height: .9; letter-spacing: -.06em; }
+.pagina-entrada .entrada__acceso > .pestanas { grid-column: 2; grid-row: 1; border-bottom-color: var(--entrada-line); }
+.pagina-entrada .entrada__acceso > .aviso { grid-column: 2; grid-row: 2; }
+.pagina-entrada .entrada__acceso > form { grid-column: 2; grid-row: 3; }
+.pagina-entrada .entrada__acceso .pestana { color: var(--entrada-muted); }
+.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] { color: var(--entrada-ink); }
+.pagina-entrada .entrada__acceso .pestana::after { background: var(--entrada-ink); box-shadow: none; }
+.pagina-entrada .entrada__acceso input { color: var(--entrada-ink); border-color: rgba(23, 27, 23, .42); background: transparent; }
+.pagina-entrada .entrada__acceso input::placeholder { color: #879087; }
+.pagina-entrada .entrada__acceso input:focus { border-color: var(--entrada-ink); box-shadow: 0 1px 0 var(--entrada-ink); }
+.pagina-entrada .entrada__acceso .boton--principal { --bg: var(--entrada-ink); --fg: var(--entrada-paper); --bd: var(--entrada-ink); }
+
+.pagina-entrada .entrada__pista-real { margin-top: clamp(100px, 14vw, 190px); padding-top: clamp(28px, 4vw, 48px); border-top: 1px solid var(--entrada-line); }
+.pagina-entrada .entrada__seccion-cabeza { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(230px, .88fr); align-items: end; gap: clamp(28px, 8vw, 150px); margin-bottom: clamp(38px, 5vw, 66px); }
+.pagina-entrada .entrada__seccion-cabeza h2 { margin: 0; color: var(--entrada-ink); font-family: var(--fuente); font-size: clamp(2.8rem, 6.6vw, 6.4rem); font-weight: 560; line-height: .86; letter-spacing: -.075em; }
+.pagina-entrada .entrada__seccion-cabeza h2 em { color: var(--entrada-green); font-style: normal; }
+.pagina-entrada .entrada__seccion-descripcion { max-width: 360px; margin: 0 0 4px auto; color: #596259; font-size: clamp(.95rem, 1.45vw, 1.1rem); line-height: 1.35; }
+
+.pagina-entrada .entrada__media-destacada { display: grid; grid-template-columns: minmax(220px, .95fr) minmax(270px, 1.25fr) minmax(170px, .62fr); min-height: 430px; overflow: hidden; border: 0; border-radius: 3px; background: #171b17; box-shadow: 0 22px 58px rgba(23, 27, 23, .15); }
+.pagina-entrada .entrada__media-destacada-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(24px, 4vw, 44px); color: #f2f4ef; background: linear-gradient(145deg, #171b17, #263126); }
+.pagina-entrada .entrada__media-destacada-copy h3 { margin: 0 0 14px; font-family: var(--fuente); font-size: clamp(2rem, 3.2vw, 3.5rem); font-weight: 560; line-height: .88; letter-spacing: -.065em; }
+.pagina-entrada .entrada__media-destacada-copy > p:not(.entrada__kicker) { max-width: 270px; margin: 0; color: rgba(242, 244, 239, .76); font-size: .9rem; line-height: 1.35; }
+.pagina-entrada .entrada__media-meta { display: flex; gap: 10px 20px; flex-wrap: wrap; margin-top: 25px; color: rgba(242, 244, 239, .55); font-family: var(--mono); font-size: .56rem; letter-spacing: .12em; text-transform: uppercase; }
+.pagina-entrada .entrada__media-marca { min-width: 0; margin: 0; border-inline: 1px solid rgba(104, 184, 47, .2); background: #111; }
+.pagina-entrada .entrada__media-marca img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.8) contrast(1.08) brightness(.76); }
+.pagina-entrada .entrada__logo-firma { position: relative; display: flex; min-width: 0; margin: 0; flex-direction: column; justify-content: flex-end; overflow: hidden; background: #f4f5f0; }
+.pagina-entrada .entrada__logo-firma img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; mix-blend-mode: multiply; }
+.pagina-entrada .entrada__logo-firma span { position: absolute; right: 13px; bottom: 12px; left: 13px; color: #111; font-family: var(--mono); font-size: .52rem; letter-spacing: .09em; text-transform: uppercase; }
+
+.pagina-entrada .entrada__galeria { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: clamp(76px, 8.2vw, 112px); gap: 10px; margin-top: 10px; }
+.pagina-entrada .entrada__foto { position: relative; min-width: 0; min-height: 0; margin: 0; overflow: hidden; border: 1px solid rgba(23, 27, 23, .14); background: #101510; isolation: isolate; }
+.pagina-entrada .entrada__foto::after { content: ''; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, transparent 48%, rgba(0, 0, 0, .78) 100%); pointer-events: none; }
+.pagina-entrada .entrada__foto img { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.78) contrast(1.08) brightness(.88); transition: transform .55s ease, filter .55s ease; }
+.pagina-entrada .entrada__foto:hover img { transform: scale(1.045); filter: saturate(.95) contrast(1.05) brightness(.96); }
+.pagina-entrada .entrada__foto figcaption { position: absolute; z-index: 2; right: 12px; bottom: 10px; left: 12px; display: flex; align-items: center; gap: 8px; color: rgba(241, 245, 237, .9); font-family: var(--mono); font-size: .54rem; letter-spacing: .07em; text-transform: uppercase; }
+.pagina-entrada .entrada__foto figcaption span { color: var(--entrada-green); }
+.entrada__foto--01 { grid-column: span 5; grid-row: span 3; }
+.entrada__foto--02 { grid-column: span 3; grid-row: span 3; }
+.entrada__foto--03 { grid-column: span 4; grid-row: span 3; }
+.entrada__foto--04 { grid-column: span 2; grid-row: span 3; }
+.entrada__foto--05, .entrada__foto--06 { grid-column: span 3; grid-row: span 2; }
+.entrada__foto--07, .entrada__foto--08, .entrada__foto--09 { grid-column: span 2; grid-row: span 2; }
+.entrada__foto--10 { grid-column: span 3; grid-row: span 2; }
+.entrada__foto--11 { grid-column: span 3; grid-row: span 3; }
+.entrada__foto--12 { grid-column: span 3; grid-row: span 2; }
+.entrada__foto--13 { grid-column: span 4; grid-row: span 2; }
+.entrada__foto--14 { grid-column: span 2; grid-row: span 2; }
+.entrada__foto--15 { grid-column: span 3; grid-row: span 2; }
+.pagina-entrada .entrada__pie { color: var(--entrada-muted); }
+
+@media (max-width: 900px) {
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: minmax(220px, .9fr) minmax(250px, 1.1fr); }
+  .pagina-entrada .entrada__logo-firma { display: none; }
+  .pagina-entrada .entrada__galeria { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .entrada__foto--01 { grid-column: span 4; }
+  .entrada__foto--02, .entrada__foto--03, .entrada__foto--04, .entrada__foto--05, .entrada__foto--06, .entrada__foto--07, .entrada__foto--08, .entrada__foto--09, .entrada__foto--10 { grid-column: span 2; }
+  .entrada__foto--11, .entrada__foto--12 { grid-column: span 3; }
+  .entrada__foto--13 { grid-column: span 4; }
+  .entrada__foto--14, .entrada__foto--15 { grid-column: span 2; }
+}
+@media (max-width: 760px) {
+  .pagina-entrada .entrada__barra { min-height: 70px; }
+  .pagina-entrada .entrada__meta { display: none; }
+  .pagina-entrada .entrada__hero { grid-template-columns: 1fr; gap: 44px; min-height: 0; padding-block: 72px 42px; }
+  .pagina-entrada .entrada__hero h1 { font-size: clamp(4.2rem, 17vw, 7.6rem); }
+  .pagina-entrada .entrada__hero-aside { max-width: 480px; }
+  .pagina-entrada .entrada__acceso { grid-template-columns: 1fr; gap: 32px; }
+  .pagina-entrada .entrada__acceso-intro { grid-column: 1; grid-row: 1; }
+  .pagina-entrada .entrada__acceso > .pestanas { grid-column: 1; grid-row: 2; }
+  .pagina-entrada .entrada__acceso > .aviso { grid-column: 1; grid-row: 3; }
+  .pagina-entrada .entrada__acceso > form { grid-column: 1; grid-row: 4; }
+  .pagina-entrada .entrada__seccion-cabeza { grid-template-columns: 1fr; gap: 24px; }
+  .pagina-entrada .entrada__seccion-descripcion { margin-left: 0; }
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr; min-height: 570px; }
+  .pagina-entrada .entrada__media-destacada-copy { min-height: 300px; }
+  .pagina-entrada .entrada__media-marca { min-height: 270px; border-inline: 0; border-top: 1px solid rgba(104, 184, 47, .2); }
+}
+@media (max-width: 480px) {
+  .pagina-entrada .contenedor--angosto { padding-inline: 15px !important; }
+  .pagina-entrada .entrada__marca-sello { width: 78px; height: 30px; }
+  .pagina-entrada .entrada__hero { padding-block: 60px 36px; }
+  .pagina-entrada .entrada__hero h1 { font-size: clamp(3.7rem, 18vw, 5.5rem); }
+  .pagina-entrada .presentacion-pista { height: 260px; }
+  .pagina-entrada .presentacion-pista__barra { align-items: flex-end; flex-direction: column; gap: 6px; font-size: .56rem; }
+  .pagina-entrada .entrada__pista-real { margin-top: 82px; }
+  .pagina-entrada .entrada__media-destacada { min-height: 540px; }
+  .pagina-entrada .entrada__media-marca { min-height: 240px; }
+  .pagina-entrada .entrada__galeria { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 82px; gap: 7px; }
+  .entrada__foto--01 { grid-column: span 4; grid-row: span 3; }
+  .entrada__foto--02, .entrada__foto--03, .entrada__foto--04, .entrada__foto--05, .entrada__foto--06, .entrada__foto--07, .entrada__foto--08, .entrada__foto--09, .entrada__foto--10, .entrada__foto--11, .entrada__foto--12, .entrada__foto--14 { grid-column: span 2; grid-row: span 2; }
+  .entrada__foto--13, .entrada__foto--15 { grid-column: span 4; grid-row: span 2; }
+  .pagina-entrada .entrada__foto figcaption { right: 8px; bottom: 7px; left: 8px; font-size: .47rem; }
+}

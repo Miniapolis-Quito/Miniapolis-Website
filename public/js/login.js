@@ -30,7 +30,7 @@ function seleccionarPestana(cual) {
   formRecuperar.hidden = true;
   zonaOlvido.hidden = !esEntrar || !recuperacionDisponible;
   mostrarAviso(aviso, '');
-  (esEntrar ? formEntrar : formRegistro).querySelector('input')?.focus();
+  (esEntrar ? formEntrar : formRegistro).querySelector('input')?.focus({ preventScroll: true });
 }
 
 pestanaEntrar.addEventListener('click', () => seleccionarPestana('entrar'));
@@ -137,6 +137,6 @@ formRegistro.addEventListener('submit', async (evento) => {
     const sesion = await refrescarSesion();
     window.location.replace(destino(sesion.user.role));
   } catch {
-    $('#entrar-email')?.focus();
+    $('#entrar-email')?.focus({ preventScroll: true });
   }
 })();
