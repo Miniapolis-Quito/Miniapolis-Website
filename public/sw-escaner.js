@@ -13,7 +13,10 @@
  * - Red primero. Con conexión, el teléfono siempre usa la versión publicada y
  *   de paso renueva la copia; la caché solo se usa si la red falla o tarda.
  */
-const CACHE = 'rh-escaner-v1';
+/* Al cambiar el aspecto o el código del escáner hay que subir este número: la
+   copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
+   un teléfono sin conexión seguiría abriendo el diseño anterior. */
+const CACHE = 'rh-escaner-v2';
 
 /** Todo lo que carga el escáner. Una prueba comprueba que no falte nada. */
 const RECURSOS = [

@@ -11,7 +11,7 @@
  * La página misma abre sin conexión gracias a un service worker, con el nombre
  * de quien trabajaba en ese teléfono.
  */
-import { $, el, render, brindis, horaCorta, plural, METODOS, claveIdempotencia,
+import { $, el, render, icono, brindis, horaCorta, plural, METODOS, claveIdempotencia,
          mostrarAviso, mostrarErroresCampo, conCarga, vibrar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion, ErrorRed, estaAutenticado,
          refrescarSesion, onSesion, usarSesionSinConexion } from './api.js';
@@ -126,12 +126,12 @@ function pitar(tipo) {
 // Panel de resultado
 // ---------------------------------------------------------------------------
 
-function mostrarResultado({ tipo, icono, titulo, detalle, restantes, acciones }) {
+function mostrarResultado({ tipo, icono: nombreIcono, titulo, detalle, restantes, acciones }) {
   const nodo = $('#resultado');
   nodo.className = `resultado resultado--${tipo}`;
   render(
     nodo,
-    el('div', { class: 'resultado__icono' }, icono),
+    el('div', { class: 'resultado__icono' }, nombreIcono ? icono(nombreIcono, { grande: true }) : null),
     restantes !== undefined && restantes !== null ? el('div', { class: 'resultado__restantes' }, String(restantes)) : null,
     restantes !== undefined && restantes !== null ? el('div', { class: 'tenue pequeno' }, 'entradas restantes') : null,
     el('div', { class: 'resultado__titulo' }, titulo),
@@ -149,7 +149,7 @@ function mostrarResultado({ tipo, icono, titulo, detalle, restantes, acciones })
 function reposar() {
   mostrarResultado({
     tipo: 'neutro',
-    icono: '🏁',
+    icono: 'bandera',
     titulo: 'Listo para escanear',
     detalle: 'Apunta la cámara al código del cliente.',
   });
@@ -203,7 +203,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
     vibrar(60);
     mostrarResultado({
       tipo: 'ok',
-      icono: '✅',
+      icono: 'ok',
       titulo: 'Entrada registrada',
       detalle: `${respuesta.customer.fullName} · ${respuesta.pack.code}`,
       restantes: respuesta.remaining,
@@ -231,7 +231,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
       estado.pendiente = { payload, code, clave: idempotencyKey, deviceLabel: puestoUsado };
       mostrarResultado({
         tipo: 'alerta',
-        icono: '📶',
+        icono: 'senal',
         titulo: 'Sin conexión',
         detalle: 'No pudimos confirmar el registro. Reintenta cuando vuelva la señal: no se descontará dos veces.',
         acciones: el(
@@ -246,7 +246,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
     const esEspera = error.codigo === 'espera_activa';
     mostrarResultado({
       tipo: esEspera ? 'alerta' : 'error',
-      icono: esEspera ? '⏳' : '⛔',
+      icono: esEspera ? 'reloj' : 'prohibido',
       titulo: esEspera ? 'Ya se registró hace un momento' : 'No se pudo registrar',
       detalle: error.message,
       restantes: error.detalles?.pack?.remaining,
@@ -260,7 +260,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
 async function reintentarPendiente() {
   if (!estado.pendiente) return;
   const intento = estado.pendiente;
-  mostrarResultado({ tipo: 'neutro', icono: '⏳', titulo: 'Reintentando…', detalle: 'Confirmando con el servidor.' });
+  mostrarResultado({ tipo: 'neutro', icono: 'reloj', titulo: 'Reintentando…', detalle: 'Confirmando con el servidor.' });
   await registrarConsumo(intento);
 }
 
@@ -290,7 +290,7 @@ function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoU
     }
     mostrarResultado({
       tipo: resultado.tono === 'neutro' ? 'neutro' : resultado.tono,
-      icono: resultado.tono === 'alerta' ? '⏳' : resultado.tono === 'neutro' ? '📥' : '⛔',
+      icono: resultado.tono === 'alerta' ? 'reloj' : resultado.tono === 'neutro' ? 'descarga' : 'prohibido',
       titulo: resultado.tono === 'neutro' ? 'Ya estaba guardada' : 'No se guardó',
       detalle: resultado.mensaje,
     });
@@ -304,7 +304,7 @@ function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoU
   const conocido = estado.actividad.find((item) => item.packCode === resultado.lectura.codigo)?.customerName;
   mostrarResultado({
     tipo: 'guardada',
-    icono: '📥',
+    icono: 'descarga',
     titulo: 'Guardada sin conexión',
     detalle:
       `${resultado.lectura.codigo}${conocido ? ` · ${conocido}` : ''}. ` +
@@ -435,7 +435,7 @@ function filaGuardada(lectura) {
   return el(
     'li',
     { class: 'lista__item' },
-    el('span', { class: 'icono-lista--grande' }, '📥'),
+    el('span', { class: 'icono-lista--grande' }, icono('descarga')),
     el(
       'div',
       { class: 'crece' },
@@ -450,7 +450,7 @@ function filaRechazada(lectura) {
   return el(
     'li',
     { class: 'lista__item lista__item--rechazada' },
-    el('span', { class: 'icono-lista--grande' }, '⛔'),
+    el('span', { class: 'icono-lista--grande' }, icono('prohibido')),
     el(
       'div',
       { class: 'crece' },
@@ -736,7 +736,7 @@ function filaActividad(item, nuevo = false) {
   return el(
     'li',
     { class: `lista__item ${nuevo ? 'lista__item--nuevo' : ''}` },
-    el('span', { class: 'icono-lista--grande' }, anulada ? '↩️' : '✅'),
+    el('span', { class: 'icono-lista--grande' }, icono(anulada ? 'devolver' : 'ok')),
     el(
       'div',
       { class: 'crece' },
@@ -762,7 +762,15 @@ async function cargarActividad() {
     const { items } = await api.get(`/api/scan/history?limit=25${alcance}`);
     estado.actividad = items;
     if (items.length === 0) {
-      render(contenedor, el('div', { class: 'vacio' }, el('div', { class: 'vacio__icono' }, '🕐'), el('p', { class: 'sin-margen' }, 'Sin escaneos todavía.')));
+      render(
+        contenedor,
+        el(
+          'div',
+          { class: 'vacio' },
+          el('div', { class: 'vacio__icono' }, icono('reloj', { grande: true })),
+          el('p', { class: 'sin-margen' }, 'Sin escaneos todavía.'),
+        ),
+      );
       return;
     }
     render(contenedor, el('ul', { class: 'lista' }, items.map((item) => filaActividad(item))));
@@ -779,7 +787,7 @@ async function cargarActividad() {
 function mostrarConsultaSinConexion() {
   mostrarResultado({
     tipo: 'alerta',
-    icono: '📶',
+    icono: 'senal',
     titulo: 'Sin conexión',
     detalle:
       'Sin red no se puede consultar el saldo. Si el cliente tiene que entrar, usa «Descontar entrada»: ' +
@@ -833,7 +841,7 @@ function montarManual() {
         marcarEnLinea();
         mostrarResultado({
           tipo: datos.usable ? 'ok' : 'alerta',
-          icono: datos.usable ? '🔎' : '⚠️',
+          icono: datos.usable ? 'buscar' : 'aviso',
           titulo: datos.customer?.fullName || 'Pack encontrado',
           detalle: `${datos.pack.code} · ${datos.message}`,
           restantes: datos.pack.remaining,
@@ -858,7 +866,7 @@ function montarManual() {
           mostrarConsultaSinConexion();
           return;
         }
-        mostrarResultado({ tipo: 'error', icono: '⛔', titulo: 'No encontrado', detalle: error.message });
+        mostrarResultado({ tipo: 'error', icono: 'prohibido', titulo: 'No encontrado', detalle: error.message });
       }
     });
   });
@@ -982,7 +990,12 @@ async function alRecuperarSesion() {
     marcarSinConexion();
     render(
       $('#actividad'),
-      el('div', { class: 'vacio' }, el('div', { class: 'vacio__icono' }, '📶'), el('p', { class: 'sin-margen' }, 'La actividad se verá cuando vuelva la señal.')),
+      el(
+        'div',
+        { class: 'vacio' },
+        el('div', { class: 'vacio__icono' }, icono('senal', { grande: true })),
+        el('p', { class: 'sin-margen' }, 'La actividad se verá cuando vuelva la señal.'),
+      ),
     );
   } else {
     recordarOperador();

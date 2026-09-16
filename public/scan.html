@@ -18,6 +18,7 @@
         <div class="brand-lockup brand-lockup--compact mb-2" aria-hidden="true">
           <img class="brand-lockup__logo" src="/images/racing-hobbies-logo-oficial.png" width="1600" height="434" alt="">
         </div>
+        <span class="seccion-marca">Puerta</span>
         <h1 class="sin-margen">Control de acceso</h1>
         <p class="tenue sin-margen" id="subtitulo">Escanea el QR del cliente para descontar una entrada.</p>
       </div>
@@ -46,7 +47,12 @@
         </div>
 
         <div id="escaner-apagado" class="vacio">
-          <div class="vacio__icono">📷</div>
+          <div class="vacio__icono">
+            <svg class="icono icono--grande" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 8h3l2-3h6l2 3h3v12H4z"></path>
+              <path d="M12 16.5a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z"></path>
+            </svg>
+          </div>
           <p class="sin-margen">La cámara está apagada.</p>
           <p class="pequeno tenue-2">Necesita permiso del navegador y una conexión segura (HTTPS o localhost).</p>
         </div>
@@ -71,7 +77,12 @@
       <!-- Resultado y entrada manual -->
       <section class="columna">
         <div class="resultado" id="resultado">
-          <div class="resultado__icono">🏁</div>
+          <div class="resultado__icono">
+            <svg class="icono icono--grande" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M5 21V4"></path>
+              <path d="M5 5h13l-2.5 4L18 13H5"></path>
+            </svg>
+          </div>
           <div class="resultado__titulo">Listo para escanear</div>
           <div class="resultado__detalle">Apunta la cámara al código del cliente.</div>
         </div>

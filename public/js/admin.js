@@ -1,7 +1,7 @@
 /**
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
-import { $, $$, el, render, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
+import { $, $$, el, render, icono, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
@@ -183,7 +183,7 @@ async function cargarResumen() {
             el(
               'li',
               { class: 'lista__item' },
-              el('span', { class: 'icono-lista' }, item.status === 'voided' ? '↩️' : '✅'),
+              el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
               el(
                 'div',
                 { class: 'crece' },
@@ -235,7 +235,7 @@ function pintarNoCobradas(lecturas) {
         el(
           'li',
           { class: 'lista__item' },
-          el('span', { class: 'icono-lista' }, '⛔'),
+          el('span', { class: 'icono-lista' }, icono('prohibido')),
           el(
             'div',
             { class: 'crece' },
@@ -287,15 +287,17 @@ function pintarIntegridad(integridad) {
       ? el(
           'div',
           { class: 'aviso aviso--ok' },
-          '✅ Contabilidad correcta: el saldo de todos los packs coincide con su historial de movimientos.',
+          icono('ok'),
+          'Contabilidad correcta: el saldo de todos los packs coincide con su historial de movimientos.',
         )
       : el(
           'div',
           { class: 'aviso aviso--error' },
+          icono('aviso'),
           el(
             'div',
             {},
-            el('strong', {}, '⚠️ Se detectaron diferencias contables.'),
+            el('strong', {}, 'Se detectaron diferencias contables.'),
             el(
               'div',
               { class: 'pequeno' },
@@ -393,7 +395,7 @@ async function cargarUsuarios() {
                   el('button', { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => verUsuario(usuario.id) }, 'Abrir ficha'),
                   el(
                     'button',
-                    { class: 'boton boton--chico boton--principal', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
+                    { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: alPulsar(() => abrirDialogoPack(usuario)) },
                     'Vender',
                   ),
                 ),
@@ -628,7 +630,7 @@ function filaConsumo(item, alCambiar) {
   return el(
     'li',
     { class: 'lista__item' },
-    el('span', { class: 'icono-lista' }, item.status === 'voided' ? '↩️' : '✅'),
+    el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
     el(
       'div',
       { class: 'crece' },
@@ -668,7 +670,7 @@ async function cargarConsumos() {
           el(
             'li',
             { class: 'lista__item' },
-            el('span', { class: 'icono-lista' }, item.status === 'voided' ? '↩️' : '✅'),
+            el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
             el(
               'div',
               { class: 'crece' },
