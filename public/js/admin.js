@@ -74,7 +74,9 @@ function aplicarRuta() {
   if (ruta.vista === 'ficha') {
     // Una ficha también se abre desde un enlace dentro de un panel (avisos,
     // entradas sin cobrar): al cerrarla se vuelve a ese panel.
-    if (!estado.mostrandoFicha) estado.panelPrevio = estado.panel;
+    if (!estado.mostrandoFicha) {
+      estado.panelPrevio = estado.panelPrevio || (estado.panel === 'resumen' ? 'clientes' : estado.panel);
+    }
     estado.mostrandoFicha = true;
     encabezado.hidden = true;
     pestanas.hidden = true;

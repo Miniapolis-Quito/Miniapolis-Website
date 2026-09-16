@@ -32,7 +32,13 @@ const db = getDb();
 
 async function asegurarUsuario({ correo, nombre, telefono, rol }) {
   const existente = users.findByEmail(correo);
-  if (existente) return existente;
+  if (existente) {
+    await users.setPassword(existente.id, CLAVE_DEMO);
+    if (existente.status !== 'active') {
+      db.prepare("UPDATE users SET status = 'active' WHERE id = ?").run(existente.id);
+    }
+    return users.findById(existente.id);
+  }
   return users.createUser({ email: correo, password: CLAVE_DEMO, fullName: nombre, phone: telefono, role: rol });
 }
 
