@@ -16,7 +16,7 @@
 /* Al cambiar el aspecto o el código del escáner hay que subir este número: la
    copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
    un teléfono sin conexión seguiría abriendo el diseño anterior. */
-const CACHE = 'rh-escaner-v2';
+const CACHE = 'rh-escaner-v3';
 
 /** Todo lo que carga el escáner. Una prueba comprueba que no falte nada. */
 const RECURSOS = [
@@ -29,12 +29,12 @@ const RECURSOS = [
   '/js/api.js',
   '/js/realtime.js',
   '/js/shell.js',
+  '/js/cursor.js',
   '/js/cuenta.js',
   '/vendor/jsQR.js',
   '/fonts/anton-400.woff2',
   '/fonts/archivo-var.woff2',
   '/images/racing-hobbies-logo-oficial.png',
-  '/images/racing-hobbies-pista-rc.webp',
   '/favicon.svg',
   '/manifest.webmanifest',
 ];

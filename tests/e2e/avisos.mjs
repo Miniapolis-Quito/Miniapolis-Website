@@ -138,13 +138,16 @@ await paso('la sección de avisos arranca apagada y explica por qué no sale nad
 });
 
 await paso('cada cliente aparece en su grupo, empezando por lo más urgente', async () => {
-  const grupos = await admin.locator('#avisos-grupos .pestana').allInnerTexts();
+  // `allInnerTexts` devuelve el texto ya pasado por CSS, y las pestañas van en
+  // mayúsculas: se compara el texto del documento, que es el que escribe el
+  // código.
+  const grupos = await admin.locator('#avisos-grupos .pestana').allTextContents();
   comprobar(
     JSON.stringify(grupos.map((g) => g.replace(/\s+/g, ' ').trim())) ===
       JSON.stringify(['Por vencer 1', 'Sin entradas 1', 'No vienen 1', 'Quedan pocas 1']),
     `grupos inesperados: ${JSON.stringify(grupos)}`,
   );
-  const seleccionado = await admin.locator('#avisos-grupos .pestana[aria-selected="true"]').innerText();
+  const seleccionado = await admin.locator('#avisos-grupos .pestana[aria-selected="true"]').textContent();
   comprobar(seleccionado.startsWith('Por vencer'), 'debería abrirse el grupo de vencimientos');
   const lista = await admin.locator('#avisos-oportunidades').innerText();
   comprobar(lista.includes('Ana Vence') && lista.includes('vencen el'), `falta Ana en por vencer: ${lista}`);
