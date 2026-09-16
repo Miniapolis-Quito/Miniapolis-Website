@@ -189,16 +189,16 @@ a:hover { text-decoration-color: var(--acento); }
   white-space: nowrap;
 }
 .barra__marca span { font-size: 1rem; }
+/* El logotipo oficial ya trae su propio contorno oscuro y va suelto sobre el
+   negro de la interfaz. Sobre una placa verde se perdían el verde de «MINI»,
+   el del «#3» y las cuchillas de velocidad: la marca quedaba a medias. */
 .marca__sello {
   display: grid; flex: none; place-items: center;
-  width: 96px; height: 34px;
-  overflow: hidden;
-  background: var(--acento);
-  border-radius: var(--radio-xs);
-  transition: box-shadow var(--transicion), transform var(--transicion);
+  height: 34px;
+  transition: filter var(--transicion), transform var(--transicion);
 }
-.barra__marca:hover .marca__sello { box-shadow: 0 0 0 1px var(--acento), 0 6px 18px rgba(61, 254, 64, .28); transform: translateY(-1px); }
-.marca__logo { display: block; width: 90px; height: 30px; object-fit: contain; }
+.barra__marca:hover .marca__sello { filter: drop-shadow(0 4px 14px rgba(61, 254, 64, .3)); transform: translateY(-1px); }
+.marca__logo { display: block; width: auto; height: 34px; object-fit: contain; }
 .barra__nav { display: flex; gap: 4px; flex-wrap: wrap; }
 
 .encabezado-pista {
@@ -238,13 +238,10 @@ a:hover { text-decoration-color: var(--acento); }
 }
 .encabezado-pista p { margin-bottom: 0; color: var(--texto-2); }
 
-.brand-lockup {
-  display: inline-grid; place-items: center;
-  padding: 8px 12px;
-  background: var(--acento);
-  border-radius: var(--radio-xs);
-}
-.brand-lockup__logo { display: block; width: min(210px, 52vw); height: auto; }
+/* Mismo motivo que en `.marca__sello`: el logotipo se apoya en el lienzo
+   negro, sin recuadro que le tape la mitad verde. */
+.brand-lockup { display: inline-grid; place-items: center; }
+.brand-lockup__logo { display: block; width: min(250px, 62vw); height: auto; }
 
 main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 
@@ -1282,16 +1279,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   background: #000;
   border-bottom: 2mm solid #3dfe40;
 }
+/* La cabecera del pase ya es negra: el logotipo se imprime directamente sobre
+   ella, sin la placa verde que le borraba «MINI» y el «#3». */
 .pase__marca {
   display: grid;
   place-items: center;
-  padding: 2mm 3mm;
-  background: #3cfe3f;
 }
 .pase__logo {
   display: block;
   width: 100%;
-  max-width: 66mm;
+  max-width: 54mm;
   height: auto;
 }
 .pase__titulo  { margin-top: 3.5mm; color: #fff; font-family: var(--fuente-display); font-size: 13pt; line-height: 1; letter-spacing: .08em; text-transform: uppercase; }
