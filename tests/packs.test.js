@@ -552,3 +552,49 @@ test('las transferencias no aparecen como entradas usadas ni emitidas dos veces'
   assert.equal(dashboard.datos.totals.issuedTickets, 5);
   assert.equal(dashboard.datos.totals.usedTickets, 0);
 });
+
+test('el resumen del cliente cuenta correctamente consumos grupales y transferencias', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const receptor = await cMaster.post('/api/admin/users', {
+    email: 'receptor-resumen@pista.ec',
+    fullName: 'Receptor Resumen',
+    role: 'customer',
+    password: 'Palanca-Cambios-55',
+  });
+  const cReceptor = crearCliente();
+  await cReceptor.entrar('receptor-resumen@pista.ec', 'Palanca-Cambios-55');
+
+  const pack = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 10 });
+  const packId = pack.datos.pack.id;
+
+  // Consumo grupal de 3 entradas
+  const canje = await cStaff.post('/api/scan', {
+    payload: (await import('../src/lib/qr.js')).buildQrPayload(packs.findById(packId)),
+    quantity: 3,
+  });
+  assert.equal(canje.status, 200);
+
+  // Transferencia de 2 entradas al receptor
+  const transfer = await cCliente.post(`/api/packs/${packId}/transfer`, {
+    quantity: 2,
+    recipient: receptor.datos.user.email,
+  });
+  assert.equal(transfer.status, 200);
+
+  // Resumen del emisor
+  const resEmisor = await cCliente.get('/api/packs/mine');
+  assert.equal(resEmisor.status, 200);
+  assert.equal(resEmisor.datos.summary.availableTickets, 5);
+  assert.equal(resEmisor.datos.summary.usedTickets, 3);
+  assert.equal(resEmisor.datos.summary.transferredTickets, 2);
+  assert.equal(resEmisor.datos.summary.purchasedTickets, 10);
+
+  // Resumen del receptor
+  const resReceptor = await cReceptor.get('/api/packs/mine');
+  assert.equal(resReceptor.status, 200);
+  assert.equal(resReceptor.datos.summary.availableTickets, 2);
+  assert.equal(resReceptor.datos.summary.usedTickets, 0);
+  assert.equal(resReceptor.datos.summary.purchasedTickets, 2);
+  assert.equal(resReceptor.datos.summary.transferredTickets, 0);
+});
+
