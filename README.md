@@ -1,4 +1,4 @@
-# Sistema de entradas — Racing Hobbies Ecuador
+# Sistema de entradas — Miniápolis #3
 
 Control de acceso por packs de entradas para la pista de autos a control remoto.
 Los clientes compran packs de 5 o 10 entradas, muestran un código QR desde su
@@ -14,8 +14,12 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 - Muestra un QR que se renueva solo cada 30 segundos y caduca a los dos
   minutos, así que una captura de pantalla ajena sirve de poco — y de nada en
   cuanto ese código se usa una vez.
-- Consulta su historial: cuándo usó cada entrada, en qué pack y con qué saldo
-  quedó.
+- Puede **transferir entradas a otro piloto** registrado por correo o teléfono,
+  dejando un mensaje opcional. El destinatario recibe un pack nuevo de inmediato,
+  ambos ven sus saldos y movimientos actualizados en vivo por SSE y carteras,
+  y se envía un aviso por correo electrónico.
+- Consulta su historial: cuándo usó cada entrada, en qué pack, transferencias
+  enviadas/recibidas y con qué saldo quedó.
 - Si se queda sin señal, su código de pack (`RHE-XXXX-XXXX`) sigue sirviendo:
   el personal puede ingresarlo a mano.
 - Puede guardar el pack en la cartera del teléfono (Apple Wallet o Google
@@ -24,12 +28,15 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 **Para el personal de pista**
 - Escáner con la cámara del teléfono, con lector nativo del navegador cuando
   está disponible y respaldo que funciona sin conexión a Internet.
+- **Admisión grupal (1 a 4 entradas)**: selector de cantidad para admitir a
+  familias o grupos con un solo escaneo de QR o ingreso manual. Incluye sonido
+  y vibración dobles para confirmar el canje grupal.
 - Confirmación grande y con sonido: cuántas entradas quedan, de quién es el
   pack, y aviso cuando el cliente se está quedando sin entradas.
 - Consulta un pack sin descontar nada, e ingreso manual por código.
-- **Sigue cobrando aunque se caiga Internet**: cada lectura se guarda en el
-  teléfono y se cobra sola al volver la señal, con la hora en que se leyó. La
-  página abre incluso sin red. Ver más abajo.
+- **Sigue cobrando aunque se caiga Internet**: cada lectura (individual o grupal)
+  se guarda en el teléfono y se cobra sola al volver la señal, con la hora en que
+  se leyó. La página abre incluso sin red. Ver más abajo.
 - No puede emitir packs, ajustar saldos ni ver la administración.
 
 **Para el usuario máster**
@@ -161,7 +168,7 @@ cualquier conexión permitiría falsificar IPs y esquivar los límites.
 ```ini
 # /etc/systemd/system/entradas.service
 [Unit]
-Description=Entradas Racing Hobbies
+Description=Entradas Miniápolis
 After=network.target
 
 [Service]
@@ -302,7 +309,7 @@ SMTP_HOST=smtp.tu-proveedor.com
 SMTP_PORT=587
 SMTP_USER=entradas@racinghobbies.ec
 SMTP_PASSWORD_FILE=/etc/entradas/smtp-password
-MAIL_FROM=Racing Hobbies <entradas@racinghobbies.ec>
+MAIL_FROM=Miniápolis <entradas@racinghobbies.ec>
 ```
 
 El envío exige TLS con certificado válido (STARTTLS en el 587, TLS directo en

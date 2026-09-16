@@ -163,7 +163,7 @@ export function clasificarRespuesta(error) {
 }
 
 /** Lectura lista para guardarse: lleva todo lo necesario para enviarla igual más tarde. */
-export function nuevaLectura({ tipo, payload, code, clave, codigo, capturadaEn, puesto, operador }) {
+export function nuevaLectura({ tipo, payload, code, clave, codigo, capturadaEn, puesto, operador, quantity }) {
   return {
     id: clave,
     tipo,
@@ -173,6 +173,7 @@ export function nuevaLectura({ tipo, payload, code, clave, codigo, capturadaEn, 
     puesto: puesto || null,
     operadorId: operador.id,
     operadorNombre: operador.fullName,
+    quantity: quantity && quantity > 1 ? quantity : 1,
     estado: 'pendiente',
     intentos: 0,
   };
@@ -188,9 +189,10 @@ export function nuevaLectura({ tipo, payload, code, clave, codigo, capturadaEn, 
 export function envioDe(lectura, ahora) {
   const horas = { capturedAt: new Date(lectura.capturadaEn).toISOString(), sentAt: new Date(ahora).toISOString() };
   const puesto = lectura.puesto ? { deviceLabel: lectura.puesto } : {};
+  const cantidad = lectura.quantity && lectura.quantity > 1 ? { quantity: lectura.quantity } : {};
   return lectura.tipo === 'qr'
-    ? { ruta: '/api/scan', cuerpo: { payload: lectura.payload, ...puesto, ...horas } }
-    : { ruta: '/api/scan/manual', cuerpo: { code: lectura.code, ...puesto, ...horas } };
+    ? { ruta: '/api/scan', cuerpo: { payload: lectura.payload, ...puesto, ...cantidad, ...horas } }
+    : { ruta: '/api/scan/manual', cuerpo: { code: lectura.code, ...puesto, ...cantidad, ...horas } };
 }
 
 /** Reparte las lecturas guardadas según quién puede ocuparse de ellas. */

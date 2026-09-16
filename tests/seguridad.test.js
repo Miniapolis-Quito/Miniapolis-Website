@@ -66,6 +66,26 @@ test('siempre debe quedar al menos un usuario máster', async () => {
   assert.equal(soloUno, 1);
 });
 
+test('dos cambios simultáneos no pueden dejar la instalación sin máster activo', async () => {
+  const { cMaster } = await sembrarUsuarios();
+  const segundo = await cMaster.post('/api/admin/users', {
+    email: 'segundo-concurrente@pista.ec', fullName: 'Segundo Concurrente', role: 'master', password: 'Palanca-Cambios-55',
+  });
+  const tercero = await cMaster.post('/api/admin/users', {
+    email: 'tercero-concurrente@pista.ec', fullName: 'Tercero Concurrente', role: 'master', password: 'Palanca-Cambios-55',
+  });
+
+  const resultados = await Promise.all([
+    cMaster.patch(`/api/admin/users/${segundo.datos.user.id}`, { role: 'staff' }),
+    cMaster.patch(`/api/admin/users/${tercero.datos.user.id}`, { role: 'staff' }),
+  ]);
+  assert.deepEqual(resultados.map((r) => r.status).sort(), [200, 200]);
+
+  const { getDb } = await import('../src/db/index.js');
+  const activos = getDb().prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'master' AND status = 'active'").get().n;
+  assert.equal(activos, 1);
+});
+
 test('las respuestas llevan las cabeceras de seguridad esperadas', async () => {
   const anonimo = crearCliente();
   const r = await anonimo.get('/api/health');
@@ -82,6 +102,12 @@ test('las respuestas llevan las cabeceras de seguridad esperadas', async () => {
   // Sin 'unsafe-inline' ni 'unsafe-eval': la interfaz no los necesita.
   assert.ok(!csp.includes('unsafe-inline'));
   assert.ok(!csp.includes('unsafe-eval'));
+
+  const pp = r.headers.get('permissions-policy');
+  assert.ok(pp.includes('accelerometer=()'));
+  assert.ok(pp.includes('gyroscope=()'));
+  assert.ok(pp.includes('magnetometer=()'));
+  assert.ok(pp.includes('display-capture=()'));
 });
 
 test('la cookie de refresco es httpOnly, SameSite=Strict y de ámbito acotado', async () => {
@@ -107,6 +133,32 @@ test('se rechaza una petición con Origin de otro sitio', async () => {
   );
   assert.equal(r.status, 403);
   assert.equal(r.datos.error.code, 'origen_no_permitido');
+});
+
+test('se rechaza una petición con Referer de otro sitio cuando no hay Origin', async () => {
+  await sembrarUsuarios();
+  const cliente = crearCliente();
+
+  const r = await cliente.post(
+    '/api/auth/login',
+    { email: 'cliente@pista.ec', password: 'Diferencial-Rojo-91' },
+    { cabeceras: { Referer: 'https://sitio-malicioso.example/formulario' } },
+  );
+  assert.equal(r.status, 403);
+  assert.equal(r.datos.error.code, 'origen_no_permitido');
+});
+
+test('se rechaza una petición con Sec-Fetch-Site cross-site sin origen permitido', async () => {
+  await sembrarUsuarios();
+  const cliente = crearCliente();
+
+  const r = await cliente.post(
+    '/api/auth/login',
+    { email: 'cliente@pista.ec', password: 'Diferencial-Rojo-91' },
+    { cabeceras: { 'Sec-Fetch-Site': 'cross-site' } },
+  );
+  assert.equal(r.status, 403);
+  assert.equal(r.datos.error.code, 'cross_site_no_permitido');
 });
 
 test('un cuerpo JSON inválido o demasiado grande devuelve un error claro', async () => {
@@ -415,4 +467,54 @@ test('producción no arranca con los secretos de ejemplo del repositorio ni con 
   const conClaveDeEjemplo = arrancar({ MASTER_PASSWORD: 'Pista-RC-Master-2026' });
   assert.notEqual(conClaveDeEjemplo.status, 0);
   assert.match(conClaveDeEjemplo.stderr, /MASTER_PASSWORD/);
+});
+
+test('las direcciones IPv6 se agrupan en su subred /64 para control de tasa', async () => {
+  const { normalizeIpForScope } = await import('../src/middleware/security.js');
+  const ip1 = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+  const ip2 = '2001:db8:85a3::1';
+  const ip3 = '2001:db8:85a4::1';
+
+  const scope1 = normalizeIpForScope(ip1);
+  const scope2 = normalizeIpForScope(ip2);
+  const scope3 = normalizeIpForScope(ip3);
+
+  assert.equal(scope1, scope2);
+  assert.notEqual(scope1, scope3);
+  assert.equal(normalizeIpForScope('192.168.1.5'), '192.168.1.5');
+});
+
+test('la reutilización de un refresh token genera un registro en auditoría', async () => {
+  const { cCliente, cliente } = await sembrarUsuarios();
+  const tokenRobado = cCliente.leerCookie('rh_refresh');
+  assert.ok(tokenRobado);
+
+  assert.equal((await cCliente.post('/api/auth/refresh')).status, 200);
+
+  const atacante = crearCliente();
+  const intento = await atacante.post('/api/auth/refresh', { refreshToken: tokenRobado });
+  assert.equal(intento.status, 401);
+  assert.equal(intento.datos.error.code, 'refresh_reutilizado');
+
+  const { getDb } = await import('../src/db/index.js');
+  const sesion = getDb().prepare("SELECT * FROM sessions WHERE revoke_reason = 'token_reuse' AND user_id = ?").get(cliente.id);
+  assert.ok(sesion, 'debe registrarse la revocación por token_reuse en la base');
+  assert.equal(sesion.user_id, cliente.id);
+
+  const entradaAudit = getDb().prepare("SELECT * FROM audit_log WHERE action = 'sesion.token_reutilizado' AND entity_id = ?").get(cliente.id);
+  assert.ok(entradaAudit, 'debe registrarse la reutilización en audit_log');
+});
+
+test('un ticket de descarga con expiración lejana en el futuro se rechaza', async () => {
+  const wallet = await import('../src/services/wallet.js');
+  const packId = 'pack-prueba-seguridad';
+  const ahora = Date.now();
+  const expiracionLejana = Math.floor(ahora / 1000) + 86400 * 365;
+  const { config } = await import('../src/config.js');
+  const crypto = await import('node:crypto');
+  const cuerpo = `${packId}.${expiracionLejana}`;
+  const firma = crypto.createHmac('sha256', config.secrets.accessToken).update(`wallet:${cuerpo}`).digest('base64url');
+  const ticketManipulado = `${expiracionLejana}.${firma}`;
+
+  assert.equal(wallet.ticketValido(packId, ticketManipulado, { ahora }), false);
 });

@@ -1,7 +1,32 @@
-# Colección visual de Racing Hobbies
+# Colección visual de Miniápolis #3
 
 Escenas originales para banners y pases, sin marcas de terceros ni texto
-incrustado. Todas mantienen el azul marino, naranja y negro de Racing Hobbies.
+incrustado. Todas mantienen el negro y el verde de Miniápolis #3.
+
+## Logotipo
+
+El logotipo oficial de Miniápolis #3 viene dibujado sobre fondo transparente y
+con su propio contorno oscuro: va suelto sobre el negro de la interfaz, nunca
+dentro de un recuadro verde (el verde de «MINI» y del «#3» desaparecería).
+
+| Archivo | Qué es | Dónde se usa |
+| --- | --- | --- |
+| `miniapolis-logo-oficial.webp` | Logotipo completo, 1000 × 425 px | Cabeceras de todas las pantallas y pase impreso |
+| `miniapolis-wallet-icon.png` | Sello cuadrado (bandera + antena), 660 × 660 px | Icono de Google Wallet, que lo recorta en círculo |
+| `miniapolis-wallet-wide-logo.png` | Logotipo completo sobre transparente, 1280 × 400 px | Cabecera del pase de Google Wallet |
+| `miniapolis-icono-192.png`, `miniapolis-icono-512.png` | Sello cuadrado con margen de seguridad | Iconos `maskable` del manifiesto |
+
+El sello cuadrado y el favicon salen del mismo dibujo vectorial que
+`/public/favicon.svg`: si cambia uno, hay que volver a exportar los demás.
+
+```bash
+rsvg-convert -w 660 -h 660 marca-cuadrada.svg -o miniapolis-wallet-icon.png
+```
+
+Los iconos de Apple Wallet (`assets/wallet/icon*.png` y `logo*.png`) salen de
+ese mismo par de archivos y hay que regenerarlos a la vez.
+
+## Escenas
 
 | Archivo | Escena | Uso recomendado |
 | --- | --- | --- |
@@ -14,6 +39,15 @@ incrustado. Todas mantienen el azul marino, naranja y negro de Racing Hobbies.
 Las tres variantes nuevas se exportaron en WebP a 1942 × 809 px y calidad alta
 para que conserven detalle en pantalla e impresión sin pesar innecesariamente
 en la conexión móvil.
+
+## Material oficial de la pista
+
+La portada pública también usa el material entregado por Miniápolis en
+`/public/images/oficial/`: las tres composiciones de marca (`miniapolis-*.webp`)
+y las 15 fotografías reales del recinto (`pista-oficial-01.webp` a
+`pista-oficial-15.webp`). Las fotografías se sirven como WebP optimizado,
+mantienen su orientación original y se cargan de forma diferida dentro de la
+galería para conservar una navegación fluida en teléfonos.
 
 ## Peso
 

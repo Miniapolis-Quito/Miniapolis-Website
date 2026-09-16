@@ -245,8 +245,8 @@ function comoEstabaAlLeer(pack, at) {
  * `at` es el instante de la lectura y `now` el de llegada; coinciden salvo en
  * una lectura diferida.
  */
-function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, nonce, ip, now, lectura }) {
-  const { at, diferida } = lectura;
+function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, nonce, ip, now, lectura, quantity = 1 }) {
+  const { at, diferida } = lectura || { at: now, diferida: false };
   const nowIso = new Date(now).toISOString();
   const atIso = new Date(at).toISOString();
 
@@ -263,6 +263,19 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     throw conflict(usable.message, codigo, {
       pack: packsService.toPublicPack(fresh),
     });
+  }
+
+  // Verificación de saldo suficiente para la cantidad solicitada.
+  if (fresh.remaining < quantity) {
+    throw conflict(
+      `Al pack solo le quedan ${fresh.remaining} ${fresh.remaining === 1 ? 'entrada' : 'entradas'}, pero se solicitaron ${quantity}.`,
+      'saldo_insuficiente',
+      {
+        requested: quantity,
+        remaining: fresh.remaining,
+        pack: packsService.toPublicPack(fresh),
+      },
+    );
   }
 
   // Barrera 3: dos escaneos muy seguidos del mismo pack.
@@ -295,7 +308,7 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
   }
 
   const remainingBefore = fresh.remaining;
-  const remainingAfter = remainingBefore - 1;
+  const remainingAfter = remainingBefore - quantity;
   // Un pack vencido que cobra una lectura anterior a su vencimiento sigue
   // vencido: cobrarla no puede devolverlo al servicio.
   const newStatus = remainingAfter === 0 && fresh.status === 'active' ? 'depleted' : fresh.status;
@@ -312,9 +325,9 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
   const syncedAt = diferida ? nowIso : null;
   db.prepare(
     `INSERT INTO redemptions (id, pack_id, user_id, scanned_by, device_label, method,
-                              remaining_before, remaining_after, status, idempotency_key, nonce, ip,
+                              remaining_before, remaining_after, quantity, status, idempotency_key, nonce, ip,
                               created_at, synced_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, ?)`,
   ).run(
     redemptionId,
     fresh.id,
@@ -324,6 +337,7 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     method,
     remainingBefore,
     remainingAfter,
+    quantity,
     idempotencyKey ?? null,
     nonce ?? null,
     ip ?? null,
@@ -335,15 +349,17 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
     syncedAt,
   );
 
+  const note = quantity > 1 ? `Entrada grupal (${quantity} entradas)` : null;
   db.prepare(
-    `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, redemption_id, actor_id, created_at)
-     VALUES (?, ?, -1, ?, 'redeem', ?, ?, ?)`,
-  ).run(newId(), fresh.id, remainingAfter, redemptionId, scannedBy ?? null, nowIso);
+    `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, redemption_id, actor_id, note, created_at)
+     VALUES (?, ?, ?, ?, 'redeem', ?, ?, ?, ?)`,
+  ).run(newId(), fresh.id, -quantity, remainingAfter, redemptionId, scannedBy ?? null, note, nowIso);
 
   return {
     redemptionId,
     remainingBefore,
     remainingAfter,
+    quantity,
     method,
     deviceLabel: deviceLabel ?? null,
     pack: packsService.findById(fresh.id, db),
@@ -352,12 +368,12 @@ function redeemOne(db, { pack, method, scannedBy, deviceLabel, idempotencyKey, n
   };
 }
 
-/** Publica el resultado del consumo a los canales en vivo. */
 function publishRedemption(result, owner, scanner) {
   const payload = {
     redemptionId: result.redemptionId,
     pack: packsService.toPublicPack(result.pack),
     remaining: result.remainingAfter,
+    quantity: result.quantity ?? 1,
     owner: { id: owner.id, fullName: owner.full_name },
     scannedBy: scanner ? { id: scanner.id, fullName: scanner.fullName } : null,
     // El método y el puesto viajan en el evento para que la actividad en vivo
@@ -409,13 +425,13 @@ export function redeemByQr(datos) {
   );
 }
 
-function canjearQr({ payload, scanner, deviceLabel, idempotencyKey, ip, userAgent, now, lectura }) {
+function canjearQr({ payload, quantity = 1, scanner, deviceLabel, idempotencyKey, ip, userAgent, now, lectura }) {
   const db = getDb();
   const endpoint = 'scan';
   // La hora de lectura no forma parte de la huella de la petición: una lectura
   // que se intentó en línea y se guardó al fallar la red se reenvía con la
   // misma clave, y tiene que reconocerse como el mismo intento.
-  const requestHash = hashRequest({ payload, deviceLabel });
+  const requestHash = hashRequest({ payload, deviceLabel, quantity });
 
   const parsed = parseQrPayload(payload);
   if (!parsed.ok) {
@@ -447,7 +463,7 @@ function canjearQr({ payload, scanner, deviceLabel, idempotencyKey, ip, userAgen
         action: 'escaneo.rechazado',
         entityType: 'pack',
         entityId: pack.id,
-        metadata: { code: pack.code, reason: verification.reason },
+        metadata: { code: pack.code, reason: verification.reason, quantity },
         ip,
         userAgent,
         db,
@@ -492,12 +508,18 @@ function canjearQr({ payload, scanner, deviceLabel, idempotencyKey, ip, userAgen
       ip,
       now,
       lectura,
+      quantity,
     });
+
+    const mensaje = quantity > 1
+      ? `${quantity} entradas registradas. Quedan ${consumo.remainingAfter} entrada(s).`
+      : `Entrada registrada. Quedan ${consumo.remainingAfter} entrada(s).`;
 
     const respuesta = {
       ok: true,
-      message: `Entrada registrada. Quedan ${consumo.remainingAfter} entrada(s).`,
+      message: mensaje,
       redemptionId: consumo.redemptionId,
+      quantity: consumo.quantity,
       method: verification.method,
       remaining: consumo.remainingAfter,
       remainingBefore: consumo.remainingBefore,
@@ -532,6 +554,7 @@ function canjearQr({ payload, scanner, deviceLabel, idempotencyKey, ip, userAgen
       code: pack.code,
       method: verification.method,
       remaining: result.remainingAfter,
+      quantity: result.quantity,
       redemptionId: result.redemptionId,
       deviceLabel,
       ...(lectura.diferida ? { capturedAt: result.createdAt } : {}),
@@ -557,10 +580,10 @@ export function redeemByCode(datos) {
   );
 }
 
-function canjearCodigo({ code, scanner, deviceLabel, idempotencyKey, ip, userAgent, now, lectura }) {
+function canjearCodigo({ code, quantity = 1, scanner, deviceLabel, idempotencyKey, ip, userAgent, now, lectura }) {
   const db = getDb();
   const endpoint = 'manual';
-  const requestHash = hashRequest({ code: normalizarCodigo(code), deviceLabel });
+  const requestHash = hashRequest({ code: normalizarCodigo(code), deviceLabel, quantity });
 
   const pack = packsService.findByLooseCode(code, db);
   if (!pack) throw notFound('No existe ningún pack con ese código.', 'pack_no_encontrado');
@@ -581,12 +604,18 @@ function canjearCodigo({ code, scanner, deviceLabel, idempotencyKey, ip, userAge
       ip,
       now,
       lectura,
+      quantity,
     });
+
+    const mensaje = quantity > 1
+      ? `${quantity} entradas registradas manualmente. Quedan ${consumo.remainingAfter} entrada(s).`
+      : `Entrada registrada manualmente. Quedan ${consumo.remainingAfter} entrada(s).`;
 
     const respuesta = {
       ok: true,
-      message: `Entrada registrada manualmente. Quedan ${consumo.remainingAfter} entrada(s).`,
+      message: mensaje,
       redemptionId: consumo.redemptionId,
+      quantity: consumo.quantity,
       method: 'manual_code',
       remaining: consumo.remainingAfter,
       remainingBefore: consumo.remainingBefore,
@@ -613,6 +642,7 @@ function canjearCodigo({ code, scanner, deviceLabel, idempotencyKey, ip, userAge
     metadata: {
       code: pack.code,
       remaining: result.remainingAfter,
+      quantity: result.quantity,
       redemptionId: result.redemptionId,
       deviceLabel,
       ...(lectura.diferida ? { capturedAt: result.createdAt } : {}),
@@ -626,7 +656,7 @@ function canjearCodigo({ code, scanner, deviceLabel, idempotencyKey, ip, userAge
   return { statusCode: 200, body };
 }
 
-/** Anula un consumo y devuelve la entrada al pack. Solo el usuario máster. */
+/** Anula un consumo y devuelve la entrada (o entradas) al pack. Solo el usuario máster. */
 export function voidRedemption(redemptionId, { reason, actor, ip, userAgent }) {
   const db = getDb();
 
@@ -647,7 +677,8 @@ export function voidRedemption(redemptionId, { reason, actor, ip, userAgent }) {
       redemptionId,
     );
 
-    const remainingAfter = pack.remaining + 1;
+    const quantityRestored = redemption.quantity || 1;
+    const remainingAfter = pack.remaining + quantityRestored;
     const newStatus = pack.status === 'depleted' ? 'active' : pack.status;
     // Si al pack se le acreditaron entradas hasta llenarlo, devolver una lo
     // haría crecer. Se agranda igual que en un ajuste manual: negarse dejaría
@@ -662,21 +693,21 @@ export function voidRedemption(redemptionId, { reason, actor, ip, userAgent }) {
     );
     db.prepare(
       `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, redemption_id, actor_id, note, created_at)
-       VALUES (?, ?, 1, ?, 'void', ?, ?, ?, ?)`,
-    ).run(newId(), pack.id, remainingAfter, redemptionId, actor?.id ?? null, reason, now);
+       VALUES (?, ?, ?, ?, 'void', ?, ?, ?, ?)`,
+    ).run(newId(), pack.id, quantityRestored, remainingAfter, redemptionId, actor?.id ?? null, reason, now);
 
     audit.record({
       actor,
       action: 'entrada.anulada',
       entityType: 'redemption',
       entityId: redemptionId,
-      metadata: { packCode: pack.code, reason, remaining: remainingAfter },
+      metadata: { packCode: pack.code, reason, remaining: remainingAfter, restored: quantityRestored },
       ip,
       userAgent,
       db,
     });
 
-    return { pack: packsService.findById(pack.id, db), remainingAfter };
+    return { pack: packsService.findById(pack.id, db), remainingAfter, quantityRestored };
   });
 
   const publicPack = packsService.toPublicPack(outcome.pack);
@@ -684,9 +715,10 @@ export function voidRedemption(redemptionId, { reason, actor, ip, userAgent }) {
     redemptionId,
     pack: publicPack,
     remaining: outcome.remainingAfter,
+    quantity: outcome.quantityRestored,
     reason,
   });
-  return { pack: publicPack, remaining: outcome.remainingAfter };
+  return { pack: publicPack, remaining: outcome.remainingAfter, quantityRestored: outcome.quantityRestored };
 }
 
 function mapRedemption(r) {
@@ -700,6 +732,7 @@ function mapRedemption(r) {
     scannerName: r.scanner_name,
     deviceLabel: r.device_label,
     method: r.method,
+    quantity: r.quantity ?? 1,
     remainingBefore: r.remaining_before,
     remainingAfter: r.remaining_after,
     status: r.status,

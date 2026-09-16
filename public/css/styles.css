@@ -363,8 +363,6 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 
 /* Contador principal del saldo del cliente */
 .saldo {
-  position: relative;
-  overflow: hidden;
   display: grid;
   place-items: center;
   gap: 4px;
@@ -373,16 +371,22 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
   background: radial-gradient(70% 140% at 50% 30%, rgba(61, 254, 64, .1), transparent 70%);
   border: 0;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: reveal-up 720ms var(--easing-entrada) both;
 }
-/* Carriles de pista al fondo del marcador. */
 .saldo::before {
   content: '';
-  position: absolute; inset: 0;
-  background-image: repeating-linear-gradient(90deg, rgba(61, 254, 64, .07) 0 1px, transparent 1px 46px);
-  mask-image: linear-gradient(180deg, transparent, #000 40%, transparent);
+  position: absolute;
+  inset: -70% 20% auto;
+  height: 170%;
   pointer-events: none;
+  background: radial-gradient(ellipse, rgba(61, 254, 64, .18), transparent 68%);
+  animation: saldo-brillo 8s ease-in-out infinite alternate;
 }
-.saldo > * { position: relative; }
+.saldo > * { position: relative; z-index: 1; }
 .saldo__numero {
   font-size: clamp(6rem, 26vw, 13rem);
   font-weight: 900;
@@ -390,7 +394,8 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
   letter-spacing: -0.065em;
   font-variant-numeric: tabular-nums;
   color: var(--acento);
-  text-shadow: 0 6px 30px rgba(61, 254, 64, 0.28);
+  text-shadow: 0 0 35px var(--acento-glow), 0 0 12px rgba(255, 255, 255, 0.4);
+  animation: numero-entra 820ms var(--easing-entrada) both;
 }
 .saldo__texto {
   font-family: var(--mono);
@@ -432,9 +437,9 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
   text-transform: uppercase; letter-spacing: .14em;
   cursor: pointer;
   text-decoration: none;
-  /* En un teléfono se pulsa rápido y repetido: ni se selecciona el texto del
-     botón ni parpadea el recuadro azul del sistema. El foco sigue marcándose
-     con el anillo verde. */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 14px rgba(0, 0, 0, 0.4);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -443,18 +448,19 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
     color var(--transicion),
     transform var(--transicion),
     box-shadow var(--transicion),
+    filter var(--transicion),
     opacity var(--transicion);
   touch-action: manipulation;
 }
-/* Barrido de luz al pasar por encima: un guiño de velocidad, sin llegar a
-   llamar la atención por sí mismo. */
 .boton::after {
   content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .13) 50%, transparent 62%);
-  transform: translateX(-120%);
-  transition: transform var(--t-lenta) var(--curva);
+  position: absolute;
+  z-index: 1;
+  inset: 0;
   pointer-events: none;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, .32) 48%, transparent 76%);
+  transform: translateX(-135%) skewX(-20deg);
+  transition: transform 580ms var(--easing-entrada);
 }
 .boton:hover:not(:disabled)::after { transform: translateX(120%); }
 .boton:hover:not(:disabled) { --bd: var(--acento); --bg: rgba(61, 254, 64, .08); }
@@ -462,10 +468,48 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 .boton:disabled { opacity: .45; cursor: not-allowed; }
 
 .boton--principal {
-  --bg: var(--acento);
-  --fg: #000;
-  --bd: var(--acento);
-  font-weight: 750;
+  --bg: linear-gradient(135deg, #44ff66 0%, #17e85a 100%);
+  --fg: #020b04;
+  --bd: rgba(255, 255, 255, 0.38);
+  font-weight: 800;
+  letter-spacing: .065em;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.65), 0 0 20px rgba(61, 254, 64, 0.34), 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.boton--principal:hover:not(:disabled) {
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85), 0 0 32px rgba(61, 254, 64, 0.55), 0 8px 26px rgba(0, 0, 0, 0.45);
+  filter: brightness(1.08);
+}
+.boton--fantasma {
+  --bg: rgba(255, 255, 255, 0.035);
+  --bd: rgba(255, 255, 255, 0.14);
+}
+.boton--fantasma:hover:not(:disabled) {
+  --bd: rgba(61, 254, 64, 0.72);
+  --fg: var(--acento);
+  --bg: rgba(61, 254, 64, 0.08);
+  box-shadow: inset 0 0 12px rgba(61, 254, 64, 0.08), 0 0 20px rgba(61, 254, 64, 0.22), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.boton--peligro {
+  --bg: rgba(255, 85, 102, 0.06);
+  --fg: #ff6677;
+  --bd: rgba(255, 85, 102, 0.45);
+}
+.boton--peligro:hover:not(:disabled) {
+  --bd: #ff5566;
+  --fg: #ffffff;
+  --bg: rgba(255, 85, 102, 0.22);
+  box-shadow: 0 0 24px rgba(255, 85, 102, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.boton--ok {
+  --bg: rgba(47, 208, 122, 0.06);
+  --fg: #3de88b;
+  --bd: rgba(47, 208, 122, 0.45);
+}
+.boton--ok:hover:not(:disabled) {
+  --bd: #2fd07a;
+  --fg: #ffffff;
+  --bg: rgba(47, 208, 122, 0.22);
+  box-shadow: 0 0 24px rgba(47, 208, 122, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .boton--principal:hover:not(:disabled) { --bg: #6dff70; --bd: #6dff70; }
 .boton--fantasma { --bg: transparent; --bd: var(--borde); --fg: var(--texto-2); }
@@ -492,14 +536,25 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
   font-family: var(--fuente); font-weight: 600; font-size: .86rem;
   text-transform: none; letter-spacing: normal;
   text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--borde-fuerte);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 .boton--enlace::after { display: none; }
-.boton--enlace:hover:not(:disabled) { color: var(--acento-2); text-decoration-color: var(--acento); transform: none; box-shadow: none; }
+.boton--enlace:hover:not(:disabled) { color: var(--acento); text-decoration-color: var(--acento); transform: translateY(-1px); box-shadow: none; }
 
 .boton--nav {
-  --bg: transparent; --bd: transparent;
-  min-height: 38px; padding: 7px 13px;
-  font-weight: 600; color: var(--texto-2);
+  --bg: transparent;
+  --bd: transparent;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-weight: 650;
+  font-size: .8rem;
+  letter-spacing: .035em;
+  color: var(--texto-2);
+  box-shadow: none;
+  backdrop-filter: none;
+  border-radius: var(--radio-s);
+  border: 1px solid transparent;
 }
 .boton--nav::after { display: none; }
 .boton--nav:hover { --bg: transparent; --bd: transparent; color: var(--texto); }
@@ -565,8 +620,15 @@ select:hover { background-image:
    caja que este diseño quita. El resto de controles sí lleva recuadro. */
 input:focus, select:focus, textarea:focus { outline: none; }
 .boton:focus-visible, a:focus-visible, [tabindex]:focus-visible, .pestana:focus-visible {
-  outline: 2px solid var(--acento-2);
-  outline-offset: 2px;
+  outline: 2px solid var(--acento);
+  outline-offset: 3px;
+  box-shadow: 0 0 14px var(--acento-glow);
+}
+input:focus, textarea:focus {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 1px var(--acento), 0 0 18px var(--acento-suave);
+  background: rgba(14, 20, 15, 0.95);
+  transform: translateY(-1px);
 }
 input[type="checkbox"]:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 2px; }
 /* Al escribir, la línea se vuelve de acento y engorda: el foco se ve de lejos
@@ -619,20 +681,28 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .aviso--alerta { border-left-color: var(--alerta); background: rgba(255, 197, 61, .07); color: #ffe6a8; }
 
 .etiqueta {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
   border-radius: var(--radio-xs);
   font-family: var(--mono);
-  font-size: .68rem; font-weight: 500;
+  font-size: .68rem; font-weight: 750;
   text-transform: uppercase; letter-spacing: .1em;
   border: 1px solid var(--borde-fuerte);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--texto-2);
   white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: color var(--transicion), border-color var(--transicion), background-color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
 }
-.etiqueta--ok { color: var(--ok); border-color: rgba(47, 208, 122, .45); background: var(--ok-suave); }
-.etiqueta--alerta { color: var(--alerta); border-color: rgba(255, 197, 61, .45); background: var(--alerta-suave); }
-.etiqueta--error { color: var(--error); border-color: rgba(255, 85, 102, .45); background: var(--error-suave); }
-.etiqueta--info { color: var(--info); border-color: var(--acento-borde); background: var(--acento-suave); }
+.etiqueta:hover {
+  transform: translateY(-1px);
+  border-color: rgba(61, 254, 64, .5);
+  box-shadow: 0 0 12px var(--acento-suave);
+}
+.etiqueta--ok { color: #3de88b; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .1); box-shadow: 0 0 10px rgba(47, 208, 122, .18); }
+.etiqueta--alerta { color: #ffd166; border-color: rgba(255, 197, 61, .5); background: rgba(255, 197, 61, .1); box-shadow: 0 0 10px rgba(255, 197, 61, .18); }
+.etiqueta--error { color: #ff6677; border-color: rgba(255, 85, 102, .5); background: rgba(255, 85, 102, .1); box-shadow: 0 0 10px rgba(255, 85, 102, .18); }
+.etiqueta--info { color: var(--acento); border-color: rgba(61, 254, 64, .55); background: rgba(61, 254, 64, .12); box-shadow: 0 0 12px rgba(61, 254, 64, .22); }
 
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--texto-3); flex: none; }
 .punto--vivo { background: var(--ok); box-shadow: 0 0 0 0 rgba(47, 208, 122, .6); animation: pulsoPunto 2.4s infinite; }
@@ -1000,6 +1070,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border-radius: 0;
   margin-bottom: var(--e5);
   overflow-x: auto;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .pestana {
   position: relative;
@@ -1012,7 +1084,19 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color var(--t-rapida) var(--curva), color var(--t-rapida) var(--curva);
+  transition: all var(--transicion);
+}
+.pestana:hover {
+  color: var(--texto);
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .08);
+  transform: translateY(-1px);
+}
+.pestana[aria-selected="true"] {
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, .16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 14px rgba(0, 0, 0, .35);
 }
 .pestana:hover { color: var(--texto-2); background: none; }
 .pestana[aria-selected="true"] { background: none; color: var(--texto); }
@@ -1032,12 +1116,17 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pestanas--grupos { margin-bottom: var(--e3); }
 .pestana__cuenta {
   display: inline-block; min-width: 1.7em; margin-left: 7px; padding: 1px 6px;
-  border: 1px solid var(--borde-fuerte); border-radius: 999px;
+  border: 1px solid var(--borde-fuerte); border-radius: var(--radio-xs);
   font-family: var(--mono);
-  font-size: .68rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  font-size: .68rem; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--texto-3);
+  background: rgba(255, 255, 255, 0.04);
 }
-.pestana[aria-selected="true"] .pestana__cuenta { border-color: var(--acento-borde); color: var(--acento-2); }
+.pestana[aria-selected="true"] .pestana__cuenta {
+  border-color: rgba(61, 254, 64, 0.5);
+  color: var(--acento);
+  background: rgba(61, 254, 64, 0.12);
+}
 
 dialog {
   border: 1px solid var(--borde-fuerte);
@@ -1510,3 +1599,217 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .opcion-aviso input { margin-top: 1px; }
 .opcion-aviso label { display: grid; gap: 3px; cursor: pointer; }
 .opcion-aviso__nombre { font-weight: 650; }
+
+/* --------------------------------------------------------------------------
+   Cierre visual de la portada
+
+   La última capa de estilos deja la portada en un lienzo editorial luminoso.
+   El verde queda reservado para llamadas y detalles; el negro organiza la
+   lectura y los bloques de imagen aportan el contraste de Racing Hobbies.
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada {
+  --entrada-paper: #f2f4ef;
+  --entrada-ink: #171b17;
+  --entrada-muted: #697269;
+  --entrada-line: rgba(23, 27, 23, .18);
+  --entrada-green: #68b82f;
+  color-scheme: light;
+  color: var(--entrada-ink);
+  background-color: var(--entrada-paper) !important;
+  background-image:
+    linear-gradient(rgba(23, 27, 23, .026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 27, 23, .026) 1px, transparent 1px) !important;
+  background-size: 92px 92px;
+}
+.pagina-entrada::before {
+  background:
+    radial-gradient(ellipse at 76% 0%, rgba(119, 222, 75, .16), transparent 32%),
+    radial-gradient(ellipse at 8% 28%, rgba(190, 217, 183, .25), transparent 38%) !important;
+  opacity: 1;
+  animation: none;
+}
+.pagina-entrada main { position: relative; z-index: 1; }
+.pagina-entrada .entrada__barra { border-bottom-color: var(--entrada-line); }
+.pagina-entrada .entrada__marca,
+.pagina-entrada .entrada__marca:hover { color: var(--entrada-ink); }
+.pagina-entrada .entrada__marca-sello {
+  width: 94px;
+  height: 35px;
+}
+.pagina-entrada .entrada__marca-sello img { filter: none; }
+.pagina-entrada .entrada__meta { color: var(--entrada-muted); }
+.pagina-entrada .entrada__punto { background: var(--entrada-ink); box-shadow: none; }
+.pagina-entrada .entrada__accion {
+  color: var(--entrada-paper);
+  background: var(--entrada-ink);
+  border-color: var(--entrada-ink);
+  box-shadow: none;
+}
+.pagina-entrada .entrada__accion:hover { background: #2a332b; color: var(--entrada-paper); }
+.pagina-entrada .entrada__hero h1,
+.pagina-entrada .entrada__hero h1 span + span { 
+  color: var(--entrada-ink);
+  font-family: var(--fuente);
+}
+.pagina-entrada .entrada__hero h1 span + span { color: var(--entrada-green); }
+.pagina-entrada .entrada__hero h1 .entrada__marca-registrada { color: var(--entrada-ink) !important; }
+.pagina-entrada .entrada__kicker { color: #4f8e2b; }
+.pagina-entrada .entrada__kicker span { color: var(--entrada-muted); }
+.pagina-entrada .entrada__hero-aside { border-left-color: var(--entrada-ink); }
+.pagina-entrada .entrada__marca-texto { color: #4f8e2b; }
+.pagina-entrada .entrada__descripcion { color: #485048; }
+.pagina-entrada .entrada__enlace { color: var(--entrada-ink); border-bottom-color: var(--entrada-ink); }
+.pagina-entrada .entrada__enlace:hover { color: #4f8e2b; }
+
+.pagina-entrada .presentacion-pista {
+  border-color: var(--entrada-ink);
+  border-radius: 3px;
+  box-shadow: 0 18px 42px rgba(23, 27, 23, .13);
+}
+.pagina-entrada .presentacion-pista::after {
+  background: linear-gradient(180deg, rgba(23, 27, 23, .03) 38%, rgba(23, 27, 23, .42) 100%);
+}
+.pagina-entrada .presentacion-pista img { filter: saturate(.9) contrast(1.04) brightness(1.03); }
+.pagina-entrada .presentacion-pista__barra {
+  right: clamp(20px, 10vw, 150px);
+  bottom: clamp(18px, 3vw, 35px);
+  left: clamp(20px, 10vw, 150px);
+  padding: 17px 20px;
+  color: var(--entrada-ink);
+  background: rgba(242, 244, 239, .9);
+  font-family: var(--fuente);
+  font-size: .73rem;
+  font-weight: 560;
+  letter-spacing: .02em;
+  text-transform: none;
+  backdrop-filter: blur(10px);
+}
+.pagina-entrada .presentacion-pista__barra span:last-child { color: var(--entrada-ink); }
+.pagina-entrada .presentacion-pista__barra i { background: #4f8e2b; box-shadow: none; }
+
+.pagina-entrada .entrada__pista-real {
+  margin-top: clamp(100px, 14vw, 190px);
+  padding-top: clamp(28px, 4vw, 48px);
+  border-top: 1px solid var(--entrada-line);
+}
+.pagina-entrada .entrada__seccion-cabeza { margin-bottom: clamp(38px, 5vw, 66px); }
+.pagina-entrada .entrada__seccion-cabeza h2,
+.pagina-entrada .entrada__media-destacada h3 {
+  font-family: var(--fuente);
+}
+.pagina-entrada .entrada__seccion-cabeza h2 { color: var(--entrada-ink); }
+.pagina-entrada .entrada__seccion-cabeza h2 em { color: var(--entrada-green); }
+.pagina-entrada .entrada__seccion-descripcion { color: #596259; }
+
+.pagina-entrada .entrada__media-destacada {
+  border: 0;
+  border-radius: 3px;
+  box-shadow: 0 22px 58px rgba(23, 27, 23, .15);
+}
+.pagina-entrada .entrada__media-destacada-copy { background: linear-gradient(145deg, #171b17, #263126); }
+.pagina-entrada .entrada__media-marca { border-inline-color: rgba(104, 184, 47, .2); }
+.pagina-entrada .entrada__foto { border-color: rgba(23, 27, 23, .14); }
+.pagina-entrada .entrada__foto figcaption { color: var(--entrada-muted); }
+.pagina-entrada .entrada__foto figcaption span { color: var(--entrada-green); }
+
+.pagina-entrada .entrada__acceso {
+  border-top: 1px solid var(--entrada-line);
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0;
+  padding-inline: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.pagina-entrada .entrada__acceso-intro h2 { color: var(--entrada-ink); font-family: var(--fuente); }
+.pagina-entrada .entrada__acceso .pestanas { border-bottom-color: var(--entrada-line); }
+.pagina-entrada .entrada__acceso .pestana { color: var(--entrada-muted); }
+.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] { color: var(--entrada-ink); }
+.pagina-entrada .entrada__acceso .pestana::after { background: var(--entrada-ink); box-shadow: none; }
+.pagina-entrada .entrada__acceso input {
+  color: var(--entrada-ink);
+  border-color: rgba(23, 27, 23, .42);
+  background: transparent;
+}
+.pagina-entrada .entrada__acceso input::placeholder { color: #879087; }
+.pagina-entrada .entrada__acceso input:focus {
+  border-color: var(--entrada-ink);
+  box-shadow: 0 1px 0 var(--entrada-ink);
+}
+.pagina-entrada .entrada__acceso .boton--principal {
+  --bg: var(--entrada-ink);
+  --fg: var(--entrada-paper);
+  --bd: var(--entrada-ink);
+}
+.pagina-entrada .entrada__pie { color: var(--entrada-muted); }
+
+@media (max-width: 760px) {
+  .pagina-entrada .entrada__marca-sello { width: 78px; height: 30px; }
+  .pagina-entrada .entrada__seccion-cabeza { grid-template-columns: 1fr; gap: 24px; }
+  .pagina-entrada .entrada__seccion-descripcion { margin-left: 0; }
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr; min-height: 570px; }
+  .pagina-entrada .entrada__media-destacada-copy { min-height: 300px; }
+  .pagina-entrada .entrada__media-marca { min-height: 270px; border-inline: 0; border-top: 1px solid rgba(104, 184, 47, .2); }
+  .pagina-entrada .entrada__logo-firma { display: none; }
+}
+
+@media (max-width: 480px) {
+  .pagina-entrada .entrada__pista-real { margin-top: 82px; }
+  .pagina-entrada .entrada__media-destacada { min-height: 540px; }
+  .pagina-entrada .entrada__media-marca { min-height: 240px; }
+}
+
+/* Selector de cantidad para escaneo en grupo */
+.selector-cantidad {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-s);
+}
+
+.selector-cantidad__etiqueta {
+  font-size: .88rem;
+  color: var(--texto-2);
+  font-weight: 600;
+}
+
+.selector-cantidad__opciones {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-cantidad {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--radio-xs);
+  border: 1px solid var(--borde-fuerte);
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 700;
+  font-size: .95rem;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.btn-cantidad:hover {
+  border-color: var(--acento);
+}
+
+.btn-cantidad.activo,
+.activo {
+  background: var(--acento);
+  color: #000;
+  border-color: var(--acento);
+  box-shadow: 0 0 10px rgba(61, 254, 64, .25);
+}
+

@@ -32,14 +32,20 @@ const db = getDb();
 
 async function asegurarUsuario({ correo, nombre, telefono, rol }) {
   const existente = users.findByEmail(correo);
-  if (existente) return existente;
+  if (existente) {
+    await users.setPassword(existente.id, CLAVE_DEMO);
+    if (existente.status !== 'active') {
+      db.prepare("UPDATE users SET status = 'active' WHERE id = ?").run(existente.id);
+    }
+    return users.findById(existente.id);
+  }
   return users.createUser({ email: correo, password: CLAVE_DEMO, fullName: nombre, phone: telefono, role: rol });
 }
 
 const antedatarUsuario = db.prepare('UPDATE users SET created_at = ?, updated_at = ? WHERE id = ?');
 
 const master = await asegurarUsuario({
-  correo: 'admin@racinghobbies.ec', nombre: 'Administración Racing Hobbies', rol: 'master',
+  correo: 'admin@racinghobbies.ec', nombre: 'Administración Miniápolis', rol: 'master',
 });
 const operador = await asegurarUsuario({
   correo: 'operador@racinghobbies.ec', nombre: 'Operador de Pista', rol: 'staff',

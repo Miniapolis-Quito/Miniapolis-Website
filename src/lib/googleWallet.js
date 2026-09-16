@@ -85,10 +85,18 @@ async function llamar(ruta, { metodo = 'GET', cuerpo, credenciales }) {
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   });
   const texto = await respuesta.text();
+  let datos = null;
+  if (texto) {
+    try {
+      datos = JSON.parse(texto);
+    } catch {
+      datos = { respuesta: texto };
+    }
+  }
   return {
     ok: respuesta.ok,
     status: respuesta.status,
-    datos: texto ? JSON.parse(texto) : null,
+    datos,
   };
 }
 

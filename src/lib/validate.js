@@ -184,6 +184,7 @@ const conHorasJuntas = (esquema) =>
 export const scanSchema = conHorasJuntas(
   z.object({
     payload: z.string().trim().min(1, 'El código está vacío.').max(512),
+    quantity: z.coerce.number().int().min(1, 'Debes descontar al menos 1 entrada.').max(10, 'No puedes descontar más de 10 entradas en un solo escaneo.').default(1),
     deviceLabel: trimmed(60).optional(),
     idempotencyKey: trimmed(80).optional(),
     ...lecturaDiferida,
@@ -193,6 +194,7 @@ export const scanSchema = conHorasJuntas(
 export const manualRedeemSchema = conHorasJuntas(
   z.object({
     code: trimmed(40).min(4, 'Ingresa el código del pack.'),
+    quantity: z.coerce.number().int().min(1, 'Debes descontar al menos 1 entrada.').max(10, 'No puedes descontar más de 10 entradas en un solo escaneo.').default(1),
     deviceLabel: trimmed(60).optional(),
     idempotencyKey: trimmed(80).optional(),
     ...lecturaDiferida,
@@ -239,6 +241,12 @@ export const notificationContactSchema = z.object({
 
 export const notificationTestSchema = z.object({
   kind: z.enum(TIPOS_DE_AVISO).default('low_balance'),
+});
+
+export const transferPackSchema = z.object({
+  quantity: z.coerce.number().int().min(1, 'Debes transferir al menos 1 entrada.').max(50, 'No puedes transferir más de 50 entradas a la vez.'),
+  recipient: z.string().trim().min(3, 'Ingresa el correo o teléfono del destinatario.').max(150),
+  note: trimmed(200).optional(),
 });
 
 export const voidRedemptionSchema = z.object({

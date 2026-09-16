@@ -38,6 +38,24 @@ test('no se permiten dos cuentas con el mismo correo, ni variando mayúsculas', 
   assert.equal(r.datos.error.code, 'correo_en_uso');
 });
 
+test('la unicidad del correo trata igual las formas Unicode equivalentes', async () => {
+  const primero = await users.createUser({
+    email: 'piloto\u0301@pista.ec',
+    password: 'Chasis-Aluminio-2026',
+    fullName: 'Piloto Uno',
+  });
+  assert.ok(primero);
+
+  await assert.rejects(
+    users.createUser({
+      email: 'pilotó@pista.ec',
+      password: 'Chasis-Aluminio-2026',
+      fullName: 'Piloto Dos',
+    }),
+    (error) => error.code === 'correo_en_uso',
+  );
+});
+
 test('se rechazan contraseñas débiles o que contienen el propio nombre', async () => {
   const cliente = crearCliente();
 
@@ -273,6 +291,34 @@ test('cambiar la contraseña cierra las demás sesiones', async () => {
   assert.equal((await telefono.get('/api/packs/mine')).status, 200);
 });
 
+test('el cambio rechaza una contraseña equivalente tras normalizar Unicode', async () => {
+  const { cCliente } = await sembrarUsuarios();
+  const equivalente = 'Ｄｉｆｅｒｅｎｃｉａｌ－Ｒｏｊｏ－９１';
+  // NFKC convierte la variante de ancho completo en la misma contraseña ASCII.
+  const cambio = await cCliente.post('/api/auth/change-password', {
+    currentPassword: CLAVES.cliente,
+    newPassword: equivalente,
+  });
+  assert.equal(cambio.status, 400);
+  assert.equal(cambio.datos.error.code, 'password_repetida');
+});
+
+test('un cambio de contraseña concurrente no puede restaurar el hash anterior', async () => {
+  const { cliente } = await sembrarUsuarios();
+  const nueva = 'Contraseña-Definitiva-2026';
+
+  // Ambas operaciones parten de la contraseña vieja y se solapan mientras
+  // scrypt calcula. El resultado final siempre debe ser el cambio ganador,
+  // nunca una restauración silenciosa del hash anterior.
+  await Promise.all([
+    users.authenticate(cliente.email, CLAVES.cliente),
+    users.setPassword(cliente.id, nueva),
+  ]);
+
+  assert.equal((await users.authenticate(cliente.email, CLAVES.cliente)).ok, false);
+  assert.equal((await users.authenticate(cliente.email, nueva)).ok, true);
+});
+
 test('suspender una cuenta corta el acceso al instante, sin esperar a que caduque el token', async () => {
   const { cMaster, cCliente, cliente } = await sembrarUsuarios();
   assert.equal((await cCliente.get('/api/packs/mine')).status, 200);
@@ -314,6 +360,18 @@ test('sin correo configurado la recuperación no se ofrece', async () => {
   const r = await anonimo.post('/api/auth/password/forgot', { email: 'cliente@pista.ec' });
   assert.equal(r.status, 404);
   assert.equal(r.datos.error.code, 'recuperacion_no_disponible');
+
+  // Apagar el correo también deja inutilizados los endpoints directos: no se
+  // puede aprovechar un enlace antiguo cuando la función está deshabilitada.
+  const check = await anonimo.post('/api/auth/password/reset/check', { token: 'a'.repeat(43) });
+  assert.equal(check.status, 404);
+  assert.equal(check.datos.error.code, 'recuperacion_no_disponible');
+  const reset = await anonimo.post('/api/auth/password/reset', {
+    token: 'a'.repeat(43),
+    newPassword: 'Nueva-Clave-Definitiva-2026',
+  });
+  assert.equal(reset.status, 404);
+  assert.equal(reset.datos.error.code, 'recuperacion_no_disponible');
 });
 
 test('un correo sin cuenta se bloquea igual que uno registrado', async () => {

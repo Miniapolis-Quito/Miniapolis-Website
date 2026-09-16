@@ -50,6 +50,7 @@ router.post(
     const data = parseOrThrow(scanSchema, req.body, badRequest);
     const result = redemptions.redeemByQr({
       payload: data.payload,
+      quantity: data.quantity,
       scanner: req.user,
       deviceLabel: data.deviceLabel,
       capturedAt: data.capturedAt,
@@ -101,6 +102,7 @@ router.post(
     const data = parseOrThrow(manualRedeemSchema, req.body, badRequest);
     const result = redemptions.redeemByCode({
       code: data.code,
+      quantity: data.quantity,
       scanner: req.user,
       deviceLabel: data.deviceLabel,
       capturedAt: data.capturedAt,

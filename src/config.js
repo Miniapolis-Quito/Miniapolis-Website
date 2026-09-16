@@ -175,6 +175,32 @@ function secretoOArchivo(nombre) {
   }
 }
 
+/** Valida la base pública usada para construir enlaces sensibles. */
+function publicUrl() {
+  const raw = (process.env.PUBLIC_URL || '').trim().replace(/\/+$/, '');
+  if (!raw) return '';
+
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error('Configuración inválida: PUBLIC_URL debe ser una URL absoluta HTTP(S).');
+  }
+  if (
+    !['http:', 'https:'].includes(parsed.protocol) ||
+    !parsed.hostname ||
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(
+      'Configuración inválida: PUBLIC_URL debe ser una URL HTTP(S) sin credenciales, consulta ni fragmento.',
+    );
+  }
+  return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`;
+}
+
 /**
  * Pases para la cartera del teléfono (Apple Wallet y Google Wallet).
  *
@@ -259,7 +285,7 @@ function correo() {
     if (!host) throw new Error('Configuración inválida: el correo por SMTP necesita SMTP_HOST.');
     const direccion = from.match(/<([^<>]+)>\s*$/)?.[1] ?? from;
     if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(direccion)) {
-      throw new Error('Configuración inválida: MAIL_FROM debe ser una dirección, por ejemplo "Racing Hobbies <entradas@tu-dominio.ec>".');
+      throw new Error('Configuración inválida: MAIL_FROM debe ser una dirección, por ejemplo "Miniápolis <entradas@tu-dominio.ec>".');
     }
     const local = ['localhost', '127.0.0.1', '::1'].includes(host);
     if (!secure && !requireTLS && !local) {
@@ -272,7 +298,7 @@ function correo() {
   return Object.freeze({
     modo,
     enabled: Boolean(modo),
-    from: from || `${process.env.BRAND_SHORT || 'Racing Hobbies'} <no-responder@localhost>`,
+    from: from || `${process.env.BRAND_SHORT || 'Miniápolis'} <no-responder@localhost>`,
     smtp: Object.freeze({ host, port, secure, requireTLS, user: (process.env.SMTP_USER || '').trim(), password }),
   });
 }
@@ -332,8 +358,8 @@ export const config = Object.freeze({
   host: process.env.HOST || '0.0.0.0',
 
   /** Nombre público del negocio, usado en la interfaz y en los QR. */
-  brandName: process.env.BRAND_NAME || 'Racing Hobbies Ecuador',
-  brandShort: process.env.BRAND_SHORT || 'Racing Hobbies',
+  brandName: process.env.BRAND_NAME || 'Miniápolis #3',
+  brandShort: process.env.BRAND_SHORT || 'Miniápolis',
   currency: process.env.CURRENCY || 'USD',
   timezone: process.env.TZ_DISPLAY || 'America/Guayaquil',
 
@@ -412,7 +438,7 @@ export const config = Object.freeze({
    * Dirección pública del sistema. El pase de la cartera lleva dentro la URL a
    * la que el teléfono pedirá el saldo actualizado, y tiene que ser absoluta.
    */
-  publicUrl: (process.env.PUBLIC_URL || '').trim().replace(/\/+$/, ''),
+  publicUrl: publicUrl(),
 
   /** Pases para la cartera del teléfono. */
   wallet: wallet(),

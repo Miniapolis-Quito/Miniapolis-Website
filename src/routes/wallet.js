@@ -41,7 +41,7 @@ const limiteServicioApple = rateLimit({
   name: 'wallet-apple-ip',
   limit: 600,
   windowSeconds: 15 * 60,
-  keyFn: (req) => `ip:${req.clientIp}`,
+  keyFn: (req) => `ip:${req.rateLimitIp ?? req.clientIp}`,
 });
 
 /** El registro de avisos del teléfono escribe en el log: cuota mucho más corta. */
@@ -49,7 +49,7 @@ const limiteLogApple = rateLimit({
   name: 'wallet-apple-log-ip',
   limit: 30,
   windowSeconds: 15 * 60,
-  keyFn: (req) => `ip:${req.clientIp}`,
+  keyFn: (req) => `ip:${req.rateLimitIp ?? req.clientIp}`,
 });
 
 /** Rechaza un identificador de teléfono con una forma que Apple no usa. */
@@ -79,13 +79,18 @@ function exigirCartera(cual) {
  * una navegación no lleva la cabecera de sesión.
  */
 function packDelCliente(req, { admitirTicket = false } = {}) {
+  const tieneTicketValido =
+    admitirTicket && typeof req.query.t === 'string' && wallet.ticketValido(req.params.packId, req.query.t);
+
+  if (!tieneTicketValido && !req.user) {
+    throw unauthorized('Necesitas iniciar sesión.');
+  }
+
   const pack = packsService.findById(req.params.packId);
   if (!pack) throw notFound('Pack no encontrado.');
 
-  if (admitirTicket && typeof req.query.t === 'string' && wallet.ticketValido(pack.id, req.query.t)) {
-    return pack;
-  }
-  if (!req.user) throw unauthorized('Necesitas iniciar sesión.');
+  if (tieneTicketValido) return pack;
+
   if (pack.user_id !== req.user.id && req.user.role !== 'master') {
     throw forbidden('Este pack no te pertenece.');
   }
@@ -118,11 +123,13 @@ router.get(
     name: 'pase-apple',
     limit: 60,
     windowSeconds: 15 * 60,
-    keyFn: (req) => req.user?.id ?? `ip:${req.clientIp}`,
+    keyFn: (req) => req.user?.id ?? `ip:${req.rateLimitIp ?? req.clientIp}`,
   }),
   asyncHandler(async (req, res) => {
     const pack = packDelCliente(req, { admitirTicket: true });
-    const { archivo } = wallet.construirPaseApple(pack.id);
+    const paseData = wallet.construirPaseApple(pack.id);
+    if (!paseData) throw notFound('Pase no encontrado.');
+    const { archivo } = paseData;
     res.set('Content-Type', 'application/vnd.apple.pkpass');
     res.set('Content-Disposition', `attachment; filename="${pack.code}.pkpass"`);
     res.set('Cache-Control', 'no-store');
@@ -165,11 +172,13 @@ function exigirPase(req, res, next) {
     return res.status(401).end();
   }
   const pase = wallet.paseDeSerie(req.params.serial);
-  if (!pase) return res.status(401).end();
-
+  // Se compara siempre en tiempo constante, exista o no el pase en la base,
+  // para no delatar por temporización qué números de serie están registrados.
+  const authToken = pase ? pase.auth_token : '0'.repeat(32);
   const a = Buffer.from(token);
-  const b = Buffer.from(pase.auth_token);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+  const b = Buffer.from(authToken);
+  const coincide = a.length === b.length && crypto.timingSafeEqual(a, b);
+  if (!pase || !coincide) {
     return res.status(401).end();
   }
   req.pase = pase;
@@ -247,7 +256,9 @@ router.get(
       return res.status(304).end();
     }
 
-    const { archivo } = wallet.construirPaseApple(req.pase.pack_id);
+    const paseData = wallet.construirPaseApple(req.pase.pack_id);
+    if (!paseData) return res.status(404).end();
+    const { archivo } = paseData;
     res.set('Content-Type', 'application/vnd.apple.pkpass');
     res.set('Last-Modified', cambiado.toUTCString());
     res.set('Cache-Control', 'no-store');

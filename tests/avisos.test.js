@@ -651,7 +651,7 @@ test('clientes por recuperar: cada uno en su grupo más urgente, con WhatsApp li
   const carlos = groups.lowBalance.items[0];
   assert.ok(carlos.whatsappUrl.startsWith('https://wa.me/593991112233?text='));
   const texto = decodeURIComponent(carlos.whatsappUrl.split('text=')[1]);
-  assert.match(texto, /^Hola, Carlos\. Te escribimos de Racing Hobbies\. Te quedan 2 entradas\./);
+  assert.match(texto, /^Hola, Carlos\. Te escribimos de Miniápolis\. Te quedan 2 entradas\./);
   assert.equal(groups.depleted.items[0].whatsappUrl, null, 'sin teléfono no hay WhatsApp');
 
   // Registrar el contacto lo deja a la vista y en la ficha.

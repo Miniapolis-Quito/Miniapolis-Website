@@ -389,6 +389,48 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '009-admision-y-transferencia',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE redemptions ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1;
+
+        CREATE TABLE pack_movements_new (
+          id            TEXT PRIMARY KEY,
+          pack_id       TEXT NOT NULL REFERENCES packs(id) ON DELETE RESTRICT,
+          delta         INTEGER NOT NULL,
+          balance_after INTEGER NOT NULL CHECK (balance_after >= 0),
+          reason        TEXT NOT NULL
+                          CHECK (reason IN ('issue','redeem','void','adjust','cancel','restore','transfer_out','transfer_in')),
+          redemption_id TEXT REFERENCES redemptions(id) ON DELETE SET NULL,
+          actor_id      TEXT REFERENCES users(id) ON DELETE SET NULL,
+          note          TEXT,
+          created_at    TEXT NOT NULL
+        );
+        INSERT INTO pack_movements_new
+          (id, pack_id, delta, balance_after, reason, redemption_id, actor_id, note, created_at)
+          SELECT id, pack_id, delta, balance_after, reason, redemption_id, actor_id, note, created_at
+            FROM pack_movements;
+        DROP TABLE pack_movements;
+        ALTER TABLE pack_movements_new RENAME TO pack_movements;
+        CREATE INDEX idx_movements_pack    ON pack_movements(pack_id, created_at DESC);
+        CREATE INDEX idx_movements_created ON pack_movements(created_at DESC);
+
+        CREATE TABLE transfers (
+          id                  TEXT PRIMARY KEY,
+          sender_id          TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+          recipient_id       TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+          source_pack_id      TEXT NOT NULL REFERENCES packs(id) ON DELETE RESTRICT,
+          destination_pack_id TEXT NOT NULL REFERENCES packs(id) ON DELETE RESTRICT,
+          quantity            INTEGER NOT NULL CHECK (quantity > 0),
+          note                TEXT,
+          created_at          TEXT NOT NULL
+        );
+        CREATE INDEX idx_transfers_sender    ON transfers(sender_id, created_at DESC);
+        CREATE INDEX idx_transfers_recipient ON transfers(recipient_id, created_at DESC);
+      `);
+    },
+  },
 ];
 
 export default migrations;

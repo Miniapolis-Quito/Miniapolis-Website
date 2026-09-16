@@ -88,6 +88,16 @@ test('no se admite una fecha de vencimiento en el pasado', async () => {
   assert.equal(r.status, 400);
 });
 
+test('tampoco se puede actualizar un vencimiento a una fecha pasada', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const r = await cMaster.patch(`/api/admin/packs/${emitido.datos.pack.id}`, {
+    expiresAt: new Date(Date.now() - 1000).toISOString(),
+  });
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'solicitud_invalida');
+});
+
 test('el ajuste manual acredita y descuenta entradas dejando asiento contable', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
   const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
@@ -370,3 +380,221 @@ test('desactivar el QR impreso invalida los pases ya entregados', async () => {
   assert.equal(despues.status, 400);
   assert.equal(despues.datos.error.code, 'qr_estatico_no_permitido');
 });
+
+test('un cliente puede transferir entradas a otro usuario registrado', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'amigo@pista.ec', fullName: 'Amigo Piloto', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const packId = emitido.datos.pack.id;
+
+  const r = await cCliente.post(`/api/packs/${packId}/transfer`, {
+    quantity: 2,
+    recipient: 'amigo@pista.ec',
+    note: 'Para la carrera del sábado',
+  });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.ok, true);
+  assert.equal(r.datos.transferred, 2);
+  assert.equal(r.datos.sourcePack.remaining, 3);
+  assert.equal(r.datos.destinationPack.size, 2);
+  assert.equal(r.datos.destinationPack.remaining, 2);
+  assert.equal(r.datos.destinationPack.userId, otro.datos.user.id);
+
+  // Verificamos libro mayor e integridad
+  const movimientos = packs.movements(packId);
+  const transfOut = movimientos.find((m) => m.reason === 'transfer_out');
+  assert.ok(transfOut);
+  assert.equal(transfOut.delta, -2);
+
+  const movimientosDestino = packs.movements(r.datos.destinationPack.id);
+  const transfIn = movimientosDestino.find((m) => m.reason === 'transfer_in');
+  assert.ok(transfIn);
+  assert.equal(transfIn.delta, 2);
+
+  assert.ok(packs.checkIntegrity().ok, 'la contabilidad debe cuadrar tras la transferencia');
+});
+
+test('no se puede transferir más entradas de las disponibles en el pack', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  await cMaster.post('/api/admin/users', {
+    email: 'amigo2@pista.ec', fullName: 'Amigo Piloto 2', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 3 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 5,
+    recipient: 'amigo2@pista.ec',
+  });
+
+  assert.equal(r.status, 409);
+  assert.equal(r.datos.error.code, 'saldo_insuficiente');
+});
+
+test('no se puede transferir a uno mismo', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: cliente.email,
+  });
+
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'auto_transferencia');
+});
+
+test('no se puede transferir a un usuario que no existe', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'fantasma@inexistente.com',
+  });
+
+  assert.equal(r.status, 404);
+  assert.equal(r.datos.error.code, 'destinatario_no_encontrado');
+});
+
+test('un cliente no puede transferir desde un pack ajeno', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'otro3@pista.ec', fullName: 'Otro Piloto 3', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const packAjeno = await cMaster.post('/api/admin/packs', { userId: otro.datos.user.id, size: 5 });
+
+  const r = await cCliente.post(`/api/packs/${packAjeno.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: cliente.email,
+  });
+
+  assert.equal(r.status, 403);
+});
+
+test('un cliente puede transferir buscando al destinatario por teléfono', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'piloto.telefono@pista.ec', fullName: 'Piloto Telefono', phone: '+593991234567', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 3,
+    recipient: '+593991234567',
+  });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.transferred, 3);
+  assert.equal(r.datos.sourcePack.remaining, 2);
+  assert.equal(r.datos.destinationPack.userId, otro.datos.user.id);
+  assert.equal(r.datos.destinationPack.remaining, 3);
+});
+
+test('no se puede transferir a una cuenta suspendida', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'suspendido@pista.ec', fullName: 'Piloto Suspendido', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  await cMaster.patch(`/api/admin/users/${otro.datos.user.id}`, { status: 'suspended' });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'suspendido@pista.ec',
+  });
+
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'destinatario_suspendido');
+});
+
+test('transferir todas las entradas restantes marca el pack emisor como agotado (depleted)', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'amigo.total@pista.ec', fullName: 'Amigo Total', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 2 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 2,
+    recipient: 'amigo.total@pista.ec',
+  });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.sourcePack.remaining, 0);
+  assert.equal(r.datos.sourcePack.status, 'depleted');
+});
+
+test('las transferencias no aparecen como entradas usadas ni emitidas dos veces', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const receptor = await cMaster.post('/api/admin/users', {
+    email: 'receptor-transferencia@pista.ec',
+    fullName: 'Receptor Transferencia',
+    role: 'customer',
+    password: 'Palanca-Cambios-55',
+  });
+  const pack = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const transfer = await cCliente.post(`/api/packs/${pack.datos.pack.id}/transfer`, {
+    quantity: 2,
+    recipient: receptor.datos.user.email,
+  });
+
+  assert.equal(transfer.status, 200);
+  assert.equal(transfer.datos.sourcePack.used, 0);
+  assert.equal(transfer.datos.destinationPack.used, 0);
+
+  const detalle = await cMaster.get(`/api/admin/packs/${pack.datos.pack.id}`);
+  assert.equal(detalle.datos.pack.used, 0);
+
+  const dashboard = await cMaster.get('/api/admin/dashboard');
+  assert.equal(dashboard.datos.totals.issuedTickets, 5);
+  assert.equal(dashboard.datos.totals.usedTickets, 0);
+});
+
+test('el resumen del cliente cuenta correctamente consumos grupales y transferencias', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const receptor = await cMaster.post('/api/admin/users', {
+    email: 'receptor-resumen@pista.ec',
+    fullName: 'Receptor Resumen',
+    role: 'customer',
+    password: 'Palanca-Cambios-55',
+  });
+  const cReceptor = crearCliente();
+  await cReceptor.entrar('receptor-resumen@pista.ec', 'Palanca-Cambios-55');
+
+  const pack = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 10 });
+  const packId = pack.datos.pack.id;
+
+  // Consumo grupal de 3 entradas
+  const canje = await cStaff.post('/api/scan', {
+    payload: (await import('../src/lib/qr.js')).buildQrPayload(packs.findById(packId)),
+    quantity: 3,
+  });
+  assert.equal(canje.status, 200);
+
+  // Transferencia de 2 entradas al receptor
+  const transfer = await cCliente.post(`/api/packs/${packId}/transfer`, {
+    quantity: 2,
+    recipient: receptor.datos.user.email,
+  });
+  assert.equal(transfer.status, 200);
+
+  // Resumen del emisor
+  const resEmisor = await cCliente.get('/api/packs/mine');
+  assert.equal(resEmisor.status, 200);
+  assert.equal(resEmisor.datos.summary.availableTickets, 5);
+  assert.equal(resEmisor.datos.summary.usedTickets, 3);
+  assert.equal(resEmisor.datos.summary.transferredTickets, 2);
+  assert.equal(resEmisor.datos.summary.purchasedTickets, 10);
+
+  // Resumen del receptor
+  const resReceptor = await cReceptor.get('/api/packs/mine');
+  assert.equal(resReceptor.status, 200);
+  assert.equal(resReceptor.datos.summary.availableTickets, 2);
+  assert.equal(resReceptor.datos.summary.usedTickets, 0);
+  assert.equal(resReceptor.datos.summary.purchasedTickets, 2);
+  assert.equal(resReceptor.datos.summary.transferredTickets, 0);
+});
+

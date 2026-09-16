@@ -237,11 +237,11 @@ export function objetoGoogle(pack, dueno, pase) {
     hexBackgroundColor: '#000000',
     ...(config.publicUrl
       ? {
-          // Google recorta el logo normal en círculo, por eso usa el icono
-          // cuadrado con el coche oficial. El wordmark panorámico queda para
-          // la cabecera, donde se lee entero y sin perder la silueta.
-          logo: { sourceUri: { uri: `${config.publicUrl}/images/racing-hobbies-wallet-icon.png` } },
-          wideLogo: { sourceUri: { uri: `${config.publicUrl}/images/racing-hobbies-wallet-wide-logo.png` } },
+          // Google recorta el logo normal en círculo, por eso usa el sello
+          // cuadrado de la bandera. El logotipo panorámico queda para la
+          // cabecera, donde se lee entero y sin perder el nombre.
+          logo: { sourceUri: { uri: `${config.publicUrl}/images/miniapolis-wallet-icon.png` } },
+          wideLogo: { sourceUri: { uri: `${config.publicUrl}/images/miniapolis-wallet-wide-logo.png` } },
         }
       : {}),
     cardTitle: { defaultValue: { language: 'es-EC', value: config.brandName } },
@@ -284,6 +284,9 @@ export function ticketValido(packId, ticket, { ahora = Date.now() } = {}) {
 
   const expira = Number(ticket.slice(0, corte));
   if (!Number.isFinite(expira) || expira * 1000 < ahora) return false;
+  // Defensa en profundidad: un ticket no puede tener una vigencia futura desmedida.
+  const ventanaMaximaSegundos = config.tokens.streamTicketTtlSeconds + 300;
+  if (expira * 1000 > ahora + ventanaMaximaSegundos * 1000) return false;
 
   const esperada = crypto
     .createHmac('sha256', config.secrets.accessToken)

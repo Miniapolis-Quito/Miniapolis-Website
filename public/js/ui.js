@@ -1,5 +1,20 @@
 /** Utilidades de interfaz compartidas por todas las páginas. */
 
+// Silenciar abortos benignos de ViewTransition del navegador en redirecciones o navegaciones rápidas
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    if (event?.message && /ViewTransition/i.test(event.message)) {
+      event.preventDefault();
+    }
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const msg = String(event?.reason?.message || event?.reason || '');
+    if (/ViewTransition/i.test(msg)) {
+      event.preventDefault();
+    }
+  });
+}
+
 /**
  * Aplica estilos usando el modelo de objetos CSS en vez del atributo `style`.
  * La política de seguridad de contenido prohíbe `style="..."`, pero sí permite
@@ -106,6 +121,8 @@ const ICONOS = {
   camara: ['M4 8h3l2-3h6l2 3h3v12H4z', 'M12 16.5a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z'],
   senal: ['M3.5 9.2a14 14 0 0 1 17 0', 'M7 12.6a9 9 0 0 1 10 0', 'M10.2 16a4.5 4.5 0 0 1 3.6 0', 'M12 19.6v.2'],
   descarga: ['M12 4v10.5', 'm7.5 10.5 4.5 4.5 4.5-4.5', 'M4.5 20h15'],
+  enviar: ['M12 20V5.5', 'm6.5 6.5-6.5-6.5-6.5 6.5', 'M4.5 20.5h15'],
+  recibir: ['M12 4v14.5', 'm6.5-6.5-6.5 6.5-6.5-6.5', 'M4.5 3.5h15'],
   buscar: ['M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z', 'm16.2 16.2 4.8 4.8'],
   pack: ['M12 3 4 7.2v9.6L12 21l8-4.2V7.2L12 3Z', 'M4 7.2 12 11.5l8-4.3', 'M12 11.5V21'],
   persona: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4.5 20.5a7.5 7.5 0 0 1 15 0'],

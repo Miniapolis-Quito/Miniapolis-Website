@@ -47,9 +47,20 @@ function pintarSaldo(anterior) {
 
   const usadas = estado.resumen?.usedTickets ?? 0;
   const compradas = estado.resumen?.purchasedTickets ?? 0;
-  $('#subtitulo').textContent = compradas
-    ? `${usadas} de ${compradas} entradas usadas · ${plural(estado.resumen.activePacks, 'pack activo', 'packs activos')}`
-    : 'Todavía no tienes packs. Acércate a recepción para comprar uno.';
+  const transferidas = estado.resumen?.transferredTickets ?? 0;
+  const activos = estado.resumen?.activePacks ?? 0;
+  const totalPacks = estado.resumen?.totalPacks ?? (estado.packs?.length ?? 0);
+
+  if (compradas > 0 || disponibles > 0 || totalPacks > 0) {
+    let detalle = `${usadas} de ${compradas} entradas usadas`;
+    if (transferidas > 0) {
+      detalle += ` · ${transferidas} ${transferidas === 1 ? 'transferida' : 'transferidas'}`;
+    }
+    detalle += ` · ${plural(activos, 'pack activo', 'packs activos')}`;
+    $('#subtitulo').textContent = detalle;
+  } else {
+    $('#subtitulo').textContent = 'Todavía no tienes packs. Acércate a recepción para comprar uno.';
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -79,15 +90,26 @@ function tarjetaPack(pack) {
       'div',
       { class: 'fila fila--entre' },
       el('div', {}, el('span', { class: 'pack__restantes' }, String(pack.remaining)), el('span', { class: 'tenue' }, ` / ${pack.size}`)),
-      activo && estado.packSeleccionado?.id !== pack.id
-        ? el(
-            'button',
-            { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => seleccionarPack(pack.id) },
-            'Mostrar QR',
-          )
-        : activo
-          ? el('span', { class: 'etiqueta etiqueta--info' }, 'QR en pantalla')
+      el(
+        'div',
+        { class: 'fila' },
+        activo && pack.remaining > 0
+          ? el(
+              'button',
+              { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => abrirTransferencia(pack) },
+              'Transferir',
+            )
           : null,
+        activo && estado.packSeleccionado?.id !== pack.id
+          ? el(
+              'button',
+              { class: 'boton boton--chico boton--fantasma', type: 'button', onClick: () => seleccionarPack(pack.id) },
+              'Mostrar QR',
+            )
+          : activo
+            ? el('span', { class: 'etiqueta etiqueta--info' }, 'QR en pantalla')
+            : null,
+      ),
     ),
     el('div', { class: 'barra-progreso' }, el('div', { class: 'barra-progreso__relleno', style: `width:${porcentaje}%` })),
     pack.expiresAt ? el('div', { class: 'tenue-2 pequeno' }, `Vence el ${fecha(pack.expiresAt, { conHora: false })}`) : null,
@@ -330,7 +352,13 @@ async function cargarHistorial() {
             el(
               'div',
               { class: 'crece' },
-              el('div', {}, item.status === 'voided' ? 'Entrada devuelta' : 'Entrada usada'),
+              el(
+                'div',
+                {},
+                item.status === 'voided'
+                  ? (item.quantity > 1 ? `${item.quantity} entradas devueltas` : 'Entrada devuelta')
+                  : (item.quantity > 1 ? `${item.quantity} entradas usadas (grupo)` : 'Entrada usada'),
+              ),
               el(
                 'div',
                 { class: 'tenue-2 pequeno' },
@@ -384,20 +412,25 @@ function manejarEvento(tipo, datos) {
 
   if (tipo === 'entrada.consumida') {
     vibrar([40, 60, 40]);
-    // Una entrada leída durante un corte de red llega cuando vuelve la señal:
-    // se dice de qué hora es para que no parezca un cobro nuevo.
-    brindis(
-      datos.syncedAt
-        ? `Se registró tu entrada de las ${horaCorta(datos.at)} en ${datos.pack.code}. Te quedan ${datos.remaining}.`
-        : `Entrada registrada en ${datos.pack.code}. Te quedan ${datos.remaining}.`,
-      'ok',
-    );
+    const cant = datos.quantity || 1;
+    let txt;
+    if (datos.syncedAt) {
+      txt = cant > 1
+        ? `Se registraron tus ${cant} entradas de las ${horaCorta(datos.at)} en ${datos.pack.code}. Te quedan ${datos.remaining}.`
+        : `Se registró tu entrada de las ${horaCorta(datos.at)} en ${datos.pack.code}. Te quedan ${datos.remaining}.`;
+    } else {
+      txt = cant > 1
+        ? `${cant} entradas registradas en ${datos.pack.code}. Te quedan ${datos.remaining}.`
+        : `Entrada registrada en ${datos.pack.code}. Te quedan ${datos.remaining}.`;
+    }
+    brindis(txt, 'ok');
     cargarTodo({ conHistorial: true }).catch(() => {});
     return;
   }
 
   if (tipo === 'entrada.anulada') {
-    brindis('Se te devolvió una entrada.', 'ok');
+    const cant = datos.quantity || 1;
+    brindis(`Se te ${cant === 1 ? 'devolvió una entrada' : `devolvieron ${cant} entradas`}.`, 'ok');
     cargarTodo({ conHistorial: true }).catch(() => {});
     return;
   }
@@ -408,9 +441,68 @@ function manejarEvento(tipo, datos) {
     return;
   }
 
+  if (tipo === 'pack.recibido') {
+    vibrar([60, 40, 60]);
+    brindis(`¡${datos.from?.fullName || 'Un piloto'} te transfirió ${datos.quantity} ${datos.quantity === 1 ? 'entrada' : 'entradas'}!`, 'ok', 7000);
+    cargarTodo({ conHistorial: false }).catch(() => {});
+    return;
+  }
+
   if (tipo === 'pack.actualizado') {
     cargarTodo({ conHistorial: false }).catch(() => {});
   }
+}
+
+// ---------------------------------------------------------------------------
+// Diálogo de transferencia de entradas
+// ---------------------------------------------------------------------------
+
+let packATransferir = null;
+
+function abrirTransferencia(pack) {
+  packATransferir = pack;
+  const dialogo = $('#dialogo-transferir');
+  $('#transferir-subtitulo').textContent = `Pack ${pack.code} · ${pack.remaining} ${pack.remaining === 1 ? 'entrada disponible' : 'entradas disponibles'}.`;
+  const inputCantidad = $('#transferir-cantidad');
+  inputCantidad.value = '1';
+  inputCantidad.max = String(pack.remaining);
+  $('#transferir-destinatario').value = '';
+  $('#transferir-nota').value = '';
+  mostrarErroresCampo($('#form-transferir'), {});
+  mostrarAviso($('#aviso-transferir'), '');
+  dialogo.showModal();
+}
+
+function montarTransferencia() {
+  const dialogo = $('#dialogo-transferir');
+  $('#btn-cancelar-transferir').addEventListener('click', () => dialogo.close());
+
+  $('#form-transferir').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    if (!packATransferir) return;
+    const formulario = evento.currentTarget;
+    mostrarErroresCampo(formulario, {});
+    mostrarAviso($('#aviso-transferir'), '');
+    const datos = datosFormulario(formulario);
+
+    await conCarga($('#btn-confirmar-transferir'), async () => {
+      try {
+        const respuesta = await api.post(`/api/packs/${packATransferir.id}/transfer`, {
+          quantity: Number(datos.quantity) || 1,
+          recipient: datos.recipient,
+          note: datos.note || undefined,
+        });
+        dialogo.close();
+        brindis(respuesta.message, 'ok', 6000);
+        await cargarTodo();
+      } catch (error) {
+        if (error.detalles?.fields) {
+          mostrarErroresCampo(formulario, error.detalles.fields);
+        }
+        mostrarAviso($('#aviso-transferir'), error.message, 'error');
+      }
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -530,6 +622,7 @@ function montarCuenta() {
   }
 
   montarCuenta();
+  montarTransferencia();
   $('#btn-refrescar-qr').addEventListener('click', () => refrescarQr({ inmediato: true }));
   $('#btn-copiar-codigo').addEventListener('click', async () => {
     const codigo = estado.packSeleccionado?.code;

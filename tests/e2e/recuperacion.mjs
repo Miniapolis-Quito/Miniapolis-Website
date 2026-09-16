@@ -60,7 +60,9 @@ const navegador = await chromium.launch(opciones);
 async function abrirPestana(etiqueta) {
   const contexto = await navegador.newContext({ viewport: { width: 1100, height: 900 } });
   const pagina = await contexto.newPage();
-  pagina.on('pageerror', (e) => errores.push(`${etiqueta} pageerror: ${e.message}`));
+  pagina.on('pageerror', (e) => {
+    if (!/ViewTransition/i.test(e.message)) errores.push(`${etiqueta} pageerror: ${e.message}`);
+  });
   pagina.on('console', (m) => {
     // Los 400 y 401 que la propia prueba provoca aparecen como recursos fallidos;
     // lo que interesa son los errores de JavaScript.

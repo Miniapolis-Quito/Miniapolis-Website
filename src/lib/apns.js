@@ -73,7 +73,7 @@ export function avisar(pushToken, { apnsKeyId, apnsKey, teamId, passTypeId, apns
 
     const terminar = (resultado) => {
       try {
-        sesion.close();
+        sesion.destroy();
       } catch {
         /* la sesión ya estaba cerrada */
       }

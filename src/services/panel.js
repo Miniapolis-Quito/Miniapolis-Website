@@ -28,8 +28,10 @@ function totalesDePacks(db) {
          COUNT(*)                                                                   AS packs_totales,
          IFNULL(SUM(CASE WHEN status='active' AND remaining>0 THEN 1 ELSE 0 END),0) AS packs_activos,
          IFNULL(SUM(CASE WHEN status='active' THEN remaining ELSE 0 END),0)         AS entradas_pendientes,
-         IFNULL(SUM(size),0)                                                        AS entradas_emitidas,
-         IFNULL(SUM(size - remaining),0)                                            AS entradas_usadas,
+         IFNULL((SELECT SUM(m.delta) FROM pack_movements m JOIN packs p2 ON p2.id = m.pack_id
+                  WHERE m.reason = 'issue' AND p2.status <> 'cancelled'), 0) AS entradas_emitidas,
+         IFNULL((SELECT SUM(r.quantity) FROM redemptions r JOIN packs p2 ON p2.id = r.pack_id
+                  WHERE r.status = 'confirmed' AND p2.status <> 'cancelled'), 0) AS entradas_usadas,
          IFNULL(SUM(price_cents),0)                                                 AS ingresos_cents
        FROM packs WHERE status <> 'cancelled'`,
     )
@@ -58,7 +60,7 @@ function totalesDeUsuarios(db) {
  */
 function actividadPorDia(db, dias, zona) {
   const contar = db.prepare(
-    `SELECT COUNT(*) AS n FROM redemptions
+    `SELECT IFNULL(SUM(quantity), 0) AS n FROM redemptions
       WHERE status = 'confirmed' AND created_at >= ? AND created_at < ?`,
   );
   const inicios = dias.map((dia) => fechas.inicioDelDia(dia, zona).toISOString());
@@ -89,9 +91,9 @@ export function resumen({ ahora = new Date() } = {}) {
   const consumos = db
     .prepare(
       `SELECT
-         IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS hoy,
-         IFNULL(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),0) AS semana,
-         COUNT(*)                                                   AS total
+         IFNULL(SUM(CASE WHEN created_at >= ? THEN quantity ELSE 0 END), 0) AS hoy,
+         IFNULL(SUM(CASE WHEN created_at >= ? THEN quantity ELSE 0 END), 0) AS semana,
+         IFNULL(SUM(quantity), 0)                                            AS total
        FROM redemptions WHERE status = 'confirmed'`,
     )
     .get(inicioDeHoy, inicioDeLaSemana);

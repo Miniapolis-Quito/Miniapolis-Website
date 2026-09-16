@@ -480,8 +480,8 @@ router.get(
       csv = toCsv(
         // `sincronizado` va al final y solo tiene valor en lo leído sin conexión:
         // `fecha` es cuándo entró la persona y esta, cuándo se cobró.
-        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'restantes', 'estado', 'dispositivo', 'sincronizado'],
-        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.remainingAfter, r.status, r.deviceLabel, r.syncedAt]),
+        ['fecha', 'pack', 'cliente', 'operador', 'metodo', 'cantidad', 'restantes', 'estado', 'dispositivo', 'sincronizado'],
+        items.map((r) => [r.createdAt, r.packCode, r.customerName, r.scannerName, r.method, r.quantity ?? 1, r.remainingAfter, r.status, r.deviceLabel, r.syncedAt]),
       );
     } else if (entity === 'clientes') {
       const { items } = users.listUsers({ limit: 5000 });
