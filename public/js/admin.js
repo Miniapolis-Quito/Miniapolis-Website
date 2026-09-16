@@ -807,6 +807,8 @@ function montarDialogoUsuario() {
     mostrarErroresCampo(formulario, {});
     mostrarAviso($('#aviso-usuario'), '');
     dialogo.showModal();
+    // Quien abre este diálogo viene a escribir un nombre: el cursor ya está ahí.
+    $('#usuario-nombre').focus();
   });
 
   formulario.addEventListener('submit', async (evento) => {
@@ -923,6 +925,8 @@ function montarDialogoPack() {
     if (cliente) seleccionarCliente(cliente);
     $('#dialogo-detalle').close();
     dialogo.showModal();
+    // Con cliente ya elegido lo siguiente es el precio; si no, hay que buscarlo.
+    (cliente ? $('#pack-precio') : buscador).focus();
   };
 
   formulario.addEventListener('submit', async (evento) => {
