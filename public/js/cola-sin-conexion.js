@@ -165,7 +165,7 @@ export class ColaSinConexion {
    * Guarda una lectura para cobrarla después, si tiene sentido guardarla.
    * @returns {{ok:true, lectura:object, persistente:boolean}|{ok:false, motivo:string, mensaje:string, tono:string}}
    */
-  guardar({ tipo, payload, code, clave, capturadaEn, puesto, operador }, { desfaseMs = null, ttlSeconds, cooldownSeconds }) {
+  guardar({ tipo, payload, code, clave, capturadaEn, puesto, operador, quantity }, { desfaseMs = null, ttlSeconds, cooldownSeconds }) {
     const evaluacion = evaluarLectura(tipo === 'qr' ? { tipo, payload } : { tipo, code }, {
       guardadas: this.almacen.todas(),
       ahora: capturadaEn,
@@ -175,7 +175,7 @@ export class ColaSinConexion {
     });
     if (!evaluacion.ok) return evaluacion;
 
-    const lectura = nuevaLectura({ tipo, payload, code, clave, codigo: evaluacion.codigo, capturadaEn, puesto, operador });
+    const lectura = nuevaLectura({ tipo, payload, code, clave, codigo: evaluacion.codigo, capturadaEn, puesto, operador, quantity });
     const persistente = this.almacen.guardar(lectura);
     return { ok: true, lectura, persistente };
   }

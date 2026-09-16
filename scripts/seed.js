@@ -39,7 +39,7 @@ async function asegurarUsuario({ correo, nombre, telefono, rol }) {
 const antedatarUsuario = db.prepare('UPDATE users SET created_at = ?, updated_at = ? WHERE id = ?');
 
 const master = await asegurarUsuario({
-  correo: 'admin@racinghobbies.ec', nombre: 'Administración Racing Hobbies', rol: 'master',
+  correo: 'admin@racinghobbies.ec', nombre: 'Administración Miniápolis', rol: 'master',
 });
 const operador = await asegurarUsuario({
   correo: 'operador@racinghobbies.ec', nombre: 'Operador de Pista', rol: 'staff',

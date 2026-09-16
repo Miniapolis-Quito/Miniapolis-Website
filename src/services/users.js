@@ -10,7 +10,7 @@ import { notificarSesionInvalida } from './sessions.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
 export function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase();
+  return String(email || '').normalize('NFKC').trim().toLowerCase();
 }
 
 /** Proyección pública de un usuario (nunca incluye el hash de contraseña). */
@@ -59,7 +59,10 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
   const now = new Date().toISOString();
   const user = {
     id: newId(),
-    email: String(email).trim(),
+    // Persistimos la misma forma canónica que usamos para buscar y comparar;
+    // así las respuestas, avisos y enlaces no dependen de cómo se escribió el
+    // correo originalmente.
+    email: normalized,
     email_normalized: normalized,
     full_name: String(fullName).trim(),
     phone: phone || null,
@@ -70,7 +73,7 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
     created_by: createdBy,
     created_at: now,
     updated_at: now,
-    search_text: textoBusquedaUsuario({ fullName, email, phone }),
+    search_text: textoBusquedaUsuario({ fullName, email: normalized, phone }),
   };
 
   try {
@@ -124,9 +127,20 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
     // cuenta y este punto hay un `await`, así que varios intentos simultáneos
     // leían el mismo contador y cada uno escribía «uno más», dejando probar
     // muchas más contraseñas de las que permite el bloqueo.
-    const { failed_logins: failed } = db
-      .prepare('UPDATE users SET failed_logins = failed_logins + 1, updated_at = ? WHERE id = ? RETURNING failed_logins')
-      .get(nowIso, user.id);
+    const updated = db
+      .prepare(
+        `UPDATE users SET failed_logins = failed_logins + 1, updated_at = ?
+           WHERE id = ? AND password_hash = ? AND token_version = ?
+           RETURNING failed_logins`,
+      )
+      .get(nowIso, user.id, user.password_hash, user.token_version);
+    if (!updated) {
+      // La contraseña o la versión de la cuenta cambió mientras se verificaba
+      // la anterior (por recuperación, administración u otro dispositivo).
+      // Ese intento antiguo no debe sumar fallos a la cuenta nueva.
+      return { ok: false, reason: 'credenciales' };
+    }
+    const { failed_logins: failed } = updated;
     const shouldLock = failed >= config.security.maxLoginAttempts;
     if (shouldLock) {
       db.prepare('UPDATE users SET failed_logins = 0, locked_until = ?, updated_at = ? WHERE id = ?').run(
@@ -143,12 +157,17 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
   // acertar la contraseña en esa carrera no debe servir para saltarse el bloqueo.
   const actual = findById(user.id, db);
   if (!actual) return { ok: false, reason: 'credenciales' };
-  if (actual.locked_until && actual.locked_until > new Date().toISOString()) {
-    const retryAfterSeconds = Math.ceil((Date.parse(actual.locked_until) - Date.now()) / 1000);
+  if (actual.locked_until && actual.locked_until > nowIso) {
+    const retryAfterSeconds = Math.ceil((Date.parse(actual.locked_until) - now) / 1000);
     return { ok: false, reason: 'bloqueado', retryAfterSeconds };
   }
 
-  if (user.status !== 'active') return { ok: false, reason: 'suspendido' };
+  if (actual.status !== 'active') return { ok: false, reason: 'suspendido' };
+  if (actual.password_hash !== user.password_hash || actual.token_version !== user.token_version) {
+    // No permitimos que una verificación iniciada antes de un cambio de
+    // contraseña/cuenta termine autenticando con datos obsoletos.
+    return { ok: false, reason: 'credenciales' };
+  }
 
   // Login correcto: se limpia el contador y, si el hash quedó con parámetros
   // antiguos, se recalcula de forma transparente.
@@ -156,9 +175,13 @@ export async function authenticate(email, password, { now = Date.now() } = {}) {
   if (needsRehash(passwordHash)) {
     passwordHash = await hashPassword(password);
   }
-  db.prepare(
-    'UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = ?, password_hash = ?, updated_at = ? WHERE id = ?',
-  ).run(nowIso, passwordHash, nowIso, user.id);
+  const loginUpdated = db
+    .prepare(
+      `UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = ?, password_hash = ?, updated_at = ?
+         WHERE id = ? AND password_hash = ? AND token_version = ? AND status = 'active'`,
+    )
+    .run(nowIso, passwordHash, nowIso, user.id, user.password_hash, user.token_version);
+  if (loginUpdated.changes !== 1) return { ok: false, reason: 'credenciales' };
 
   return { ok: true, user: findById(user.id, db) };
 }
@@ -197,7 +220,16 @@ export async function changePassword(userId, currentPassword, newPassword) {
   if (!user) throw notFound('Usuario no encontrado.');
   const valid = await verifyPassword(currentPassword, user.password_hash);
   if (!valid) throw badRequest('La contraseña actual no es correcta.', { fields: { currentPassword: 'Contraseña incorrecta.' } }, 'password_incorrecta');
-  return setPassword(userId, newPassword);
+  if (await verifyPassword(newPassword, user.password_hash)) {
+    throw badRequest(
+      'La contraseña nueva debe ser distinta a la anterior.',
+      { fields: { newPassword: 'Debe ser distinta a la anterior.' } },
+      'password_repetida',
+    );
+  }
+  // El hash leído queda como testigo: si otra operación cambia la cuenta
+  // mientras se calculan los hashes, este cambio no puede sobrescribirla.
+  return setPassword(userId, newPassword, { expectedPasswordHash: user.password_hash });
 }
 
 /** Deja sin efecto los enlaces de recuperación pendientes de una cuenta. */
@@ -219,23 +251,38 @@ export function invalidarEnlacesDeRecuperacion(db, userId, motivo, ahoraIso = ne
  * usa en la misma que canjea el enlace.
  */
 export function escribirPassword(db, userId, passwordHash, { ahoraIso = new Date().toISOString(), motivo = 'password_changed' } = {}) {
-  db.prepare(
+  const updated = db.prepare(
     `UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ?,
             token_version = token_version + 1, failed_logins = 0, locked_until = NULL
       WHERE id = ?`,
   ).run(passwordHash, ahoraIso, ahoraIso, userId);
+  if (updated.changes !== 1) return false;
   db.prepare(
     `UPDATE sessions SET revoked_at = ?, revoke_reason = ?
       WHERE user_id = ? AND revoked_at IS NULL`,
   ).run(ahoraIso, motivo, userId);
   invalidarEnlacesDeRecuperacion(db, userId, 'password_cambiada', ahoraIso);
+  return true;
 }
 
 /** Cambia la contraseña e invalida todas las sesiones activas del usuario. */
-export async function setPassword(userId, newPassword) {
+export async function setPassword(userId, newPassword, { expectedPasswordHash = null } = {}) {
   const db = getDb();
   const passwordHash = await hashPassword(newPassword);
-  inTransaction(() => escribirPassword(db, userId, passwordHash));
+  const changed = inTransaction(() => {
+    if (expectedPasswordHash !== null) {
+      const actual = findById(userId, db);
+      if (!actual || actual.password_hash !== expectedPasswordHash) {
+        throw badRequest(
+          'La cuenta cambió mientras se actualizaba. Comprueba la contraseña actual e inténtalo de nuevo.',
+          null,
+          'password_cambio_concurrente',
+        );
+      }
+    }
+    return escribirPassword(db, userId, passwordHash);
+  });
+  if (!changed) throw notFound('Usuario no encontrado.');
   notificarSesionInvalida(userId, 'password_cambiada');
   return findById(userId, db);
 }
@@ -265,8 +312,8 @@ export function updateUser(userId, changes, db = getDb()) {
   }
   if (changes.email !== undefined) {
     fields.push('email = @email', 'email_normalized = @email_normalized');
-    params.email = String(changes.email).trim();
-    params.email_normalized = normalizeEmail(changes.email);
+    params.email = normalizeEmail(changes.email);
+    params.email_normalized = params.email;
   }
   // Cambiar rol, suspender o cambiar el correo debe invalidar los tokens vivos.
   const invalidates = changes.role !== undefined || changes.status !== undefined || changes.email !== undefined;
@@ -278,33 +325,49 @@ export function updateUser(userId, changes, db = getDb()) {
     fields.push('search_text = @search_text');
     params.search_text = textoBusquedaUsuario({
       fullName: changes.fullName ?? user.full_name,
-      email: changes.email ?? user.email,
+      email: changes.email !== undefined ? params.email : user.email,
       phone: changes.phone !== undefined ? changes.phone : user.phone,
     });
   }
 
   if (fields.length === 0) return user;
 
-  try {
-    db.prepare(`UPDATE users SET ${fields.join(', ')}, updated_at = @updated_at WHERE id = @id`).run(params);
-  } catch (error) {
-    if (String(error.message).includes('UNIQUE')) {
-      throw conflict('Ya existe una cuenta registrada con ese correo.', 'correo_en_uso');
+  const guardar = db.transaction(() => {
+    // La comprobación de la ruta administrativa no basta: dos peticiones
+    // concurrentes podrían ver dos másters activos y degradarlos a la vez.
+    // Repetirla dentro de la transacción de escritura garantiza que siempre
+    // sobreviva al menos uno, incluso si otra operación acaba de cambiar la
+    // cuenta que estamos contando.
+    const dejaDeSerMasterActivo =
+      user.role === 'master' && (changes.role === 'customer' || changes.role === 'staff' || changes.status === 'suspended');
+    if (dejaDeSerMasterActivo) {
+      const activos = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'master' AND status = 'active'").get().n;
+      if (activos <= 1) throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
     }
-    throw error;
-  }
 
-  if (invalidates) {
-    db.prepare(
-      `UPDATE sessions SET revoked_at = ?, revoke_reason = 'account_changed' WHERE user_id = ? AND revoked_at IS NULL`,
-    ).run(params.updated_at, userId);
-    // Un enlace de recuperación iba a la dirección de antes, o a una cuenta
-    // que ahora está suspendida o tiene otro rol: ya no debe servir.
-    invalidarEnlacesDeRecuperacion(db, userId, 'cuenta_modificada', params.updated_at);
-    notificarSesionInvalida(userId, 'cuenta_modificada');
-  }
+    try {
+      db.prepare(`UPDATE users SET ${fields.join(', ')}, updated_at = @updated_at WHERE id = @id`).run(params);
+    } catch (error) {
+      if (String(error.message).includes('UNIQUE')) {
+        throw conflict('Ya existe una cuenta registrada con ese correo.', 'correo_en_uso');
+      }
+      throw error;
+    }
 
-  return findById(userId, db);
+    if (invalidates) {
+      db.prepare(
+        `UPDATE sessions SET revoked_at = ?, revoke_reason = 'account_changed' WHERE user_id = ? AND revoked_at IS NULL`,
+      ).run(params.updated_at, userId);
+      // Un enlace de recuperación iba a la dirección de antes, o a una cuenta
+      // que ahora está suspendida o tiene otro rol: ya no debe servir. Todo va
+      // en la misma transacción que el cambio para cerrar la ventana de carrera.
+      invalidarEnlacesDeRecuperacion(db, userId, 'cuenta_modificada', params.updated_at);
+      notificarSesionInvalida(userId, 'cuenta_modificada');
+    }
+
+    return findById(userId, db);
+  });
+  return guardar.immediate();
 }
 
 export function unlockUser(userId, db = getDb()) {

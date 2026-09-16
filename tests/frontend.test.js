@@ -177,7 +177,7 @@ test('cada página carga los módulos que sus scripts necesitan', () => {
   }
 });
 
-test('las pantallas usan el lienzo negro de la identidad Racing Hobbies', () => {
+test('las pantallas usan el lienzo negro de la identidad Miniápolis', () => {
   const paginas = [...Object.keys(PAGINAS), 'public/404.html'];
   for (const html of paginas) {
     const src = leer(html);

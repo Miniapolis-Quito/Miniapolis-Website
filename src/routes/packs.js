@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { forbidden, notFound, badRequest } from '../lib/errors.js';
-import { paginationSchema, parseOrThrow } from '../lib/validate.js';
+import { paginationSchema, transferPackSchema, parseOrThrow } from '../lib/validate.js';
 import { buildQrPayload } from '../lib/qr.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import * as packs from '../services/packs.js';
@@ -114,6 +114,21 @@ router.get(
   asyncHandler(async (req, res) => {
     const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
     res.json(redemptions.listRedemptions({ userId: req.user.id, limit, offset }));
+  }),
+);
+
+/** Transfiere entradas de un pack propio a otro cliente registrado. */
+router.post(
+  '/:id/transfer',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(transferPackSchema, req.body, badRequest);
+    const result = packs.transferTickets(req.params.id, {
+      ...data,
+      actor: req.user,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    res.json(result);
   }),
 );
 

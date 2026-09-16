@@ -23,6 +23,8 @@ const RAZONES_MOVIMIENTO = {
   adjust: 'Ajuste manual',
   cancel: 'Pack anulado',
   restore: 'Pack restaurado',
+  transfer_out: 'Transferencia enviada',
+  transfer_in: 'Transferencia recibida',
 };
 
 const ACCIONES_CUENTA = {
@@ -779,6 +781,7 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
 
   const iconos = {
     issue: '🎟️', redeem: '🏎️', void: '↩️', adjust: '⚖️', cancel: '🚫', restore: '♻️',
+    transfer_out: '📤', transfer_in: '📥',
   };
   const iconosCuenta = {
     'login.exitoso': '🔑', 'login.fallido': '⚠️', logout: '🚪', 'logout.todos': '🚪',

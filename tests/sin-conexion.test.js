@@ -468,3 +468,21 @@ test('administración marca una lectura no cobrada como resuelta y deja de verla
   assert.equal(resolucion.actorId, master.id);
   assert.equal(resolucion.metadata.note, 'Pagó la entrada en efectivo en recepción');
 });
+
+test('una lectura hecha sin conexión con cantidad múltiple descuenta todas las entradas indicadas', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const lectura = diferida({ payload: qrDeHace(pack, 30_000), quantity: 3, deviceLabel: 'Puesto 1' }, { hace: 30_000 });
+  const cobro = await cStaff.post('/api/scan', lectura);
+
+  assert.equal(cobro.status, 200, JSON.stringify(cobro.datos));
+  assert.equal(cobro.datos.quantity, 3);
+  assert.equal(cobro.datos.remaining, 2);
+  assert.equal(cobro.datos.remainingBefore, 5);
+
+  const final = packsService.findById(pack.id);
+  assert.equal(final.remaining, 2);
+  assert.ok(packsService.checkIntegrity().ok);
+});
+

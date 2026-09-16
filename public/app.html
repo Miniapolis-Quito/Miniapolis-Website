@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <title>Mis entradas · Racing Hobbies Ecuador</title>
+  <title>Mis entradas · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -22,7 +22,7 @@
       <div class="encabezado-pista fila fila--entre mb-2">
         <div>
           <div class="brand-lockup brand-lockup--compact mb-2" aria-hidden="true">
-            <img class="brand-lockup__logo" src="/images/racing-hobbies-logo-oficial.png" width="1600" height="434" alt="">
+            <img class="brand-lockup__logo" src="/images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="">
           </div>
           <h1 class="sin-margen" id="titulo">Mis entradas</h1>
           <p class="tenue sin-margen" id="subtitulo"></p>
@@ -149,6 +149,37 @@
     </div>
     <div class="modal__pie">
       <button class="boton boton--fantasma" id="btn-cerrar-cuenta" type="button">Cerrar</button>
+    </div>
+  </dialog>
+
+  <!-- Diálogo de transferir entradas -->
+  <dialog id="dialogo-transferir">
+    <div class="modal__cuerpo">
+      <h2>Transferir entradas</h2>
+      <p class="tenue pequeno" id="transferir-subtitulo">Envía entradas de tu pack a otro piloto registrado.</p>
+      <form id="form-transferir" novalidate>
+        <div class="campo">
+          <label for="transferir-cantidad">Cantidad a transferir</label>
+          <input id="transferir-cantidad" name="quantity" type="number" min="1" max="50" value="1" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="transferir-destinatario">Correo o teléfono del destinatario</label>
+          <input id="transferir-destinatario" name="recipient" type="text" placeholder="amigo@correo.com o +593 99..." required>
+          <div class="campo__ayuda">El destinatario debe tener una cuenta registrada en Miniápolis.</div>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="transferir-nota">Nota o mensaje <span class="tenue-2">(opcional)</span></label>
+          <input id="transferir-nota" name="note" type="text" maxlength="200" placeholder="Ej: Para la carrera del sábado">
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-transferir" class="aviso" role="alert" hidden></div>
+        <div class="fila mt">
+          <button class="boton boton--fantasma" id="btn-cancelar-transferir" type="button">Cancelar</button>
+          <button class="boton boton--principal crece" id="btn-confirmar-transferir" type="submit">Transferir entradas</button>
+        </div>
+      </form>
     </div>
   </dialog>
 

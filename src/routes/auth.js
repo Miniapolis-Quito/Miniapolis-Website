@@ -169,6 +169,17 @@ router.post(
     const result = sessions.rotate(token, { ip: req.clientIp, userAgent: req.get('user-agent') });
     if (!result.ok) {
       clearRefreshCookie(res);
+      if (result.reason === 'reutilizado') {
+        audit.record({
+          actor: result.userId ? { id: result.userId } : null,
+          action: 'sesion.token_reutilizado',
+          entityType: 'user',
+          entityId: result.userId ?? null,
+          metadata: { motivo: 'reutilizacion_detectada' },
+          ip: req.clientIp,
+          userAgent: req.get('user-agent'),
+        });
+      }
       const messages = {
         reutilizado: 'Detectamos un uso sospechoso de tu sesión y la cerramos por seguridad. Vuelve a entrar.',
         expirado: 'Tu sesión expiró. Vuelve a entrar.',
@@ -351,6 +362,7 @@ router.post(
 /** Comprueba un enlace sin gastarlo, para no pedir la contraseña en vano. */
 router.post(
   '/password/reset/check',
+  exigirRecuperacion,
   canjeLimiter,
   asyncHandler(async (req, res) => {
     const { token } = parseOrThrow(resetTokenSchema, req.body, badRequest);
@@ -363,6 +375,7 @@ router.post(
 /** Canjea el enlace. No abre sesión: se vuelve a entrar con la contraseña nueva. */
 router.post(
   '/password/reset',
+  exigirRecuperacion,
   canjeLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(resetPasswordSchema, req.body, badRequest);

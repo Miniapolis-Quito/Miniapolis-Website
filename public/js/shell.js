@@ -4,6 +4,11 @@ import { cerrarSesion, getUsuario } from './api.js';
 import { textoEstado } from './realtime.js';
 import { abrirCambioPassword } from './cuenta.js';
 
+/** Marca de fábrica: la que traen escritas las páginas y el logotipo oficial.
+ *  Si el despliegue configura otra, `aplicarMarca` la sustituye. */
+const MARCA_POR_DEFECTO = 'Miniápolis #3';
+const MARCA_CORTA_POR_DEFECTO = 'Miniápolis';
+
 const NAV_POR_ROL = {
   customer: [{ href: '/app', texto: 'Mis entradas' }],
   staff: [
@@ -17,7 +22,7 @@ const NAV_POR_ROL = {
   ],
 };
 
-export function montarCabecera(contenedor, { marca = 'Racing Hobbies' } = {}) {
+export function montarCabecera(contenedor, { marca = MARCA_CORTA_POR_DEFECTO } = {}) {
   const usuario = getUsuario();
   const rutaActual = window.location.pathname;
 
@@ -62,9 +67,9 @@ export function montarCabecera(contenedor, { marca = 'Racing Hobbies' } = {}) {
             { class: 'marca__sello', 'aria-hidden': 'true' },
             el('img', {
               class: 'marca__logo',
-              src: '/images/racing-hobbies-logo-oficial.png',
-              width: '1600',
-              height: '434',
+              src: '/images/miniapolis-logo-oficial.webp',
+              width: '1000',
+              height: '425',
               alt: '',
             }),
           ),
@@ -119,7 +124,7 @@ export function saludo() {
 export async function aplicarMarca(configuracion) {
   if (!configuracion) return;
   configurarFormato(configuracion);
-  document.title = document.title.replace('Racing Hobbies', configuracion.brandShort || 'Racing Hobbies');
+  document.title = document.title.replace(MARCA_POR_DEFECTO, configuracion.brandName || MARCA_POR_DEFECTO);
   for (const nodo of document.querySelectorAll('[data-marca]')) {
     nodo.textContent = configuracion.brandName;
   }

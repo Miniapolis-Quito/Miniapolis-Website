@@ -560,3 +560,81 @@ test('se puede anular un consumo aunque el pack haya recibido entradas de cortes
   assert.equal(final.size, 6, 'el tamaño acompaña al saldo, como en un ajuste');
   assert.ok(packsService.checkIntegrity().ok);
 });
+
+test('escanear un QR con cantidad mayor a 1 descuenta todas las entradas indicadas', async () => {
+  const { cMaster, cStaff, cCliente, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 10);
+
+  const r = await cStaff.post('/api/scan', {
+    payload: buildQrPayload(pack),
+    deviceLabel: 'Torniquete 1',
+    quantity: 3,
+  });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.ok, true);
+  assert.equal(r.datos.quantity, 3);
+  assert.equal(r.datos.remaining, 7);
+  assert.equal(r.datos.remainingBefore, 10);
+
+  const saldo = await cCliente.get('/api/packs/mine/summary');
+  assert.equal(saldo.datos.summary.availableTickets, 7);
+
+  const final = packsService.findById(pack.id);
+  assert.equal(final.remaining, 7);
+  assert.ok(packsService.checkIntegrity().ok);
+});
+
+test('el canje manual admite cantidad múltiple', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const r = await cStaff.post('/api/scan/manual', {
+    code: pack.code,
+    quantity: 2,
+    deviceLabel: 'Mesa de control',
+  });
+
+  assert.equal(r.status, 200);
+  assert.equal(r.datos.quantity, 2);
+  assert.equal(r.datos.remaining, 3);
+  assert.equal(r.datos.remainingBefore, 5);
+  assert.equal(packsService.findById(pack.id).remaining, 3);
+  assert.ok(packsService.checkIntegrity().ok);
+});
+
+test('no se puede canjear más entradas de las disponibles en el pack', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 2);
+
+  const r = await cStaff.post('/api/scan', {
+    payload: buildQrPayload(pack),
+    quantity: 3,
+  });
+
+  assert.equal(r.status, 409);
+  assert.equal(r.datos.error.code, 'saldo_insuficiente');
+  assert.equal(packsService.findById(pack.id).remaining, 2);
+});
+
+test('al anular un canje con cantidad mayor a 1 se restituyen todas las entradas', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await emitirPack(cMaster, cliente.id, 5);
+
+  const consumo = await cStaff.post('/api/scan', {
+    payload: buildQrPayload(pack),
+    quantity: 3,
+  });
+  assert.equal(consumo.status, 200);
+  assert.equal(consumo.datos.remaining, 2);
+
+  const anulacion = await cMaster.post(`/api/admin/redemptions/${consumo.datos.redemptionId}/void`, {
+    reason: 'Corrección de grupo',
+  });
+  assert.equal(anulacion.status, 200);
+  assert.equal(anulacion.datos.remaining, 5);
+
+  const final = packsService.findById(pack.id);
+  assert.equal(final.remaining, 5);
+  assert.ok(packsService.checkIntegrity().ok);
+});

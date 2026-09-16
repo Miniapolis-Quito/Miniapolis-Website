@@ -11,7 +11,7 @@
  * La página misma abre sin conexión gracias a un service worker, con el nombre
  * de quien trabajaba en ese teléfono.
  */
-import { $, el, render, brindis, horaCorta, plural, METODOS, claveIdempotencia,
+import { $, $$, el, render, brindis, horaCorta, plural, METODOS, claveIdempotencia,
          mostrarAviso, mostrarErroresCampo, conCarga, vibrar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion, ErrorRed, estaAutenticado,
          refrescarSesion, onSesion, usarSesionSinConexion } from './api.js';
@@ -51,6 +51,7 @@ const estado = {
   arranqueSinConexion: false,
   /** Hora del servidor menos la del teléfono, medida la última vez que hubo red. */
   desfaseMs: null,
+  cantidadSeleccionada: 1,
 };
 
 let cabecera;
@@ -86,20 +87,16 @@ function modoSinConexion() {
 // ---------------------------------------------------------------------------
 
 let audio = null;
-
-/**
- * `true` es un cobro, `false` un error y `'guardada'` una lectura guardada sin
- * conexión: dos toques cortos, para que el operador distinga sin mirar que esa
- * entrada todavía no está cobrada.
- */
-function pitar(tipo) {
+function pitar(tipo, cantidad = 1) {
   if (!$('#chk-sonido').checked) return;
   const tonos =
     tipo === 'guardada'
       ? [{ frecuencia: 660, duracion: 0.09, retraso: 0 }, { frecuencia: 660, duracion: 0.09, retraso: 0.15 }]
-      : tipo
-        ? [{ frecuencia: 880, duracion: 0.16, retraso: 0 }]
-        : [{ frecuencia: 240, duracion: 0.34, retraso: 0 }];
+      : !tipo
+        ? [{ frecuencia: 240, duracion: 0.34, retraso: 0 }]
+        : cantidad > 1
+          ? [{ frecuencia: 880, duracion: 0.15, retraso: 0 }, { frecuencia: 1174, duracion: 0.16, retraso: 0.12 }]
+          : [{ frecuencia: 880, duracion: 0.16, retraso: 0 }];
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
     if (audio.state === 'suspended') audio.resume();
@@ -164,31 +161,27 @@ function puesto() {
 }
 
 /**
- * Registra un consumo. `clave` y `deviceLabel` solo llegan en un reintento: un
- * reintento tiene que repetir la MISMA petición, porque el servidor identifica
- * el intento por su clave de idempotencia junto con los datos enviados. Si el
- * operador cambiara el nombre del puesto durante el corte de red, reconstruir
- * el cuerpo con el valor nuevo haría que el servidor viera otra operación con
- * una clave ya usada, y lo rechazaría en vez de confirmar lo que ya pasó.
+ * Registra un consumo. `clave`, `deviceLabel` y `cantidad` solo llegan en un reintento.
  *
  * Con el modo sin conexión, la lectura se guarda en vez de intentarse si ya se
  * sabe que no hay red, y también si el intento en línea falla por red: con la
  * misma clave, así que si el servidor llegó a cobrarla, al enviarla recibe la
  * respuesta original en lugar de descontar otra vez.
  */
-async function registrarConsumo({ payload, code, clave, deviceLabel }) {
+async function registrarConsumo({ payload, code, clave, deviceLabel, cantidad }) {
   const capturadaEn = Date.now();
   const idempotencyKey = clave || claveIdempotencia('scan');
   const puestoUsado = deviceLabel ?? puesto();
+  const cant = cantidad ?? estado.cantidadSeleccionada ?? 1;
 
   if (modoSinConexion() && !clave && (estado.sinConexion || !estaAutenticado() || navigator.onLine === false)) {
-    return guardarSinConexion({ payload, code, clave: idempotencyKey, capturadaEn, puesto: puestoUsado });
+    return guardarSinConexion({ payload, code, clave: idempotencyKey, capturadaEn, puesto: puestoUsado, cantidad: cant });
   }
 
   estado.procesando = true;
   const cuerpo = payload
-    ? { payload, deviceLabel: puestoUsado }
-    : { code, deviceLabel: puestoUsado };
+    ? { payload, deviceLabel: puestoUsado, quantity: cant }
+    : { code, deviceLabel: puestoUsado, quantity: cant };
 
   try {
     const respuesta = await api.post(payload ? '/api/scan' : '/api/scan/manual', cuerpo, {
@@ -199,12 +192,13 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
     });
     estado.pendiente = null;
     marcarEnLinea();
-    pitar(true);
-    vibrar(60);
+    pitar(true, cant);
+    vibrar(cant > 1 ? [60, 40, 60] : 60);
+    const titulo = cant > 1 ? `${cant} entradas registradas` : 'Entrada registrada';
     mostrarResultado({
       tipo: 'ok',
       icono: '✅',
-      titulo: 'Entrada registrada',
+      titulo,
       detalle: `${respuesta.customer.fullName} · ${respuesta.pack.code}`,
       restantes: respuesta.remaining,
     });
@@ -219,7 +213,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
   } catch (error) {
     if (modoSinConexion() && esFalloDeRed(error)) {
       marcarSinConexion();
-      return guardarSinConexion({ payload, code, clave: idempotencyKey, capturadaEn, puesto: puestoUsado });
+      return guardarSinConexion({ payload, code, clave: idempotencyKey, capturadaEn, puesto: puestoUsado, cantidad: cant });
     }
 
     pitar(false);
@@ -228,7 +222,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel }) {
     if (error instanceof ErrorRed) {
       // La entrada puede haberse descontado o no: se guarda el intento con su
       // clave para poder reintentar sin riesgo de descontar dos veces.
-      estado.pendiente = { payload, code, clave: idempotencyKey, deviceLabel: puestoUsado };
+      estado.pendiente = { payload, code, clave: idempotencyKey, deviceLabel: puestoUsado, cantidad: cant };
       mostrarResultado({
         tipo: 'alerta',
         icono: '📶',
@@ -271,11 +265,11 @@ async function reintentarPendiente() {
 let avisoNoPersistente = false;
 
 /** Guarda una lectura para cobrarla al volver la señal y se lo dice al operador. */
-function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoUsado }) {
+function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoUsado, cantidad }) {
   const usuario = getUsuario();
   if (!usuario) return null; // la sesión se perdió: la página ya va hacia el acceso
   const resultado = cola.guardar(
-    { tipo: payload ? 'qr' : 'codigo', payload, code, clave, capturadaEn, puesto: puestoUsado, operador: usuario },
+    { tipo: payload ? 'qr' : 'codigo', payload, code, clave, capturadaEn, puesto: puestoUsado, operador: usuario, quantity: cantidad ?? 1 },
     {
       desfaseMs: estado.desfaseMs,
       ttlSeconds: estado.config.qr?.ttlSeconds ?? 120,
@@ -751,6 +745,7 @@ function filaActividad(item, nuevo = false) {
           (item.syncedAt ? ` · sin conexión, cobrada a las ${horaCorta(item.syncedAt)}` : ''),
       ),
     ),
+    item.quantity > 1 ? el('span', { class: 'etiqueta etiqueta--info' }, `${item.quantity} entradas`) : null,
     el('span', { class: `etiqueta ${item.remainingAfter === 0 ? 'etiqueta--error' : ''}` }, `Quedan ${item.remainingAfter}`),
   );
 }
@@ -770,6 +765,34 @@ async function cargarActividad() {
     if (esFalloDeRed(error) && estado.actividad.length) return; // se conserva lo último que se vio
     render(contenedor, el('div', { class: 'aviso aviso--alerta' }, error.message));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Selector de cantidad (modo individual / grupo)
+// ---------------------------------------------------------------------------
+
+function montarSelectorCantidad() {
+  const botones = $$('.btn-cantidad');
+  const indicador = $('#indicador-modo-grupo');
+  const btnManual = $('#btn-descontar-manual');
+
+  botones.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      botones.forEach((b) => b.classList.remove('activo'));
+      btn.classList.add('activo');
+      estado.cantidadSeleccionada = Number(btn.dataset.cantidad) || 1;
+      const cant = estado.cantidadSeleccionada;
+      if (indicador) {
+        indicador.hidden = cant <= 1;
+        if (cant > 1) {
+          indicador.textContent = `Grupo: ${cant}`;
+        }
+      }
+      if (btnManual) {
+        btnManual.textContent = cant > 1 ? `Descontar ${cant} entradas` : 'Descontar entrada';
+      }
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -848,7 +871,7 @@ function montarManual() {
                     entrada.value = '';
                   },
                 },
-                'Descontar una entrada',
+                estado.cantidadSeleccionada > 1 ? `Descontar ${estado.cantidadSeleccionada} entradas` : 'Descontar entrada',
               )
             : null,
         });
@@ -871,7 +894,7 @@ function montarManual() {
       mostrarErroresCampo(formulario, { code: 'Ingresa el código del pack.' });
       return;
     }
-    await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
+    await conCarga($('#btn-descontar-manual'), async () => {
       const respuesta = await registrarConsumo({ code: codigo });
       if (respuesta) entrada.value = '';
     });
@@ -962,6 +985,7 @@ async function alRecuperarSesion() {
     }),
   );
 
+  montarSelectorCantidad();
   montarManual();
   reposar();
 
@@ -1025,6 +1049,7 @@ async function alRecuperarSesion() {
             // supuestos hacía que un canje manual apareciera como "QR app".
             method: datos.method,
             deviceLabel: datos.deviceLabel,
+            quantity: datos.quantity ?? 1,
             remainingAfter: datos.remaining,
             syncedAt: datos.syncedAt,
             status: 'confirmed',

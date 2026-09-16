@@ -167,7 +167,10 @@ const COMMON_PASSWORDS = new Set([
  */
 export function validatePasswordStrength(password, { email = '', fullName = '' } = {}) {
   const errors = [];
-  const value = String(password || '');
+  // El hash usa NFKC; validar la misma representación evita que el alta, el
+  // cambio y la recuperación apliquen reglas distintas a lo que realmente se
+  // almacenará y verificará.
+  const value = String(password || '').normalize('NFKC');
   const min = config.security.minPasswordLength;
 
   if (value.length < min) errors.push(`Debe tener al menos ${min} caracteres.`);
