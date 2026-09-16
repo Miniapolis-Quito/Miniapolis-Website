@@ -10,20 +10,46 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
-<body>
+<body class="pagina-entrada">
   <main class="contenedor contenedor--angosto pt-pagina">
-    <div class="centrado mb-3">
-      <div class="brand-lockup brand-lockup--entrada" aria-hidden="true">
-        <img class="brand-lockup__logo" src="/images/racing-hobbies-logo-oficial.png" width="1600" height="434" alt="">
+    <header class="entrada__barra">
+      <a class="entrada__marca subrayado-no" href="/" aria-label="Racing Hobbies — inicio">
+        <span class="entrada__marca-icono" aria-hidden="true">RH</span>
+        <span>RACING HOBBIES</span>
+      </a>
+      <div class="entrada__meta" aria-label="Identificador de la pista">
+        <span>ECUADOR</span>
+        <span class="entrada__punto" aria-hidden="true"></span>
+        <span>TRACK 03</span>
       </div>
-      <h1 data-marca>Racing Hobbies Ecuador</h1>
-      <p class="tenue">Tus entradas para la pista de autos a control remoto.</p>
-      <div class="presentacion-pista" aria-hidden="true">
-        <img src="/images/racing-hobbies-pista-rc.webp" width="1600" height="667" alt="" fetchpriority="high" decoding="async">
+      <a class="entrada__accion" href="#acceso">Acceso <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <section class="entrada__hero" aria-labelledby="titulo-entrada">
+      <div class="entrada__hero-copy">
+        <p class="entrada__kicker"><span>01</span> Sistema de entradas</p>
+        <h1 id="titulo-entrada"><span>Adrenalina</span><span>sin límites<span class="entrada__marca-registrada">™</span></span></h1>
+      </div>
+      <div class="entrada__hero-aside">
+        <p class="entrada__marca-texto" data-marca>Racing Hobbies Ecuador</p>
+        <p class="entrada__descripcion">Tu pase digital para vivir la pista de autos a control remoto. Entra, acelera y vuelve a la línea de salida.</p>
+        <a class="entrada__enlace" href="#acceso">Entrar al sistema <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <div class="presentacion-pista" aria-hidden="true">
+      <img src="/images/racing-hobbies-pista-rc.webp" width="1600" height="667" alt="" fetchpriority="high" decoding="async">
+      <div class="presentacion-pista__barra">
+        <span>Racing Hobbies / Miniápolis #3</span>
+        <span>Acceso en tiempo real <i aria-hidden="true"></i></span>
       </div>
     </div>
 
-    <div class="tarjeta">
+    <div id="acceso" class="tarjeta entrada__acceso">
+      <div class="entrada__acceso-intro">
+        <p class="entrada__kicker"><span>02</span> Control de acceso</p>
+        <h2>Tu próxima<br>vuelta empieza aquí.</h2>
+      </div>
       <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
         <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
         <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
@@ -94,7 +120,7 @@
       </form>
     </div>
 
-    <p class="centrado tenue-2 pequeno mt-2">
+    <p class="entrada__pie centrado tenue-2 pequeno mt-2">
       ¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.
     </p>
   </main>

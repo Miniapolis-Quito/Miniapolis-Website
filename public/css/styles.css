@@ -626,6 +626,396 @@ dialog::backdrop { background: rgba(4, 6, 10, .74); backdrop-filter: blur(3px); 
 .pase__cliente { font-size: 10pt; margin-top: 1mm; }
 .pase__pie     { font-size: 8pt; margin-top: 3mm; color: #444; }
 
+/* --------------------------------------------------------------------------
+   Dirección visual Racing Hobbies / editorial futurista
+
+   La entrada es la portada del producto. Mantiene los mismos controles y
+   formularios, pero adopta una composición más abierta: navegación mínima,
+   tipografía protagonista, líneas de precisión y la pista como imagen héroe.
+   -------------------------------------------------------------------------- */
+
+:root {
+  --fondo: #050705;
+  --fondo-2: #090c09;
+  --superficie: #0d110d;
+  --superficie-2: #151b15;
+  --borde: #273027;
+  --borde-fuerte: #566256;
+  --texto: #f1f5ed;
+  --texto-2: #a8b3a5;
+  --texto-3: #697368;
+  --acento: #a6ff52;
+  --acento-2: #a6ff52;
+  --acento-suave: rgba(166, 255, 82, .12);
+  --radio: 3px;
+  --radio-s: 2px;
+}
+
+body:not(.pagina-entrada)::before {
+  background:
+    radial-gradient(ellipse at 84% 0%, rgba(166, 255, 82, .07), transparent 42%),
+    radial-gradient(ellipse at 12% 15%, rgba(35, 96, 53, .1), transparent 38%);
+}
+
+.pagina-entrada {
+  background-color: var(--fondo);
+  background-image:
+    linear-gradient(rgba(166, 255, 82, .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 255, 82, .025) 1px, transparent 1px);
+  background-size: 76px 76px;
+}
+.pagina-entrada::before {
+  inset: -14vh -8vw auto;
+  height: 74vh;
+  background:
+    radial-gradient(ellipse at 16% 2%, rgba(166, 255, 82, .16), transparent 33%),
+    radial-gradient(ellipse at 90% 3%, rgba(22, 76, 45, .2), transparent 38%),
+    linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.28));
+}
+
+.pagina-entrada .contenedor--angosto {
+  width: min(1440px, 100%);
+  padding-inline: clamp(20px, 3.4vw, 50px);
+}
+.pagina-entrada main {
+  padding-block: 0 80px;
+}
+.entrada__barra {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-height: 82px;
+  border-bottom: 1px solid rgba(166, 255, 82, .18);
+  animation: entrada-linea 900ms var(--easing-entrada) both;
+}
+.entrada__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--texto);
+  font-size: .77rem;
+  font-weight: 750;
+  letter-spacing: .11em;
+}
+.entrada__marca:hover { color: var(--acento); }
+.entrada__marca-icono {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid var(--acento);
+  color: var(--acento);
+  font-size: .67rem;
+  letter-spacing: -.04em;
+  transform: skewX(-12deg);
+}
+.entrada__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-left: auto;
+  color: var(--texto-3);
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.entrada__punto {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--acento);
+  box-shadow: 0 0 12px var(--acento);
+}
+.entrada__accion,
+.entrada__enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--fondo);
+  background: var(--acento);
+  border: 1px solid var(--acento);
+  border-radius: 999px;
+  padding: 10px 15px 10px 18px;
+  font-size: .78rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform var(--transicion), box-shadow var(--transicion), background var(--transicion);
+}
+.entrada__accion:hover,
+.entrada__enlace:hover {
+  color: var(--fondo);
+  transform: translateY(-2px);
+  box-shadow: 0 9px 26px rgba(166, 255, 82, .22);
+}
+.entrada__accion span,
+.entrada__enlace span { font-size: 1rem; line-height: .7; }
+
+.entrada__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr);
+  align-items: end;
+  gap: clamp(30px, 8vw, 150px);
+  min-height: 355px;
+  padding-block: clamp(70px, 10vw, 132px) clamp(38px, 5vw, 66px);
+}
+.entrada__hero-copy { min-width: 0; }
+.entrada__kicker {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 0 0 23px;
+  color: var(--acento);
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.entrada__kicker span {
+  color: var(--texto-3);
+  font-size: .61rem;
+}
+.entrada__hero h1 {
+  max-width: 920px;
+  margin: 0;
+  color: var(--texto);
+  font-family: var(--fuente);
+  font-size: clamp(4.4rem, 10.2vw, 10.4rem);
+  font-weight: 560;
+  line-height: .82;
+  letter-spacing: -.085em;
+  text-transform: none;
+}
+.entrada__hero h1 span { display: block; }
+.entrada__hero h1 span + span { color: var(--acento); }
+.entrada__marca-registrada {
+  display: inline !important;
+  margin-left: .12em;
+  color: var(--texto) !important;
+  font-size: .19em;
+  letter-spacing: 0;
+  vertical-align: top;
+}
+.entrada__hero-aside {
+  align-self: end;
+  max-width: 380px;
+  padding: 3px 0 5px 22px;
+  border-left: 1px solid var(--acento);
+}
+.entrada__marca-texto {
+  margin: 0 0 13px;
+  color: var(--acento);
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.entrada__descripcion {
+  margin: 0 0 24px;
+  color: var(--texto-2);
+  font-size: clamp(.98rem, 1.45vw, 1.18rem);
+  line-height: 1.25;
+}
+.entrada__enlace {
+  padding: 0 0 7px;
+  border: 0;
+  border-bottom: 1px solid var(--acento);
+  border-radius: 0;
+  color: var(--texto);
+  background: transparent;
+  font-size: .75rem;
+  letter-spacing: .04em;
+}
+.entrada__enlace:hover { color: var(--acento); box-shadow: none; }
+
+.pagina-entrada .presentacion-pista {
+  height: clamp(230px, 40vw, 500px);
+  margin: 0;
+  border-color: rgba(166, 255, 82, .4);
+  border-radius: 3px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, .45);
+}
+.pagina-entrada .presentacion-pista::after {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, .02) 32%, rgba(0, 0, 0, .74) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, .52), transparent 42%, rgba(0, 0, 0, .08));
+}
+.pagina-entrada .presentacion-pista img {
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.88) contrast(1.12) brightness(.82);
+}
+.presentacion-pista__barra {
+  position: absolute;
+  z-index: 3;
+  right: clamp(12px, 3vw, 38px);
+  bottom: clamp(13px, 2.4vw, 28px);
+  left: clamp(12px, 3vw, 38px);
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  color: rgba(241, 245, 237, .78);
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.presentacion-pista__barra span:last-child { color: var(--acento); }
+.presentacion-pista__barra i {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: var(--acento);
+  box-shadow: 0 0 12px var(--acento);
+  animation: pulsoPunto 2.1s infinite;
+}
+
+.pagina-entrada .entrada__acceso {
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(300px, 1fr);
+  column-gap: clamp(28px, 6vw, 110px);
+  row-gap: 26px;
+  margin-top: clamp(46px, 7vw, 88px);
+  padding: clamp(25px, 4vw, 48px);
+  border-color: rgba(166, 255, 82, .22);
+  border-radius: 3px;
+  background: linear-gradient(135deg, rgba(20, 27, 20, .88), rgba(5, 7, 5, .96));
+  box-shadow: 0 25px 60px rgba(0,0,0,.28);
+}
+.pagina-entrada .entrada__acceso > .pestanas,
+.pagina-entrada .entrada__acceso > form,
+.pagina-entrada .entrada__acceso > .aviso { grid-column: 2; }
+.pagina-entrada .entrada__acceso > .pestanas { grid-row: 1; }
+.pagina-entrada .entrada__acceso > form,
+.pagina-entrada .entrada__acceso > .aviso { grid-row: 2; }
+.entrada__acceso-intro h2 {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: clamp(1.8rem, 3.2vw, 3rem);
+  font-weight: 540;
+  line-height: .95;
+  letter-spacing: -.06em;
+  text-transform: none;
+}
+.pagina-entrada .entrada__acceso .pestanas {
+  margin: 0 0 25px;
+  padding: 0;
+  gap: 24px;
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  border-radius: 0;
+  background: transparent;
+}
+.pagina-entrada .entrada__acceso .pestana {
+  flex: 0 0 auto;
+  min-height: 45px;
+  padding: 8px 0 13px;
+  border-radius: 0;
+  color: var(--texto-3);
+  font-size: .78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] {
+  background: transparent;
+  color: var(--texto);
+  box-shadow: none;
+}
+.pagina-entrada .entrada__acceso .pestana::after {
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  box-shadow: 0 0 11px var(--acento);
+}
+.pagina-entrada .entrada__acceso form { max-width: 530px; }
+.pagina-entrada .entrada__acceso .campo { gap: 7px; margin-bottom: 19px; }
+.pagina-entrada .entrada__acceso .campo > label {
+  color: var(--texto-3);
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.pagina-entrada .entrada__acceso input {
+  min-height: 48px;
+  padding: 10px 0;
+  border-width: 0 0 1px;
+  border-color: var(--borde-fuerte);
+  border-radius: 0;
+  background: transparent;
+}
+.pagina-entrada .entrada__acceso input:focus { transform: none; box-shadow: 0 1px 0 var(--acento); }
+.pagina-entrada .entrada__acceso .boton--grande {
+  min-height: 50px;
+  border-radius: 999px;
+  font-size: .78rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.pagina-entrada .entrada__pie { margin-top: 28px; font-size: .72rem; }
+
+/* El resto del producto comparte la misma gramática: menos ruido, más aire y
+   bordes finos. Los componentes siguen siendo táctiles y legibles. */
+body:not(.pagina-entrada) .barra {
+  background: rgba(5, 7, 5, .88);
+  border-bottom-color: rgba(166, 255, 82, .18);
+}
+body:not(.pagina-entrada) .barra__marca { letter-spacing: .08em; text-transform: uppercase; }
+body:not(.pagina-entrada) .encabezado-pista {
+  border-radius: 3px;
+  border-color: rgba(166, 255, 82, .28);
+}
+body:not(.pagina-entrada) .tarjeta,
+body:not(.pagina-entrada) .pack {
+  border-radius: 3px;
+  background: linear-gradient(135deg, rgba(15, 20, 15, .95), rgba(7, 10, 7, .98));
+}
+body:not(.pagina-entrada) .boton { border-radius: 999px; }
+
+@keyframes entrada-linea {
+  from { opacity: 0; transform: scaleX(.75); transform-origin: left; }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@media (max-width: 760px) {
+  .entrada__barra { min-height: 70px; }
+  .entrada__meta { display: none; }
+  .entrada__hero {
+    grid-template-columns: 1fr;
+    gap: 44px;
+    min-height: 0;
+    padding-block: 72px 42px;
+  }
+  .entrada__hero h1 { font-size: clamp(4.2rem, 17vw, 7.6rem); }
+  .entrada__hero-aside { max-width: 480px; }
+  .pagina-entrada .entrada__acceso { grid-template-columns: 1fr; gap: 32px; }
+  .pagina-entrada .entrada__acceso > .pestanas,
+  .pagina-entrada .entrada__acceso > form,
+  .pagina-entrada .entrada__acceso > .aviso { grid-column: 1; }
+  .pagina-entrada .entrada__acceso > .pestanas { grid-row: 2; }
+  .pagina-entrada .entrada__acceso > form,
+  .pagina-entrada .entrada__acceso > .aviso { grid-row: 3; }
+  .entrada__acceso-intro h2 br { display: none; }
+}
+
+@media (max-width: 480px) {
+  .pagina-entrada .contenedor--angosto { padding-inline: 15px; }
+  .entrada__barra { gap: 10px; }
+  .entrada__marca { font-size: .66rem; letter-spacing: .07em; }
+  .entrada__accion { padding-inline: 13px; font-size: .7rem; }
+  .entrada__hero { padding-block: 60px 36px; }
+  .entrada__hero h1 { font-size: clamp(3.7rem, 18vw, 5.5rem); }
+  .pagina-entrada .presentacion-pista { height: 260px; }
+  .presentacion-pista__barra { align-items: flex-end; flex-direction: column; gap: 6px; font-size: .56rem; }
+  .pagina-entrada .entrada__acceso { padding: 23px 18px; }
+  .pagina-entrada .entrada__acceso .pestanas { gap: 17px; }
+}
+
 @media print {
   body { background: #fff; color: #000; }
   .barra, .boton, .brindis-zona { display: none !important; }
