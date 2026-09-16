@@ -1,4 +1,4 @@
-/** Cabeceras de seguridad, CORS restringido y detección de IP del cliente. */
+import { isIP } from 'node:net';
 import { config } from '../config.js';
 import { forbidden } from '../lib/errors.js';
 
@@ -30,12 +30,40 @@ export function securityHeaders(req, res, next) {
   res.set('Cross-Origin-Opener-Policy', 'same-origin');
   res.set('Cross-Origin-Resource-Policy', 'same-origin');
   // La cámara se usa en /scan; el resto de capacidades del navegador se apaga.
-  res.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()');
+  res.set(
+    'Permissions-Policy',
+    'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), display-capture=()',
+  );
   res.removeHeader('X-Powered-By');
   if (config.security.cookieSecure) {
     res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
   next();
+}
+
+/**
+ * Normaliza una dirección IP para el cálculo de cuotas de tasa.
+ * En IPv6, un mismo cliente dispone de subredes completas (/64); agrupar por
+ * el prefijo de red impide rotar direcciones dentro del mismo bloque.
+ */
+export function normalizeIpForScope(ip) {
+  if (!ip || typeof ip !== 'string') return 'desconocida';
+  const clean = ip.replace(/^::ffff:/, '').trim().split('%')[0];
+  if (isIP(clean) === 6) {
+    const partes = clean.split('::');
+    let hextetos = [];
+    if (partes.length === 2) {
+      const izquierda = partes[0] ? partes[0].split(':') : [];
+      const derecha = partes[1] ? partes[1].split(':') : [];
+      const faltantes = 8 - (izquierda.length + derecha.length);
+      hextetos = [...izquierda, ...Array(faltantes).fill('0'), ...derecha];
+    } else {
+      hextetos = clean.split(':');
+    }
+    const prefijo = hextetos.slice(0, 4).map((h) => h.padStart(4, '0').toLowerCase()).join(':');
+    return `${prefijo}::/64`;
+  }
+  return clean;
 }
 
 /** Resuelve la IP real del cliente, respetando el proxy solo si se configuró. */
@@ -45,6 +73,7 @@ export function clientIp(req, res, next) {
   // directamente permitiría falsificarla desde Internet.
   const ip = req.ip || req.socket?.remoteAddress || '';
   req.clientIp = ip.replace(/^::ffff:/, '') || 'desconocida';
+  req.rateLimitIp = normalizeIpForScope(req.clientIp);
   next();
 }
 
@@ -74,14 +103,33 @@ export function cors(req, res, next) {
 export function sameOriginOnly(req, res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
 
+  const secFetchSite = req.headers['sec-fetch-site'];
   const origin = req.headers.origin;
-  if (!origin) return next(); // Clientes no navegador (curl, apps nativas) no envían Origin.
+  const referer = req.headers.referer;
+
+  // Si no hay Origin pero sí Referer (en envíos de formularios tradicionales),
+  // se valida el origen del Referer.
+  let requestOrigin = origin;
+  if (!requestOrigin && referer) {
+    try {
+      requestOrigin = new URL(referer).origin;
+    } catch {
+      return next(forbidden('Referer no válido.', 'referer_invalido'));
+    }
+  }
+
+  if (!requestOrigin) {
+    if (secFetchSite === 'cross-site') {
+      return next(forbidden('Petición bloqueada por seguridad (cross-site sin origen).', 'cross_site_no_permitido'));
+    }
+    return next(); // Clientes no navegador (curl, apps nativas, demonio de pases) no envían Origin.
+  }
 
   const host = req.headers.host;
   let originUrl;
   let expectedOrigin;
   try {
-    originUrl = new URL(origin);
+    originUrl = new URL(requestOrigin);
     // "Mismo origen" incluye protocolo y puerto, no solo el host. Express
     // toma X-Forwarded-Proto únicamente de los proxies permitidos en la app.
     expectedOrigin = new URL(`${req.protocol}://${host}`).origin;
@@ -89,6 +137,6 @@ export function sameOriginOnly(req, res, next) {
     return next(forbidden('Origen no válido.', 'origen_invalido'));
   }
   if (originUrl.origin === expectedOrigin) return next();
-  if (config.security.corsOrigins.includes(origin)) return next();
+  if (config.security.corsOrigins.includes(originUrl.origin)) return next();
   return next(forbidden('Petición bloqueada por seguridad (origen no permitido).', 'origen_no_permitido'));
 }

@@ -3,7 +3,7 @@
 ## Avisar de un problema
 
 Si encuentras una vulnerabilidad, no abras un issue: escribe directamente a la
-administración de Racing Hobbies Ecuador o al responsable del repositorio.
+administración de Miniápolis #3 o al responsable del repositorio.
 Cuenta qué viste, cómo reproducirlo y qué podría hacer alguien con ello.
 
 ## Secretos

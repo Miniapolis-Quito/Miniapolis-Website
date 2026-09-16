@@ -74,7 +74,9 @@ function aplicarRuta() {
   if (ruta.vista === 'ficha') {
     // Una ficha también se abre desde un enlace dentro de un panel (avisos,
     // entradas sin cobrar): al cerrarla se vuelve a ese panel.
-    if (!estado.mostrandoFicha) estado.panelPrevio = estado.panel;
+    if (!estado.mostrandoFicha) {
+      estado.panelPrevio = estado.panelPrevio || (estado.panel === 'resumen' ? 'clientes' : estado.panel);
+    }
     estado.mostrandoFicha = true;
     encabezado.hidden = true;
     pestanas.hidden = true;
@@ -199,6 +201,7 @@ async function cargarResumen() {
                 el('div', {}, item.customerName),
                 el('div', { class: 'tenue-2 pequeno' }, `${horaCorta(item.createdAt)} · ${item.packCode} · ${item.scannerName || 'sistema'}`),
               ),
+              item.quantity > 1 ? el('span', { class: 'etiqueta etiqueta--info' }, `${item.quantity} entradas`) : null,
               el('span', { class: 'etiqueta' }, `Quedan ${item.remainingAfter}`),
             ),
           ),
@@ -594,10 +597,10 @@ async function imprimirPase(pack, propietario) {
             { class: 'pase__marca' },
             el('img', {
               class: 'pase__logo',
-              src: '/images/racing-hobbies-logo-oficial.png',
-              width: '1600',
-              height: '434',
-              alt: 'Racing Hobbies Ecuador',
+              src: '/images/miniapolis-logo-oficial.webp',
+              width: '1000',
+              height: '425',
+              alt: 'Miniápolis #3',
             }),
           ),
           el('div', { class: 'pase__titulo' }, `Pase de ${pack.size} entradas`),
@@ -707,6 +710,7 @@ async function cargarConsumos() {
                 : null,
               item.voidReason ? el('div', { class: 'tenue-2 pequeno' }, `Anulado: ${item.voidReason}`) : null,
             ),
+            item.quantity > 1 ? el('span', { class: 'etiqueta etiqueta--info' }, `${item.quantity} entradas`) : null,
             el('span', { class: 'etiqueta' }, `Quedaban ${item.remainingAfter}`),
             item.status === 'confirmed'
               ? el(

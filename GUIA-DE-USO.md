@@ -1,4 +1,4 @@
-# Guía rápida — Racing Hobbies Ecuador
+# Guía rápida — Miniápolis #3
 
 Para quien atiende la pista. Sin tecnicismos.
 
@@ -35,6 +35,20 @@ número baja solo cada vez que usas una: no hace falta que hagas nada.
 
 Para entrar a la pista sigue siendo mejor el QR de la app, que cambia cada
 pocos segundos. El pase de la cartera es para llevar la cuenta.
+
+### Transferir entradas a otro piloto
+
+Si compraste un pack y quieres compartir entradas con amigos, familiares o
+compañeros de pista:
+
+1. Toca el botón **Transferir entradas** junto a tu pack activo.
+2. Ingresa el **correo o teléfono** del piloto que las recibirá (debe estar
+   registrado en el sistema).
+3. Elige cuántas entradas deseas enviar (desde 1 hasta el total disponible) y
+   opcionalmente escribe un mensaje o dedicatoria.
+4. Confirma el envío. Tu saldo se actualiza de inmediato, al destinatario se le
+   genera un nuevo pack con su propio código y se le envía un correo con el
+   detalle. Ambos verán el movimiento en su historial y en sus carteras digitales.
 
 ### Consejos
 
@@ -78,6 +92,24 @@ descontada. El número grande son las entradas que le quedan.
   Internet, pero la entrada quedó guardada en el teléfono. **Déjalo pasar**:
   se cobrará sola cuando vuelva la señal. Suenan dos pitidos cortos en vez de
   uno para que lo notes sin mirar.
+
+### Cobrar varias entradas a la vez (familias o grupos)
+
+Si un cliente viene acompañado y quiere pagar la entrada de varios pilotos con
+su mismo pack:
+
+1. Antes de escanear, usa los botones **1, 2, 3 o 4** en el selector de
+   entradas del escáner.
+2. El botón seleccionado se marcará en color y el escáner indicará cuántas
+   entradas cobrará.
+3. Apunta al QR o ingresa el código manual: se descontarán las entradas
+   seleccionadas de una sola vez.
+4. Suena una confirmación de tono doble y una doble vibración distintiva para
+   que sepas que se cobró el grupo completo.
+5. Si el pack tiene menos entradas de las pedidas, el escáner lo rechaza sin
+   descontar nada.
+6. El selector vuelve automáticamente a 1 entrada después del canje para evitar
+   cobros accidentales al siguiente cliente.
 
 ### El cliente no trae el teléfono
 

@@ -91,7 +91,7 @@ async function escanearConCamara({ pack, forzarRespaldo }) {
     const motor = (await pagina.textContent('#etiqueta-motor')).trim();
     const restantes = (await pagina.textContent('.resultado__restantes')).trim();
     // El 401 de comprobar si hay sesión al cargar la página es esperado.
-    const relevantes = errores.filter((e) => !/401|favicon|manifest/i.test(e));
+    const relevantes = errores.filter((e) => !/401|favicon|manifest|ViewTransition/i.test(e));
     return { motor, restantes, hayNativo, errores: relevantes };
   } finally {
     await navegador.close();

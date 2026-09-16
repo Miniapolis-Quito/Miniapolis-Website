@@ -16,7 +16,11 @@
 /* Al cambiar el aspecto o el código del escáner hay que subir este número: la
    copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
    un teléfono sin conexión seguiría abriendo el diseño anterior. */
-const CACHE = 'rh-escaner-v2';
+const CACHE = 'miniapolis-escaner-v2';
+
+/** Nombres de caché propios. Incluye el prefijo anterior a la marca actual para
+ *  que los teléfonos que ya tenían el escáner instalado suelten la copia vieja. */
+const PREFIJOS_CACHE = ['miniapolis-escaner-', 'rh-escaner-'];
 
 /** Todo lo que carga el escáner. Una prueba comprueba que no falte nada. */
 const RECURSOS = [
@@ -33,7 +37,7 @@ const RECURSOS = [
   '/vendor/jsQR.js',
   '/fonts/anton-400.woff2',
   '/fonts/archivo-var.woff2',
-  '/images/racing-hobbies-logo-oficial.png',
+  '/images/miniapolis-logo-oficial.webp',
   '/images/racing-hobbies-pista-rc.webp',
   '/favicon.svg',
   '/manifest.webmanifest',
@@ -60,7 +64,7 @@ self.addEventListener('activate', (evento) => {
     caches
       .keys()
       .then((nombres) =>
-        Promise.all(nombres.filter((n) => n.startsWith('rh-escaner-') && n !== CACHE).map((n) => caches.delete(n))),
+        Promise.all(nombres.filter((n) => PREFIJOS_CACHE.some((p) => n.startsWith(p)) && n !== CACHE).map((n) => caches.delete(n))),
       )
       .then(() => self.clients.claim()),
   );

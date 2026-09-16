@@ -8,11 +8,14 @@
  */
 import { getDb, inTransaction } from '../db/index.js';
 import { newId, newPackCode, randomHex, normalizePackCode } from '../lib/ids.js';
-import { badRequest, conflict, notFound } from '../lib/errors.js';
+import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { buildQrPayload } from '../lib/qr.js';
 import { config } from '../config.js';
 import { patronLike } from '../lib/texto.js';
 import { hub, channels } from '../lib/events.js';
+import { logger } from '../lib/logger.js';
+import { correoDisponible, enviarCorreo } from '../lib/correo.js';
+import { boton, envolverHtml, escaparHtml, saludo } from '../lib/plantillaCorreo.js';
 import * as audit from './audit.js';
 
 const ACTIVE_STATUSES = new Set(['active']);
@@ -30,7 +33,11 @@ export function toPublicPack(row, { includeQr = false, owner = null } = {}) {
     userId: row.user_id,
     size: row.size,
     remaining: row.remaining,
-    used: row.size - row.remaining,
+    // Las transferencias y los ajustes cambian el saldo, pero no son entradas
+    // usadas. Cuando la fila viene de una consulta simple, las consultas de
+    // packs añaden este agregado; se conserva el cálculo antiguo como respaldo
+    // para filas construidas por integraciones internas.
+    used: row.used_tickets ?? row.size - row.remaining,
     priceCents: row.price_cents,
     currency: row.currency,
     status: row.status,
@@ -85,11 +92,25 @@ export function isUsable(pack, { now = Date.now(), owner = null } = {}) {
 }
 
 export function findById(id, db = getDb()) {
-  return db.prepare('SELECT * FROM packs WHERE id = ?').get(id) ?? null;
+  return db
+    .prepare(
+      `SELECT p.*,
+              IFNULL((SELECT SUM(r.quantity) FROM redemptions r
+                       WHERE r.pack_id = p.id AND r.status = 'confirmed'), 0) AS used_tickets
+         FROM packs p WHERE p.id = ?`,
+    )
+    .get(id) ?? null;
 }
 
 export function findByCode(code, db = getDb()) {
-  return db.prepare('SELECT * FROM packs WHERE code = ?').get(code) ?? null;
+  return db
+    .prepare(
+      `SELECT p.*,
+              IFNULL((SELECT SUM(r.quantity) FROM redemptions r
+                       WHERE r.pack_id = p.id AND r.status = 'confirmed'), 0) AS used_tickets
+         FROM packs p WHERE p.code = ?`,
+    )
+    .get(code) ?? null;
 }
 
 /** Busca por código tolerando errores de tipeo (minúsculas, sin guiones, etc.). */
@@ -198,12 +219,15 @@ export function listPacksForUser(userId, { includeQr = false, includeInactive = 
   expireDuePacks(db);
   const rows = db
     .prepare(
-      `SELECT * FROM packs
-        WHERE user_id = ? ${includeInactive ? '' : "AND status = 'active' AND remaining > 0"}
-        ORDER BY CASE WHEN status = 'active' AND remaining > 0 THEN 0 ELSE 1 END,
-                 CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END,
-                 expires_at ASC,
-                 created_at ASC`,
+      `SELECT p.*,
+              IFNULL((SELECT SUM(r.quantity) FROM redemptions r
+                       WHERE r.pack_id = p.id AND r.status = 'confirmed'), 0) AS used_tickets
+         FROM packs p
+        WHERE p.user_id = ? ${includeInactive ? '' : "AND p.status = 'active' AND p.remaining > 0"}
+        ORDER BY CASE WHEN p.status = 'active' AND p.remaining > 0 THEN 0 ELSE 1 END,
+                 CASE WHEN p.expires_at IS NULL THEN 1 ELSE 0 END,
+                 p.expires_at ASC,
+                 p.created_at ASC`,
     )
     .all(userId);
   return rows.map((r) => {
@@ -233,21 +257,32 @@ export function summaryForUser(userId) {
     )
     .get({ userId, ahora: new Date().toISOString() });
 
-  // "Usadas" son las veces que entró de verdad, no la diferencia entre tamaño y
-  // saldo: una entrada de cortesía agranda el pack y esa resta daría cero.
+  // "Usadas" son las veces que entró de verdad (sumando entradas individuales
+  // o grupales), no la diferencia entre tamaño y saldo: una entrada de cortesía
+  // agranda el pack y esa resta daría cero.
   const usadas = db
-    .prepare("SELECT COUNT(*) AS n FROM redemptions WHERE user_id = ? AND status = 'confirmed'")
+    .prepare("SELECT IFNULL(SUM(quantity), 0) AS n FROM redemptions WHERE user_id = ? AND status = 'confirmed'")
     .get(userId).n;
 
-  // "Compradas" es lo que se le vendió: los asientos de emisión. Los ajustes de
-  // cortesía suman saldo, pero no son una compra.
-  const compradas = db
+  // "Adquiridas" es lo que recibió el cliente: los asientos de emisión y las
+  // entradas recibidas por transferencia.
+  const adquiridas = db
     .prepare(
       `SELECT IFNULL(SUM(m.delta), 0) AS n
          FROM pack_movements m JOIN packs p ON p.id = m.pack_id
-        WHERE p.user_id = ? AND m.reason = 'issue'`,
+        WHERE p.user_id = ? AND m.reason IN ('issue', 'transfer_in')`,
     )
     .get(userId).n;
+
+  // Entradas transferidas a otros clientes desde packs propios.
+  const transferidas = db
+    .prepare(
+      `SELECT IFNULL(SUM(ABS(m.delta)), 0) AS n
+         FROM pack_movements m JOIN packs p ON p.id = m.pack_id
+        WHERE p.user_id = ? AND m.reason = 'transfer_out'`,
+    )
+    .get(userId).n;
+
   const nextExpiry = db
     .prepare(
       `SELECT expires_at FROM packs
@@ -259,7 +294,8 @@ export function summaryForUser(userId) {
     availableTickets: row.disponibles,
     activePacks: row.packs_activos,
     usedTickets: usadas,
-    purchasedTickets: compradas,
+    purchasedTickets: adquiridas,
+    transferredTickets: transferidas,
     totalPacks: row.packs_totales,
     nextExpiryAt: nextExpiry?.expires_at ?? null,
   };
@@ -324,6 +360,9 @@ export function updatePack(packId, changes, { actor, ip, userAgent } = {}) {
     params.note = changes.note || null;
   }
   if (changes.expiresAt !== undefined) {
+    if (changes.expiresAt && Date.parse(changes.expiresAt) <= Date.now()) {
+      throw badRequest('La fecha de vencimiento debe ser futura.', { fields: { expiresAt: 'Debe ser futura.' } });
+    }
     fields.push('expires_at = @expires_at');
     params.expires_at = changes.expiresAt || null;
   }
@@ -410,6 +449,214 @@ export function adjustPack(packId, { delta, reason, actor, ip, userAgent }) {
   return publicPack;
 }
 
+/**
+ * Transfiere una cantidad de entradas de un pack propio a otro cliente registrado.
+ */
+export function transferTickets(sourcePackId, { quantity, recipient, note = null, actor, ip = null, userAgent = null }) {
+  const db = getDb();
+
+  const outcome = inTransaction(() => {
+    const sourcePack = findById(sourcePackId, db);
+    if (!sourcePack) throw notFound('Pack no encontrado.');
+
+    if (actor && actor.role !== 'master' && sourcePack.user_id !== actor.id) {
+      throw forbidden('Este pack no te pertenece.');
+    }
+
+    const sender = db.prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(sourcePack.user_id);
+    const usable = isUsable(sourcePack, { owner: sender });
+    if (!usable.ok) {
+      throw badRequest(usable.message, { reason: usable.reason }, `pack_${usable.reason}`);
+    }
+
+    if (sourcePack.remaining < quantity) {
+      throw conflict(
+        `Al pack solo le quedan ${sourcePack.remaining} ${sourcePack.remaining === 1 ? 'entrada' : 'entradas'}, pero se intentaron transferir ${quantity}.`,
+        'saldo_insuficiente',
+        { requested: quantity, remaining: sourcePack.remaining, pack: toPublicPack(sourcePack) },
+      );
+    }
+
+    const term = String(recipient || '').trim().toLowerCase();
+    const rawTerm = String(recipient || '').trim();
+    const cleanPhone = rawTerm.replace(/[\s-]/g, '');
+    const targetUser = db
+      .prepare(
+        `SELECT id, full_name, email, phone, status, role FROM users
+          WHERE email_normalized = ? OR email = ? OR phone = ? OR phone = ?
+          LIMIT 1`,
+      )
+      .get(term, rawTerm, rawTerm, cleanPhone);
+
+    if (!targetUser) {
+      throw notFound(
+        'No encontramos ningún usuario con ese correo o teléfono. Pídele que cree su cuenta en recepción o en la app.',
+        'destinatario_no_encontrado',
+      );
+    }
+
+    if (targetUser.id === sender.id) {
+      throw badRequest('No puedes transferirte entradas a ti mismo.', null, 'auto_transferencia');
+    }
+
+    if (targetUser.status !== 'active') {
+      throw badRequest('La cuenta del destinatario está suspendida.', null, 'destinatario_suspendido');
+    }
+
+    const now = new Date().toISOString();
+
+    // 1. Descontar del pack emisor
+    const remainingBefore = sourcePack.remaining;
+    const remainingAfter = remainingBefore - quantity;
+    const newStatus = remainingAfter === 0 ? 'depleted' : sourcePack.status;
+
+    const updatedSource = db
+      .prepare('UPDATE packs SET remaining = ?, status = ?, updated_at = ? WHERE id = ? AND remaining = ?')
+      .run(remainingAfter, newStatus, now, sourcePack.id, remainingBefore);
+    if (updatedSource.changes !== 1) {
+      throw conflict('El saldo del pack cambió mientras se procesaba. Inténtalo de nuevo.', 'conflicto_concurrencia');
+    }
+
+    const noteSender = `Transferido a ${targetUser.full_name}${note ? `: ${note}` : ''}`;
+    db.prepare(
+      `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, actor_id, note, created_at)
+       VALUES (?, ?, ?, ?, 'transfer_out', ?, ?, ?)`,
+    ).run(newId(), sourcePack.id, -quantity, remainingAfter, actor?.id ?? null, noteSender, now);
+
+    // 2. Crear pack para el destinatario
+    const newPackId = newId();
+    const newCode = generateUniqueCode(db);
+    const newSecret = randomHex(32);
+    const noteReceiver = `Transferido por ${sender.full_name}${note ? `: ${note}` : ''}`;
+    const expiresAt = sourcePack.expires_at || null;
+
+    db.prepare(
+      `INSERT INTO packs (id, code, user_id, size, remaining, price_cents, currency, secret, status,
+                          allow_static_qr, expires_at, note, payment_method, payment_reference,
+                          created_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'active', 0, ?, ?, 'transferencia', ?, ?, ?, ?)`,
+    ).run(
+      newPackId,
+      newCode,
+      targetUser.id,
+      quantity,
+      quantity,
+      config.currency,
+      newSecret,
+      expiresAt,
+      noteReceiver,
+      `from:${sourcePack.code}`,
+      actor?.id ?? null,
+      now,
+      now,
+    );
+
+    db.prepare(
+      `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, actor_id, note, created_at)
+       VALUES (?, ?, ?, ?, 'transfer_in', ?, ?, ?)`,
+    ).run(newId(), newPackId, quantity, quantity, actor?.id ?? null, noteReceiver, now);
+
+    const transferId = newId();
+    db.prepare(
+      `INSERT INTO transfers (id, sender_id, recipient_id, source_pack_id, destination_pack_id, quantity, note, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(transferId, sender.id, targetUser.id, sourcePack.id, newPackId, quantity, note || null, now);
+
+    audit.record({
+      actor,
+      action: 'pack.transferido',
+      entityType: 'pack',
+      entityId: sourcePack.id,
+      metadata: {
+        sourceCode: sourcePack.code,
+        newPackId,
+        newCode,
+        quantity,
+        senderId: sender.id,
+        recipientId: targetUser.id,
+        recipientEmail: targetUser.email,
+        note,
+      },
+      ip,
+      userAgent,
+      db,
+    });
+
+    return {
+      sourcePack: findById(sourcePack.id, db),
+      newPack: findById(newPackId, db),
+      sender,
+      recipient: targetUser,
+      quantity,
+      note,
+    };
+  });
+
+  const publicSource = toPublicPack(outcome.sourcePack);
+  const publicNew = toPublicPack(outcome.newPack);
+
+  hub.publish([channels.user(outcome.sender.id), channels.admin], 'pack.actualizado', {
+    pack: publicSource,
+    reason: 'transferencia_saliente',
+    transferredTo: { id: outcome.recipient.id, fullName: outcome.recipient.full_name },
+    quantity: outcome.quantity,
+  });
+
+  hub.publish([channels.user(outcome.recipient.id), channels.admin], 'pack.recibido', {
+    pack: publicNew,
+    from: { id: outcome.sender.id, fullName: outcome.sender.full_name },
+    quantity: outcome.quantity,
+  });
+
+  if (correoDisponible() && outcome.recipient.email) {
+    const cantTexto = `${outcome.quantity} ${outcome.quantity === 1 ? 'entrada' : 'entradas'}`;
+    const asunto = `¡Has recibido ${cantTexto} para la pista de ${config.brandName}!`;
+    const notaTexto = outcome.note ? `\nMensaje de ${outcome.sender.full_name}: "${outcome.note}"\n` : '';
+    const cuerpoTexto =
+      `${saludo(outcome.recipient)}\n\n` +
+      `${outcome.sender.full_name} te ha transferido ${cantTexto} para la pista de ${config.brandName}.\n` +
+      notaTexto +
+      `\nCódigo de tu nuevo pack: ${publicNew.code}\n` +
+      `Entradas disponibles: ${publicNew.remaining}\n\n` +
+      `Puedes ver tu código QR y saldo en cualquier momento en:\n${config.publicUrl}/app\n\n` +
+      `¡Te esperamos en la pista!\n` +
+      `${config.brandName}`;
+
+    const bloquesHtml = [
+      saludo(outcome.recipient),
+      `<strong>${escaparHtml(outcome.sender.full_name)}</strong> te ha transferido <strong>${cantTexto}</strong> para la pista de ${escaparHtml(config.brandName)}.`,
+      ...(outcome.note
+        ? [`<blockquote style="margin:0 0 16px;padding:8px 16px;border-left:4px solid #3cfe3f;background:#f9f9f9;font-style:italic">"${escaparHtml(outcome.note)}"</blockquote>`]
+        : []),
+      `<p style="margin:0 0 8px">Código de tu nuevo pack: <strong style="font-family:monospace;font-size:16px">${escaparHtml(publicNew.code)}</strong><br>Entradas disponibles: <strong>${publicNew.remaining}</strong></p>`,
+      boton(`${config.publicUrl}/app`, 'Ver mis entradas'),
+    ];
+
+    const cuerpoHtml = envolverHtml(bloquesHtml, {
+      pie: `${escaparHtml(config.brandName)} · Acceso a pista`,
+    });
+
+    enviarCorreo({
+      para: outcome.recipient.email,
+      asunto,
+      texto: cuerpoTexto,
+      html: cuerpoHtml,
+    }).catch((err) => {
+      logger.warn('No se pudo enviar correo de transferencia al destinatario', { message: err.message });
+    });
+  }
+
+  return {
+    ok: true,
+    message: `Has transferido ${outcome.quantity} ${outcome.quantity === 1 ? 'entrada' : 'entradas'} a ${outcome.recipient.full_name}.`,
+    transferred: outcome.quantity,
+    sourcePack: publicSource,
+    destinationPack: publicNew,
+    newPack: publicNew,
+    recipient: { id: outcome.recipient.id, fullName: outcome.recipient.full_name, email: outcome.recipient.email },
+  };
+}
+
 /** Lista packs con filtros para el panel de administración. */
 export function listPacks({ limit = 50, offset = 0, status = null, search = '', userId = null } = {}) {
   const db = getDb();
@@ -438,7 +685,9 @@ export function listPacks({ limit = 50, offset = 0, status = null, search = '', 
 
   const rows = db
     .prepare(
-      `SELECT p.*, u.full_name AS owner_name, u.email AS owner_email, u.status AS owner_status
+      `SELECT p.*, u.full_name AS owner_name, u.email AS owner_email, u.status AS owner_status,
+              IFNULL((SELECT SUM(r.quantity) FROM redemptions r
+                       WHERE r.pack_id = p.id AND r.status = 'confirmed'), 0) AS used_tickets
          FROM packs p JOIN users u ON u.id = p.user_id
          ${clause}
          ORDER BY p.created_at DESC

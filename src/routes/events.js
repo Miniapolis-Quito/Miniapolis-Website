@@ -7,6 +7,7 @@
  */
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { rateLimit } from '../lib/rateLimit.js';
 import { hub, channels } from '../lib/events.js';
 import { summaryForUser } from '../services/packs.js';
 import { isSessionActive } from '../services/sessions.js';
@@ -14,6 +15,14 @@ import * as users from '../services/users.js';
 import { logger } from '../lib/logger.js';
 
 export const router = express.Router();
+
+const eventsLimiter = rateLimit({
+  name: 'events-connect',
+  limit: 120,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => req.user?.id ?? `ip:${req.rateLimitIp ?? req.clientIp}`,
+  message: 'Demasiadas aperturas de canal en poco tiempo. Espera un momento.',
+});
 
 const HEARTBEAT_MS = 25_000;
 /** Cada cuánto se revisa que la sesión que abrió el canal siga siendo válida. */
@@ -52,7 +61,7 @@ function writeEvent(res, { id, type, data }) {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, eventsLimiter, (req, res) => {
   const subscribed = channelsFor(req.user);
 
   res.status(200).set({
@@ -150,6 +159,7 @@ router.get('/', requireAuth, (req, res) => {
   req.on('close', cleanup);
   req.on('error', cleanup);
   res.on('error', cleanup);
+  req.socket?.on('close', cleanup);
 });
 
 export default router;

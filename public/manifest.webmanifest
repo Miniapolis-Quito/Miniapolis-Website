@@ -1,6 +1,6 @@
 {
-  "name": "Racing Hobbies Ecuador — Entradas",
-  "short_name": "RH Entradas",
+  "name": "Miniápolis #3 — Entradas",
+  "short_name": "Miniápolis",
   "description": "Tus entradas para la pista de autos a control remoto.",
   "start_url": "/app",
   "scope": "/",
@@ -9,6 +9,8 @@
   "theme_color": "#000000",
   "lang": "es-EC",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/images/miniapolis-icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/images/miniapolis-icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

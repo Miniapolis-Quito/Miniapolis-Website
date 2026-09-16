@@ -71,7 +71,8 @@ export function rotate(refreshToken, { ip, userAgent } = {}) {
         userId: session.user_id,
         familyId: session.family_id,
       });
-      return { ok: false, reason: 'reutilizado' };
+      notificarSesionInvalida(session.user_id, 'token_reutilizado');
+      return { ok: false, reason: 'reutilizado', userId: session.user_id };
     }
 
     if (session.expires_at <= nowIso) return { ok: false, reason: 'expirado' };

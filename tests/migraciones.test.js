@@ -89,6 +89,66 @@ test('actualizar conserva las respuestas idempotentes y las asocia a su operador
   db.close();
 });
 
+test('actualizar a migración 009 añade quantity a consumos, tabla transfers y amplía movimientos', () => {
+  const indice = migrations.findIndex((m) => m.name === '009-admision-y-transferencia');
+  assert.ok(indice > 0, 'falta la migración 009-admision-y-transferencia');
+  const db = baseEn(indice);
+  const ahora = new Date().toISOString();
+
+  // Insertar datos previos en version previa
+  db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, role, password_hash, password_changed_at, created_at, updated_at)
+     VALUES ('u1', 'test@test.ec', 'test@test.ec', 'Test User', 'customer', 'x', ?, ?, ?)`
+  ).run(ahora, ahora, ahora);
+
+  db.prepare(
+    `INSERT INTO packs (id, code, user_id, size, remaining, secret, created_at, updated_at)
+     VALUES ('p1', 'RHE-0001-0001', 'u1', 5, 5, 'sec', ?, ?)`
+  ).run(ahora, ahora);
+
+  db.prepare(
+    `INSERT INTO redemptions (id, pack_id, user_id, method, remaining_before, remaining_after, status, created_at)
+     VALUES ('r1', 'p1', 'u1', 'qr_dynamic', 5, 4, 'confirmed', ?)`
+  ).run(ahora);
+
+  db.prepare(
+    `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, created_at)
+     VALUES ('m1', 'p1', -1, 4, 'redeem', ?)`
+  ).run(ahora);
+
+  // Aplicar migración 009
+  migrations[indice].up(db);
+  db.pragma(`user_version = ${indice + 1}`);
+
+  // Verificar que redemptions tiene quantity = 1 por defecto
+  const r = db.prepare('SELECT id, quantity FROM redemptions WHERE id = ?').get('r1');
+  assert.equal(r.quantity, 1);
+
+  // Verificar que pack_movements permite transfer_out y transfer_in
+  assert.doesNotThrow(() => {
+    db.prepare(
+      `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, created_at)
+       VALUES ('m2', 'p1', -2, 2, 'transfer_out', ?)`
+    ).run(ahora);
+
+    db.prepare(
+      `INSERT INTO pack_movements (id, pack_id, delta, balance_after, reason, created_at)
+       VALUES ('m3', 'p1', 2, 4, 'transfer_in', ?)`
+    ).run(ahora);
+
+    db.prepare(
+      `INSERT INTO transfers (id, sender_id, recipient_id, source_pack_id, destination_pack_id, quantity, note, created_at)
+       VALUES ('t1', 'u1', 'u1', 'p1', 'p1', 2, 'prueba', ?)`
+    ).run(ahora);
+  });
+
+  const t = db.prepare('SELECT * FROM transfers WHERE id = ?').get('t1');
+  assert.equal(t.quantity, 2);
+  assert.equal(t.note, 'prueba');
+
+  db.close();
+});
+
 test('aplicar todas las migraciones deja el esquema esperado', () => {
   const db = baseEn(migrations.length);
 
@@ -98,7 +158,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
     .map((r) => r.name);
   assert.deepEqual(tablas, [
     'audit_log', 'idempotency_keys', 'notifications', 'pack_movements', 'packs', 'password_resets',
-    'rate_limits', 'redemptions', 'sessions', 'settings', 'used_nonces', 'users',
+    'rate_limits', 'redemptions', 'sessions', 'settings', 'transfers', 'used_nonces', 'users',
     'wallet_devices', 'wallet_passes',
   ]);
 
@@ -108,7 +168,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   const indices = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((r) => r.name);
   for (const necesario of [
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
-    'idx_password_resets_expiry', 'idx_notifications_queue',
+    'idx_password_resets_expiry', 'idx_notifications_queue', 'idx_transfers_sender',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }

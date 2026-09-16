@@ -64,7 +64,7 @@ export function reset(key) {
  */
 export function rateLimit({ name, limit, windowSeconds, keyFn, message }) {
   return (req, res, next) => {
-    const scope = keyFn ? keyFn(req) : req.clientIp;
+    const scope = keyFn ? keyFn(req) : (req.rateLimitIp ?? req.clientIp);
     if (scope === null || scope === undefined) return next();
     const key = `${name}:${scope}`;
     const result = consume(key, { limit, windowSeconds });

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <title>Escanear entradas · Racing Hobbies Ecuador</title>
+  <title>Escanear entradas · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -16,7 +16,7 @@
     <div class="encabezado-pista fila fila--entre mb-2">
       <div>
         <div class="brand-lockup brand-lockup--compact mb-2" aria-hidden="true">
-          <img class="brand-lockup__logo" src="/images/racing-hobbies-logo-oficial.png" width="1600" height="434" alt="">
+          <img class="brand-lockup__logo" src="/images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="">
         </div>
         <span class="seccion-marca">Puerta</span>
         <h1 class="sin-margen">Control de acceso</h1>
@@ -39,6 +39,17 @@
         <div class="tarjeta__titulo">
           <h2>Cámara</h2>
           <span class="etiqueta" id="etiqueta-motor" hidden></span>
+        </div>
+
+        <div class="selector-cantidad mb" id="selector-cantidad" role="group" aria-label="Cantidad de entradas por escaneo">
+          <span class="selector-cantidad__etiqueta">Entradas por escaneo:</span>
+          <div class="selector-cantidad__opciones">
+            <button type="button" class="btn-cantidad activo" data-cantidad="1" id="btn-cant-1">1</button>
+            <button type="button" class="btn-cantidad" data-cantidad="2" id="btn-cant-2">2</button>
+            <button type="button" class="btn-cantidad" data-cantidad="3" id="btn-cant-3">3</button>
+            <button type="button" class="btn-cantidad" data-cantidad="4" id="btn-cant-4">4</button>
+          </div>
+          <span class="etiqueta etiqueta--info" id="indicador-modo-grupo" hidden>Grupo: 2</span>
         </div>
 
         <div class="escaner" id="escaner" hidden>
@@ -99,7 +110,7 @@
             </div>
             <div class="fila">
               <button class="boton boton--fantasma crece" id="btn-consultar" type="button">Consultar</button>
-              <button class="boton boton--principal crece" type="submit">Descontar entrada</button>
+              <button class="boton boton--principal crece" id="btn-descontar-manual" type="submit">Descontar entrada</button>
             </div>
           </form>
         </div>

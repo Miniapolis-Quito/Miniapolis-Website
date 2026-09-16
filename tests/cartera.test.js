@@ -333,8 +333,8 @@ test('el pase de Google lleva el saldo y va firmado por la cuenta de servicio', 
   assert.equal(objeto.id, `3388000000000000000.${pase.serial}`);
   assert.equal(objeto.state, 'ACTIVE');
   assert.equal(objeto.hexBackgroundColor, '#000000');
-  assert.match(objeto.logo.sourceUri.uri, /\/images\/racing-hobbies-wallet-icon\.png$/);
-  assert.match(objeto.wideLogo.sourceUri.uri, /\/images\/racing-hobbies-wallet-wide-logo\.png$/);
+  assert.match(objeto.logo.sourceUri.uri, /\/images\/miniapolis-wallet-icon\.png$/);
+  assert.match(objeto.wideLogo.sourceUri.uri, /\/images\/miniapolis-wallet-wide-logo\.png$/);
   assert.equal(objeto.header.defaultValue.value, '5');
   assert.equal(objeto.textModulesData.find((t) => t.id === 'restantes').body, '5 de 5');
   assert.equal(objeto.barcode.value.startsWith('RHE1|'), true);

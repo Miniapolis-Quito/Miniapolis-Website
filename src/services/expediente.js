@@ -22,6 +22,7 @@ const ACCIONES_DUPLICADAS = [
   'entrada.anulada',
   'pack.emitido',
   'pack.ajustado',
+  'pack.transferido',
 ];
 
 /**
