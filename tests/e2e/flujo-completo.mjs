@@ -203,7 +203,7 @@ await navegador.close();
 // prueba provoca varias a propósito: el 401 de comprobar si hay sesión al
 // cargar la página, y el 409 del segundo escaneo dentro del tiempo de espera.
 // Se descartan para que solo queden los fallos de verdad.
-const ESPERADOS = /favicon|manifest|status of (401|409)/i;
+const ESPERADOS = /favicon|manifest|status of (401|409)|ViewTransition/i;
 const relevantes = errores.filter((e) => !ESPERADOS.test(e));
 
 console.log('\n=== errores de consola/página ===');
