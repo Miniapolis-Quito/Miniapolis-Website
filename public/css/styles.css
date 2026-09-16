@@ -394,7 +394,7 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
   letter-spacing: -0.065em;
   font-variant-numeric: tabular-nums;
   color: var(--acento);
-  text-shadow: 0 0 35px var(--acento-glow), 0 0 12px rgba(255, 255, 255, 0.4);
+  text-shadow: 0 0 60px var(--acento-glow);
   animation: numero-entra 820ms var(--easing-entrada) both;
 }
 .saldo__texto {
@@ -467,49 +467,13 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 .boton:active:not(:disabled) { --bg: rgba(61, 254, 64, .18); transition-duration: 60ms; }
 .boton:disabled { opacity: .45; cursor: not-allowed; }
 
+/* Acción principal: bloque de acento macizo, sin degradado ni halo. */
 .boton--principal {
-  --bg: linear-gradient(135deg, #44ff66 0%, #17e85a 100%);
-  --fg: #020b04;
-  --bd: rgba(255, 255, 255, 0.38);
-  font-weight: 800;
-  letter-spacing: .065em;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.65), 0 0 20px rgba(61, 254, 64, 0.34), 0 4px 14px rgba(0, 0, 0, 0.4);
-}
-.boton--principal:hover:not(:disabled) {
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85), 0 0 32px rgba(61, 254, 64, 0.55), 0 8px 26px rgba(0, 0, 0, 0.45);
-  filter: brightness(1.08);
-}
-.boton--fantasma {
-  --bg: rgba(255, 255, 255, 0.035);
-  --bd: rgba(255, 255, 255, 0.14);
-}
-.boton--fantasma:hover:not(:disabled) {
-  --bd: rgba(61, 254, 64, 0.72);
-  --fg: var(--acento);
-  --bg: rgba(61, 254, 64, 0.08);
-  box-shadow: inset 0 0 12px rgba(61, 254, 64, 0.08), 0 0 20px rgba(61, 254, 64, 0.22), 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-.boton--peligro {
-  --bg: rgba(255, 85, 102, 0.06);
-  --fg: #ff6677;
-  --bd: rgba(255, 85, 102, 0.45);
-}
-.boton--peligro:hover:not(:disabled) {
-  --bd: #ff5566;
-  --fg: #ffffff;
-  --bg: rgba(255, 85, 102, 0.22);
-  box-shadow: 0 0 24px rgba(255, 85, 102, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
-}
-.boton--ok {
-  --bg: rgba(47, 208, 122, 0.06);
-  --fg: #3de88b;
-  --bd: rgba(47, 208, 122, 0.45);
-}
-.boton--ok:hover:not(:disabled) {
-  --bd: #2fd07a;
-  --fg: #ffffff;
-  --bg: rgba(47, 208, 122, 0.22);
-  box-shadow: 0 0 24px rgba(47, 208, 122, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
+  --bg: var(--acento);
+  --fg: #000;
+  --bd: var(--acento);
+  font-weight: 700;
+  letter-spacing: .16em;
 }
 .boton--principal:hover:not(:disabled) { --bg: #6dff70; --bd: #6dff70; }
 .boton--fantasma { --bg: transparent; --bd: var(--borde); --fg: var(--texto-2); }
@@ -694,15 +658,11 @@ fieldset { border: 0; margin: 0; padding: 0; }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition: color var(--transicion), border-color var(--transicion), background-color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
 }
-.etiqueta:hover {
-  transform: translateY(-1px);
-  border-color: rgba(61, 254, 64, .5);
-  box-shadow: 0 0 12px var(--acento-suave);
-}
-.etiqueta--ok { color: #3de88b; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .1); box-shadow: 0 0 10px rgba(47, 208, 122, .18); }
-.etiqueta--alerta { color: #ffd166; border-color: rgba(255, 197, 61, .5); background: rgba(255, 197, 61, .1); box-shadow: 0 0 10px rgba(255, 197, 61, .18); }
-.etiqueta--error { color: #ff6677; border-color: rgba(255, 85, 102, .5); background: rgba(255, 85, 102, .1); box-shadow: 0 0 10px rgba(255, 85, 102, .18); }
-.etiqueta--info { color: var(--acento); border-color: rgba(61, 254, 64, .55); background: rgba(61, 254, 64, .12); box-shadow: 0 0 12px rgba(61, 254, 64, .22); }
+.etiqueta:hover { border-color: var(--texto-3); }
+.etiqueta--ok { color: #3de88b; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .1); }
+.etiqueta--alerta { color: #ffd166; border-color: rgba(255, 197, 61, .5); background: rgba(255, 197, 61, .1); }
+.etiqueta--error { color: #ff6677; border-color: rgba(255, 85, 102, .5); background: rgba(255, 85, 102, .1); }
+.etiqueta--info { color: var(--acento); border-color: rgba(61, 254, 64, .55); background: rgba(61, 254, 64, .12); }
 
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--texto-3); flex: none; }
 .punto--vivo { background: var(--ok); box-shadow: 0 0 0 0 rgba(47, 208, 122, .6); animation: pulsoPunto 2.4s infinite; }
@@ -875,8 +835,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 }
 .barra-progreso__relleno {
   height: 100%;
-  background: linear-gradient(90deg, rgba(61, 254, 64, .65), var(--acento));
-  box-shadow: 0 0 12px rgba(61, 254, 64, .45);
+  background: var(--acento);
   transition: width var(--t-lenta) var(--curva);
 }
 
@@ -1243,7 +1202,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 /* Justo debajo de las pestañas ya hay una línea: el primer bloque del panel no
    añade otra ni el aire que la acompaña. */
 [role="tabpanel"] > .tarjeta:first-child,
-[role="tabpanel"] > .rejilla:first-child > .tarjeta:first-child { border-top: 0; padding-top: 0; }
+[role="tabpanel"] > .rejilla:not(.rejilla--metricas):first-child > .tarjeta:first-child { border-top: 0; padding-top: 0; }
 
 /* En pantallas muy estrechas los elementos de lista se apilan en vez de
    comprimir el texto hasta hacerlo ilegible. */
@@ -1761,55 +1720,61 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   .pagina-entrada .entrada__media-marca { min-height: 240px; }
 }
 
-/* Selector de cantidad para escaneo en grupo */
+/* Selector de cantidad para escaneo en grupo: una fila de teclas, sin caja
+   alrededor. El rótulo va como el resto de los rótulos técnicos. */
 .selector-cantidad {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  padding: 8px 12px;
-  background: var(--fondo-2);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-s);
+  padding: 0 0 var(--e3);
+  background: none;
+  border: 0;
+  border-radius: 0;
 }
 
 .selector-cantidad__etiqueta {
-  font-size: .88rem;
-  color: var(--texto-2);
-  font-weight: 600;
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-etiqueta);
+  color: var(--texto-3);
 }
 
 .selector-cantidad__opciones {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .btn-cantidad {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  height: 38px;
+  min-width: 44px;
+  height: 44px;
   padding: 0 10px;
-  border-radius: var(--radio-xs);
-  border: 1px solid var(--borde-fuerte);
-  background: var(--superficie);
-  color: var(--texto);
-  font-weight: 700;
+  border-radius: 0;
+  border: 1px solid var(--borde-campo);
+  background: transparent;
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-weight: 500;
   font-size: .95rem;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: border-color var(--transicion), color var(--transicion), background-color var(--transicion);
 }
 
 .btn-cantidad:hover {
   border-color: var(--acento);
+  color: var(--texto);
 }
 
-.btn-cantidad.activo,
-.activo {
+/* La cantidad elegida se rellena de acento: en la puerta se ve de un vistazo
+   cuántas entradas va a descontar el siguiente escaneo. */
+.btn-cantidad.activo {
   background: var(--acento);
   color: #000;
   border-color: var(--acento);
-  box-shadow: 0 0 10px rgba(61, 254, 64, .25);
 }
 
