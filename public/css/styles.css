@@ -664,6 +664,18 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .vacio { text-align: center; padding: 38px 18px; color: var(--texto-3); }
 .vacio__icono { display: inline-flex; margin-bottom: 10px; opacity: .5; font-size: 2rem; }
 
+/* Espera con forma: ocupa el sitio que ocupará el contenido real. */
+.esqueleto { display: grid; gap: 8px; }
+.esqueleto__linea {
+  height: 48px;
+  border-radius: var(--radio-s);
+  border: 1px solid var(--borde);
+  background: linear-gradient(90deg, var(--fondo-2) 0%, var(--superficie-2) 50%, var(--fondo-2) 100%);
+  background-size: 220% 100%;
+  animation: latidoEsqueleto 1.5s var(--curva-entrada) infinite;
+}
+@keyframes latidoEsqueleto { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+
 .cargando {
   display: inline-block; width: 17px; height: 17px;
   border: 2px solid var(--borde-fuerte);

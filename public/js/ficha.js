@@ -301,6 +301,12 @@ function pestanas() {
 
 function irAPestana(clave) {
   estado.pestana = clave;
+  // Desde el final de una pestaña larga, la siguiente empezaría fuera de la
+  // pantalla. Se sube hasta las pestañas de la ficha, nunca hacia abajo.
+  const pestanas = document.querySelector('.ficha .pestanas');
+  if (pestanas && pestanas.getBoundingClientRect().top < 0) {
+    window.scrollTo({ top: window.scrollY + pestanas.getBoundingClientRect().top - 16, behavior: 'smooth' });
+  }
   for (const boton of document.querySelectorAll('.ficha .pestana')) {
     boton.setAttribute('aria-selected', String(boton.dataset.pestana === clave));
   }

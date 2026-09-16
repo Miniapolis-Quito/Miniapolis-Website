@@ -46,6 +46,22 @@ export function el(etiqueta, atributos = {}, ...hijos) {
   return nodo;
 }
 
+/**
+ * Bloque de espera: unas barras del alto de una fila que laten mientras llega
+ * la respuesta del servidor. Sin esto, una tabla aparece de golpe y la página
+ * pega un salto; con esto se ve desde el principio cuánto va a ocupar.
+ *
+ * Es decorativo: lleva `aria-hidden` porque quien usa un lector de pantalla ya
+ * sabe que la página está cargando por el propio flujo de la aplicación.
+ */
+export function esqueleto(filas = 4) {
+  return el(
+    'div',
+    { class: 'esqueleto', 'aria-hidden': 'true' },
+    Array.from({ length: filas }, () => el('div', { class: 'esqueleto__linea' })),
+  );
+}
+
 export const $ = (selector, raiz = document) => raiz.querySelector(selector);
 export const $$ = (selector, raiz = document) => [...raiz.querySelectorAll(selector)];
 
