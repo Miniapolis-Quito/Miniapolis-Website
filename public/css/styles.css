@@ -1053,12 +1053,17 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pestanas--grupos { margin-bottom: var(--e3); }
 .pestana__cuenta {
   display: inline-block; min-width: 1.7em; margin-left: 7px; padding: 1px 6px;
-  border: 1px solid var(--borde-fuerte); border-radius: 999px;
+  border: 1px solid var(--borde-fuerte); border-radius: var(--radio-xs);
   font-family: var(--mono);
-  font-size: .68rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  font-size: .68rem; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--texto-3);
+  background: rgba(255, 255, 255, 0.04);
 }
-.pestana[aria-selected="true"] .pestana__cuenta { border-color: var(--acento-borde); color: var(--acento-2); }
+.pestana[aria-selected="true"] .pestana__cuenta {
+  border-color: rgba(61, 254, 64, 0.5);
+  color: var(--acento);
+  background: rgba(61, 254, 64, 0.12);
+}
 
 dialog {
   border: 1px solid var(--borde-fuerte);

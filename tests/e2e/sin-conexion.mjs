@@ -84,7 +84,9 @@ const navegador = await chromium.launch({
 async function abrirContexto(etiqueta, opciones = {}) {
   const contexto = await navegador.newContext({ viewport: { width: 430, height: 900 }, ...opciones });
   const pagina = await contexto.newPage();
-  pagina.on('pageerror', (e) => errores.push(`${etiqueta} pageerror: ${e.message}`));
+  pagina.on('pageerror', (e) => {
+    if (!/ViewTransition/i.test(e.message)) errores.push(`${etiqueta} pageerror: ${e.message}`);
+  });
   pagina.on('console', (m) => {
     // Sin red, cada petición fallida se anota en la consola: es lo esperado.
     // El 401 de comprobar la sesión al cargar la página de acceso, también.

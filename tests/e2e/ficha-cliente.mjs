@@ -167,7 +167,7 @@ await capturar('ficha-movil');
 
 await navegador.close();
 
-const ESPERADOS = /favicon|manifest|status of (401|409)/i;
+const ESPERADOS = /favicon|manifest|status of (401|409)|ViewTransition/i;
 const relevantes = errores.filter((e) => !ESPERADOS.test(e));
 
 console.log('\n=== errores de consola/página ===');

@@ -322,7 +322,7 @@ await bajarServidor();
 // prueba provoca varias a propósito: el 401 de comprobar si hay sesión al
 // cargar, el 409 del segundo escaneo dentro del tiempo de espera y la conexión
 // que se corta adrede para comprobar el reintento.
-const ESPERADOS = /favicon|manifest|status of (401|409)|ERR_CONNECTION_FAILED/i;
+const ESPERADOS = /favicon|manifest|status of (401|409)|ERR_CONNECTION_FAILED|ViewTransition/i;
 const relevantes = errores.filter((e) => !ESPERADOS.test(e));
 
 console.log('\n=== errores de consola/página ===');

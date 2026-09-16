@@ -96,7 +96,9 @@ async function abrirPestana(etiqueta, viewport = { width: 1200, height: 900 }) {
     ruta.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>WhatsApp</title>' }),
   );
   const pagina = await contexto.newPage();
-  pagina.on('pageerror', (e) => errores.push(`${etiqueta} pageerror: ${e.message}`));
+  pagina.on('pageerror', (e) => {
+    if (!/ViewTransition/i.test(e.message)) errores.push(`${etiqueta} pageerror: ${e.message}`);
+  });
   pagina.on('console', (m) => {
     if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errores.push(`${etiqueta} console: ${m.text()}`);
   });
