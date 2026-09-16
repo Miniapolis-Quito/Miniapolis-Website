@@ -259,7 +259,7 @@ function cadenciaTexto(dias) {
 
 function franjaHabitos(stats) {
   if (!stats.visitas) {
-    return el('p', { class: 'habitos' }, 'Todavía no ha usado ninguna entrada.');
+    return el('p', { class: 'tenue' }, 'Todavía no ha usado ninguna entrada.');
   }
   return el(
     'div',

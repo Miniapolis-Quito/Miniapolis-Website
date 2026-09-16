@@ -16,7 +16,7 @@
 /* Al cambiar el aspecto o el código del escáner hay que subir este número: la
    copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
    un teléfono sin conexión seguiría abriendo el diseño anterior. */
-const CACHE = 'miniapolis-escaner-v2';
+const CACHE = 'miniapolis-escaner-v3';
 
 /** Nombres de caché propios. Incluye el prefijo anterior a la marca actual para
  *  que los teléfonos que ya tenían el escáner instalado suelten la copia vieja. */
@@ -33,12 +33,12 @@ const RECURSOS = [
   '/js/api.js',
   '/js/realtime.js',
   '/js/shell.js',
+  '/js/cursor.js',
   '/js/cuenta.js',
   '/vendor/jsQR.js',
   '/fonts/anton-400.woff2',
   '/fonts/archivo-var.woff2',
   '/images/miniapolis-logo-oficial.webp',
-  '/images/racing-hobbies-pista-rc.webp',
   '/favicon.svg',
   '/manifest.webmanifest',
 ];

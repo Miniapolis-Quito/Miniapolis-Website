@@ -35,14 +35,41 @@ una lectura de instrumento. **Excepción deliberada**: la frase que acompaña a
 una casilla se lee como texto normal, no como rótulo; en monoespaciada y
 mayúsculas ocupaba tres líneas y costaba leerla.
 
-### Superficies y líneas
+### Superficies y líneas: no hay cajas
 
-- Fondo negro con una retícula de 64 px al 1,2 % y un halo verde muy tenue
+La primera versión de este sistema seguía construyendo la pantalla con
+recuadros —tarjeta con borde, banner con foto, pestañas dentro de una caja
+gris— y el resultado se parecía demasiado a lo anterior. La segunda quita la
+caja como unidad de construcción:
+
+- **Un bloque es una línea fina y el aire que lo rodea**, no un rectángulo con
+  borde y fondo. Al pasar por encima, el acento recorre esa línea de lado a
+  lado: es la única reacción, y es la misma en toda la interfaz.
+- **Fuera los banners con foto.** Cada pantalla abre con una cabecera
+  tipográfica: marca de sección, titular grande y una línea que se traza sola
+  al cargar. La fotografía competía con los datos y envejecía la pantalla.
+- **Un campo es la línea sobre la que se escribe.** Sin recuadro ni relleno:
+  al enfocar, esa línea se vuelve de acento y engorda. Como la línea es el
+  único contorno del control, tiene su propio color (`--borde-campo`, 4,2:1
+  sobre negro) para cumplir el mínimo de 3:1 que pide la norma.
+- **Las filas se separan con un pelo de 1 px**, y al pasar por encima se
+  desplazan un poco y encienden una marca de acento a la izquierda.
+- **Cantos vivos** (2 px, y 0 en lo pequeño) y **sin sombras** en el contenido:
+  lo que necesita separarse lo hace con una línea y con espacio, nunca
+  simulando relieve. La sombra queda solo para lo que de verdad flota: los
+  diálogos.
+- Fondo negro con una retícula de 96 px al 1,2 % y un halo verde muy tenue
   arriba: da profundidad sin introducir ningún color nuevo.
-- Las tarjetas llevan un **filo de luz** corto en el borde superior que crece
-  al pasar por encima. La **esquina de acento** (dos trazos en ángulo) se
-  reserva para lo que de verdad manda: el QR del cliente y la mira del escáner.
-- Radios contenidos (10 / 6 / 3 px) y sombras bajas: la identidad es recta.
+- La **esquina de acento** (dos trazos en ángulo) se reserva para lo que de
+  verdad manda: el QR del cliente y la mira del escáner.
+
+### Escala: los números y los titulares mandan
+
+Los titulares de pantalla suben a `clamp(2.3rem, 6.5vw, 3.9rem)` y el marcador
+de entradas del cliente a `clamp(6rem, 26vw, 13rem)`. Las métricas del panel
+pasan de números medianos dentro de ocho cajas iguales a una fila de
+instrumentos: cifra grande, rótulo técnico debajo, una línea encima y nada
+más.
 
 ### Color
 
@@ -57,7 +84,10 @@ Una sola familia de curvas (`cubic-bezier(.22,1,.36,1)`) y tres duraciones
 
 - **Revelado al entrar en pantalla** de los bloques de cada página.
 - **Entrada de panel** al cambiar de pestaña, y de los diálogos.
-- **Botones**: elevación de 1 px y un barrido de luz al pasar por encima.
+- **Titular que se descubre**: al abrir una pantalla, el título aparece de
+  abajo arriba con un recorte, y la línea de la cabecera se traza sola.
+- **Botones**: el borde se vuelve de acento y el fondo se tiñe apenas; ya no
+  se levantan. Mantienen el barrido de luz al pasar por encima.
 - **Datos**: las barras del gráfico crecen escalonadas; el saldo late al
   cambiar; la barra de progreso se desplaza.
 
@@ -72,6 +102,25 @@ Dos reglas que no se negocian:
    pestaña **en blanco**.
 2. **Quien pide menos movimiento no ve ninguno** (`prefers-reduced-motion`), y
    aun así lo ve todo.
+
+### Cursor propio
+
+En un equipo con ratón, el puntero del sistema se sustituye por **un punto que
+va pegado al ratón y un anillo que lo persigue con retardo**; sobre algo que se
+puede pulsar el anillo se abre y se llena, y al pulsar se contrae. Ambos se
+pintan con mezcla por diferencia, así que se ven sobre el negro y sobre el
+verde sin cambiar de color. Los acompaña un halo muy tenue, por detrás del
+texto, que se mueve mucho más despacio.
+
+Cuatro condiciones lo hacen seguro:
+
+1. Solo se monta con ratón de verdad (`hover: hover` y `pointer: fine`). En un
+   teléfono no hay puntero que seguir y el dedo tapa la pantalla.
+2. Quien pide menos movimiento se queda con el cursor del sistema.
+3. La clase que esconde el cursor nativo la pone el módulo, nunca el HTML: si
+   el JavaScript no llega a ejecutarse, el ratón se ve con normalidad.
+4. Sobre un campo de texto vuelve la barra del sistema, que es la que dice
+   dónde se va a escribir.
 
 ### Iconografía propia
 

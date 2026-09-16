@@ -30,6 +30,10 @@
   --superficie-2: #1d1d1d;
   --borde: #2a2a2a;
   --borde-fuerte: #4a4a4a;
+  /* La línea de un campo es su único contorno: sin recuadro alrededor, tiene
+     que llegar sola a 3:1 sobre el fondo para que se vea dónde se escribe.
+     Esta llega a 4,2:1. */
+  --borde-campo: #706f68;
 
   --texto: #f6f6f2;
   --texto-2: #c5c5bf;
@@ -49,12 +53,17 @@
   --info: #3dfe40;
 
   /* Radios contenidos: la identidad es recta, no redondeada. */
-  --radio: 10px;
-  --radio-s: 6px;
-  --radio-xs: 3px;
+  /* Cantos vivos: la interfaz se construye con líneas, no con cajas
+     redondeadas. Solo lo que de verdad flota sobre la página —diálogos,
+     avisos— conserva un radio mínimo. */
+  --radio: 2px;
+  --radio-s: 2px;
+  --radio-xs: 0px;
 
-  --sombra: 0 18px 40px rgba(0, 0, 0, 0.55);
-  --sombra-baja: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --sombra: 0 30px 80px rgba(0, 0, 0, 0.7);
+  /* Nada de sombras en el contenido: si un bloque necesita separarse, lo hace
+     con una línea y con espacio, nunca simulando relieve. */
+  --sombra-baja: none;
 
   /* Una sola familia de curvas y tres duraciones para todo el sistema: el
      movimiento se reconoce como propio cuando siempre acelera igual. */
@@ -71,8 +80,8 @@
   --e2: 10px;
   --e3: 16px;
   --e4: 24px;
-  --e5: 36px;
-  --e6: 56px;
+  --e5: 44px;
+  --e6: 80px;
 
   --tracking-etiqueta: 0.16em;
 
@@ -108,7 +117,7 @@ body {
     radial-gradient(120% 80% at 50% 0%, rgba(61, 254, 64, 0.05), transparent 60%),
     linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-  background-size: 100% 100%, 64px 64px, 64px 64px;
+  background-size: 100% 100%, 96px 96px, 96px 96px;
   background-attachment: fixed;
   color: var(--texto);
   font-family: var(--fuente);
@@ -125,9 +134,9 @@ h1, h2, h3 {
   letter-spacing: .02em;
   text-transform: uppercase;
 }
-h1 { font-size: clamp(1.6rem, 4.4vw, 2.3rem); }
-h2 { font-size: clamp(1.15rem, 3vw, 1.4rem); }
-h3 { font-size: 1.02rem; }
+h1 { font-size: clamp(2.3rem, 6.5vw, 3.9rem); letter-spacing: -0.005em; }
+h2 { font-size: clamp(1.4rem, 3.4vw, 2rem); }
+h3 { font-size: 1.1rem; }
 p  { margin: 0 0 1em; }
 
 a { color: var(--acento-2); text-underline-offset: 3px; text-decoration-thickness: 1px; }
@@ -192,57 +201,42 @@ a:hover { text-decoration-color: var(--acento); }
 .marca__logo { display: block; width: 90px; height: 30px; object-fit: contain; }
 .barra__nav { display: flex; gap: 4px; flex-wrap: wrap; }
 
-/* Escena original sin texto: aporta la energía de la pista sin competir con
-   los controles ni con la legibilidad de la información importante. */
-.presentacion-pista {
-  position: relative;
-  overflow: hidden;
-  margin-top: var(--e3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  box-shadow: var(--sombra-baja);
-}
-.presentacion-pista::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, .55), transparent 58%),
-    linear-gradient(0deg, rgba(0, 0, 0, .55), transparent 45%);
-  pointer-events: none;
-}
-.presentacion-pista img { display: block; width: 100%; height: auto; }
-
 .encabezado-pista {
   position: relative;
-  overflow: hidden;
-  min-height: 118px;
-  padding: clamp(18px, 3vw, 28px);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background-image:
-    linear-gradient(90deg, rgba(0, 0, 0, .97) 0%, rgba(0, 0, 0, .88) 48%, rgba(0, 0, 0, .45) 100%),
-    url('/images/racing-hobbies-pista-rc.webp');
-  background-position: center, right center;
-  background-size: cover;
-  box-shadow: var(--sombra-baja);
+  padding: clamp(26px, 5.5vw, 68px) 0 clamp(18px, 2.6vw, 30px);
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  background: none;
+  box-shadow: none;
 }
-/* Franja de acento a la izquierda: el mismo recurso que marca el inicio de
-   cada sección, aquí a tamaño de cabecera. */
+/* La línea de abajo se traza sola al abrir la pantalla: un solo gesto, de
+   izquierda a derecha, que dice «aquí empieza esto». */
 .encabezado-pista::before {
   content: '';
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, var(--acento), rgba(61, 254, 64, .1));
+  position: absolute; left: 0; bottom: -1px;
+  height: 1px; width: 0;
+  background: var(--acento);
+  animation: trazarLinea var(--t-lenta) var(--curva) 120ms forwards;
 }
-.encabezado-pista--simple { display: flex; align-items: center; }
-/* Hay una foto detrás: el texto lleva su propia sombra para no depender de qué
-   toque en esa zona de la imagen. En la pista se lee a pleno sol. */
-.encabezado-pista h1,
-.encabezado-pista h2,
-.encabezado-pista p,
-.encabezado-pista label,
-.encabezado-pista span { text-shadow: 0 1px 4px rgba(4, 6, 10, .9); }
+@keyframes trazarLinea { to { width: 38%; } }
+@media (prefers-reduced-motion: reduce) {
+  .encabezado-pista::before { width: 38%; animation: none; }
+}
+.encabezado-pista--simple { display: flex; align-items: flex-end; }
+.encabezado-pista h1 {
+  margin-bottom: 0;
+  /* El titular se descubre de abajo arriba al abrir la pantalla. El recorte
+     llega a -12% para que no corte los acentos ni los descendentes. */
+  animation: descubrirTitular var(--t-lenta) var(--curva) both;
+}
+@keyframes descubrirTitular {
+  from { clip-path: inset(0 0 100% 0); transform: translateY(10px); }
+  to   { clip-path: inset(-12% 0 -12% 0); transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .encabezado-pista h1 { animation: none; }
+}
+.encabezado-pista p { margin-bottom: 0; color: var(--texto-2); }
 
 .brand-lockup {
   display: inline-grid; place-items: center;
@@ -250,13 +244,11 @@ a:hover { text-decoration-color: var(--acento); }
   background: var(--acento);
   border-radius: var(--radio-xs);
 }
-.brand-lockup__logo { display: block; width: min(330px, 70vw); height: auto; }
-.brand-lockup--compact { padding: 5px 9px; }
-.brand-lockup--compact .brand-lockup__logo { width: min(164px, 40vw); }
+.brand-lockup__logo { display: block; width: min(210px, 52vw); height: auto; }
 
-main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
+main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 
-.rejilla { display: grid; gap: var(--e3); }
+.rejilla { display: grid; gap: clamp(20px, 3.4vw, 44px); }
 /* Los elementos de una rejilla no encogen por debajo de su contenido salvo que
    se les permita: sin esto, una tabla ancha estira la página entera en vez de
    desplazarse dentro de su contenedor. */
@@ -315,43 +307,40 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
 .tarjeta {
   position: relative;
   min-width: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, .022), transparent 42%),
-    var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: clamp(16px, 2.4vw, 24px);
-  box-shadow: var(--sombra-baja);
-  transition: border-color var(--t-media) var(--curva), box-shadow var(--t-media) var(--curva);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  padding: clamp(20px, 2.8vw, 30px) 0 clamp(24px, 3.4vw, 38px);
+  box-shadow: none;
+  transition: border-color var(--t-media) var(--curva);
 }
-/* Filo superior: un hilo de luz corto en el borde de arriba. Marca dónde
-   empieza cada bloque sin gritar; la esquina de acento se reserva para lo que
-   de verdad manda en la pantalla (el QR, la mira del escáner). */
+/* Al pasar por encima, el acento recorre la línea de arriba de lado a lado.
+   Es toda la reacción que necesita un bloque: ni fondo, ni sombra, ni salto. */
 .tarjeta::before {
   content: '';
-  position: absolute; top: -1px; left: 18px;
-  width: 64px; height: 1px;
-  background: linear-gradient(90deg, var(--acento), transparent);
-  opacity: .5;
+  position: absolute; top: -1px; left: 0;
+  width: 0; height: 1px;
+  background: var(--acento);
   pointer-events: none;
-  transition: opacity var(--t-media) var(--curva), width var(--t-media) var(--curva);
+  transition: width var(--t-lenta) var(--curva);
 }
-.tarjeta:hover::before { opacity: .85; width: 108px; }
-.tarjeta--atencion { border-color: rgba(255, 85, 102, .5); }
-.tarjeta--atencion::before { background: linear-gradient(90deg, var(--error), transparent); opacity: .8; }
+.tarjeta:hover::before, .tarjeta:focus-within::before { width: 100%; }
+.tarjeta--atencion { border-top-color: rgba(255, 85, 102, .65); }
+.tarjeta--atencion::before { background: var(--error); width: 38%; }
 
 .tarjeta__titulo {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: 12px; margin-bottom: var(--e3);
+  gap: 12px; margin-bottom: var(--e4);
   flex-wrap: wrap;  /* en móvil la etiqueta baja en lugar de partir el título */
 }
 .tarjeta__titulo h2, .tarjeta__titulo h3 { margin: 0; }
 
 .metrica { display: grid; gap: 4px; }
 .metrica__valor {
-  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
   font-weight: 800;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.04em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -365,34 +354,22 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
 .metrica--acento .metrica__valor { color: var(--acento-2); }
 .metrica--ok .metrica__valor { color: var(--ok); }
 
-/* Una métrica es una tarjeta con una regla de acento arriba: se leen como una
-   fila de instrumentos, no como ocho cajas iguales. */
+/* Las métricas se leen como una fila de instrumentos: número grande, etiqueta
+   fina debajo y nada más que la línea que las separa. */
 .rejilla--metricas .tarjeta {
-  padding: 15px 16px;
-  overflow: hidden;
+  padding: var(--e3) 0 var(--e4);
 }
-.rejilla--metricas .tarjeta::before {
-  top: 0; left: 0;
-  width: 100%; height: 2px;
-  border: 0;
-  border-radius: 0;
-  background: linear-gradient(90deg, var(--acento), transparent 62%);
-  opacity: .35;
-}
-.rejilla--metricas .tarjeta:hover::before { opacity: .8; width: 100%; height: 2px; }
-.rejilla--metricas .tarjeta:has(.metrica--acento)::before,
-.rejilla--metricas .tarjeta:has(.metrica--ok)::before { opacity: .75; }
+.rejilla--metricas .tarjeta::before { height: 2px; top: -1px; }
 
 /* Contador principal del saldo del cliente */
 .saldo {
   display: grid;
   place-items: center;
   gap: 4px;
-  padding: clamp(22px, 5vw, 36px);
-  border-radius: var(--radio);
-  background: linear-gradient(145deg, rgba(61, 254, 64, 0.12), rgba(61, 254, 64, 0.02));
-  border: 1px solid rgba(61, 254, 64, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 34px rgba(0, 0, 0, 0.5), 0 0 24px rgba(61, 254, 64, 0.12);
+  padding: clamp(30px, 7vw, 76px) 0 clamp(26px, 5vw, 52px);
+  border-radius: 0;
+  background: radial-gradient(70% 140% at 50% 30%, rgba(61, 254, 64, .1), transparent 70%);
+  border: 0;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -411,29 +388,24 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
 }
 .saldo > * { position: relative; z-index: 1; }
 .saldo__numero {
-  font-size: clamp(3.8rem, 17vw, 6.2rem);
+  font-size: clamp(6rem, 26vw, 13rem);
   font-weight: 900;
-  line-height: .95;
-  letter-spacing: -0.04em;
+  line-height: .86;
+  letter-spacing: -0.065em;
   font-variant-numeric: tabular-nums;
   color: var(--acento);
-  text-shadow: 0 0 35px var(--acento-glow), 0 0 12px rgba(255, 255, 255, 0.4);
+  text-shadow: 0 0 60px var(--acento-glow);
   animation: numero-entra 820ms var(--easing-entrada) both;
 }
 .saldo__texto {
-  color: var(--texto-2);
   font-family: var(--mono);
-  font-size: .84rem;
-  letter-spacing: .08em;
+  color: var(--texto-3);
+  font-size: .78rem;
   text-transform: uppercase;
-  font-weight: 600;
+  letter-spacing: .3em;
+  padding-left: .3em;   /* compensa el espaciado de la última letra */
 }
-.saldo--vacio {
-  background:
-    radial-gradient(90% 120% at 50% 0%, rgba(255, 85, 102, .16), transparent 62%),
-    var(--fondo-2);
-  border-color: rgba(255, 85, 102, .38);
-}
+.saldo--vacio { background: radial-gradient(70% 140% at 50% 30%, rgba(255, 85, 102, .12), transparent 70%); }
 .saldo--vacio .saldo__numero { color: var(--error); text-shadow: 0 6px 30px rgba(255, 85, 102, 0.3); }
 .saldo--vacio::before { background-image: repeating-linear-gradient(90deg, rgba(255, 85, 102, .07) 0 1px, transparent 1px 46px); }
 
@@ -445,24 +417,24 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
    -------------------------------------------------------------------------- */
 
 .boton {
-  --bg: rgba(20, 26, 21, 0.72);
+  --bg: transparent;
   --fg: var(--texto);
-  --bd: rgba(255, 255, 255, 0.14);
+  --bd: var(--borde-campo);
   position: relative;
   overflow: hidden;
   appearance: none;
-  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-  min-height: 46px;
-  padding: 10px 20px;
-  border-radius: var(--radio-s);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px;
+  padding: 11px 20px;
+  border-radius: 0;
   border: 1px solid var(--bd);
   background: var(--bg);
   color: var(--fg);
-  font: inherit;
-  font-size: .86rem;
-  font-weight: 700;
-  letter-spacing: .055em;
-  text-transform: uppercase;
+  /* Etiqueta técnica: monoespaciada, en mayúsculas y muy espaciada. Las
+     acciones se leen como los mandos de un equipo, no como botones de web. */
+  font-family: var(--mono);
+  font-size: .76rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .14em;
   cursor: pointer;
   text-decoration: none;
   backdrop-filter: blur(12px);
@@ -490,81 +462,43 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
   transform: translateX(-135%) skewX(-20deg);
   transition: transform 580ms var(--easing-entrada);
 }
-.boton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  filter: brightness(1.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 24px rgba(0, 0, 0, .45);
-}
-.boton:hover:not(:disabled)::after { transform: translateX(135%) skewX(-20deg); }
-.boton:active:not(:disabled) { transform: translateY(0) scale(.975); box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.4); }
-.boton:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(0.5); }
+.boton:hover:not(:disabled)::after { transform: translateX(120%); }
+.boton:hover:not(:disabled) { --bd: var(--acento); --bg: rgba(61, 254, 64, .08); }
+.boton:active:not(:disabled) { --bg: rgba(61, 254, 64, .18); transition-duration: 60ms; }
+.boton:disabled { opacity: .45; cursor: not-allowed; }
 
+/* Acción principal: bloque de acento macizo, sin degradado ni halo. */
 .boton--principal {
-  --bg: linear-gradient(135deg, #44ff66 0%, #17e85a 100%);
-  --fg: #020b04;
-  --bd: rgba(255, 255, 255, 0.38);
-  font-weight: 800;
-  letter-spacing: .065em;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.65), 0 0 20px rgba(61, 254, 64, 0.34), 0 4px 14px rgba(0, 0, 0, 0.4);
+  --bg: var(--acento);
+  --fg: #000;
+  --bd: var(--acento);
+  font-weight: 700;
+  letter-spacing: .16em;
 }
-.boton--principal:hover:not(:disabled) {
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85), 0 0 32px rgba(61, 254, 64, 0.55), 0 8px 26px rgba(0, 0, 0, 0.45);
-  filter: brightness(1.08);
-}
-.boton--fantasma {
-  --bg: rgba(255, 255, 255, 0.035);
-  --bd: rgba(255, 255, 255, 0.14);
-}
-.boton--fantasma:hover:not(:disabled) {
-  --bd: rgba(61, 254, 64, 0.72);
-  --fg: var(--acento);
-  --bg: rgba(61, 254, 64, 0.08);
-  box-shadow: inset 0 0 12px rgba(61, 254, 64, 0.08), 0 0 20px rgba(61, 254, 64, 0.22), 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-.boton--peligro {
-  --bg: rgba(255, 85, 102, 0.06);
-  --fg: #ff6677;
-  --bd: rgba(255, 85, 102, 0.45);
-}
-.boton--peligro:hover:not(:disabled) {
-  --bd: #ff5566;
-  --fg: #ffffff;
-  --bg: rgba(255, 85, 102, 0.22);
-  box-shadow: 0 0 24px rgba(255, 85, 102, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
-}
-.boton--ok {
-  --bg: rgba(47, 208, 122, 0.06);
-  --fg: #3de88b;
-  --bd: rgba(47, 208, 122, 0.45);
-}
-.boton--ok:hover:not(:disabled) {
-  --bd: #2fd07a;
-  --fg: #ffffff;
-  --bg: rgba(47, 208, 122, 0.22);
-  box-shadow: 0 0 24px rgba(47, 208, 122, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
-}
+.boton--principal:hover:not(:disabled) { --bg: #6dff70; --bd: #6dff70; }
+.boton--fantasma { --bg: transparent; --bd: var(--borde); --fg: var(--texto-2); }
+.boton--fantasma:hover:not(:disabled) { --bg: rgba(61, 254, 64, .08); --bd: var(--acento); --fg: var(--texto); }
+.boton--peligro { --bg: transparent; --fg: var(--error); --bd: rgba(255, 85, 102, .45); }
+.boton--peligro:hover:not(:disabled) { --bg: var(--error-suave); --bd: var(--error); }
+.boton--ok { --bg: transparent; --fg: var(--ok); --bd: rgba(47, 208, 122, .45); }
+.boton--ok:hover:not(:disabled) { --bg: var(--ok-suave); --bd: var(--ok); }
 .boton--bloque { width: 100%; }
 .boton--grande {
-  min-height: 54px;
-  font-size: .94rem;
-  padding-inline: 26px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  border-radius: var(--radio);
+  min-height: 60px;
+  font-size: .86rem;
+  padding-inline: 30px;
+  letter-spacing: .2em;
 }
-.boton--chico {
-  min-height: 34px;
-  padding: 5px 13px;
-  font-size: .75rem;
-  letter-spacing: .055em;
-  border-radius: var(--radio-xs);
-}
+.boton--chico { min-height: 32px; padding: 5px 12px; font-size: .68rem; letter-spacing: .12em; }
+
+/* Acción secundaria que no compite con nada: se lee como un enlace, pero
+   sigue siendo un botón para el teclado y el lector de pantalla. */
 .boton--enlace {
   --bg: transparent; --bd: transparent;
   min-height: 34px; padding: 4px 6px;
   color: var(--texto-3);
-  font-weight: 600; font-size: .84rem;
-  letter-spacing: .03em;
+  font-family: var(--fuente); font-weight: 600; font-size: .86rem;
+  text-transform: none; letter-spacing: normal;
   text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--borde-fuerte);
   box-shadow: none;
   backdrop-filter: none;
@@ -587,21 +521,18 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
   border: 1px solid transparent;
 }
 .boton--nav::after { display: none; }
-.boton--nav:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
-  box-shadow: none;
-}
-.boton--nav[aria-current="page"] {
-  color: var(--acento);
-  background: rgba(61, 254, 64, 0.1);
-  border-color: rgba(61, 254, 64, 0.4);
-  box-shadow: 0 0 16px rgba(61, 254, 64, 0.16);
+.boton--nav:hover { --bg: transparent; --bd: transparent; color: var(--texto); }
+/* La sección abierta se marca con una línea de acento debajo, no con un
+   recuadro de color: la barra queda en una sola línea de texto. */
+.boton--nav[aria-current="page"] { color: var(--acento-2); }
+.boton--nav[aria-current="page"]::before {
+  content: '';
+  position: absolute; left: 13px; right: 13px; bottom: 3px;
+  height: 1px;
+  background: var(--acento);
 }
 
-.campo { display: grid; gap: 7px; margin-bottom: var(--e3); }
+.campo { display: grid; gap: 0; margin-bottom: var(--e4); }
 .campo > label,
 .campo__etiqueta {
   font-family: var(--mono);
@@ -615,29 +546,32 @@ main { padding-block: clamp(18px, 3.5vw, 34px) 96px; }
 .campo__error { font-size: .82rem; color: var(--error); min-height: 0; }
 .campo__error:empty { display: none; }
 
+/* Un campo es una línea sobre la que se escribe. Sin recuadro, sin relleno:
+   lo único que cambia al escribir es esa línea. */
 input, select, textarea {
   width: 100%;
   min-height: 46px;
-  padding: 11px 13px;
-  border-radius: var(--radio-s);
-  border: 1px solid var(--borde);
-  background: var(--fondo-2);
+  padding: 17px 2px 8px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--borde-campo);
+  background: transparent;
   color: var(--texto);
   font: inherit;
   transition: border-color var(--transicion), box-shadow var(--transicion), background-color var(--transicion);
 }
-input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: var(--borde-fuerte); }
+input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-bottom-color: var(--texto-3); }
 textarea { min-height: 84px; resize: vertical; }
 
 /* Desplegable con la flecha de la casa en vez de la del sistema: es lo único
    que delataba el aspecto por defecto del navegador. */
 select {
   appearance: none;
-  padding-right: 38px;
+  padding-right: 30px;
   background-image:
     linear-gradient(45deg, transparent 50%, var(--texto-3) 50%, var(--texto-3) 58%, transparent 58%),
     linear-gradient(-45deg, transparent 50%, var(--texto-3) 50%, var(--texto-3) 58%, transparent 58%);
-  background-position: right 18px center, right 13px center;
+  background-position: right 13px center, right 8px center;
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
   cursor: pointer;
@@ -645,8 +579,10 @@ select {
 select:hover { background-image:
   linear-gradient(45deg, transparent 50%, var(--texto) 50%, var(--texto) 58%, transparent 58%),
   linear-gradient(-45deg, transparent 50%, var(--texto) 50%, var(--texto) 58%, transparent 58%); }
-input:focus, select, textarea:focus { outline: none; }
-input:focus-visible, select:focus-visible, textarea:focus-visible,
+/* En los campos, el foco se ve en su propia línea —que se vuelve de acento y
+   engorda— y en el fondo apenas teñido. Añadir encima un recuadro devolvía la
+   caja que este diseño quita. El resto de controles sí lleva recuadro. */
+input:focus, select:focus, textarea:focus { outline: none; }
 .boton:focus-visible, a:focus-visible, [tabindex]:focus-visible, .pestana:focus-visible {
   outline: 2px solid var(--acento);
   outline-offset: 3px;
@@ -658,10 +594,14 @@ input:focus, textarea:focus {
   background: rgba(14, 20, 15, 0.95);
   transform: translateY(-1px);
 }
-input[aria-invalid="true"] { border-color: var(--error); }
-input[aria-invalid="true"]:focus { box-shadow: 0 0 0 1px var(--error), 0 0 14px var(--error-suave); }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 2px; }
+/* Al escribir, la línea se vuelve de acento y engorda: el foco se ve de lejos
+   sin encender un recuadro de color. */
+input:focus, textarea:focus, select:focus { border-bottom-color: var(--acento); box-shadow: 0 2px 0 -1px var(--acento); background: transparent; }
+input[aria-invalid="true"] { border-bottom-color: var(--error); }
+input[aria-invalid="true"]:focus { box-shadow: 0 2px 0 -1px var(--error); background: transparent; }
 input::placeholder, textarea::placeholder { color: var(--texto-3); }
-input[type="checkbox"] { width: 20px; height: 20px; min-height: 0; accent-color: var(--acento); cursor: pointer; }
+input[type="checkbox"] { width: 20px; height: 20px; min-height: 0; border-bottom: 0; background: none; accent-color: var(--acento); cursor: pointer; }
 
 .campo--linea { display: flex; align-items: center; gap: 10px; }
 /* Junto a una casilla no hay un rótulo, hay una frase: se lee como texto
@@ -689,20 +629,20 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .aviso {
   position: relative;
   display: flex; gap: 11px; align-items: flex-start;
-  padding: 13px 15px 13px 16px;
-  border-radius: var(--radio-s);
-  border: 1px solid var(--borde);
-  border-left: 3px solid var(--borde-fuerte);
-  background: var(--superficie-2);
+  padding: 13px 16px;
+  border: 0;
+  border-left: 2px solid var(--borde-fuerte);
+  border-radius: 0;
+  background: rgba(255, 255, 255, .025);
   font-size: .92rem;
   margin-bottom: var(--e3);
   animation: entrarAviso var(--t-media) var(--curva);
 }
 @keyframes entrarAviso { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 .aviso:empty { display: none; }
-.aviso--error { border-color: rgba(255, 85, 102, .35); border-left-color: var(--error); background: var(--error-suave); color: #ffc6cc; }
-.aviso--ok { border-color: rgba(47, 208, 122, .35); border-left-color: var(--ok); background: var(--ok-suave); color: #b6f2d3; }
-.aviso--alerta { border-color: rgba(255, 197, 61, .35); border-left-color: var(--alerta); background: var(--alerta-suave); color: #ffe6a8; }
+.aviso--error { border-left-color: var(--error); background: rgba(255, 85, 102, .07); color: #ffc6cc; }
+.aviso--ok { border-left-color: var(--ok); background: rgba(47, 208, 122, .07); color: #b6f2d3; }
+.aviso--alerta { border-left-color: var(--alerta); background: rgba(255, 197, 61, .07); color: #ffe6a8; }
 
 .etiqueta {
   display: inline-flex; align-items: center; gap: 6px;
@@ -718,15 +658,11 @@ fieldset { border: 0; margin: 0; padding: 0; }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition: color var(--transicion), border-color var(--transicion), background-color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
 }
-.etiqueta:hover {
-  transform: translateY(-1px);
-  border-color: rgba(61, 254, 64, .5);
-  box-shadow: 0 0 12px var(--acento-suave);
-}
-.etiqueta--ok { color: #3de88b; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .1); box-shadow: 0 0 10px rgba(47, 208, 122, .18); }
-.etiqueta--alerta { color: #ffd166; border-color: rgba(255, 197, 61, .5); background: rgba(255, 197, 61, .1); box-shadow: 0 0 10px rgba(255, 197, 61, .18); }
-.etiqueta--error { color: #ff6677; border-color: rgba(255, 85, 102, .5); background: rgba(255, 85, 102, .1); box-shadow: 0 0 10px rgba(255, 85, 102, .18); }
-.etiqueta--info { color: var(--acento); border-color: rgba(61, 254, 64, .55); background: rgba(61, 254, 64, .12); box-shadow: 0 0 12px rgba(61, 254, 64, .22); }
+.etiqueta:hover { border-color: var(--texto-3); }
+.etiqueta--ok { color: #3de88b; border-color: rgba(47, 208, 122, .5); background: rgba(47, 208, 122, .1); }
+.etiqueta--alerta { color: #ffd166; border-color: rgba(255, 197, 61, .5); background: rgba(255, 197, 61, .1); }
+.etiqueta--error { color: #ff6677; border-color: rgba(255, 85, 102, .5); background: rgba(255, 85, 102, .1); }
+.etiqueta--info { color: var(--acento); border-color: rgba(61, 254, 64, .55); background: rgba(61, 254, 64, .12); }
 
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--texto-3); flex: none; }
 .punto--vivo { background: var(--ok); box-shadow: 0 0 0 0 rgba(47, 208, 122, .6); animation: pulsoPunto 2.4s infinite; }
@@ -771,6 +707,77 @@ fieldset { border: 0; margin: 0; padding: 0; }
 @keyframes giro { to { transform: rotate(360deg); } }
 
 /* --------------------------------------------------------------------------
+   Cursor propio (lo monta cursor.js; sin él, el ratón se ve normal)
+   -------------------------------------------------------------------------- */
+
+.cursor-propio,
+.cursor-propio * { cursor: none !important; }
+/* Donde se escribe manda la barra del sistema. */
+.cursor-propio input:not([type="checkbox"]),
+.cursor-propio textarea { cursor: text !important; }
+
+/* Luz que acompaña al ratón, muy por detrás de todo. Se mueve solo con
+   `transform`, así que no repinta la página en cada cuadro. */
+.cursor__halo {
+  position: fixed;
+  top: 0; left: 0;
+  /* Detrás del contenido: la luz pasa por debajo del texto, nunca por encima. */
+  z-index: -1;
+  width: 520px; height: 520px;
+  margin: -260px 0 0 -260px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(61, 254, 64, .07), transparent 68%);
+  transition: opacity var(--t-lenta) var(--curva);
+  will-change: transform;
+}
+.cursor__halo--visible { opacity: 1; }
+
+.cursor__punto,
+.cursor__anillo {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 9999;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  /* La mezcla por diferencia hace que el cursor se vea sobre cualquier fondo:
+     claro sobre el negro y oscuro sobre el verde de la marca. */
+  mix-blend-mode: difference;
+}
+.cursor__punto {
+  width: 7px; height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: var(--acento);
+  transition: opacity var(--t-rapida) var(--curva), transform 40ms linear;
+}
+.cursor__anillo {
+  width: 34px; height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgba(61, 254, 64, .85);
+  transition:
+    width var(--t-media) var(--curva),
+    height var(--t-media) var(--curva),
+    margin var(--t-media) var(--curva),
+    background-color var(--t-media) var(--curva),
+    opacity var(--t-rapida) var(--curva);
+}
+.cursor__punto--visible, .cursor__anillo--visible { opacity: 1; }
+.cursor__punto--oculto, .cursor__anillo--oculto { opacity: 0; }
+/* Sobre algo que se puede pulsar, el anillo se abre y se llena. */
+.cursor__anillo--activo {
+  width: 58px; height: 58px;
+  margin: -29px 0 0 -29px;
+  background: rgba(61, 254, 64, .14);
+}
+.cursor__anillo--pulsado {
+  width: 24px; height: 24px;
+  margin: -12px 0 0 -12px;
+  background: rgba(61, 254, 64, .3);
+}
+
+/* --------------------------------------------------------------------------
    Iconografía propia (SVG dibujado en ui.js)
    -------------------------------------------------------------------------- */
 
@@ -794,23 +801,24 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .pack {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent 40%), var(--superficie);
-  padding: 18px;
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  background: none;
+  padding: 20px 0 22px 18px;
   display: grid;
   gap: 13px;
-  transition: border-color var(--t-media) var(--curva), transform var(--t-media) var(--curva);
+  transition: background-color var(--t-media) var(--curva);
 }
+.pack:hover { background: rgba(255, 255, 255, .025); }
 .pack::before {
   content: '';
   position: absolute; left: 0; top: 0; bottom: 0;
   width: 2px;
   background: linear-gradient(180deg, var(--acento), transparent);
-  opacity: .5;
+  opacity: .7;
   transition: opacity var(--t-media) var(--curva);
 }
-.pack:hover { border-color: var(--borde-fuerte); }
 .pack:hover::before { opacity: 1; }
 .pack--inactivo { opacity: .5; }
 .pack--inactivo::before { background: var(--borde-fuerte); }
@@ -827,8 +835,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 }
 .barra-progreso__relleno {
   height: 100%;
-  background: linear-gradient(90deg, rgba(61, 254, 64, .65), var(--acento));
-  box-shadow: 0 0 12px rgba(61, 254, 64, .45);
+  background: var(--acento);
   transition: width var(--t-lenta) var(--curva);
 }
 
@@ -864,7 +871,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 
 .escaner {
   position: relative;
-  border-radius: var(--radio-s);
+  border-radius: 0;
   overflow: hidden;
   background: #000;
   aspect-ratio: 4 / 3;
@@ -901,13 +908,13 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .resultado {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radio);
-  padding: clamp(20px, 4vw, 28px);
+  border-radius: 0;
+  padding: clamp(24px, 5vw, 36px);
   text-align: center;
   display: grid;
   gap: 8px;
-  border: 1px solid var(--borde);
-  background: var(--superficie);
+  border: 0;
+  background: rgba(255, 255, 255, .03);
   transition: border-color var(--t-media) var(--curva), background-color var(--t-media) var(--curva);
 }
 /* Franja de estado: se lee el color antes que el texto, que es lo que pasa en
@@ -919,15 +926,17 @@ fieldset { border: 0; margin: 0; padding: 0; }
   background: var(--borde-fuerte);
   transition: background-color var(--t-media) var(--curva);
 }
-.resultado--ok { border-color: rgba(47, 208, 122, .45); background: var(--ok-suave); }
+.resultado--ok { background: rgba(47, 208, 122, .09); }
 .resultado--ok::before { background: var(--ok); }
-.resultado--error { border-color: rgba(255, 85, 102, .45); background: var(--error-suave); }
+.resultado--error { background: rgba(255, 85, 102, .09); }
 .resultado--error::before { background: var(--error); }
-.resultado--alerta { border-color: rgba(255, 197, 61, .45); background: var(--alerta-suave); }
+.resultado--alerta { background: rgba(255, 197, 61, .09); }
 .resultado--alerta::before { background: var(--alerta); }
 /* Guardada sin conexión: la persona pasa, pero la entrada aún no está cobrada.
    El borde discontinuo lo distingue de un cobro confirmado sin leer el texto. */
-.resultado--guardada { border-color: var(--acento-borde); border-style: dashed; background: var(--acento-suave); }
+/* Guardada sin conexión: la franja de arriba va a trazos en vez de continua.
+   Se distingue de un cobro confirmado sin tener que leer el texto. */
+.resultado--guardada { background: rgba(61, 254, 64, .07); }
 .resultado--guardada::before { background: repeating-linear-gradient(90deg, var(--acento) 0 10px, transparent 10px 18px); }
 .resultado__icono { display: grid; place-items: center; font-size: 2.4rem; line-height: 1; color: var(--texto-2); }
 .resultado--ok .resultado__icono { color: var(--ok); }
@@ -937,7 +946,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .resultado__titulo { font-size: clamp(1.25rem, 4vw, 1.55rem); font-weight: 800; letter-spacing: -0.02em; }
 .resultado__detalle { color: var(--texto-2); }
 .resultado__restantes {
-  font-size: clamp(2.6rem, 9vw, 3.6rem);
+  font-size: clamp(3.4rem, 13vw, 5rem);
   font-weight: 900; line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
@@ -949,8 +958,8 @@ fieldset { border: 0; margin: 0; padding: 0; }
 
 .tabla-envoltura {
   overflow-x: auto;
-  border-radius: var(--radio-s);
-  border: 1px solid var(--borde);
+  border-radius: 0;
+  border: 0;
   /* Sin esto, dentro de una rejilla la tabla estira la página en vez de
      desplazarse por dentro: los elementos de grid no encogen por debajo de su
      contenido a menos que se les permita. */
@@ -959,16 +968,19 @@ fieldset { border: 0; margin: 0; padding: 0; }
 }
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 thead th {
-  text-align: left; padding: 11px 14px;
-  background: var(--fondo-2);
+  text-align: left; padding: 0 14px 12px;
+  background: transparent;
   color: var(--texto-3);
   font-family: var(--mono);
   font-size: .68rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: var(--tracking-etiqueta);
-  border-bottom: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde-fuerte);
   white-space: nowrap;
 }
-tbody td { padding: 12px 14px; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+tbody td { padding: 16px 14px; border-bottom: 1px solid rgba(255, 255, 255, .07); vertical-align: middle; }
+/* La primera y la última columna se alinean con el resto de la página. */
+thead th:first-child, tbody td:first-child { padding-left: 2px; }
+thead th:last-child, tbody td:last-child { padding-right: 2px; }
 tbody tr:last-child td { border-bottom: 0; }
 /* La fila señalada se marca con un filo de acento a la izquierda en vez de un
    fondo distinto: se distingue sin alterar el contraste del texto. */
@@ -977,19 +989,31 @@ tbody tr:hover { background: rgba(255, 255, 255, .025); box-shadow: inset 2px 0 
 td.mono, .mono { font-family: var(--mono); font-size: .88em; letter-spacing: .02em; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
-.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 .lista__item {
-  display: flex; gap: 12px; align-items: center;
-  padding: 12px 14px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-s);
-  background: var(--fondo-2);
-  transition: border-color var(--t-rapida) var(--curva), background-color var(--t-rapida) var(--curva), transform var(--t-rapida) var(--curva);
+  display: flex; gap: 14px; align-items: center;
+  padding: 15px 4px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 0;
+  background: none;
+  transition:
+    background-color var(--t-media) var(--curva),
+    box-shadow var(--t-media) var(--curva),
+    padding-left var(--t-media) var(--curva);
 }
-.lista__item:hover { border-color: var(--borde-fuerte); background: var(--superficie); }
-.lista__item--rechazada { border-color: rgba(255, 85, 102, .45); background: var(--error-suave); }
+/* La primera fila no lleva línea: la del bloque que la contiene ya está ahí. */
+.lista__item:first-child { border-top: 0; }
+/* Al pasar por encima, la fila se desplaza un poco y enciende una marca de
+   acento a la izquierda. Es el mismo gesto en toda la interfaz. */
+.lista__item:hover {
+  background: rgba(255, 255, 255, .035);
+  box-shadow: inset 2px 0 0 var(--acento);
+  padding-left: 14px;
+}
+.lista__item--rechazada { box-shadow: inset 2px 0 0 var(--error); background: rgba(255, 85, 102, .06); }
 .aviso--sin-conexion { margin-bottom: var(--e3); }
-.lista__item--nuevo { animation: aparecer var(--t-lenta) var(--curva); border-color: rgba(47, 208, 122, .5); }
+.lista__item--nuevo { animation: aparecer var(--t-lenta) var(--curva); box-shadow: inset 2px 0 0 var(--ok); }
 @keyframes aparecer { from { opacity: 0; transform: translateY(-9px); } to { opacity: 1; transform: none; } }
 
 /* --------------------------------------------------------------------------
@@ -997,29 +1021,25 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
    -------------------------------------------------------------------------- */
 
 .pestanas {
-  display: flex; gap: 6px;
-  padding: 5px;
-  background: rgba(14, 20, 15, 0.85);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-s);
-  margin-bottom: var(--e4);
+  display: flex; gap: clamp(16px, 2.8vw, 38px);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  border-radius: 0;
+  margin-bottom: var(--e5);
   overflow-x: auto;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 .pestana {
   position: relative;
-  flex: 1 1 auto; min-width: max-content;
-  padding: 10px 18px;
-  border: 1px solid transparent;
-  border-radius: var(--radio-xs);
-  background: transparent;
-  color: var(--texto-3);
-  font: inherit;
-  font-size: .8rem;
-  font-weight: 700;
-  letter-spacing: .065em;
-  text-transform: uppercase;
+  flex: 0 0 auto; min-width: max-content;
+  padding: 15px 2px 14px;
+  border: 0; border-radius: 0;
+  background: transparent; color: var(--texto-3);
+  font-family: var(--mono); font-size: .76rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: var(--tracking-etiqueta);
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -1037,13 +1057,15 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border-color: rgba(255, 255, 255, .16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 14px rgba(0, 0, 0, .35);
 }
+.pestana:hover { color: var(--texto-2); background: none; }
+.pestana[aria-selected="true"] { background: none; color: var(--texto); }
+/* Subrayado de acento que crece al seleccionar: dice cuál está activa sin
+   depender solo del cambio de fondo. */
 .pestana[aria-selected="true"]::after {
   content: '';
-  position: absolute; left: 14%; right: 14%; bottom: 0px;
+  position: absolute; left: 0; right: 0; bottom: -1px;
   height: 2px;
   background: var(--acento);
-  border-radius: 999px;
-  box-shadow: 0 0 10px var(--acento), 0 0 20px var(--acento);
   animation: crecerLinea var(--t-media) var(--curva);
   transform-origin: center;
 }
@@ -1164,7 +1186,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 /* Entrada de los bloques: aparecen de abajo arriba al entrar en pantalla.
    La clase la pone JavaScript (ver shell.js), nunca el HTML: sin JavaScript
    todo se ve igual, en su sitio y opaco. */
-@keyframes entrarBloque { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes entrarBloque { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
 .revelar { opacity: 0; }
 /* La opacidad se fija aquí y no solo en el fotograma final de la animación:
    si otra regla de `animation` pisa a esta —los paneles de pestaña tienen la
@@ -1174,15 +1196,21 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 /* Cambiar de pestaña no es un salto: el panel nuevo entra desde abajo. Basta
    con la animación, porque el panel pasa de `display:none` a visible y los
    paneles de la ficha se vuelven a crear enteros. */
-@keyframes entrarPanel { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes entrarPanel { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 [role="tabpanel"]:not([hidden]),
 #ficha-panel > * { animation: entrarPanel var(--t-media) var(--curva); }
+/* Justo debajo de las pestañas ya hay una línea: el primer bloque del panel no
+   añade otra ni el aire que la acompaña. */
+[role="tabpanel"] > .tarjeta:first-child,
+[role="tabpanel"] > .rejilla:not(.rejilla--metricas):first-child > .tarjeta:first-child { border-top: 0; padding-top: 0; }
 
 /* En pantallas muy estrechas los elementos de lista se apilan en vez de
    comprimir el texto hasta hacerlo ilegible. */
 @media (max-width: 480px) {
   .lista__item { flex-wrap: wrap; }
-  .lista__item > .crece { flex-basis: 100%; }
+  /* El icono se queda junto al texto y lo que baja de línea es la etiqueta del
+     final: separar el icono del renglón que explica dejaba una fila coja. */
+  .lista__item > .crece { flex: 1 1 62%; }
   .recuperar__acciones { width: 100%; }
   .recuperar__acciones .boton { flex: 1 1 auto; }
 }
@@ -1190,13 +1218,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 @media (max-width: 640px) {
   .barra__interior { min-height: 54px; }
   .barra__marca span:last-child { font-size: .95rem; }
-  .tarjeta { padding: 16px; }
-  .encabezado-pista {
-    min-height: 104px;
-    background-image:
-      linear-gradient(90deg, rgba(0, 0, 0, .96) 0%, rgba(0, 0, 0, .82) 68%, rgba(0, 0, 0, .5) 100%),
-      url('/images/racing-hobbies-pista-rc.webp');
-  }
+  .encabezado-pista::before { animation-name: trazarLineaCorta; }
+  @keyframes trazarLineaCorta { to { width: 62%; } }
 }
 
 /* En pantallas estrechas el estado de conexión se reduce al punto de color y
@@ -1370,13 +1393,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   position: relative;
   overflow: hidden;
   display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;
-  padding: clamp(18px, 3vw, 26px);
-  border-radius: var(--radio);
-  border: 1px solid var(--borde);
-  background:
-    radial-gradient(700px 220px at 0% 0%, rgba(61, 254, 64, .09), transparent 70%),
-    var(--superficie);
-  box-shadow: var(--sombra-baja);
+  padding: clamp(18px, 2.6vw, 26px) 0 clamp(20px, 3vw, 30px) 22px;
+  border: 0;
+  border-top: 1px solid var(--borde);
+  border-radius: 0;
+  background: radial-gradient(700px 220px at 0% 0%, rgba(61, 254, 64, .07), transparent 70%);
+  box-shadow: none;
 }
 .ficha__cabecera::before {
   content: '';
@@ -1528,11 +1550,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .ajustes-grupo legend { margin-bottom: 10px; font-family: var(--mono); font-size: .72rem; font-weight: 500; text-transform: uppercase; letter-spacing: var(--tracking-etiqueta); color: var(--texto-3); }
 .opcion-aviso {
   display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: start;
-  padding: 12px 14px;
-  border: 1px solid var(--borde); border-radius: var(--radio-s); background: var(--fondo-2);
-  transition: border-color var(--t-rapida) var(--curva);
+  padding: 14px 2px;
+  border: 0; border-bottom: 1px solid rgba(255, 255, 255, .07); border-radius: 0; background: none;
+  transition: background-color var(--t-rapida) var(--curva);
 }
-.opcion-aviso:hover { border-color: var(--borde-fuerte); }
+.opcion-aviso:hover { background: rgba(255, 255, 255, .03); }
 .opcion-aviso input { margin-top: 1px; }
 .opcion-aviso label { display: grid; gap: 3px; cursor: pointer; }
 .opcion-aviso__nombre { font-weight: 650; }
@@ -1698,55 +1720,61 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   .pagina-entrada .entrada__media-marca { min-height: 240px; }
 }
 
-/* Selector de cantidad para escaneo en grupo */
+/* Selector de cantidad para escaneo en grupo: una fila de teclas, sin caja
+   alrededor. El rótulo va como el resto de los rótulos técnicos. */
 .selector-cantidad {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  padding: 8px 12px;
-  background: var(--fondo-2);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-s);
+  padding: 0 0 var(--e3);
+  background: none;
+  border: 0;
+  border-radius: 0;
 }
 
 .selector-cantidad__etiqueta {
-  font-size: .88rem;
-  color: var(--texto-2);
-  font-weight: 600;
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-etiqueta);
+  color: var(--texto-3);
 }
 
 .selector-cantidad__opciones {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .btn-cantidad {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  height: 38px;
+  min-width: 44px;
+  height: 44px;
   padding: 0 10px;
-  border-radius: var(--radio-xs);
-  border: 1px solid var(--borde-fuerte);
-  background: var(--superficie);
-  color: var(--texto);
-  font-weight: 700;
+  border-radius: 0;
+  border: 1px solid var(--borde-campo);
+  background: transparent;
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-weight: 500;
   font-size: .95rem;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: border-color var(--transicion), color var(--transicion), background-color var(--transicion);
 }
 
 .btn-cantidad:hover {
   border-color: var(--acento);
+  color: var(--texto);
 }
 
-.btn-cantidad.activo,
-.activo {
+/* La cantidad elegida se rellena de acento: en la puerta se ve de un vistazo
+   cuántas entradas va a descontar el siguiente escaneo. */
+.btn-cantidad.activo {
   background: var(--acento);
   color: #000;
   border-color: var(--acento);
-  box-shadow: 0 0 10px rgba(61, 254, 64, .25);
 }
 
