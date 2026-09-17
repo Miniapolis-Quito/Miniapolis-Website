@@ -2288,7 +2288,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   position: relative;
 }
 
-.entrada__foto--hud {
+.entrada__foto--hud,
+.entrada__media-foto--hud {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
