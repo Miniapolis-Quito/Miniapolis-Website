@@ -500,9 +500,10 @@ export function montarOndaBotones() {
 // ---------------------------------------------------------------------------
 
 /**
- * Inclinación 3D suave en tarjetas y figuras fotográficas bajo el ratón.
+ * Inclinación 3D sutil para tarjetas explícitas, con retorno suavizado.
+ * Las fotografías quedan fuera para preservar su perspectiva natural.
  */
-export function montarInclinacion3D(selector = '.pagina-entrada figure, .entrada__media-destacada') {
+export function montarInclinacion3D(selector = '.con-inclinacion-3d') {
   if (sinMovimiento() || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
   const elementos = [...document.querySelectorAll(selector)].filter((el) => !yaHecho(el, 'inclinacion3d'));
   for (const elem of elementos) {
@@ -513,11 +514,13 @@ export function montarInclinacion3D(selector = '.pagina-entrada figure, .entrada
       const y = (e.clientY - rect.top) / rect.height - 0.5;
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        elem.style.transform = `perspective(1000px) rotateX(${(-y * 5).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg) scale3d(1.012, 1.012, 1.012)`;
+        elem.style.transition = 'none';
+        elem.style.transform = `perspective(1000px) rotateX(${(-y * 2.5).toFixed(2)}deg) rotateY(${(x * 3).toFixed(2)}deg) scale3d(1.008, 1.008, 1.008)`;
       });
     };
     const alSalir = () => {
       if (rafId) cancelAnimationFrame(rafId);
+      elem.style.transition = 'transform 650ms cubic-bezier(0.16, 1, 0.3, 1)';
       elem.style.transform = '';
     };
     elem.addEventListener('mousemove', alMover, { passive: true });
