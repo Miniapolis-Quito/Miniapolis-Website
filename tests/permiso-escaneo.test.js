@@ -192,7 +192,12 @@ test('conceder y retirar el escáner queda en la bitácora con su propio nombre'
   const { cMaster, staff } = await sembrarUsuarios();
   const acciones = () =>
     getDb()
-      .prepare("SELECT action FROM audit_log WHERE entity_id = ? AND action LIKE 'usuario.escaneo%' ORDER BY created_at")
+      // `created_at` va en milisegundos y estos dos apuntes se escriben casi a
+      // la vez: sin el desempate por `rowid` el orden es el que quiera SQLite.
+      // Es el mismo criterio que usa la consulta de la bitácora en producción.
+      .prepare(
+        "SELECT action FROM audit_log WHERE entity_id = ? AND action LIKE 'usuario.escaneo%' ORDER BY created_at, rowid",
+      )
       .all(staff.id)
       .map((f) => f.action);
 
