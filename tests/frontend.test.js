@@ -198,21 +198,21 @@ test('cada página carga los módulos que sus scripts necesitan', () => {
 });
 
 /**
- * Todo el producto se pinta sobre el mismo papel: portada, entradas, puerta y
- * administración. El `theme-color` de cada pantalla tiene que ser ese papel,
- * porque si declara otro color el teléfono pinta una franja ajena encima de la
- * página.
+ * Todo el producto se pinta sobre el negro de la marca: portada, entradas,
+ * puerta y administración. El `theme-color` de cada pantalla tiene que ser ese
+ * negro, porque si declara otro color el teléfono pinta una franja ajena
+ * encima de la página.
  */
 const PORTADA = 'public/index.html';
-const PAPEL = '#faf9f6';
+const PAPEL = '#000000';
 
-test('todas las pantallas comparten el papel y la hoja de estilos de la marca', () => {
+test('todas las pantallas se pintan sobre el negro de la marca', () => {
   for (const html of [...Object.keys(PAGINAS), 'public/404.html']) {
     const src = leer(html);
     assert.match(
       src,
       new RegExp(`<meta name="theme-color" content="${PAPEL}">`),
-      `${html} debe declarar el papel que de verdad pinta`,
+      `${html} debe declarar el negro que de verdad pinta`,
     );
     assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/, `${html} debe cargar los estilos de marca`);
   }
