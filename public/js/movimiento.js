@@ -115,9 +115,8 @@ export function revelarTitulares(selector = '[data-titular]') {
 // ---------------------------------------------------------------------------
 
 /**
- * Las fotos se descubren con una cortinilla que sube, y la imagen de dentro
- * termina de asentarse desde una escala un poco mayor. Es el gesto de una
- * bandera que se levanta, no un desvanecido.
+ * Las fotos se descubren con una transición suave y delicada: desvanecido
+ * sutil, elevación contenida y un levísimo reescalado de llegada.
  */
 export function revelarFiguras(selector = '.pagina-entrada figure') {
   if (sinMovimiento() || typeof IntersectionObserver !== 'function') return;
@@ -137,7 +136,7 @@ export function revelarFiguras(selector = '.pagina-entrada figure') {
         retraso += ESCALON_MS;
       }
     },
-    { rootMargin: '0px 0px -6% 0px', threshold: 0.08 },
+    { rootMargin: '0px 0px -4% 0px', threshold: 0.08 },
   );
   for (const figura of figuras) observador.observe(figura);
 
@@ -147,17 +146,16 @@ export function revelarFiguras(selector = '.pagina-entrada figure') {
 }
 
 /**
- * Paralaje: la imagen se mueve algo más despacio que la página dentro de su
- * propio marco. Muy poco —unos píxeles—, lo justo para que la página tenga
- * profundidad sin que nadie se maree.
+ * Paralaje sutil: micro-desvío suave y delicado dentro del marco para
+ * dar sensación de profundidad y acabado premium sin saltos ni mareos.
  */
 export function montarParalaje(selector = '.pagina-entrada figure img') {
   if (sinMovimiento()) return;
   const imagenes = [...document.querySelectorAll(selector)].filter((n) => !yaHecho(n, 'paralajeMontado'));
   if (imagenes.length === 0) return;
 
-  /** Recorrido total del efecto, en píxeles. */
-  const RECORRIDO = 26;
+  /** Recorrido total del efecto, en píxeles (muy sutil y delicado). */
+  const RECORRIDO = 10;
   let pendiente = false;
 
   const colocar = () => {
@@ -170,12 +168,6 @@ export function montarParalaje(selector = '.pagina-entrada figure img') {
       const avance = (alto - caja.top) / (alto + caja.height);
       const desvio = (avance - 0.5) * -RECORRIDO;
       imagen.style.setProperty('--paralaje', `${desvio.toFixed(2)}px`);
-      // Mientras corre la cortinilla manda su transición; en cuanto termina,
-      // el paralaje pasa a ir pegado al desplazamiento.
-      if (!imagen.dataset.paralaje && imagen.closest('figure')?.classList.contains('figura-revela--visible')) {
-        imagen.dataset.paralaje = 'esperando';
-        setTimeout(() => { imagen.dataset.paralaje = '1'; }, 1200);
-      }
     }
   };
 
