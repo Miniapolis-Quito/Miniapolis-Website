@@ -30,6 +30,17 @@ const MASTER = {
   email: process.env.MASTER_EMAIL || 'admin@racinghobbies.ec',
   password: process.env.MASTER_PASSWORD || 'Pista-RC-Master-2026',
 };
+
+/**
+ * Esta prueba se puede repetir sobre el mismo servidor, y el sistema no deja
+ * registrar dos veces el mismo correo. En vez de ir a la base a borrar lo de
+ * la vez anterior —que además es la base de quien esté ejecutando esto—, cada
+ * ejecución se inventa sus propios correos. No hay nada que limpiar después.
+ */
+const SELLO = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const CLIENTE_EMAIL = `piloto+${SELLO}@ejemplo.com`;
+const STAFF_EMAIL = `pista+${SELLO}@ejemplo.com`;
+
 const errores = [];
 const pasosFallidos = [];
 let pasosTotales = 0;
@@ -69,7 +80,7 @@ await paso('carga login', async () => {
 await paso('registro de cliente', async () => {
   await pagina.click('#pestana-registro');
   await pagina.fill('#registro-nombre', 'Carlos Piloto');
-  await pagina.fill('#registro-email', 'piloto@ejemplo.com');
+  await pagina.fill('#registro-email', CLIENTE_EMAIL);
   await pagina.fill('#registro-telefono', '+593 99 888 7766');
   await pagina.fill('#registro-password', 'Nitro-Buggy-2026!');
   await pagina.click('#form-registro button[type=submit]');
@@ -130,7 +141,7 @@ await paso('máster crea personal de pista', async () => {
   await paginaAdmin.click('#btn-nuevo-usuario');
   await paginaAdmin.waitForSelector('#dialogo-usuario[open]');
   await paginaAdmin.fill('#usuario-nombre', 'Operador Pista');
-  await paginaAdmin.fill('#usuario-email', 'pista@racinghobbies.ec');
+  await paginaAdmin.fill('#usuario-email', STAFF_EMAIL);
   await paginaAdmin.selectOption('#usuario-rol', 'staff');
   await paginaAdmin.fill('#usuario-password', 'Chicane-Nocturna-77');
   await paginaAdmin.click('#form-usuario button[type=submit]');
@@ -144,7 +155,7 @@ paginaStaff.on('console', (m) => { if (m.type() === 'error') errores.push('staff
 
 await paso('login del personal y acceso al escáner', async () => {
   await paginaStaff.goto(B, { waitUntil: 'domcontentloaded' });
-  await paginaStaff.fill('#entrar-email', 'pista@racinghobbies.ec');
+  await paginaStaff.fill('#entrar-email', STAFF_EMAIL);
   await paginaStaff.fill('#entrar-password', 'Chicane-Nocturna-77');
   await paginaStaff.click('#form-entrar button[type=submit]');
   await paginaStaff.waitForURL('**/escanear', { timeout: 15000 });
