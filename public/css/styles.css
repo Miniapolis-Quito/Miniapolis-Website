@@ -2,16 +2,15 @@
    Miniápolis #3 — sistema de entradas
 
    Una sola hoja para todo el producto: portada, entradas del cliente, puerta
-   y administración. El lenguaje visual es el de un impreso bien hecho —papel
-   claro, tinta oscura, retícula ancha y una única familia tipográfica—, no el
-   de un tablero de telemetría.
+   y administración. Los colores son los de la marca: el negro del lienzo y el
+   verde de la bandera. Nada más compite con ellos.
 
    Tres reglas que ordenan todo lo demás:
 
-     1. El color se reserva para el estado (lo hecho, lo que avisa, lo que
-        falla). Ningún adorno gasta color.
-     2. La jerarquía es de tamaño y de espacio, no de brillo: nada resplandece,
-        nada simula relieve más allá de una sombra de un píxel.
+     1. El verde señala, no decora: acción principal, dato vivo, foco y
+        estado correcto. Ámbar y rojo quedan para lo que avisa y lo que falla.
+     2. La jerarquía es de tamaño y de espacio, no de brillo: nada resplandece
+        ni simula relieve; las superficies se separan con una línea de 1px.
      3. Se mueve lo justo para explicar un cambio, nunca para llamar la
         atención.
    ========================================================================== */
@@ -24,50 +23,54 @@
 }
 
 :root {
-  /* --- Lienzo ---------------------------------------------------------- */
-  --fondo: #faf9f6;
-  --fondo-2: #f3f2ed;
-  --superficie: #ffffff;
-  --superficie-2: #f7f6f2;
+  /* --- Lienzo ----------------------------------------------------------- */
+  /* El negro de la marca es el fondo; encima, dos superficies apenas más
+     claras ordenan la profundidad sin introducir ningún gris nuevo. */
+  --fondo: #000000;
+  --fondo-2: #0b0c0d;
+  --superficie: #0e1011;
+  --superficie-2: #16191b;
 
-  --borde: #e6e4dc;
-  --borde-fuerte: #d3d0c6;
-  /* Contorno de los campos y de los botones: tiene que llegar solo a 3:1
-     sobre el papel para que se vea dónde se escribe. Este llega a 3,3:1. */
-  --borde-campo: #8e8a80;
+  --borde: #25292b;
+  --borde-fuerte: #454b4f;
+  /* Contorno de los campos y de los botones: llega solo a 3,1:1 sobre la
+     superficie para que se vea dónde se escribe. */
+  --borde-campo: #5e6469;
 
-  /* --- Tinta ------------------------------------------------------------ */
-  --texto: #1b1d1f;
-  --texto-2: #4b5057;
-  /* 4,5:1 sobre el papel: el texto de apoyo también se lee a pleno sol. */
-  --texto-3: #6e737a;
+  /* --- Tipos ------------------------------------------------------------ */
+  --texto: #f4f6f3;
+  --texto-2: #b4babd;
+  /* 5,4:1 sobre el negro: el texto de apoyo también se lee a pleno sol. */
+  --texto-3: #8b9296;
 
   /* --- Acento ----------------------------------------------------------- */
-  /* El verde de la marca es un neón pensado para el negro; sobre papel se usa
-     su versión profunda, que llega a 5,5:1 y sigue siendo el mismo verde. */
-  --acento: #10693f;
-  --acento-2: #0c5233;
-  --acento-suave: #ecf4ef;
-  --acento-borde: #bcd8c8;
+  /* El verde oficial, tal cual. Sobre el negro llega a 14:1, así que sirve
+     igual para un rótulo pequeño que para el relleno de una acción. */
+  --acento: #3dfe40;
+  --acento-2: #7dff7f;
+  --acento-suave: rgba(61, 254, 64, .1);
+  --acento-borde: rgba(61, 254, 64, .38);
+  /* Lo que se escribe encima del verde macizo: el negro del lienzo. */
+  --sobre-acento: #05090a;
 
-  --ok: #10693f;
-  --ok-suave: #ecf4ef;
-  --alerta: #8a5b00;
-  --alerta-suave: #fdf3e0;
-  --error: #ad2a20;
-  --error-suave: #fbeceb;
-  --info: #10693f;
+  --ok: #3dfe40;
+  --ok-suave: rgba(61, 254, 64, .1);
+  --alerta: #ffc53d;
+  --alerta-suave: rgba(255, 197, 61, .1);
+  --error: #ff6f68;
+  --error-suave: rgba(255, 111, 104, .12);
+  --info: #3dfe40;
 
   /* --- Forma ------------------------------------------------------------ */
   --radio: 14px;
   --radio-s: 10px;
   --radio-xs: 7px;
 
-  /* Sombras de un solo píxel de intención: separan una capa de la de abajo y
-     nunca fingen volumen. */
-  --sombra-baja: 0 1px 2px rgba(27, 29, 31, .04);
-  --sombra: 0 1px 2px rgba(27, 29, 31, .04), 0 12px 32px -18px rgba(27, 29, 31, .28);
-  --sombra-alta: 0 24px 60px -24px rgba(27, 29, 31, .32);
+  /* Sobre negro una sombra casi no se ve: lo que separa una capa de la de
+     abajo es su línea. La sombra solo acompaña a lo que de verdad flota. */
+  --sombra-baja: none;
+  --sombra: 0 18px 40px -24px rgba(0, 0, 0, .9);
+  --sombra-alta: 0 30px 70px -20px rgba(0, 0, 0, .95);
 
   /* --- Movimiento ------------------------------------------------------- */
   --curva: cubic-bezier(0.22, 1, 0.36, 1);
@@ -88,7 +91,9 @@
   --fuente: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
-  color-scheme: light;
+  /* Los controles que dibuja el navegador —el calendario de una fecha, la
+     lista de un desplegable, la barra de desplazamiento— también en oscuro. */
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -130,7 +135,7 @@ p  { margin: 0 0 1em; }
 a { color: var(--acento); text-underline-offset: 3px; text-decoration-thickness: 1px; }
 a:hover { color: var(--acento-2); }
 
-::selection { background: var(--acento-suave); color: var(--acento-2); }
+::selection { background: var(--acento); color: var(--sobre-acento); }
 
 * { scrollbar-width: thin; scrollbar-color: var(--borde-fuerte) transparent; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -148,7 +153,7 @@ a:hover { color: var(--acento-2); }
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(250, 249, 246, .93);
+  background: rgba(0, 0, 0, .94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--borde);
@@ -230,7 +235,7 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
   background: var(--superficie);
   box-shadow: var(--sombra-baja);
 }
-.tarjeta--atencion { border-color: #edc9c5; background: var(--error-suave); }
+.tarjeta--atencion { border-color: rgba(255, 111, 104, .4); background: var(--error-suave); }
 
 .tarjeta__titulo {
   display: flex; align-items: baseline; justify-content: space-between;
@@ -273,7 +278,7 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
   line-height: .95;
   letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
-  color: var(--texto);
+  color: var(--acento);
 }
 .saldo__texto {
   color: var(--texto-3);
@@ -325,14 +330,14 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
 /* Acción principal: el verde de la marca, macizo y sin degradado. */
 .boton--principal {
   --bg: var(--acento);
-  --fg: #fff;
+  --fg: var(--sobre-acento);
   --bd: var(--acento);
   font-weight: 600;
 }
 .boton--principal:hover:not(:disabled) { --bg: var(--acento-2); --bd: var(--acento-2); }
 .boton--fantasma { --bg: transparent; --bd: var(--borde-fuerte); --fg: var(--texto-2); box-shadow: none; }
 .boton--fantasma:hover:not(:disabled) { --bg: var(--superficie-2); --bd: var(--borde-campo); --fg: var(--texto); }
-.boton--peligro { --bg: transparent; --fg: var(--error); --bd: #e8c2be; box-shadow: none; }
+.boton--peligro { --bg: transparent; --fg: var(--error); --bd: rgba(255, 111, 104, .4); box-shadow: none; }
 .boton--peligro:hover:not(:disabled) { --bg: var(--error-suave); --bd: var(--error); }
 .boton--ok { --bg: transparent; --fg: var(--ok); --bd: var(--acento-borde); box-shadow: none; }
 .boton--ok:hover:not(:disabled) { --bg: var(--ok-suave); --bd: var(--ok); }
@@ -461,9 +466,9 @@ fieldset { border: 0; margin: 0; padding: 0; }
   font-size: .94rem;
 }
 .aviso:empty { display: none; }
-.aviso--error  { border-color: #edc9c5; border-left-color: var(--error); background: var(--error-suave); color: #7d1c15; }
-.aviso--ok     { border-color: var(--acento-borde); border-left-color: var(--ok); background: var(--ok-suave); color: var(--acento-2); }
-.aviso--alerta { border-color: #efdcb4; border-left-color: var(--alerta); background: var(--alerta-suave); color: #6d4700; }
+.aviso--error  { border-color: rgba(255, 111, 104, .35); border-left-color: var(--error); background: var(--error-suave); color: #ffc9c5; }
+.aviso--ok     { border-color: var(--acento-borde); border-left-color: var(--ok); background: var(--ok-suave); color: #b9ffba; }
+.aviso--alerta { border-color: rgba(255, 197, 61, .35); border-left-color: var(--alerta); background: var(--alerta-suave); color: #ffe6a6; }
 
 .etiqueta {
   display: inline-flex; align-items: center; gap: 6px;
@@ -477,8 +482,8 @@ fieldset { border: 0; margin: 0; padding: 0; }
   white-space: nowrap;
 }
 .etiqueta--ok     { color: var(--ok); border-color: var(--acento-borde); background: var(--ok-suave); }
-.etiqueta--alerta { color: var(--alerta); border-color: #efdcb4; background: var(--alerta-suave); }
-.etiqueta--error  { color: var(--error); border-color: #edc9c5; background: var(--error-suave); }
+.etiqueta--alerta { color: var(--alerta); border-color: rgba(255, 197, 61, .35); background: var(--alerta-suave); }
+.etiqueta--error  { color: var(--error); border-color: rgba(255, 111, 104, .35); background: var(--error-suave); }
 .etiqueta--info   { color: var(--acento); border-color: var(--acento-borde); background: var(--acento-suave); }
 
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--borde-fuerte); flex: none; }
@@ -622,7 +627,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .escaner__mira {
   position: relative;
   width: min(64%, 300px); aspect-ratio: 1;
-  box-shadow: 0 0 0 100vmax rgba(10, 11, 12, .45);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .55);
   border-radius: var(--radio-s);
   --mira: rgba(255, 255, 255, .92);
 }
@@ -636,8 +641,8 @@ fieldset { border: 0; margin: 0; padding: 0; }
 }
 .escaner__mira::before { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: var(--radio-s) 0 0 0; }
 .escaner__mira::after { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 var(--radio-s) 0; }
-.escaner__mira--ok { --mira: #55d494; }
-.escaner__mira--error { --mira: #ff8a80; }
+.escaner__mira--ok { --mira: var(--acento); }
+.escaner__mira--error { --mira: var(--error); }
 
 /* El resultado de la puerta: se lee a un brazo de distancia y con prisa, así
    que manda el color de fondo y el tamaño del número. */
@@ -654,8 +659,8 @@ fieldset { border: 0; margin: 0; padding: 0; }
   transition: border-color var(--t-media) var(--curva), background-color var(--t-media) var(--curva);
 }
 .resultado--ok       { background: var(--ok-suave); border-color: var(--acento-borde); }
-.resultado--error    { background: var(--error-suave); border-color: #edc9c5; }
-.resultado--alerta   { background: var(--alerta-suave); border-color: #efdcb4; }
+.resultado--error    { background: var(--error-suave); border-color: rgba(255, 111, 104, .4); }
+.resultado--alerta   { background: var(--alerta-suave); border-color: rgba(255, 197, 61, .4); }
 .resultado--guardada { background: var(--superficie-2); border-color: var(--borde-fuerte); border-style: dashed; }
 .resultado__icono { display: grid; place-items: center; font-size: 2.1rem; line-height: 1; color: var(--texto-3); }
 .resultado--ok .resultado__icono       { color: var(--ok); }
@@ -698,7 +703,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .btn-cantidad:hover { border-color: var(--texto-3); color: var(--texto); }
 /* La cantidad elegida se rellena: en la puerta se ve de un vistazo cuántas
    entradas va a descontar el siguiente escaneo. */
-.btn-cantidad.activo { background: var(--acento); border-color: var(--acento); color: #fff; }
+.btn-cantidad.activo { background: var(--acento); border-color: var(--acento); color: var(--sobre-acento); }
 
 /* --------------------------------------------------------------------------
    Tablas y listas
@@ -774,7 +779,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   content: '';
   position: absolute; left: 0; right: 0; bottom: -1px;
   height: 2px;
-  background: var(--texto);
+  background: var(--acento);
 }
 
 .pestanas--grupos { margin-bottom: var(--e3); }
@@ -802,7 +807,7 @@ dialog[open] { animation: entrarModal var(--t-media) var(--curva); }
   from { opacity: 0; transform: translateY(8px) scale(.99); }
   to { opacity: 1; transform: none; }
 }
-dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px); }
+dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .dialogo-ancho { width: min(720px, calc(100vw - 26px)); }
 .modal__cuerpo { padding: clamp(18px, 3vw, 26px); overflow-y: auto; max-height: calc(100dvh - 120px); }
 .modal__cuerpo > h2:first-child { margin-bottom: var(--e3); }
@@ -894,7 +899,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
 .grafico { display: flex; align-items: flex-end; gap: 5px; height: 104px; padding-bottom: 1px; border-bottom: 1px solid var(--borde); }
 .grafico__barra {
   flex: 1;
-  background: var(--acento-borde);
+  background: rgba(61, 254, 64, .45);
   border-radius: 3px 3px 0 0;
   min-height: 2px;
   transform-origin: bottom;
@@ -968,8 +973,8 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
   color: var(--acento-2);
   background: var(--acento-suave);
 }
-.avatar--staff { background: var(--fondo-2); color: var(--texto-2); }
-.avatar--master { background: var(--acento); color: #fff; }
+.avatar--staff { background: var(--superficie-2); color: var(--texto-2); }
+.avatar--master { background: var(--acento); color: var(--sobre-acento); }
 
 .ficha__identidad { display: grid; gap: 4px; min-width: 220px; flex: 1 1 260px; }
 .ficha__nombre { font-size: clamp(1.3rem, 3vw, 1.6rem); font-weight: 600; letter-spacing: -0.025em; line-height: 1.15; }
@@ -990,7 +995,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
 .semana__fila { display: grid; grid-template-columns: 78px 1fr 30px; align-items: center; gap: 12px; font-size: .86rem; }
 .semana__nombre { color: var(--texto-3); }
 .semana__barra { height: 8px; border-radius: 999px; background: var(--fondo-2); overflow: hidden; }
-.semana__relleno { height: 100%; background: var(--acento-borde); border-radius: 999px; transition: width var(--t-lenta) var(--curva); }
+.semana__relleno { height: 100%; background: rgba(61, 254, 64, .5); border-radius: 999px; transition: width var(--t-lenta) var(--curva); }
 .semana__valor { text-align: right; font-variant-numeric: tabular-nums; color: var(--texto-2); font-size: .84rem; }
 
 .tiempo { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
@@ -1013,7 +1018,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
 }
 .tiempo__icono--suma { border-color: var(--acento-borde); background: var(--ok-suave); color: var(--ok); }
 .tiempo__icono--resta { border-color: var(--borde-fuerte); background: var(--fondo-2); color: var(--texto-2); }
-.tiempo__icono--aviso { border-color: #efdcb4; background: var(--alerta-suave); color: var(--alerta); }
+.tiempo__icono--aviso { border-color: rgba(255, 197, 61, .4); background: var(--alerta-suave); color: var(--alerta); }
 .tiempo__cuerpo { display: grid; gap: 3px; align-content: start; min-width: 0; }
 .tiempo__titulo { font-weight: 600; }
 .tiempo__detalle { color: var(--texto-2); font-size: .88rem; }
@@ -1103,7 +1108,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
   top: 0;
   z-index: 20;
   border-bottom: 1px solid transparent;
-  background: rgba(250, 249, 246, .93);
+  background: rgba(0, 0, 0, .94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   transition: border-color var(--t-media) var(--curva), background-color var(--t-media) var(--curva);
@@ -1131,7 +1136,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
 .entrada__accion {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 18px;
-  border: 1px solid var(--borde-fuerte);
+  border: 1px solid rgba(255, 255, 255, .22);
   border-radius: 999px;
   background: var(--superficie);
   color: var(--texto);
@@ -1188,6 +1193,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
 .entrada__hero-aside { min-width: 0; }
 .entrada__hero-foto {
   margin: 0;
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
   overflow: hidden;
   background: var(--fondo-2);
@@ -1251,6 +1257,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
   height: auto;
   aspect-ratio: 3 / 2;
   object-fit: cover;
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo-2);
 }
@@ -1302,6 +1309,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
   aspect-ratio: 4 / 5;
   object-fit: cover;
   object-position: center 58%;
+  border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo-2);
 }
@@ -1443,7 +1451,7 @@ dialog::backdrop { background: rgba(27, 29, 31, .38); backdrop-filter: blur(3px)
   height: 2px;
   opacity: 0;
   pointer-events: none;
-  background: var(--texto);
+  background: var(--acento);
   transform: translateX(var(--x, 0));
   transition:
     transform 340ms var(--curva),
@@ -1588,6 +1596,8 @@ tbody tr:nth-child(n+9) { animation-delay: 192ms; }
   margin: 0 -6mm 5mm;
   padding: 5mm 6mm 4mm;
   background: #111;
+  /* El filete verde de la marca: lo único de color que lleva la hoja. */
+  border-bottom: 1.5mm solid #3dfe40;
 }
 .pase__marca { display: grid; place-items: center; }
 .pase__logo { display: block; width: 100%; max-width: 50mm; height: auto; }
@@ -1598,7 +1608,25 @@ tbody tr:nth-child(n+9) { animation-delay: 192ms; }
 .pase__pie { font-size: 8pt; margin-top: 3mm; color: #555; }
 
 @media print {
+  /* En papel no hay lienzo negro: los tipos vuelven a la tinta y las
+     superficies al blanco, o la hoja saldría en negativo. */
+  :root {
+    --fondo: #fff;
+    --fondo-2: #fff;
+    --superficie: #fff;
+    --superficie-2: #fff;
+    --texto: #000;
+    --texto-2: #333;
+    --texto-3: #555;
+    --borde: #ccc;
+    --borde-fuerte: #999;
+    --acento: #0b6b32;
+    --sombra: none;
+    --sombra-alta: none;
+  }
   body { background: #fff; color: #000; }
+  /* El velo del diálogo es una mancha de tinta en papel. */
+  dialog::backdrop { background: transparent; backdrop-filter: none; }
   /* Nada de lo que espera a entrar en pantalla puede salir en blanco en papel. */
   .revelar { opacity: 1 !important; }
   .figura-revela img, .figura-revela figcaption { opacity: 1 !important; transform: none !important; }
