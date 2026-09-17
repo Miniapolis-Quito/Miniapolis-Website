@@ -35,5 +35,5 @@ jobs:
             echo "Sin cambios para publicar."
           else
             git commit -m "deploy: actualiza GitHub Pages [skip ci]"
-            git push origin gh-pages
+            git push --force origin gh-pages
           fi
