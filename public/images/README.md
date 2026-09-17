@@ -48,12 +48,23 @@ material de origen aunque ninguna pantalla las use ahora mismo.
 ## Peso
 
 Estas imágenes las carga un teléfono en la pista, muchas veces con mala señal,
-así que van a 1600 px de ancho y en WebP. Si añades otra, pásala por el mismo
-aro antes de subirla:
+así que van en WebP y al doble del tamaño al que de verdad se muestran, no más:
+a partir de ahí solo se gastan datos. La receta, midiendo antes cuánto ocupa la
+imagen en pantalla:
 
 ```bash
-magick original.png -resize 1600x -strip -quality 80 nombre.webp
+magick original.webp -resize '1200x>' -strip -quality 80 nombre.webp
 ```
+
+Al cierre de septiembre de 2026 la portada pesaba 1,8 MB en la primera carga,
+casi todo fotografías exportadas a mucha más resolución de la que se ve: la
+panorámica se mostraba a 1100 px y la más grande llegaba a 449 KB. Ajustadas al
+doble de su tamaño en pantalla, la página quedó en 1,2 MB sin que la diferencia
+se aprecie (43 dB de PSNR comparadas al tamaño al que se ven).
+
+El atributo `width`/`height` del HTML tiene que coincidir con el archivo. Si no,
+el navegador reserva una proporción equivocada y la página pega un salto cuando
+la imagen termina de cargar.
 
 Y si una deja de usarse, quítala en vez de arrastrarla: cada clon del
 repositorio se la lleva entera. En septiembre de 2026 se retiraron por eso las
