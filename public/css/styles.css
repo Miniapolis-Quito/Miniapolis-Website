@@ -850,22 +850,40 @@ fieldset { border: 0; margin: 0; padding: 0; }
   background: #fff;
   border-radius: var(--radio-s);
   min-height: 210px;
+  /* La caja se ajusta al código. Ocupando todo el ancho de la tarjeta, el
+     código quedaba perdido en medio de un rectángulo blanco enorme y los
+     ángulos de la mira enmarcaban el vacío que había a los lados, no el QR.
+     El `min-width` sostiene la caja mientras el código aún no ha llegado. */
+  width: fit-content;
+  min-width: min(304px, 100%);
+  max-width: 100%;
+  margin-inline: auto;
 }
 /* Esquinas de enfoque sobre el blanco del código: lo enmarcan como una mira
    sin tocar la zona silenciosa que el lector necesita. */
+/* Cuatro esquinas, no dos. Con un ángulo arriba a la izquierda y otro abajo a
+   la derecha no se leía como una mira, sino como un marco a medio dibujar. Los
+   cuatro ángulos se pintan con degradados —dos por pseudoelemento— para no
+   añadir nodos al HTML. */
 .qr-caja::before,
 .qr-caja::after {
   content: '';
   position: absolute;
-  width: 22px; height: 22px;
-  border: 2px solid var(--acento);
+  right: 8px; left: 8px;
+  height: 22px;
   pointer-events: none;
+  background:
+    linear-gradient(var(--acento), var(--acento)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) right top / 2px 22px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) right top / 22px 2px no-repeat;
 }
-.qr-caja::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
-.qr-caja::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+.qr-caja::before { top: 8px; }
+/* Volteado, los dos ángulos de arriba sirven de ángulos de abajo. */
+.qr-caja::after { bottom: 8px; transform: scaleY(-1); }
 .qr-caja svg { display: block; width: min(268px, 62vw); height: auto; }
 .qr-caja--cargando { background: var(--superficie-2); }
-.qr-caja--cargando::before, .qr-caja--cargando::after { border-color: var(--borde-fuerte); }
+.qr-caja--cargando::before, .qr-caja--cargando::after { filter: grayscale(1) brightness(.6); }
 .qr-pie { text-align: center; color: var(--texto-3); font-size: .82rem; }
 .qr-cuenta { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; color: var(--acento-2); }
 
@@ -1307,7 +1325,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   body { background: #fff; color: #000; }
   /* Nada de lo que espera a entrar en pantalla puede salir en blanco en papel. */
   .revelar { opacity: 1 !important; }
-  .barra, .boton, .brindis-zona { display: none !important; }
+  /* La portada tiene su propia cabecera y su propio pie, que no se llaman
+     `.barra`: en papel tampoco pintan nada. */
+  .barra, .boton, .brindis-zona,
+  .entrada__barra, .entrada__pie { display: none !important; }
   .tarjeta, .pack { border: 1px solid #ccc; box-shadow: none; background: #fff; color: #000; }
   .tarjeta::before, .pack::before { display: none; }
   .qr-caja { min-height: auto; }
@@ -1335,6 +1356,23 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .mb-3            { margin-bottom: 26px; }
 .pt-pagina       { padding-top: 7vh; }
 .pt-pagina-2     { padding-top: 14vh; }
+
+/* Un error, un enlace caducado, una contraseña nueva: pantallas de una sola
+   cosa. El bloque se centra en el alto en vez de quedarse pegado arriba con
+   media pantalla de negro debajo. */
+.pagina-sola {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  padding-block: clamp(36px, 8vh, 96px);
+}
+/* En una columna flexible todo hijo se estira a lo ancho. A un bloque le da
+   igual —es lo que ya hacía—, pero un rótulo o un botón, que en flujo normal
+   se ajustan a su contenido, se estiraban de lado a lado y su texto se quedaba
+   pegado a la izquierda. Esos dos se centran ellos mismos. */
+.pagina-sola > .seccion-marca,
+.pagina-sola > .boton { align-self: center; }
 .centro-flex     { justify-content: center; }
 .alinea-arriba   { align-items: start; }
 .sin-salto       { white-space: nowrap; }
@@ -1344,7 +1382,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .columna > *     { min-width: 0; }
 .lista-scroll    { max-height: 190px; overflow-y: auto; }
 
-.brand-lockup--entrada { margin: 0 auto 18px; }
+/* En bloque, no en línea. Siendo `inline-grid`, el rótulo de sección que va
+   justo detrás se colocaba en la misma línea —encima del «#3» del logotipo— y
+   el `margin: 0 auto` no centraba nada, porque en una caja en línea no hace
+   nada. */
+.brand-lockup--entrada { display: grid; margin: 0 auto 18px; }
 .cargando--grande { width: 30px; height: 30px; border-width: 3px; }
 
 .separador { border: 0; border-top: 1px solid var(--borde); margin: var(--e4) 0; }
@@ -2459,9 +2501,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 @keyframes entrarQr { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 .qr-caja svg { animation: entrarQr var(--t-lenta) var(--curva-rebote) both; }
 
+/* La mira se traza abriéndose desde el centro hacia los lados.
+   Antes animaba `width`/`height`, y con `animation-fill-mode: both` ese ancho
+   de 22 px quedaba fijado sobre el pseudoelemento. Al llevar además `left` y
+   `right`, la caja quedaba sobredeterminada: el navegador descartaba `right`,
+   el elemento medía 22 px y los dos ángulos de la derecha se dibujaban encima
+   de los de la izquierda. Con `clip-path` no se toca ni el tamaño ni la
+   transformación —que el ángulo de abajo necesita para voltearse—. */
 @keyframes trazarMira {
-  from { width: 0; height: 0; opacity: 0; }
-  to   { width: 22px; height: 22px; opacity: 1; }
+  from { clip-path: inset(0 50% 0 50%); opacity: 0; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
 }
 .qr-caja::before { animation: trazarMira var(--t-media) var(--curva) 160ms both; }
 .qr-caja::after  { animation: trazarMira var(--t-media) var(--curva) 260ms both; }
@@ -2503,4 +2552,92 @@ tbody tr:nth-child(n+9) { animation-delay: 208ms; }
   tbody tr,
   .pack { animation: none; }
   .pack:hover::before { filter: none; }
+}
+
+/* --- El momento de la lectura ------------------------------------------- */
+
+/* En la puerta, la confirmación se mira a un brazo de distancia y con prisa.
+   Todo lo de aquí es corto y de una sola pasada: informa, no entretiene. */
+
+/* Un destello del color del estado recorre el panel de lado a lado. */
+.resultado--destello::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 32%, var(--destello, rgba(255, 255, 255, .16)) 50%, transparent 68%);
+  transform: translateX(-120%);
+  animation: destelloResultado 620ms var(--curva-entrada);
+}
+@keyframes destelloResultado { to { transform: translateX(120%); } }
+.resultado--ok       { --destello: rgba(47, 208, 122, .3); }
+.resultado--guardada { --destello: rgba(61, 254, 64, .26); }
+.resultado--error    { --destello: rgba(255, 85, 102, .3); }
+.resultado--alerta   { --destello: rgba(255, 197, 61, .3); }
+
+/* La franja de estado se traza en vez de encenderse: se ve de dónde viene. */
+.resultado--destello::before { animation: trazarFranja 420ms var(--curva) both; }
+@keyframes trazarFranja { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.resultado::before { transform-origin: 0 50%; }
+
+/* El número que queda entra con un golpe seco. Es el dato que la persona de la
+   puerta necesita leer sin pensar. */
+@keyframes golpeRestantes {
+  from { opacity: 0; transform: scale(1.35); }
+  60%  { opacity: 1; }
+  to   { opacity: 1; transform: none; }
+}
+.resultado__restantes { animation: golpeRestantes 380ms var(--curva-rebote) both; }
+
+@keyframes entrarIconoResultado {
+  from { opacity: 0; transform: scale(.55) rotate(-12deg); }
+  to   { opacity: 1; transform: none; }
+}
+.resultado__icono { animation: entrarIconoResultado 420ms var(--curva-rebote) both; }
+
+/* La mira de la cámara late una vez con el color del resultado: confirma la
+   lectura sin apartar la vista del encuadre. */
+@keyframes lateMira {
+  0%   { box-shadow: 0 0 0 0 var(--mira); }
+  70%  { box-shadow: 0 0 0 14px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.escaner__mira--ok::before,
+.escaner__mira--ok::after,
+.escaner__mira--error::before,
+.escaner__mira--error::after { animation: lateMira 900ms var(--curva-entrada); }
+
+@media (prefers-reduced-motion: reduce) {
+  .resultado--destello::after { animation: none; content: none; }
+  .resultado--destello::before { animation: none; }
+  .resultado__restantes,
+  .resultado__icono { animation: none; }
+  .escaner__mira--ok::before,
+  .escaner__mira--ok::after,
+  .escaner__mira--error::before,
+  .escaner__mira--error::after { animation: none; }
+}
+
+/* --- Tiras de pestañas que se desplazan de lado ------------------------- */
+
+/* En un teléfono no caben seis pestañas en una línea y la tira se desplaza.
+   El degradado de los bordes avisa de que hay más a los lados: sin él, la
+   última pestaña se corta a hueso y parece que ahí se acaba la lista. */
+.pestanas--desplazable { scroll-behavior: smooth; }
+/* Las clases las pone `movimiento.js` según por dónde quede tira sin ver. */
+.pestanas--desplazable.hay-antes.hay-despues {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+}
+.pestanas--desplazable.hay-antes:not(.hay-despues) {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px);
+}
+.pestanas--desplazable:not(.hay-antes).hay-despues {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pestanas--desplazable { scroll-behavior: auto; }
 }
