@@ -28,39 +28,35 @@ rsvg-convert -w 660 -h 660 marca-cuadrada.svg -o miniapolis-wallet-icon.png
 Los iconos de Apple Wallet (`assets/wallet/icon*.png` y `logo*.png`) salen de
 ese mismo par de archivos y hay que regenerarlos a la vez.
 
-## Escenas
-
-| Archivo | Escena | Uso recomendado |
-| --- | --- | --- |
-| `racing-hobbies-pista-rc.webp` | Dos vehículos RC en una pista nocturna | Cabeceras generales |
-| `racing-hobbies-pase-rc.webp` | Buggy en primer plano | Pase físico impreso |
-| `racing-hobbies-nocturno-rc.webp` | Buggy de competición bajo luces de pista | Venta, acceso y campañas nocturnas |
-| `racing-hobbies-taller-crawler.webp` | Crawler técnico en taller | Servicio técnico y detalle de pack |
-| `racing-hobbies-circuito-rc.webp` | Buggy 1/10 en circuito RC nocturno | Cliente, promociones y versiones premium |
-
-Las tres variantes nuevas se exportaron en WebP a 1942 × 809 px y calidad alta
-para que conserven detalle en pantalla e impresión sin pesar innecesariamente
-en la conexión móvil.
-
 ## Material oficial de la pista
 
-La portada pública también usa el material entregado por Miniápolis en
-`/public/images/oficial/`: las tres composiciones de marca (`miniapolis-*.webp`)
-y las 15 fotografías reales del recinto (`pista-oficial-01.webp` a
-`pista-oficial-15.webp`). Las fotografías se sirven como WebP optimizado,
-mantienen su orientación original y se cargan de forma diferida dentro de la
-galería para conservar una navegación fluida en teléfonos.
+En `oficial/` está lo que entregó Miniápolis. La portada pública usa hoy las
+cinco fotografías del recinto:
+
+| Archivo | Escena |
+| --- | --- |
+| `pista-senna-wide.webp` | El McLaren Senna a escala sobre el asfalto — foto de apertura |
+| `pista-senna-vertical.webp` | El mismo coche detenido junto a un bordillo |
+| `pista-hangar-vertical.webp` | La nave con el trazado de césped y bordillos |
+| `pista-hangar-curva.webp` | Curva con bordillo rojo y blanco sobre el césped |
+| `pista-circuito-panorama.webp` | Panorámica del circuito completo |
+
+Las tres composiciones de marca (`miniapolis-bandera-hero.webp`,
+`miniapolis-logo-dark.webp`, `miniapolis-logo-light.webp`) se conservan como
+material de origen aunque ninguna pantalla las use ahora mismo.
 
 ## Peso
 
 Estas imágenes las carga un teléfono en la pista, muchas veces con mala señal,
-así que van a 1600 px de ancho y en WebP: ninguna pasa de ~110 KB. Si añades
-otra, pásala por el mismo aro antes de subirla:
+así que van a 1600 px de ancho y en WebP. Si añades otra, pásala por el mismo
+aro antes de subirla:
 
 ```bash
 magick original.png -resize 1600x -strip -quality 80 nombre.webp
 ```
 
-De la colección, hoy solo se usan dos: `pista-rc` (portada y cabeceras) y
-`pase-rc` (el pase impreso). Las otras tres están preparadas para cuando hagan
-falta; si pasado un tiempo siguen sin usarse, mejor quitarlas que arrastrarlas.
+Y si una deja de usarse, quítala en vez de arrastrarla: cada clon del
+repositorio se la lleva entera. En septiembre de 2026 se retiraron por eso las
+cinco escenas `racing-hobbies-*.webp` de la marca anterior y las quince
+`pista-oficial-NN.webp` de una galería que ya no existe. Están en el historial
+de git si alguna vez hacen falta.
