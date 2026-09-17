@@ -1,13 +1,15 @@
 # Colección visual de Miniápolis #3
 
 Escenas originales para banners y pases, sin marcas de terceros ni texto
-incrustado. Todas mantienen el negro y el verde de Miniápolis #3.
+incrustado. Son el único color fuerte de una interfaz de papel claro: se
+apoyan sobre el fondo sin marcos ni filtros.
 
 ## Logotipo
 
 El logotipo oficial de Miniápolis #3 viene dibujado sobre fondo transparente y
-con su propio contorno oscuro: va suelto sobre el negro de la interfaz, nunca
-dentro de un recuadro verde (el verde de «MINI» y del «#3» desaparecería).
+con su propio contorno oscuro, así que se lee igual sobre el papel claro de la
+interfaz que sobre la banda negra del pase impreso. Va siempre suelto, nunca
+dentro de un recuadro de color (el verde de «MINI» y del «#3» desaparecería).
 
 | Archivo | Qué es | Dónde se usa |
 | --- | --- | --- |

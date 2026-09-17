@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f5f1">
-  <meta name="description" content="Entradas para la pista de autos a control remoto de Miniápolis #3. Siente la adrenalina y velocidad del radiocontrol pro.">
+  <meta name="theme-color" content="#faf9f6">
+  <meta name="description" content="Entradas para la pista de autos a control remoto de Miniápolis #3: compra tus packs, muestra tu QR en la puerta y sigue tus entradas en tiempo real.">
   <title>Entrar · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="./images/oficial/pista-senna-wide.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="./images/oficial/pista-senna-vertical.webp" as="image" fetchpriority="high">
 </head>
 <body class="pagina-entrada">
   <header class="entrada__barra">
@@ -17,147 +17,120 @@
       <a class="entrada__marca subrayado-no" href="./index.html" aria-label="Miniápolis #3 — inicio">
         <span class="entrada__marca-sello" aria-hidden="true"><img src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="Miniápolis #3"></span>
       </a>
-      <p class="entrada__meta" aria-label="Identificador de la pista"><span class="entrada__estado-pista"><span class="entrada__punto-vivo" aria-hidden="true"></span>Circuito activo</span><span class="entrada__punto" aria-hidden="true"></span><span>Track 03</span><span class="entrada__punto" aria-hidden="true"></span><span>Ecuador</span></p>
-      <a class="entrada__accion" href="#acceso">Acceso a Pista <span aria-hidden="true">↗</span></a>
+      <p class="entrada__meta" aria-label="Identificador de la pista">
+        <span class="entrada__estado-pista"><span class="entrada__punto-vivo" aria-hidden="true"></span>Circuito activo</span>
+        <span class="entrada__punto" aria-hidden="true"></span><span>Track 03</span>
+        <span class="entrada__punto" aria-hidden="true"></span><span>Ecuador</span>
+      </p>
+      <a class="entrada__accion" href="#acceso">Entrar</a>
     </div>
   </header>
 
-  <main class="contenedor contenedor--portada pt-pagina">
+  <main class="contenedor contenedor--portada">
     <section class="entrada__hero" aria-labelledby="titulo-entrada">
       <div class="entrada__hero-copy">
-        <div class="entrada__telemetria-badge">
-          <span class="badge-pulse"></span>
-          <span>POLE POSITION &bull; CIRCUITO RC INDOOR</span>
-        </div>
-        <p class="entrada__kicker"><span>01</span> Sistema de entradas</p>
-        <h1 id="titulo-entrada"><span>Adrenalina</span><span>sin límites<sup class="entrada__marca-registrada">™</sup></span></h1>
-        <div class="entrada__speed-stats">
-          <div class="speed-stat">
-            <span class="speed-stat__num">65+<small>KM/H</small></span>
-            <span class="speed-stat__label">Velocidad escala</span>
-          </div>
-          <div class="speed-stat__div" aria-hidden="true"></div>
-          <div class="speed-stat">
-            <span class="speed-stat__num">400<small>M²</small></span>
-            <span class="speed-stat__label">Circuito indoor</span>
-          </div>
-          <div class="speed-stat__div" aria-hidden="true"></div>
-          <div class="speed-stat">
-            <span class="speed-stat__num">100%<small>PRO</small></span>
-            <span class="speed-stat__label">Timing & QR</span>
-          </div>
-          <div class="speed-stat__div" aria-hidden="true"></div>
-          <div class="speed-stat">
-            <span class="speed-stat__num">1/10<small>RC</small></span>
-            <span class="speed-stat__label">GT & Touring</span>
-          </div>
+        <p class="entrada__kicker">Racing Hobbies Ecuador</p>
+        <h1 id="titulo-entrada">Tu pase para la pista de radiocontrol.</h1>
+        <p class="entrada__descripcion">
+          Compra tus packs de entradas, guarda el QR en el teléfono y entra a rodar.
+          Cada entrada se descuenta en la puerta y la ves al instante en tu cuenta.
+        </p>
+        <div class="entrada__hero-acciones">
+          <a class="boton boton--principal boton--grande" href="#acceso">Entrar a mi cuenta</a>
+          <a class="entrada__enlace" href="#pista">Conocer la pista</a>
         </div>
       </div>
       <div class="entrada__hero-aside">
-        <div class="entrada__racing-tag">MINIÁPOLIS #3 &bull; PADDOCK PASS</div>
-        <p class="entrada__marca-texto">Circuito de Carreras RC</p>
-        <p class="entrada__descripcion">Tu pase digital de alta velocidad para dominar la pista de autos a control remoto. Acelera en cada curva, domina las chicanes y vuelve a la línea de salida.</p>
-        <a class="entrada__enlace" href="#acceso">Entrar al sistema <span aria-hidden="true">↗</span></a>
+        <figure class="entrada__hero-foto">
+          <img src="./images/oficial/pista-senna-vertical.webp" width="1152" height="2048"
+               alt="Un coche de radiocontrol a escala junto al bordillo de la pista de Miniápolis #3"
+               fetchpriority="high" decoding="async">
+        </figure>
       </div>
     </section>
 
-    <figure class="entrada__foto entrada__foto--apertura entrada__foto--hud">
-      <div class="foto-hud__top">
-        <span class="foto-hud__tag foto-hud__live"><span class="foto-hud__dot"></span>REC &bull; CAM 01 [PIT EXIT]</span>
-        <span class="foto-hud__tag">APEX SPEED &bull; MCLAREN SENNA RC</span>
+    <section class="entrada__cifras" aria-label="La pista en cifras">
+      <div class="cifra">
+        <span class="cifra__num">400 m²</span>
+        <span class="cifra__texto">Circuito indoor de asfalto y césped técnico</span>
       </div>
-      <img src="./images/oficial/pista-senna-wide.webp" width="1920" height="1280" alt="Un McLaren Senna a escala sobre el asfalto de la pista de Miniápolis #3" fetchpriority="high" decoding="async">
-      <div class="foto-hud__kerb" aria-hidden="true"></div>
-      <figcaption>
-        <span class="entrada__foto-nombre">Racing Hobbies / Miniápolis&nbsp;#3</span>
-        <span class="entrada__foto-estado">Acceso en tiempo real <i aria-hidden="true"></i></span>
-      </figcaption>
-    </figure>
+      <div class="cifra">
+        <span class="cifra__num">1/10</span>
+        <span class="cifra__texto">Escala de competición, GT y touring</span>
+      </div>
+      <div class="cifra">
+        <span class="cifra__num">7 días</span>
+        <span class="cifra__texto">Packs válidos para venir cuando quieras</span>
+      </div>
+    </section>
 
-    <section class="entrada__pista-real" aria-labelledby="titulo-pista">
+    <section id="pista" class="entrada__pista-real" aria-labelledby="titulo-pista">
       <div class="entrada__seccion-cabeza">
-        <div>
-          <p class="entrada__kicker"><span>02</span> La pista real</p>
-          <h2 id="titulo-pista">Cada curva tiene<br><em>su propia historia.</em></h2>
-        </div>
-        <p class="entrada__seccion-descripcion">Conoce el escenario real de Miniápolis #3: una pista indoor de competición de asfalto y césped técnico hecha para acelerar a fondo, competir al milímetro y compartir la pasión por el radiocontrol.</p>
+        <h2 id="titulo-pista">La pista, tal como es.</h2>
+        <p class="entrada__seccion-descripcion">
+          Un circuito indoor de asfalto y césped técnico, con bordillos de competición
+          y sitio para rodar con calma o cronometrar a fondo.
+        </p>
       </div>
+
+      <figure class="entrada__foto entrada__foto--apertura">
+        <img src="./images/oficial/pista-circuito-panorama.webp" width="1920" height="1440"
+             alt="Panorámica del circuito de Miniápolis #3 con el trazado de césped y asfalto"
+             loading="lazy" decoding="async">
+        <figcaption><span class="entrada__foto-nombre">El trazado completo</span> · Miniápolis&nbsp;#3, Track 03</figcaption>
+      </figure>
 
       <article class="entrada__media-destacada">
         <div class="entrada__media-destacada-copy">
-          <div class="telemetria-chip">CIRCUIT SPECS &bull; RACING HOBBIES</div>
-          <h3>Diseñada para<br>vivirla a fondo.</h3>
-          <p>El pulso de la carrera empieza antes de la primera vuelta: en cada bandera, cada curva y cada detalle del paddock.</p>
-          <div class="pista-specs-grid">
-            <div class="spec-item">
-              <span class="spec-label">SUPERFICIE</span>
-              <span class="spec-value">Asfalto y césped técnico</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">CURVAS</span>
-              <span class="spec-value">Bordillos oficiales de competición</span>
-            </div>
-          </div>
-          <p class="entrada__media-meta"><span>Miniápolis&nbsp;#3</span><span>Racing Hobbies Ecuador</span><span>Track 03</span></p>
+          <h3>Pensada para rodar de verdad.</h3>
+          <p>
+            El trazado combina rectas largas y chicanes cerradas, así que sirve igual
+            para dar las primeras vueltas que para bajar tiempos.
+          </p>
+          <ul class="entrada__media-lista">
+            <li><span>Superficie</span><span>Asfalto y césped técnico</span></li>
+            <li><span>Curvas</span><span>Bordillos oficiales de competición</span></li>
+            <li><span>Dónde</span><span>Miniápolis #3, Track 03 · Ecuador</span></li>
+          </ul>
         </div>
-        <figure class="entrada__media-foto entrada__media-foto--hud">
-          <div class="foto-hud__overlay">CAM 02 &bull; HANGAR CHICANE</div>
-          <img src="./images/oficial/pista-hangar-vertical.webp" width="1152" height="2048" alt="Nave de Miniápolis #3 con el trazado de césped y bordillos" loading="lazy" decoding="async">
-        </figure>
-        <figure class="entrada__media-foto entrada__media-foto--segunda entrada__media-foto--hud">
-          <div class="foto-hud__overlay">CAM 03 &bull; SENNA APEX</div>
-          <img src="./images/oficial/pista-senna-vertical.webp" width="1152" height="2048" alt="Coche de radiocontrol detenido junto a un bordillo de la pista" loading="lazy" decoding="async">
+        <figure class="entrada__media-foto">
+          <img src="./images/oficial/pista-hangar-vertical.webp" width="1152" height="2048"
+               alt="Nave de Miniápolis #3 con el trazado de césped y bordillos"
+               loading="lazy" decoding="async">
         </figure>
       </article>
 
       <div class="entrada__diptico">
-        <figure class="entrada__foto entrada__foto--hud">
-          <div class="foto-hud__overlay">SECTOR 01 &bull; CIRCUITO COMPLETO</div>
-          <img src="./images/oficial/pista-circuito-panorama.webp" width="1920" height="1440" alt="Panorámica del circuito de Miniápolis #3 con el trazado de césped y asfalto" loading="lazy" decoding="async">
-          <figcaption>
-            <span class="entrada__foto-nombre"><span>01</span> El circuito completo</span>
-          </figcaption>
+        <figure class="entrada__foto">
+          <img src="./images/oficial/pista-senna-wide.webp" width="1920" height="1280"
+               alt="Un McLaren Senna a escala sobre el asfalto de la pista"
+               loading="lazy" decoding="async">
+          <figcaption><span class="entrada__foto-nombre">Asfalto</span> · Salida de boxes</figcaption>
         </figure>
-        <figure class="entrada__foto entrada__foto--hud">
-          <div class="foto-hud__overlay">SECTOR 02 &bull; CURVA Y BORDILLO</div>
-          <img src="./images/oficial/pista-hangar-curva.webp" width="1599" height="1166" alt="Curva de la pista con bordillo rojo y blanco sobre el césped" loading="lazy" decoding="async">
-          <figcaption>
-            <span class="entrada__foto-nombre"><span>02</span> Curva y bordillo</span>
-          </figcaption>
+        <figure class="entrada__foto">
+          <img src="./images/oficial/pista-hangar-curva.webp" width="1599" height="1166"
+               alt="Curva de la pista con bordillo rojo y blanco sobre el césped"
+               loading="lazy" decoding="async">
+          <figcaption><span class="entrada__foto-nombre">Curva</span> · Bordillo de competición</figcaption>
         </figure>
       </div>
     </section>
 
     <section id="acceso" class="entrada__acceso" aria-labelledby="titulo-acceso">
       <div class="entrada__acceso-intro">
-        <div class="entrada__telemetria-badge entrada__telemetria-badge--red">
-          <span class="badge-pulse badge-pulse--red"></span>
-          <span>BOXES &bull; CONTROL DE ENTRADAS</span>
-        </div>
-        <p class="entrada__kicker"><span>03</span> Control de acceso</p>
-        <h2 id="titulo-acceso">Tu próxima<br>vuelta empieza aquí.</h2>
-        <p class="entrada__acceso-nota">Entra con tu correo para ver tus packs, mostrar tu QR en la puerta y seguir tus entradas en tiempo real.</p>
-        
-        <div class="paddock-highlights">
-          <div class="paddock-item">
-            <span class="paddock-icon">⚡</span>
-            <div>
-              <strong>Acceso instantáneo con QR dinámico</strong>
-              <p>Tu pase se renueva automáticamente para mayor seguridad en la puerta.</p>
-            </div>
-          </div>
-          <div class="paddock-item">
-            <span class="paddock-icon">🏁</span>
-            <div>
-              <strong>Control en tiempo real</strong>
-              <p>Revisa tus consumos y vueltas restantes al momento desde cualquier dispositivo.</p>
-            </div>
-          </div>
-        </div>
+        <h2 id="titulo-acceso">Entra y mira tus entradas.</h2>
+        <p class="entrada__acceso-nota">
+          Con tu correo ves tus packs, muestras el QR en la puerta y sigues cada
+          entrada que usas, desde cualquier teléfono.
+        </p>
+        <ol class="entrada__pasos">
+          <li><span><strong>Entra con tu correo</strong>Tu cuenta guarda todos tus packs.</span></li>
+          <li><span><strong>Muestra el QR</strong>Se renueva solo: una captura caduca en minutos.</span></li>
+          <li><span><strong>Sigue tu saldo</strong>Cada entrada usada aparece al momento.</span></li>
+        </ol>
       </div>
 
       <div class="entrada__acceso-panel">
-        <div class="panel-header-chicane" aria-hidden="true"></div>
         <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
           <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
           <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
@@ -178,7 +151,7 @@
             <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
             <div class="campo__error"></div>
           </div>
-          <button class="boton boton--principal boton--bloque boton--grande boton--racing" type="submit">Entrar a la pista</button>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
           <p class="entrada__acceso-pie" id="zona-olvido" hidden>
             <button class="boton boton--enlace" id="btn-olvido" type="button">¿Olvidaste tu contraseña?</button>
           </p>
@@ -196,7 +169,7 @@
                    required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
             <div class="campo__error"></div>
           </div>
-          <button class="boton boton--principal boton--bloque boton--grande boton--racing" type="submit">Enviarme el enlace</button>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Enviarme el enlace</button>
           <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
         </form>
 
@@ -224,7 +197,7 @@
             <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Usa algo que solo tú recuerdes.</div>
             <div class="campo__error"></div>
           </div>
-          <button class="boton boton--principal boton--bloque boton--grande boton--racing" type="submit">Crear mi cuenta</button>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Crear mi cuenta</button>
         </form>
       </div>
     </section>
@@ -232,7 +205,7 @@
 
   <footer class="entrada__pie">
     <div class="entrada__pie-interior contenedor contenedor--portada">
-      <p class="entrada__pie-marca">Miniápolis&nbsp;#3 <span>Racing Hobbies Ecuador &bull; Track 03</span></p>
+      <p class="entrada__pie-marca">Miniápolis&nbsp;#3 <span>Racing Hobbies Ecuador · Track 03</span></p>
       <p class="entrada__pie-nota">¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.</p>
     </div>
   </footer>
