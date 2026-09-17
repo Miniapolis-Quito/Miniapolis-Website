@@ -136,14 +136,6 @@ function mostrarResultado({ tipo, icono: nombreIcono, titulo, detalle, restantes
     acciones ? el('div', { class: 'fila mt centro-flex' }, acciones) : null,
   );
 
-  // Un destello del color del estado recorre el panel. El contenido se vuelve
-  // a crear en cada lectura, así que sus animaciones arrancan solas; el panel
-  // no, porque el nodo es el mismo: hay que reiniciarla a mano o dos lecturas
-  // seguidas del mismo tipo no destellarían.
-  nodo.classList.remove('resultado--destello');
-  void nodo.offsetWidth;
-  nodo.classList.add('resultado--destello');
-
   const mira = $('#mira');
   mira.classList.remove('escaner__mira--ok', 'escaner__mira--error');
   if (tipo === 'ok' || tipo === 'guardada') mira.classList.add('escaner__mira--ok');

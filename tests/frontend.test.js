@@ -198,35 +198,35 @@ test('cada página carga los módulos que sus scripts necesitan', () => {
 });
 
 /**
- * La portada pública es la única pantalla clara del sistema: papel y tinta.
- * Su `theme-color` tiene que ser el suyo, porque si declara el negro de marca
- * el teléfono pinta una franja negra encima de una página blanca. El resto del
- * producto —todo lo que hay detrás del acceso— sí usa el lienzo negro.
+ * Todo el producto se pinta sobre el mismo papel: portada, entradas, puerta y
+ * administración. El `theme-color` de cada pantalla tiene que ser ese papel,
+ * porque si declara otro color el teléfono pinta una franja ajena encima de la
+ * página.
  */
 const PORTADA = 'public/index.html';
-const PAPEL_PORTADA = '#f4f5f1';
+const PAPEL = '#faf9f6';
 
-test('las pantallas del producto usan el lienzo negro de la identidad Miniápolis', () => {
-  const paginas = [...Object.keys(PAGINAS), 'public/404.html'].filter((html) => html !== PORTADA);
-  for (const html of paginas) {
+test('todas las pantallas comparten el papel y la hoja de estilos de la marca', () => {
+  for (const html of [...Object.keys(PAGINAS), 'public/404.html']) {
     const src = leer(html);
-    assert.match(src, /<meta name="theme-color" content="#000000">/, `${html} debe declarar el negro de marca`);
+    assert.match(
+      src,
+      new RegExp(`<meta name="theme-color" content="${PAPEL}">`),
+      `${html} debe declarar el papel que de verdad pinta`,
+    );
     assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/, `${html} debe cargar los estilos de marca`);
   }
   const manifest = JSON.parse(leer('public/manifest.webmanifest'));
-  assert.equal(manifest.background_color, '#000000');
-  assert.equal(manifest.theme_color, '#000000');
+  assert.equal(manifest.background_color, PAPEL);
+  assert.equal(manifest.theme_color, PAPEL);
 });
 
-test('la portada declara su propio papel y comparte la hoja de estilos de marca', () => {
-  const src = leer(PORTADA);
+test('la portada se marca como página de entrada', () => {
   assert.match(
-    src,
-    new RegExp(`<meta name="theme-color" content="${PAPEL_PORTADA}">`),
-    'la portada debe declarar el papel que de verdad pinta',
+    leer(PORTADA),
+    /<body class="pagina-entrada">/,
+    'la portada debe marcar su cuerpo como página de entrada',
   );
-  assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/, 'la portada debe cargar los estilos de marca');
-  assert.match(src, /<body class="pagina-entrada">/, 'la portada debe marcar su cuerpo como página de entrada');
 });
 
 test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la API', () => {
