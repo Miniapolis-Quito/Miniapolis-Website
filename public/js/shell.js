@@ -2,7 +2,7 @@
 import { el, render, $, configurarFormato } from './ui.js';
 import { montarCursor } from './cursor.js';
 import { montarMovimiento } from './movimiento.js';
-import { cerrarSesion, getUsuario } from './api.js';
+import { cerrarSesion, getUsuario, puedeEscanear } from './api.js';
 import { textoEstado } from './realtime.js';
 import { abrirCambioPassword } from './cuenta.js';
 
@@ -11,18 +11,26 @@ import { abrirCambioPassword } from './cuenta.js';
 const MARCA_POR_DEFECTO = 'Miniápolis #3';
 const MARCA_CORTA_POR_DEFECTO = 'Miniápolis';
 
+const MIS_ENTRADAS = { href: '/app', texto: 'Mis entradas' };
+const ESCANEAR = { href: '/escanear', texto: 'Escanear', soloConEscaner: true };
+
 const NAV_POR_ROL = {
-  customer: [{ href: '/app', texto: 'Mis entradas' }],
-  staff: [
-    { href: '/escanear', texto: 'Escanear' },
-    { href: '/app', texto: 'Mis entradas' },
-  ],
-  master: [
-    { href: '/admin', texto: 'Administración' },
-    { href: '/escanear', texto: 'Escanear' },
-    { href: '/app', texto: 'Mis entradas' },
-  ],
+  customer: [MIS_ENTRADAS],
+  staff: [ESCANEAR, MIS_ENTRADAS],
+  master: [{ href: '/admin', texto: 'Administración' }, ESCANEAR, MIS_ENTRADAS],
 };
+
+/**
+ * Enlaces que le corresponden a esta persona.
+ *
+ * El escáner desaparece del menú si su cuenta no está autorizada: no es la
+ * defensa (esa está en el servidor), pero evita que alguien acabe en una
+ * pantalla que no puede usar y crea que el sistema está roto.
+ */
+function enlacesPara(usuario) {
+  const autorizado = puedeEscanear(usuario);
+  return (NAV_POR_ROL[usuario?.role] || []).filter((entrada) => !entrada.soloConEscaner || autorizado);
+}
 
 export function montarCabecera(contenedor, { marca = MARCA_CORTA_POR_DEFECTO } = {}) {
   const usuario = getUsuario();
@@ -34,7 +42,7 @@ export function montarCabecera(contenedor, { marca = MARCA_CORTA_POR_DEFECTO } =
   const nav = el(
     'nav',
     { class: 'barra__nav', 'aria-label': 'Secciones' },
-    (NAV_POR_ROL[usuario?.role] || []).map((entrada) =>
+    enlacesPara(usuario).map((entrada) =>
       el(
         'a',
         {

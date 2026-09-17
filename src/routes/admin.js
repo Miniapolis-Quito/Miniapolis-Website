@@ -83,12 +83,21 @@ router.post(
       throw badRequest(strength.errors[0], { fields: { password: strength.errors.join(' ') } }, 'password_debil');
     }
 
+    if (data.scanEnabled && !users.puedeLlevarPermisoDeEscaneo(data.role)) {
+      throw badRequest(
+        'Solo una cuenta de personal o máster puede escanear entradas.',
+        { fields: { scanEnabled: 'Cambia el rol a personal para habilitar el escáner.' } },
+        'escaneo_rol_invalido',
+      );
+    }
+
     const user = await users.createUser({
       email: data.email,
       password,
       fullName: data.fullName,
       phone: data.phone,
       role: data.role,
+      scanEnabled: data.scanEnabled === true,
       createdBy: req.user.id,
     });
 
@@ -97,8 +106,25 @@ router.post(
       action: 'usuario.creado',
       entityType: 'user',
       entityId: user.id,
-      metadata: { email: user.email, role: user.role, passwordGenerada: Boolean(generated) },
+      metadata: {
+        email: user.email,
+        role: user.role,
+        scanEnabled: Boolean(user.scan_enabled),
+        passwordGenerada: Boolean(generated),
+      },
     });
+
+    // El permiso de escaneo deja su propia entrada en la bitácora: quién puede
+    // tocar el saldo de un cliente es la pregunta que más se audita.
+    if (user.scan_enabled) {
+      audit.record({
+        ...actorContext(req),
+        action: 'usuario.escaneo_autorizado',
+        entityType: 'user',
+        entityId: user.id,
+        metadata: { email: user.email, alCrear: true },
+      });
+    }
 
     res.status(201).json({
       user: users.toPublicUser(user),
@@ -169,19 +195,51 @@ router.patch(
       throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
     }
 
+    // Pedir el permiso de escaneo para una cuenta que va a quedar como cliente
+    // se rechaza en vez de ignorarse: así el máster ve por qué no se aplicó.
+    const rolResultante = data.role ?? target.role;
+    if (data.scanEnabled === true && !users.puedeLlevarPermisoDeEscaneo(rolResultante)) {
+      throw badRequest(
+        'Solo una cuenta de personal o máster puede escanear entradas.',
+        { fields: { scanEnabled: 'Cambia el rol a personal para habilitar el escáner.' } },
+        'escaneo_rol_invalido',
+      );
+    }
+
     // Los recordatorios tienen su propio registro, que dice desde dónde se
     // cambiaron: no se mezclan con los datos de la cuenta.
     const { emailReminders, ...cambios } = data;
+    const permisoAntes = Boolean(target.scan_enabled);
+    let user = target;
     if (Object.values(cambios).some((valor) => valor !== undefined)) {
-      users.updateUser(req.params.id, cambios);
+      user = users.updateUser(req.params.id, cambios);
       audit.record({
         ...actorContext(req),
         action: 'usuario.actualizado',
         entityType: 'user',
-        entityId: target.id,
+        entityId: user.id,
         metadata: cambios,
       });
     }
+
+    // Conceder o retirar el escáner se registra aparte, con su propio nombre,
+    // para que se pueda filtrar la bitácora por esa sola pregunta.
+    const permisoDespues = Boolean(user.scan_enabled);
+    if (permisoDespues !== permisoAntes) {
+      audit.record({
+        ...actorContext(req),
+        action: permisoDespues ? 'usuario.escaneo_autorizado' : 'usuario.escaneo_revocado',
+        entityType: 'user',
+        entityId: user.id,
+        metadata: {
+          email: user.email,
+          // Bajar de rol retira el permiso sin haberlo pedido; conviene que la
+          // bitácora diga cuál de las dos cosas pasó.
+          motivo: cambios.scanEnabled === undefined ? 'cambio_de_rol' : 'decision_del_master',
+        },
+      });
+    }
+
     if (emailReminders !== undefined) {
       avisos.cambiarPreferencia(target.id, emailReminders, { via: 'administracion', ...actorContext(req) });
     }

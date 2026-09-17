@@ -70,13 +70,18 @@ try {
     const cambios = {};
     if (existente.role !== 'master') cambios.role = 'master';
     if (existente.status !== 'active') cambios.status = 'active';
+    // Es la salida de emergencia: deja la cuenta capaz de administrar y de
+    // abrir la puerta, que es justo lo que se necesita cuando se usa.
+    if (!existente.scan_enabled) cambios.scanEnabled = true;
     if (typeof opciones.nombre === 'string' && nombre !== existente.full_name) cambios.fullName = nombre;
     if (Object.keys(cambios).length > 0) users.updateUser(existente.id, cambios);
     users.unlockUser(existente.id);
     audit.record({ actor: null, action: 'sistema.master_reparado', entityType: 'user', entityId: existente.id });
-    process.stdout.write(`\n  Cuenta actualizada: ${email}\n  Rol: máster · Sesiones anteriores cerradas\n`);
+    process.stdout.write(
+      `\n  Cuenta actualizada: ${email}\n  Rol: máster · Escáner habilitado · Sesiones anteriores cerradas\n`,
+    );
   } else {
-    const creado = await users.createUser({ email, password, fullName: nombre, role: 'master' });
+    const creado = await users.createUser({ email, password, fullName: nombre, role: 'master', scanEnabled: true });
     audit.record({ actor: null, action: 'sistema.master_creado', entityType: 'user', entityId: creado.id });
     process.stdout.write(`\n  Cuenta máster creada: ${email}\n`);
   }

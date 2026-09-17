@@ -30,7 +30,26 @@
       <span><strong>Sin conexión.</strong> Sigue escaneando: cada entrada se guarda en este teléfono y se cobra sola cuando vuelva la señal.</span>
     </div>
 
-    <div class="rejilla rejilla--2 alinea-arriba">
+    <!-- Cuenta sin permiso para escanear: el servidor la rechaza igualmente,
+         esto solo explica por qué y evita encender la cámara para nada. -->
+    <section class="tarjeta" id="sin-permiso" hidden>
+      <div class="vacio">
+        <div class="vacio__icono">
+          <svg class="icono icono--grande" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 11h12v9H6z"></path>
+            <path d="M9 11V8a3 3 0 0 1 6 0v3"></path>
+          </svg>
+        </div>
+        <h2 class="sin-margen">Tu cuenta no puede escanear</h2>
+        <p class="sin-margen">El escáner se habilita cuenta por cuenta desde la administración.</p>
+        <p class="pequeno tenue-2">
+          Pídele al administrador que active «Puede escanear» en tu usuario. Tus entradas las tienes
+          en «Mis entradas», arriba.
+        </p>
+      </div>
+    </section>
+
+    <div id="puesto" class="rejilla rejilla--2 alinea-arriba">
       <!-- Cámara -->
       <section class="tarjeta">
         <div class="tarjeta__titulo">
@@ -127,11 +146,11 @@
     </section>
 
     <!-- Actividad reciente -->
-    <section class="tarjeta mt-2">
+    <section class="tarjeta mt-2" id="seccion-actividad">
       <div class="tarjeta__titulo">
         <h2>Actividad reciente</h2>
         <div class="fila">
-          <label class="campo--linea sin-margen-todo">
+          <label class="campo--linea sin-margen-todo" id="etiqueta-todos" hidden>
             <input type="checkbox" id="chk-todos">
             <span class="pequeno">Ver todo el personal</span>
           </label>

@@ -17,6 +17,7 @@
 import '../env-espera.js';
 import { readFileSync } from 'node:fs';
 import { levantarServidor, bajarServidor, sembrarUsuarios, CLAVES } from '../helpers.js';
+import * as users from '../../src/services/users.js';
 import * as packsService from '../../src/services/packs.js';
 import * as redemptions from '../../src/services/redemptions.js';
 
@@ -185,6 +186,27 @@ await paso('el pase impreso sale solo, y solo él, en la hoja', async () => {
 // ---------------------------------------------------------------------------
 
 const staff = await abrirPestana(900, 1000, 'staff');
+
+await paso('una cuenta sin permiso ve por qué no puede escanear, y no se le enciende la cámara', async () => {
+  await users.createUser({
+    email: 'sinpermiso@pista.ec', password: CLAVES.staff, fullName: 'Elena Boxes', role: 'staff',
+  });
+  const sinPermiso = await abrirPestana(900, 1000, 'sin-permiso');
+  try {
+    await entrar(sinPermiso, 'sinpermiso@pista.ec', CLAVES.staff, '/app');
+    await sinPermiso.goto(`${B}/escanear`, { waitUntil: 'domcontentloaded' });
+
+    await sinPermiso.waitForSelector('#sin-permiso:not([hidden])', { timeout: 10000 });
+    if (await sinPermiso.isVisible('#puesto')) throw new Error('el puesto no debería verse');
+    if (await sinPermiso.isVisible('#btn-camara')) throw new Error('no debería ofrecerse encender la cámara');
+    // Y el enlace al escáner tampoco aparece en la barra de navegación.
+    if (await sinPermiso.isVisible('.barra__nav a[href="/escanear"]')) {
+      throw new Error('el escáner no debería estar en el menú');
+    }
+  } finally {
+    await sinPermiso.close();
+  }
+});
 
 await paso('el personal entra al escáner', async () => {
   await entrar(staff, 'staff@pista.ec', CLAVES.staff, '/escanear');
