@@ -1,6 +1,7 @@
 /** Cabecera común: marca, navegación por rol, estado en vivo y cierre de sesión. */
 import { el, render, $, configurarFormato } from './ui.js';
 import { montarCursor } from './cursor.js';
+import { montarMovimiento } from './movimiento.js';
 import { cerrarSesion, getUsuario } from './api.js';
 import { textoEstado } from './realtime.js';
 import { abrirCambioPassword } from './cuenta.js';
@@ -197,6 +198,7 @@ export function revelarAlEntrar() {
 // `revelarAlEntrar()` cuando terminan.
 requestAnimationFrame(revelarAlEntrar);
 montarCursor();
+requestAnimationFrame(montarMovimiento);
 
 /** Aplica la marca cargada del servidor a los textos de la página. */
 export async function aplicarMarca(configuracion) {

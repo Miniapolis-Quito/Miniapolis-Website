@@ -3,161 +3,171 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#f4f5f1">
   <meta name="description" content="Entradas para la pista de autos a control remoto de Miniápolis #3.">
   <title>Entrar · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="./images/oficial/pista-senna-wide.webp" as="image" fetchpriority="high">
 </head>
 <body class="pagina-entrada">
-  <main class="contenedor contenedor--angosto pt-pagina">
-    <header class="entrada__barra">
+  <header class="entrada__barra">
+    <div class="entrada__barra-interior contenedor contenedor--portada">
       <a class="entrada__marca subrayado-no" href="./index.html" aria-label="Miniápolis #3 — inicio">
         <span class="entrada__marca-sello" aria-hidden="true"><img src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt=""></span>
-        <span>MINIÁPOLIS #3</span>
       </a>
-      <div class="entrada__meta" aria-label="Identificador de la pista"><span>ECUADOR</span><span class="entrada__punto" aria-hidden="true"></span><span>TRACK 03</span></div>
+      <p class="entrada__meta" aria-label="Identificador de la pista"><span>Ecuador</span><span class="entrada__punto" aria-hidden="true"></span><span>Track 03</span></p>
       <a class="entrada__accion" href="#acceso">Acceso <span aria-hidden="true">↗</span></a>
-    </header>
+    </div>
+  </header>
 
+  <main class="contenedor contenedor--portada pt-pagina">
     <section class="entrada__hero" aria-labelledby="titulo-entrada">
       <div class="entrada__hero-copy">
         <p class="entrada__kicker"><span>01</span> Sistema de entradas</p>
-        <h1 id="titulo-entrada"><span>Adrenalina</span><span>sin límites<span class="entrada__marca-registrada">™</span></span></h1>
+        <h1 id="titulo-entrada"><span>Adrenalina</span><span>sin límites<sup class="entrada__marca-registrada">™</sup></span></h1>
       </div>
       <div class="entrada__hero-aside">
-        <p class="entrada__marca-texto">Miniápolis #3</p>
+        <p class="entrada__marca-texto">Miniápolis&nbsp;#3</p>
         <p class="entrada__descripcion">Tu pase digital para vivir la pista de autos a control remoto. Entra, acelera y vuelve a la línea de salida.</p>
         <a class="entrada__enlace" href="#acceso">Entrar al sistema <span aria-hidden="true">↗</span></a>
       </div>
     </section>
 
-    <div class="presentacion-pista" aria-label="Bandera y emblema oficiales de Miniápolis #3">
-      <img src="./images/oficial/miniapolis-bandera-hero.webp" width="1536" height="1024" alt="Bandera a cuadros con el emblema oficial de Miniápolis #3" fetchpriority="high" decoding="async">
-      <div class="presentacion-pista__barra"><span>Racing Hobbies / Miniápolis #3</span><span>Acceso en tiempo real <i aria-hidden="true"></i></span></div>
-    </div>
+    <figure class="entrada__foto entrada__foto--apertura">
+      <img src="./images/oficial/pista-senna-wide.webp" width="1920" height="1280" alt="Un McLaren Senna a escala sobre el asfalto de la pista de Miniápolis #3" fetchpriority="high" decoding="async">
+      <figcaption>
+        <span class="entrada__foto-nombre">Racing Hobbies / Miniápolis&nbsp;#3</span>
+        <span class="entrada__foto-estado">Acceso en tiempo real <i aria-hidden="true"></i></span>
+      </figcaption>
+    </figure>
 
     <section class="entrada__pista-real" aria-labelledby="titulo-pista">
       <div class="entrada__seccion-cabeza">
-        <h2 id="titulo-pista">Cada curva tiene<br><em>su propia historia.</em></h2>
+        <div>
+          <p class="entrada__kicker"><span>02</span> La pista real</p>
+          <h2 id="titulo-pista">Cada curva tiene<br><em>su propia historia.</em></h2>
+        </div>
         <p class="entrada__seccion-descripcion">Conoce el escenario real de Miniápolis #3: una pista hecha para acelerar, competir y compartir la pasión por el radiocontrol.</p>
       </div>
 
-      <article class="entrada__media-destacada" aria-label="Identidad visual oficial de Miniápolis #3">
+      <article class="entrada__media-destacada">
         <div class="entrada__media-destacada-copy">
-          <p class="entrada__kicker"><span>03</span> La pista real</p>
           <h3>Diseñada para<br>vivirla a fondo.</h3>
           <p>El pulso de la carrera empieza antes de la primera vuelta: en cada bandera, cada curva y cada detalle del paddock.</p>
-          <div class="entrada__media-meta"><span>Miniápolis #3</span><span>Racing Hobbies</span></div>
+          <p class="entrada__media-meta"><span>Miniápolis&nbsp;#3</span><span>Racing Hobbies</span></p>
         </div>
-        <figure class="entrada__media-marca">
-          <img src="./images/oficial/miniapolis-logo-dark.webp" width="1536" height="1024" alt="Composición oficial oscura del logotipo de Miniápolis #3" loading="lazy" decoding="async">
+        <figure class="entrada__media-foto">
+          <img src="./images/oficial/pista-hangar-vertical.webp" width="1152" height="2048" alt="Nave de Miniápolis #3 con el trazado de césped y bordillos" loading="lazy" decoding="async">
         </figure>
-        <figure class="entrada__logo-firma">
-          <img src="./images/oficial/miniapolis-logo-light.webp" width="1536" height="1024" alt="Composición oficial clara del logotipo de Miniápolis #3" loading="lazy" decoding="async">
-          <span>Identidad oficial / 2026</span>
+        <figure class="entrada__media-foto entrada__media-foto--segunda">
+          <img src="./images/oficial/pista-senna-vertical.webp" width="1152" height="2048" alt="Coche de radiocontrol detenido junto a un bordillo de la pista" loading="lazy" decoding="async">
         </figure>
       </article>
 
-      <div class="entrada__galeria" aria-label="Fotografías oficiales de la pista">
-        <figure class="entrada__foto entrada__foto--01"><img src="./images/oficial/pista-oficial-01.webp" width="1400" height="1400" alt="Vista oficial de la pista Miniápolis #3" loading="lazy" decoding="async"><figcaption><span>01</span> Línea de salida</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--02"><img src="./images/oficial/pista-oficial-02.webp" width="1400" height="1400" alt="Detalle oficial del circuito" loading="lazy" decoding="async"><figcaption><span>02</span> Circuito</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--03"><img src="./images/oficial/pista-oficial-03.webp" width="1400" height="1400" alt="Curva de la pista Miniápolis #3" loading="lazy" decoding="async"><figcaption><span>03</span> Curva 03</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--04"><img src="./images/oficial/pista-oficial-04.webp" width="1400" height="1400" alt="Vehículo de radiocontrol en la pista" loading="lazy" decoding="async"><figcaption><span>04</span> Paddock</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--05"><img src="./images/oficial/pista-oficial-05.webp" width="1400" height="1400" alt="Zona técnica del recinto" loading="lazy" decoding="async"><figcaption><span>05</span> Zona técnica</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--06"><img src="./images/oficial/pista-oficial-06.webp" width="1400" height="1400" alt="Recta principal de Miniápolis #3" loading="lazy" decoding="async"><figcaption><span>06</span> Recta</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--07"><img src="./images/oficial/pista-oficial-07.webp" width="1400" height="1400" alt="Señalética oficial del circuito" loading="lazy" decoding="async"><figcaption><span>07</span> Señalética</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--08"><img src="./images/oficial/pista-oficial-08.webp" width="1400" height="1400" alt="Superficie de la pista" loading="lazy" decoding="async"><figcaption><span>08</span> Superficie</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--09"><img src="./images/oficial/pista-oficial-09.webp" width="1400" height="1400" alt="Peralte de la pista" loading="lazy" decoding="async"><figcaption><span>09</span> Peralte</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--10"><img src="./images/oficial/pista-oficial-10.webp" width="1400" height="1400" alt="Vista del ambiente de carreras" loading="lazy" decoding="async"><figcaption><span>10</span> Ambiente</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--11"><img src="./images/oficial/pista-oficial-11.webp" width="1400" height="1400" alt="Vehículo listo para competir" loading="lazy" decoding="async"><figcaption><span>11</span> Competición</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--12"><img src="./images/oficial/pista-oficial-12.webp" width="1400" height="1400" alt="Vista lateral del circuito" loading="lazy" decoding="async"><figcaption><span>12</span> Trazada</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--13"><img src="./images/oficial/pista-oficial-13.webp" width="1400" height="1400" alt="Escena oficial del recinto" loading="lazy" decoding="async"><figcaption><span>13</span> Escenario</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--14"><img src="./images/oficial/pista-oficial-14.webp" width="1400" height="1400" alt="Detalle de una curva del circuito" loading="lazy" decoding="async"><figcaption><span>14</span> Curva</figcaption></figure>
-        <figure class="entrada__foto entrada__foto--15"><img src="./images/oficial/pista-oficial-15.webp" width="1400" height="1400" alt="Pista Miniápolis #3 en acción" loading="lazy" decoding="async"><figcaption><span>15</span> En acción</figcaption></figure>
+      <div class="entrada__diptico">
+        <figure class="entrada__foto">
+          <img src="./images/oficial/pista-circuito-panorama.webp" width="1920" height="1440" alt="Panorámica del circuito de Miniápolis #3 con el trazado de césped y asfalto" loading="lazy" decoding="async">
+          <figcaption>
+            <span class="entrada__foto-nombre"><span>01</span> El circuito completo</span>
+          </figcaption>
+        </figure>
+        <figure class="entrada__foto">
+          <img src="./images/oficial/pista-hangar-curva.webp" width="1599" height="1166" alt="Curva de la pista con bordillo rojo y blanco sobre el césped" loading="lazy" decoding="async">
+          <figcaption>
+            <span class="entrada__foto-nombre"><span>02</span> Curva y bordillo</span>
+          </figcaption>
+        </figure>
       </div>
     </section>
 
-    <div id="acceso" class="tarjeta entrada__acceso">
+    <section id="acceso" class="entrada__acceso" aria-labelledby="titulo-acceso">
       <div class="entrada__acceso-intro">
-        <p class="entrada__kicker"><span>02</span> Control de acceso</p>
-        <h2>Tu próxima<br>vuelta empieza aquí.</h2>
-      </div>
-      <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
-        <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
-        <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
+        <p class="entrada__kicker"><span>03</span> Control de acceso</p>
+        <h2 id="titulo-acceso">Tu próxima<br>vuelta empieza aquí.</h2>
+        <p class="entrada__acceso-nota">Entra con tu correo para ver tus packs, mostrar tu QR en la puerta y seguir tus entradas en tiempo real.</p>
       </div>
 
-      <div id="aviso" class="aviso" role="alert" hidden></div>
+      <div class="entrada__acceso-panel">
+        <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
+          <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
+          <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
+        </div>
 
-      <!-- Entrar -->
-      <form id="form-entrar" role="tabpanel" aria-labelledby="pestana-entrar" novalidate>
-        <div class="campo">
-          <label for="entrar-email">Correo electrónico</label>
-          <input id="entrar-email" name="email" type="email" autocomplete="username" inputmode="email"
-                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="entrar-password">Contraseña</label>
-          <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
-          <div class="campo__error"></div>
-        </div>
-        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
-        <p class="centrado mt sin-margen" id="zona-olvido" hidden>
-          <button class="boton boton--enlace" id="btn-olvido" type="button">¿Olvidaste tu contraseña?</button>
-        </p>
-      </form>
+        <div id="aviso" class="aviso" role="alert" hidden></div>
 
-      <!-- Recuperar la contraseña -->
-      <form id="form-recuperar" aria-labelledby="titulo-recuperar" novalidate hidden>
-        <h2 id="titulo-recuperar">Recuperar tu contraseña</h2>
-        <p class="tenue pequeno">
-          Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.
-        </p>
-        <div class="campo">
-          <label for="recuperar-email">Correo electrónico</label>
-          <input id="recuperar-email" name="email" type="email" autocomplete="username" inputmode="email"
-                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
-          <div class="campo__error"></div>
-        </div>
-        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Enviarme el enlace</button>
-        <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
-      </form>
+        <!-- Entrar -->
+        <form id="form-entrar" role="tabpanel" aria-labelledby="pestana-entrar" novalidate>
+          <div class="campo">
+            <label for="entrar-email">Correo electrónico</label>
+            <input id="entrar-email" name="email" type="email" autocomplete="username" inputmode="email"
+                   required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="entrar-password">Contraseña</label>
+            <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
+            <div class="campo__error"></div>
+          </div>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
+          <p class="entrada__acceso-pie" id="zona-olvido" hidden>
+            <button class="boton boton--enlace" id="btn-olvido" type="button">¿Olvidaste tu contraseña?</button>
+          </p>
+        </form>
 
-      <!-- Registro -->
-      <form id="form-registro" role="tabpanel" aria-labelledby="pestana-registro" novalidate hidden>
-        <div class="campo">
-          <label for="registro-nombre">Nombre completo</label>
-          <input id="registro-nombre" name="fullName" type="text" autocomplete="name" required placeholder="Tu nombre y apellido">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="registro-email">Correo electrónico</label>
-          <input id="registro-email" name="email" type="email" autocomplete="username" inputmode="email"
-                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="registro-telefono">Teléfono <span class="tenue-2">(opcional)</span></label>
-          <input id="registro-telefono" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+593 99 000 0000">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="registro-password">Contraseña</label>
-          <input id="registro-password" name="password" type="password" autocomplete="new-password" required>
-          <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Usa algo que solo tú recuerdes.</div>
-          <div class="campo__error"></div>
-        </div>
-        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Crear mi cuenta</button>
-      </form>
-    </div>
+        <!-- Recuperar la contraseña -->
+        <form id="form-recuperar" aria-labelledby="titulo-recuperar" novalidate hidden>
+          <h2 id="titulo-recuperar" class="entrada__acceso-subtitulo">Recuperar tu contraseña</h2>
+          <p class="entrada__acceso-nota">
+            Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.
+          </p>
+          <div class="campo">
+            <label for="recuperar-email">Correo electrónico</label>
+            <input id="recuperar-email" name="email" type="email" autocomplete="username" inputmode="email"
+                   required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Enviarme el enlace</button>
+          <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
+        </form>
 
-    <p class="entrada__pie centrado tenue-2 pequeno mt-2">
-      ¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.
-    </p>
+        <!-- Registro -->
+        <form id="form-registro" role="tabpanel" aria-labelledby="pestana-registro" novalidate hidden>
+          <div class="campo">
+            <label for="registro-nombre">Nombre completo</label>
+            <input id="registro-nombre" name="fullName" type="text" autocomplete="name" required placeholder="Tu nombre y apellido">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="registro-email">Correo electrónico</label>
+            <input id="registro-email" name="email" type="email" autocomplete="username" inputmode="email"
+                   required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="registro-telefono">Teléfono <span class="tenue-2">(opcional)</span></label>
+            <input id="registro-telefono" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+593 99 000 0000">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="registro-password">Contraseña</label>
+            <input id="registro-password" name="password" type="password" autocomplete="new-password" required>
+            <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Usa algo que solo tú recuerdes.</div>
+            <div class="campo__error"></div>
+          </div>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Crear mi cuenta</button>
+        </form>
+      </div>
+    </section>
   </main>
+
+  <footer class="entrada__pie">
+    <div class="entrada__pie-interior contenedor contenedor--portada">
+      <p class="entrada__pie-marca">Miniápolis&nbsp;#3 <span>Racing Hobbies Ecuador</span></p>
+      <p class="entrada__pie-nota">¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.</p>
+    </div>
+  </footer>
 
   <script type="module" src="/js/login.js"></script>
 </body>

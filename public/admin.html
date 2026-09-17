@@ -51,46 +51,45 @@
         <div id="lista-no-cobradas"></div>
       </div>
 
-      <!-- El gráfico y el estado del sistema son bajos; la lista de accesos es
-           larga. Juntando los dos primeros en una columna, las dos columnas
-           terminan a la misma altura en vez de dejar medio panel vacío. -->
-      <div class="rejilla rejilla--2 mt-2 alinea-arriba">
-        <div class="columna">
-          <div class="tarjeta">
-            <div class="tarjeta__titulo">
-              <h2>Entradas usadas (14 días)</h2>
-              <span class="etiqueta" id="grafico-maximo"></span>
-            </div>
-            <div class="grafico" id="grafico"></div>
-            <div class="fila fila--entre mt">
-              <span class="tenue-2 pequeno" id="grafico-desde"></span>
-              <span class="tenue-2 pequeno">hoy</span>
-            </div>
+      <!-- Los dos bloques bajos —el gráfico y el estado— van arriba, uno al lado
+           del otro. La lista de accesos, que es la larga, va debajo a todo lo
+           ancho y en dos columnas: apilada a la derecha de los otros dos dejaba
+           trescientos píxeles de panel vacío a su izquierda. -->
+      <div class="rejilla rejilla--resumen mt-2 alinea-arriba">
+        <div class="tarjeta">
+          <div class="tarjeta__titulo">
+            <h2>Entradas usadas (14 días)</h2>
+            <span class="etiqueta" id="grafico-maximo"></span>
           </div>
-
-          <div class="tarjeta">
-            <div class="tarjeta__titulo">
-              <h2>Estado del sistema</h2>
-              <button class="boton boton--fantasma boton--chico" id="btn-verificar" type="button">Verificar ahora</button>
-            </div>
-            <div id="integridad"></div>
-            <!-- Botones, no enlaces: el reporte va por la API autenticada y un enlace
-                 normal lo pediría sin la cabecera de sesión (ver admin.js). -->
-            <div class="fila mt">
-              <button class="boton boton--fantasma boton--chico" id="exp-packs" type="button" data-exportar="packs">Exportar packs</button>
-              <button class="boton boton--fantasma boton--chico" id="exp-consumos" type="button" data-exportar="consumos">Exportar consumos</button>
-              <button class="boton boton--fantasma boton--chico" id="exp-clientes" type="button" data-exportar="clientes">Exportar clientes</button>
-            </div>
+          <div class="grafico" id="grafico"></div>
+          <div class="fila fila--entre mt">
+            <span class="tenue-2 pequeno" id="grafico-desde"></span>
+            <span class="tenue-2 pequeno">hoy</span>
           </div>
         </div>
 
         <div class="tarjeta">
           <div class="tarjeta__titulo">
-            <h2>Últimos accesos</h2>
-            <span class="etiqueta etiqueta--info" id="conexiones-vivas"></span>
+            <h2>Estado del sistema</h2>
+            <button class="boton boton--fantasma boton--chico" id="btn-verificar" type="button">Verificar ahora</button>
           </div>
-          <div id="ultimos-consumos"></div>
+          <div id="integridad"></div>
+          <!-- Botones, no enlaces: el reporte va por la API autenticada y un enlace
+               normal lo pediría sin la cabecera de sesión (ver admin.js). -->
+          <div class="fila mt">
+            <button class="boton boton--fantasma boton--chico" id="exp-packs" type="button" data-exportar="packs">Exportar packs</button>
+            <button class="boton boton--fantasma boton--chico" id="exp-consumos" type="button" data-exportar="consumos">Exportar consumos</button>
+            <button class="boton boton--fantasma boton--chico" id="exp-clientes" type="button" data-exportar="clientes">Exportar clientes</button>
+          </div>
         </div>
+      </div>
+
+      <div class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>Últimos accesos</h2>
+          <span class="etiqueta" id="conexiones-vivas"></span>
+        </div>
+        <div id="ultimos-consumos"></div>
       </div>
     </section>
 

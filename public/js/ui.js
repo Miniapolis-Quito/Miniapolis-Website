@@ -276,7 +276,7 @@ export function metrica(valor, etiqueta, modificador = '') {
     el(
       'div',
       { class: `metrica ${modificador}` },
-      el('div', { class: 'metrica__valor' }, valor),
+      el('div', { class: 'metrica__valor', 'data-contar': '' }, valor),
       el('div', { class: 'metrica__etiqueta' }, etiqueta),
     ),
   );
