@@ -504,6 +504,89 @@ export function montarOndaBotones() {
 }
 
 // ---------------------------------------------------------------------------
+// Inclinación 3D, temporizador QR y atracción magnética
+// ---------------------------------------------------------------------------
+
+/**
+ * Inclinación 3D suave en tarjetas y figuras fotográficas bajo el ratón.
+ */
+export function montarInclinacion3D(selector = '.pagina-entrada figure, .entrada__media-destacada') {
+  if (sinMovimiento() || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+  const elementos = [...document.querySelectorAll(selector)].filter((el) => !yaHecho(el, 'inclinacion3d'));
+  for (const elem of elementos) {
+    let rafId = null;
+    const alMover = (e) => {
+      const rect = elem.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        elem.style.transform = `perspective(1000px) rotateX(${(-y * 5).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg) scale3d(1.012, 1.012, 1.012)`;
+      });
+    };
+    const alSalir = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      elem.style.transform = '';
+    };
+    elem.addEventListener('mousemove', alMover, { passive: true });
+    elem.addEventListener('mouseleave', alSalir, { passive: true });
+  }
+}
+
+/**
+ * Temporizador visual en vivo para la rotación del código QR.
+ */
+export function montarTemporizadorQr() {
+  if (sinMovimiento()) return;
+  const estado = document.querySelector('#qr-estado');
+  if (!estado || yaHecho(estado, 'temporizadorQr')) return;
+
+  const temporizador = document.createElement('div');
+  temporizador.className = 'qr-temporizador';
+  const barra = document.createElement('div');
+  barra.className = 'qr-temporizador__barra';
+  temporizador.append(barra);
+  estado.after(temporizador);
+
+  const cuentaNodo = document.querySelector('#qr-cuenta');
+  if (!cuentaNodo) return;
+
+  let duracionMaxima = 120;
+  const actualizarBarra = () => {
+    const valor = parseInt(cuentaNodo.textContent, 10);
+    if (!Number.isNaN(valor)) {
+      if (valor > duracionMaxima) duracionMaxima = valor;
+      const porcentaje = Math.max(0, Math.min(100, (valor / duracionMaxima) * 100));
+      barra.style.width = `${porcentaje}%`;
+    }
+  };
+
+  new MutationObserver(actualizarBarra).observe(cuentaNodo, { childList: true, characterData: true, subtree: true });
+  actualizarBarra();
+}
+
+/**
+ * Micro-interacción magnética para botones principales en escritorio.
+ */
+export function montarEfectoMagnetico(selector = '.entrada__accion, .entrada__enlace') {
+  if (sinMovimiento() || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+  const botones = [...document.querySelectorAll(selector)].filter((b) => !yaHecho(b, 'magnetico'));
+  for (const boton of botones) {
+    const alMover = (e) => {
+      const rect = boton.getBoundingClientRect();
+      const dx = e.clientX - (rect.left + rect.width / 2);
+      const dy = e.clientY - (rect.top + rect.height / 2);
+      boton.style.transform = `translate3d(${(dx * 0.15).toFixed(1)}px, ${(dy * 0.15).toFixed(1)}px, 0)`;
+    };
+    const alSalir = () => {
+      boton.style.transform = '';
+    };
+    boton.addEventListener('mousemove', alMover, { passive: true });
+    boton.addEventListener('mouseleave', alSalir, { passive: true });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Montaje
 // ---------------------------------------------------------------------------
 
@@ -519,11 +602,14 @@ export function montarMovimiento() {
   montarIndicadorPestanas();
   animarNumeros();
   vigilarNumeros();
+  montarTemporizadorQr();
   if (document.body.classList.contains('pagina-entrada')) {
     montarProgresoLectura();
     revelarTitulares('.entrada__hero h1, .entrada__seccion-cabeza h2, .entrada__acceso-intro h2, .entrada__media-destacada-copy h3');
     revelarFiguras();
     montarParalaje();
     trazarRotulos();
+    montarInclinacion3D();
+    montarEfectoMagnetico();
   }
 }

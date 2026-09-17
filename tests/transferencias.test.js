@@ -148,3 +148,66 @@ test('la transferencia emite los eventos en tiempo real para emisor y receptor',
   }
 });
 
+test('transferir entradas resuelve variantes de prefijo telefónico ecuatoriano (09... y +5939...)', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const usuario1 = await cMaster.post('/api/admin/users', {
+    email: 'local.phone@pista.ec',
+    fullName: 'Piloto Local',
+    phone: '0991112233',
+    role: 'customer',
+    password: 'Neumatico-Slick-2026',
+  });
+  const usuario2 = await cMaster.post('/api/admin/users', {
+    email: 'intl.phone@pista.ec',
+    fullName: 'Piloto Internacional',
+    phone: '+593984445566',
+    role: 'customer',
+    password: 'Neumatico-Slick-2026',
+  });
+
+  const pack1 = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  // Transferir usando formato internacional a usuario guardado con formato local
+  const r1 = await cCliente.post(`/api/packs/${pack1.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: '+593991112233',
+  });
+  assert.equal(r1.status, 200);
+  assert.equal(r1.datos.destinationPack.userId, usuario1.datos.user.id);
+
+  // Transferir usando formato local a usuario guardado con formato internacional
+  const r2 = await cCliente.post(`/api/packs/${pack1.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: '0984445566',
+  });
+  assert.equal(r2.status, 200);
+  assert.equal(r2.datos.destinationPack.userId, usuario2.datos.user.id);
+});
+
+test('transferir entradas rechaza con conflicto si múltiples cuentas comparten el mismo teléfono', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const telefonoCompartido = '+593977778888';
+  await cMaster.post('/api/admin/users', {
+    email: 'hermano1@pista.ec',
+    fullName: 'Hermano Uno',
+    phone: telefonoCompartido,
+    role: 'customer',
+    password: 'Neumatico-Slick-2026',
+  });
+  await cMaster.post('/api/admin/users', {
+    email: 'hermano2@pista.ec',
+    fullName: 'Hermano Dos',
+    phone: telefonoCompartido,
+    role: 'customer',
+    password: 'Neumatico-Slick-2026',
+  });
+
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 3 });
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: telefonoCompartido,
+  });
+
+  assert.equal(r.status, 409);
+  assert.equal(r.datos.error.code, 'telefono_ambiguo');
+});
+

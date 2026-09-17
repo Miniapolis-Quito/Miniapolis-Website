@@ -453,7 +453,7 @@ router.get(
       if (value === null || value === undefined) return '';
       let text = String(value);
       // Excel y LibreOffice interpretan como fórmula cualquier celda que empiece
-      // por =, +, - o @. Un nombre de cliente no debería poder ejecutar nada al
+      // por =, +, -, @, | o %. Un nombre de cliente no debería poder ejecutar nada al
       // abrir el reporte, así que se antepone un apóstrofo, que la hoja de
       // cálculo entiende como "esto es texto".
       // Algunas hojas recortan espacios iniciales antes de interpretar la
@@ -461,7 +461,7 @@ router.get(
       // Un tabulador o un retorno de carro al principio también los tratan
       // algunas hojas como el arranque de una fórmula (recomendación de OWASP),
       // y LibreOffice acepta además las formas de ancho completo de los signos.
-      if (/^(?:[\t\r]|\s*[=+\-@\uFF1D\uFF0B\uFF0D\uFF20])/.test(text)) text = `'${text}`;
+      if (/^(?:[\t\r]|\s*[=+\-@|%\uFF1D\uFF0B\uFF0D\uFF20\uFF5C\uFF05])/.test(text)) text = `'${text}`;
       return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const toCsv = (headers, rows) =>

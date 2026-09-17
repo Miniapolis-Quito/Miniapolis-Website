@@ -43,6 +43,12 @@
   --acento-2: #3dfe40;
   --acento-suave: rgba(61, 254, 64, 0.12);
   --acento-borde: rgba(61, 254, 64, 0.42);
+  --acento-glow: rgba(61, 254, 64, 0.35);
+  --acento-glow-fuerte: rgba(61, 254, 64, 0.65);
+  --easing-entrada: cubic-bezier(0.16, 1, 0.3, 1);
+  --curva-suave: cubic-bezier(0.16, 1, 0.3, 1);
+  --curva-resorte: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --sombra-vidrio: 0 16px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   --ok: #2fd07a;
   --ok-suave: rgba(47, 208, 122, 0.12);
@@ -329,6 +335,15 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 .tarjeta--atencion { border-top-color: rgba(255, 85, 102, .65); }
 .tarjeta--atencion::before { background: var(--error); width: 38%; }
 
+#seccion-qr {
+  border: 1px solid rgba(61, 254, 64, 0.22);
+  border-radius: var(--radio);
+  background: linear-gradient(160deg, rgba(61, 254, 64, 0.04) 0%, rgba(18, 18, 18, 0.6) 40%, rgba(10, 12, 10, 0.8) 100%);
+  padding: clamp(24px, 4vw, 36px);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(61, 254, 64, 0.2);
+}
+#seccion-qr::before { display: none; }
+
 .tarjeta__titulo {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; margin-bottom: var(--e4);
@@ -412,6 +427,35 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 .saldo--vacio { background: radial-gradient(70% 140% at 50% 30%, rgba(255, 85, 102, .12), transparent 70%); }
 .saldo--vacio .saldo__numero { color: var(--error); text-shadow: 0 6px 30px rgba(255, 85, 102, 0.3); }
 .saldo--vacio::before { background-image: repeating-linear-gradient(90deg, rgba(255, 85, 102, .07) 0 1px, transparent 1px 46px); }
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(22px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes saldo-brillo {
+  0%   { opacity: 0.45; transform: translateY(-4%) scale(0.96); }
+  50%  { opacity: 0.9; transform: translateY(0%) scale(1.04); }
+  100% { opacity: 0.45; transform: translateY(4%) scale(0.98); }
+}
+
+@keyframes numero-entra {
+  0%   { opacity: 0; transform: translateY(24px) scale(0.92); filter: blur(5px); }
+  60%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: none; }
+}
+
+.saldo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--acento-borde) 30%, var(--acento) 50%, var(--acento-borde) 70%, transparent);
+  box-shadow: 0 0 16px var(--acento-glow);
+  pointer-events: none;
+}
 
 @keyframes latido { 0% { transform: scale(1); } 42% { transform: scale(1.1); } 100% { transform: scale(1); } }
 .saldo__numero.pulso { animation: latido 620ms var(--curva-rebote); }
@@ -805,66 +849,69 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .pack {
   position: relative;
   overflow: hidden;
-  border: 0;
-  border-top: 1px solid var(--borde);
-  border-radius: 0;
-  background: none;
-  padding: 20px 0 22px 18px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 22px 20px 22px 22px;
   display: grid;
   gap: 13px;
-  transition: background-color var(--t-media) var(--curva);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: all var(--t-media) var(--curva-suave);
 }
-.pack:hover { background: rgba(255, 255, 255, .025); }
+.pack:hover {
+  background: linear-gradient(150deg, rgba(61, 254, 64, 0.05), rgba(255, 255, 255, 0.02));
+  border-color: var(--acento-borde);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px var(--acento-glow);
+  transform: translateY(-2px);
+}
 .pack::before {
   content: '';
   position: absolute; left: 0; top: 0; bottom: 0;
-  width: 2px;
+  width: 3px;
   background: linear-gradient(180deg, var(--acento), transparent);
-  opacity: .7;
-  transition: opacity var(--t-media) var(--curva);
+  opacity: .8;
+  transition: opacity var(--t-media) var(--curva-suave), width var(--t-media) var(--curva-suave);
 }
-.pack:hover::before { opacity: 1; }
+.pack:hover::before { opacity: 1; width: 4px; }
 .pack--inactivo { opacity: .5; }
 .pack--inactivo::before { background: var(--borde-fuerte); }
 .pack__cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.pack__codigo { font-family: var(--mono); font-size: 1rem; font-weight: 600; letter-spacing: .08em; color: var(--acento-2); }
+.pack__codigo { font-family: var(--mono); font-size: 1rem; font-weight: 600; letter-spacing: .08em; color: var(--acento-2); text-shadow: 0 0 12px var(--acento-glow); }
 .pack__restantes { font-size: 2.1rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
 
 .barra-progreso {
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
-  background: var(--fondo);
+  background: rgba(0, 0, 0, 0.65);
   overflow: hidden;
-  border: 1px solid var(--borde);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .barra-progreso__relleno {
   height: 100%;
-  background: var(--acento);
-  transition: width var(--t-lenta) var(--curva);
+  background: linear-gradient(90deg, #1fa34c, var(--acento));
+  box-shadow: 0 0 12px var(--acento-glow);
+  transition: width var(--t-lenta) var(--curva-suave);
 }
 
 .qr-caja {
   position: relative;
   display: grid; place-items: center; gap: 12px;
-  padding: 18px;
+  padding: 20px;
   background: #fff;
   border-radius: var(--radio-s);
   min-height: 210px;
-  /* La caja se ajusta al código. Ocupando todo el ancho de la tarjeta, el
-     código quedaba perdido en medio de un rectángulo blanco enorme y los
-     ángulos de la mira enmarcaban el vacío que había a los lados, no el QR.
-     El `min-width` sostiene la caja mientras el código aún no ha llegado. */
   width: fit-content;
   min-width: min(304px, 100%);
   max-width: 100%;
   margin-inline: auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px var(--acento-glow);
+  transition: transform var(--t-media) var(--curva-suave), box-shadow var(--t-media) var(--curva-suave);
 }
 /* Esquinas de enfoque sobre el blanco del código: lo enmarcan como una mira
    sin tocar la zona silenciosa que el lector necesita. */
-/* Cuatro esquinas, no dos. Con un ángulo arriba a la izquierda y otro abajo a
-   la derecha no se leía como una mira, sino como un marco a medio dibujar. Los
-   cuatro ángulos se pintan con degradados —dos por pseudoelemento— para no
-   añadir nodos al HTML. */
 .qr-caja::before,
 .qr-caja::after {
   content: '';
@@ -879,7 +926,6 @@ fieldset { border: 0; margin: 0; padding: 0; }
     linear-gradient(var(--acento), var(--acento)) right top / 22px 2px no-repeat;
 }
 .qr-caja::before { top: 8px; }
-/* Volteado, los dos ángulos de arriba sirven de ángulos de abajo. */
 .qr-caja::after { bottom: 8px; transform: scaleY(-1); }
 .qr-caja svg { display: block; width: min(268px, 62vw); height: auto; }
 .qr-caja--cargando { background: var(--superficie-2); }
@@ -887,18 +933,37 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .qr-pie { text-align: center; color: var(--texto-3); font-size: .82rem; }
 .qr-cuenta { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; color: var(--acento-2); }
 
+.qr-temporizador {
+  width: 100%;
+  max-width: 260px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  margin: 10px auto 0;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.qr-temporizador__barra {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--acento-2), var(--ok));
+  box-shadow: 0 0 8px var(--acento-glow);
+  transition: width 1s linear;
+}
+
 /* --------------------------------------------------------------------------
    Escáner
    -------------------------------------------------------------------------- */
 
 .escaner {
   position: relative;
-  border-radius: 0;
+  border-radius: var(--radio);
   overflow: hidden;
   background: #000;
   aspect-ratio: 4 / 3;
   max-height: 62vh;
   border: 1px solid var(--borde);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
 }
 .escaner video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .escaner__marco {
@@ -906,8 +971,6 @@ fieldset { border: 0; margin: 0; padding: 0; }
   display: grid; place-items: center;
   pointer-events: none;
 }
-/* La mira son cuatro ángulos, no un marco cerrado: se ve el código completo y
-   la forma es la misma que marca las tarjetas del resto del sistema. */
 .escaner__mira {
   position: relative;
   width: min(64%, 300px); aspect-ratio: 1;
@@ -926,6 +989,23 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .escaner__mira::after { bottom: 0; right: 0; border-left: 0; border-top: 0; }
 .escaner__mira--ok { --mira: var(--ok); }
 .escaner__mira--error { --mira: var(--error); }
+
+.escaner__laser {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--acento) 25%, #fff 50%, var(--acento) 75%, transparent);
+  box-shadow: 0 0 12px var(--acento), 0 0 4px #fff;
+  pointer-events: none;
+  animation: barridoLaser 2.4s ease-in-out infinite alternate;
+}
+@keyframes barridoLaser {
+  0%   { top: 4%; opacity: 0.15; }
+  15%  { opacity: 0.95; }
+  85%  { opacity: 0.95; }
+  100% { top: 96%; opacity: 0.15; }
+}
 
 .resultado {
   position: relative;
@@ -1184,15 +1264,20 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .grafico { display: flex; align-items: flex-end; gap: 5px; height: 104px; padding-bottom: 1px; border-bottom: 1px solid var(--borde); }
 .grafico__barra {
   flex: 1;
-  background: linear-gradient(180deg, var(--acento), rgba(61, 254, 64, .35));
+  background: linear-gradient(180deg, #fff 0%, var(--acento) 20%, rgba(61, 254, 64, .25) 100%);
   border-radius: 2px 2px 0 0;
   min-height: 2px;
   position: relative;
   transform-origin: bottom;
-  animation: crecerBarra var(--t-lenta) var(--curva) backwards;
-  transition: filter var(--t-rapida) var(--curva);
+  animation: crecerBarra var(--t-lenta) var(--curva-suave) backwards;
+  transition: all var(--t-rapida) var(--curva-suave);
+  box-shadow: 0 0 8px rgba(61, 254, 64, 0.25);
 }
-.grafico__barra:hover { filter: brightness(1.3); }
+.grafico__barra:hover {
+  filter: brightness(1.35);
+  box-shadow: 0 0 16px var(--acento-glow-fuerte);
+  transform: scaleY(1.04);
+}
 @keyframes crecerBarra { from { transform: scaleY(0); opacity: .4; } to { transform: scaleY(1); opacity: 1; } }
 /* Las barras entran una tras otra, de izquierda a derecha. */
 .grafico__barra:nth-child(1) { animation-delay: 20ms; }
@@ -1822,24 +1907,76 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   text-transform: uppercase;
 }
 .pagina-entrada .entrada__punto { display: block; width: 3px; height: 3px; background: var(--tinta-3); box-shadow: none; }
+.pagina-entrada .entrada__estado-pista {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--verde);
+  font-weight: 600;
+  letter-spacing: .12em;
+}
+.pagina-entrada .entrada__punto-vivo {
+  position: relative;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--verde-vivo);
+}
+.pagina-entrada .entrada__punto-vivo::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1px solid var(--verde-vivo);
+  animation: pulsoRadar 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+@keyframes pulsoRadar {
+  0%   { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
 
 .pagina-entrada .entrada__accion {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   color: var(--papel);
   background: var(--tinta);
   border: 1px solid var(--tinta);
+  border-radius: var(--radio);
   font-family: var(--mono);
   font-size: .7rem;
+  font-weight: 600;
   letter-spacing: .14em;
   text-transform: uppercase;
   text-decoration: none;
-  box-shadow: none;
-  transition: background-color var(--t-rapida) var(--curva), color var(--t-rapida) var(--curva);
+  box-shadow: 0 4px 12px rgba(20, 24, 20, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--t-media) var(--curva-suave);
 }
-.pagina-entrada .entrada__accion:hover { color: var(--papel); background: var(--verde); border-color: var(--verde); }
+.pagina-entrada .entrada__accion::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.18) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 600ms var(--curva-suave);
+}
+.pagina-entrada .entrada__accion:hover::before {
+  transform: translateX(120%);
+}
+.pagina-entrada .entrada__accion:hover {
+  color: #fff;
+  background: var(--verde);
+  border-color: var(--verde);
+  box-shadow: 0 6px 20px rgba(58, 116, 26, 0.35);
+  transform: translateY(-1px);
+}
+.pagina-entrada .entrada__accion:active {
+  transform: translateY(1px) scale(0.98);
+}
 .pagina-entrada .entrada__accion span { transition: transform var(--t-rapida) var(--curva); }
 .pagina-entrada .entrada__accion:hover span { transform: translate(2px, -2px); }
 
@@ -1883,8 +2020,18 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 }
 
 .pagina-entrada .entrada__hero-aside {
-  padding-left: clamp(18px, 2vw, 28px);
-  border-left: 1px solid var(--tinta);
+  padding-left: clamp(20px, 2.5vw, 32px);
+  border-left: 2px solid var(--tinta);
+  position: relative;
+}
+.pagina-entrada .entrada__hero-aside::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 2px;
+  height: 40%;
+  background: var(--verde);
 }
 .entrada__marca-texto {
   margin: 0 0 12px;
@@ -2123,7 +2270,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
    el aviso y el formulario eran tres filas que el titular de al lado estiraba
    a lo alto, y entre las pestañas y el primer campo quedaba un hueco de casi
    doscientos píxeles. */
-.pagina-entrada .entrada__acceso-panel { min-width: 0; }
+.pagina-entrada .entrada__acceso-panel {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--filete);
+  border-radius: var(--radio);
+  padding: clamp(24px, 4vw, 36px);
+  box-shadow: 0 20px 48px -12px rgba(20, 24, 20, 0.08), 0 1px 2px rgba(20, 24, 20, 0.04);
+}
 .pagina-entrada .entrada__acceso-panel form { margin: 0; }
 .pagina-entrada .entrada__acceso .pestanas { margin-bottom: var(--e4); border-bottom-color: var(--filete); }
 .pagina-entrada .entrada__acceso .pestana { color: var(--tinta-3); }
@@ -2134,16 +2290,25 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .pagina-entrada .entrada__acceso .campo__ayuda { color: var(--tinta-3); }
 .pagina-entrada .entrada__acceso input {
   color: var(--tinta);
-  border-bottom-color: var(--filete-fuerte);
-  background: transparent;
+  border: 1px solid rgba(20, 24, 20, 0.16);
+  border-radius: var(--radio);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  transition: all var(--t-rapida) var(--curva-suave);
 }
-.pagina-entrada .entrada__acceso input::placeholder { color: #949c94; }
-.pagina-entrada .entrada__acceso input:hover:not(:disabled) { border-bottom-color: var(--tinta-3); }
+.pagina-entrada .entrada__acceso input::placeholder { color: #8a948a; }
+.pagina-entrada .entrada__acceso input:hover:not(:disabled) {
+  border-color: rgba(20, 24, 20, 0.35);
+  background: #fff;
+}
 .pagina-entrada .entrada__acceso input:focus {
-  border-bottom-color: var(--tinta);
-  box-shadow: 0 2px 0 -1px var(--tinta);
+  border-color: var(--verde);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(58, 116, 26, 0.15), 0 2px 8px rgba(20, 24, 20, 0.06);
+  outline: none;
 }
-.pagina-entrada .entrada__acceso input[aria-invalid="true"] { border-bottom-color: var(--rojo); }
+.pagina-entrada .entrada__acceso input[aria-invalid="true"] { border-color: var(--rojo); }
 .pagina-entrada .entrada__acceso .campo__error { color: var(--rojo); }
 
 /* Los avisos del sistema están escritos para el negro: sobre papel, un rosa
@@ -2161,15 +2326,46 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .pagina-entrada .aviso--alerta { color: var(--ambar); background: rgba(138, 94, 0, .08); border-left-color: var(--ambar); }
 
 /* Sobre papel, los botones del sistema oscuro llegaban con su relieve y su
-   destello: aquí son bloques planos de tinta. */
+   destello: aquí son bloques de tinta pulidos. */
 .pagina-entrada .boton {
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 .pagina-entrada .boton::after { display: none; }
-.pagina-entrada .entrada__acceso .boton--principal { --bg: var(--tinta); --fg: var(--papel); --bd: var(--tinta); }
-.pagina-entrada .entrada__acceso .boton--principal:hover:not(:disabled) { --bg: var(--verde); --bd: var(--verde); --fg: var(--papel); }
+.pagina-entrada .entrada__acceso .boton--principal {
+  --bg: var(--tinta);
+  --fg: var(--papel);
+  --bd: var(--tinta);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  border-radius: var(--radio);
+  box-shadow: 0 6px 18px rgba(20, 24, 20, 0.15);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--t-media) var(--curva-suave);
+}
+.pagina-entrada .entrada__acceso .boton--principal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+  transform: translateX(-130%);
+  transition: transform 700ms var(--curva-suave);
+}
+.pagina-entrada .entrada__acceso .boton--principal:hover::before {
+  transform: translateX(130%);
+}
+.pagina-entrada .entrada__acceso .boton--principal:hover:not(:disabled) {
+  --bg: var(--verde);
+  --bd: var(--verde);
+  --fg: #fff;
+  box-shadow: 0 8px 26px rgba(58, 116, 26, 0.35);
+  transform: translateY(-2px);
+}
+.pagina-entrada .entrada__acceso .boton--principal:active {
+  transform: translateY(1px) scale(0.98);
+}
 .pagina-entrada .entrada__acceso .boton--fantasma { --bg: transparent; --fg: var(--tinta); --bd: var(--filete-fuerte); }
 .pagina-entrada .entrada__acceso .boton--fantasma:hover:not(:disabled) { --bd: var(--tinta); --bg: transparent; }
 .pagina-entrada .entrada__acceso .boton--enlace { color: var(--tinta-3); text-decoration-color: var(--filete-fuerte); }

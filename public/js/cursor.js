@@ -13,7 +13,7 @@
  */
 
 /** Qué se considera «algo con lo que se puede interactuar». */
-const INTERACTIVO = 'a, button, [role="tab"], summary, label, select, input[type="checkbox"], .lista__item, .pack, .mini-pack, tbody tr';
+const INTERACTIVO = 'a, button, [role="tab"], summary, label, select, input[type="checkbox"], .lista__item, .pack, .mini-pack, tbody tr, figure, .entrada__media-destacada';
 
 /** Cuánto se acerca el anillo a su destino en cada cuadro: el retardo. */
 const SEGUIMIENTO = 0.19;

@@ -480,13 +480,39 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
     const term = String(recipient || '').trim().toLowerCase();
     const rawTerm = String(recipient || '').trim();
     const cleanPhone = rawTerm.replace(/[\s-]/g, '');
-    const targetUser = db
-      .prepare(
-        `SELECT id, full_name, email, phone, status, role FROM users
-          WHERE email_normalized = ? OR email = ? OR phone = ? OR phone = ?
-          LIMIT 1`,
-      )
-      .get(term, rawTerm, rawTerm, cleanPhone);
+
+    // 1. Búsqueda exacta por correo (la columna email_normalized es única)
+    let targetUser = db
+      .prepare('SELECT id, full_name, email, phone, status, role FROM users WHERE email_normalized = ? OR email = ?')
+      .get(term, rawTerm);
+
+    // 2. Si no se encontró por correo y tiene formato telefónico, buscar por variantes
+    if (!targetUser && cleanPhone.length >= 6 && /^\+?[0-9]+$/.test(cleanPhone)) {
+      const phoneVariants = new Set([cleanPhone, rawTerm]);
+      if (cleanPhone.startsWith('+593') && cleanPhone.length === 13) {
+        phoneVariants.add(`0${cleanPhone.slice(4)}`);
+      } else if (cleanPhone.startsWith('593') && cleanPhone.length === 12) {
+        phoneVariants.add(`0${cleanPhone.slice(3)}`);
+      } else if (cleanPhone.startsWith('0') && cleanPhone.length === 10) {
+        phoneVariants.add(`+593${cleanPhone.slice(1)}`);
+        phoneVariants.add(`593${cleanPhone.slice(1)}`);
+      }
+
+      const placeholders = Array.from(phoneVariants).map(() => '?').join(', ');
+      const matchingUsers = db
+        .prepare(`SELECT id, full_name, email, phone, status, role FROM users WHERE phone IN (${placeholders})`)
+        .all(...phoneVariants);
+
+      if (matchingUsers.length > 1) {
+        throw conflict(
+          'Hay más de una cuenta registrada con ese número de teléfono. Usa el correo electrónico del destinatario para transferir.',
+          'telefono_ambiguo',
+        );
+      }
+      if (matchingUsers.length === 1) {
+        targetUser = matchingUsers[0];
+      }
+    }
 
     if (!targetUser) {
       throw notFound(

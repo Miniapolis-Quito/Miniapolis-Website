@@ -518,3 +518,46 @@ test('un ticket de descarga con expiración lejana en el futuro se rechaza', asy
 
   assert.equal(wallet.ticketValido(packId, ticketManipulado, { ahora }), false);
 });
+
+test('el CSV neutraliza fórmulas y comandos con pipe (|) y porcentaje (%)', async () => {
+  const { cMaster } = await sembrarUsuarios();
+  const alta = await cMaster.post('/api/admin/users', {
+    email: 'formula-pipe@pista.ec',
+    fullName: "|'cmd'/'C calc'!A0",
+  });
+  assert.equal(alta.status, 201);
+
+  const alta2 = await cMaster.post('/api/admin/users', {
+    email: 'formula-pct@pista.ec',
+    fullName: '%calc%',
+  });
+  assert.equal(alta2.status, 201);
+
+  const csv = await cMaster.get('/api/admin/export/clientes.csv');
+  assert.equal(csv.status, 200);
+  assert.ok(csv.datos.includes(`'|'cmd'/'C calc'!A0`), 'la celda con pipe debe empezar por apóstrofo');
+  assert.ok(csv.datos.includes(`'%calc%`), 'la celda con porcentaje debe empezar por apóstrofo');
+});
+
+test('el desbloqueo administrativo de un usuario también limpia la cuota de rate limit de login y fallos', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const { consume } = await import('../src/lib/rateLimit.js');
+  const { CLAVES } = await import('./helpers.js');
+  const anon = crearCliente();
+
+  // Agotar la cuota de rate limit por cuenta (login-cuenta)
+  for (let i = 0; i < 15; i++) {
+    consume('login-cuenta:cliente@pista.ec', { limit: 12, windowSeconds: 900 });
+  }
+
+  // Desbloquear al usuario desde administración
+  const desbloqueo = await cMaster.post(`/api/admin/users/${cliente.id}/unlock`);
+  assert.equal(desbloqueo.status, 200);
+
+  // Tras el desbloqueo, el usuario debe poder iniciar sesión inmediatamente sin 429
+  const login = await anon.post('/api/auth/login', {
+    email: 'cliente@pista.ec',
+    password: CLAVES.cliente,
+  });
+  assert.equal(login.status, 200, JSON.stringify(login.datos));
+});

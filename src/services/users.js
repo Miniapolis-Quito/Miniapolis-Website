@@ -5,7 +5,7 @@ import { hashPassword, verifyPassword, needsRehash, HASH_FICTICIO } from '../lib
 import { conflict, notFound, badRequest } from '../lib/errors.js';
 import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
-import { consume } from '../lib/rateLimit.js';
+import { consume, reset as resetRateLimit } from '../lib/rateLimit.js';
 import { notificarSesionInvalida } from './sessions.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
@@ -91,6 +91,11 @@ export async function createUser({ email, password, fullName, phone, role = 'cus
     }
     throw error;
   }
+
+  // Si hubo intentos fallidos previos con este correo cuando la cuenta aún no
+  // existía, se limpian las cuotas para que la nueva cuenta empiece sin trabas.
+  resetRateLimit(`login-fantasma:${normalized}`);
+  resetRateLimit(`login-cuenta:${normalized}`);
 
   return findById(user.id);
 }
@@ -283,8 +288,13 @@ export async function setPassword(userId, newPassword, { expectedPasswordHash = 
     return escribirPassword(db, userId, passwordHash);
   });
   if (!changed) throw notFound('Usuario no encontrado.');
+  const user = findById(userId, db);
+  if (user) {
+    resetRateLimit(`login-cuenta:${user.email_normalized}`);
+    resetRateLimit(`password-actual-fallos:${userId}`);
+  }
   notificarSesionInvalida(userId, 'password_cambiada');
-  return findById(userId, db);
+  return user;
 }
 
 export function updateUser(userId, changes, db = getDb()) {
@@ -371,10 +381,14 @@ export function updateUser(userId, changes, db = getDb()) {
 }
 
 export function unlockUser(userId, db = getDb()) {
+  const user = findById(userId, db);
+  if (!user) throw notFound('Usuario no encontrado.');
   db.prepare('UPDATE users SET failed_logins = 0, locked_until = NULL, updated_at = ? WHERE id = ?').run(
     new Date().toISOString(),
     userId,
   );
+  resetRateLimit(`login-cuenta:${user.email_normalized}`);
+  resetRateLimit(`password-actual-fallos:${userId}`);
   return findById(userId, db);
 }
 
