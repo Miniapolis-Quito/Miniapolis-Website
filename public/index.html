@@ -3,99 +3,171 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#f4f5f1">
   <meta name="description" content="Entradas para la pista de autos a control remoto de Miniápolis #3.">
   <title>Entrar · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="./images/oficial/pista-senna-wide.webp" as="image" fetchpriority="high">
 </head>
-<body>
-  <main class="contenedor contenedor--angosto pt-pagina">
-    <div class="centrado mb-3">
-      <div class="brand-lockup brand-lockup--entrada" aria-hidden="true">
-        <img class="brand-lockup__logo" src="/images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="">
-      </div>
-      <span class="seccion-marca">Entradas de pista</span>
-      <h1 data-marca>Miniápolis #3</h1>
-      <p class="tenue">Tus entradas para la pista de autos a control remoto.</p>
+<body class="pagina-entrada">
+  <header class="entrada__barra">
+    <div class="entrada__barra-interior contenedor contenedor--portada">
+      <a class="entrada__marca subrayado-no" href="./index.html" aria-label="Miniápolis #3 — inicio">
+        <span class="entrada__marca-sello" aria-hidden="true"><img src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt=""></span>
+      </a>
+      <p class="entrada__meta" aria-label="Identificador de la pista"><span>Ecuador</span><span class="entrada__punto" aria-hidden="true"></span><span>Track 03</span></p>
+      <a class="entrada__accion" href="#acceso">Acceso <span aria-hidden="true">↗</span></a>
     </div>
+  </header>
 
-    <div class="tarjeta">
-      <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
-        <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
-        <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
+  <main class="contenedor contenedor--portada pt-pagina">
+    <section class="entrada__hero" aria-labelledby="titulo-entrada">
+      <div class="entrada__hero-copy">
+        <p class="entrada__kicker"><span>01</span> Sistema de entradas</p>
+        <h1 id="titulo-entrada"><span>Adrenalina</span><span>sin límites<sup class="entrada__marca-registrada">™</sup></span></h1>
+      </div>
+      <div class="entrada__hero-aside">
+        <p class="entrada__marca-texto">Miniápolis&nbsp;#3</p>
+        <p class="entrada__descripcion">Tu pase digital para vivir la pista de autos a control remoto. Entra, acelera y vuelve a la línea de salida.</p>
+        <a class="entrada__enlace" href="#acceso">Entrar al sistema <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <figure class="entrada__foto entrada__foto--apertura">
+      <img src="./images/oficial/pista-senna-wide.webp" width="1920" height="1280" alt="Un McLaren Senna a escala sobre el asfalto de la pista de Miniápolis #3" fetchpriority="high" decoding="async">
+      <figcaption>
+        <span class="entrada__foto-nombre">Racing Hobbies / Miniápolis&nbsp;#3</span>
+        <span class="entrada__foto-estado">Acceso en tiempo real <i aria-hidden="true"></i></span>
+      </figcaption>
+    </figure>
+
+    <section class="entrada__pista-real" aria-labelledby="titulo-pista">
+      <div class="entrada__seccion-cabeza">
+        <div>
+          <p class="entrada__kicker"><span>02</span> La pista real</p>
+          <h2 id="titulo-pista">Cada curva tiene<br><em>su propia historia.</em></h2>
+        </div>
+        <p class="entrada__seccion-descripcion">Conoce el escenario real de Miniápolis #3: una pista hecha para acelerar, competir y compartir la pasión por el radiocontrol.</p>
       </div>
 
-      <div id="aviso" class="aviso" role="alert" hidden></div>
+      <article class="entrada__media-destacada">
+        <div class="entrada__media-destacada-copy">
+          <h3>Diseñada para<br>vivirla a fondo.</h3>
+          <p>El pulso de la carrera empieza antes de la primera vuelta: en cada bandera, cada curva y cada detalle del paddock.</p>
+          <p class="entrada__media-meta"><span>Miniápolis&nbsp;#3</span><span>Racing Hobbies</span></p>
+        </div>
+        <figure class="entrada__media-foto">
+          <img src="./images/oficial/pista-hangar-vertical.webp" width="1152" height="2048" alt="Nave de Miniápolis #3 con el trazado de césped y bordillos" loading="lazy" decoding="async">
+        </figure>
+        <figure class="entrada__media-foto entrada__media-foto--segunda">
+          <img src="./images/oficial/pista-senna-vertical.webp" width="1152" height="2048" alt="Coche de radiocontrol detenido junto a un bordillo de la pista" loading="lazy" decoding="async">
+        </figure>
+      </article>
 
-      <!-- Entrar -->
-      <form id="form-entrar" role="tabpanel" aria-labelledby="pestana-entrar" novalidate>
-        <div class="campo">
-          <label for="entrar-email">Correo electrónico</label>
-          <input id="entrar-email" name="email" type="email" autocomplete="username" inputmode="email"
-                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="entrar-password">Contraseña</label>
-          <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
-          <div class="campo__error"></div>
-        </div>
-        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
-        <p class="centrado mt sin-margen" id="zona-olvido" hidden>
-          <button class="boton boton--enlace" id="btn-olvido" type="button">¿Olvidaste tu contraseña?</button>
-        </p>
-      </form>
+      <div class="entrada__diptico">
+        <figure class="entrada__foto">
+          <img src="./images/oficial/pista-circuito-panorama.webp" width="1920" height="1440" alt="Panorámica del circuito de Miniápolis #3 con el trazado de césped y asfalto" loading="lazy" decoding="async">
+          <figcaption>
+            <span class="entrada__foto-nombre"><span>01</span> El circuito completo</span>
+          </figcaption>
+        </figure>
+        <figure class="entrada__foto">
+          <img src="./images/oficial/pista-hangar-curva.webp" width="1599" height="1166" alt="Curva de la pista con bordillo rojo y blanco sobre el césped" loading="lazy" decoding="async">
+          <figcaption>
+            <span class="entrada__foto-nombre"><span>02</span> Curva y bordillo</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
 
-      <!-- Recuperar la contraseña -->
-      <form id="form-recuperar" aria-labelledby="titulo-recuperar" novalidate hidden>
-        <h2 id="titulo-recuperar">Recuperar tu contraseña</h2>
-        <p class="tenue pequeno">
-          Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.
-        </p>
-        <div class="campo">
-          <label for="recuperar-email">Correo electrónico</label>
-          <input id="recuperar-email" name="email" type="email" autocomplete="username" inputmode="email"
-                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
-          <div class="campo__error"></div>
-        </div>
-        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Enviarme el enlace</button>
-        <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
-      </form>
+    <section id="acceso" class="entrada__acceso" aria-labelledby="titulo-acceso">
+      <div class="entrada__acceso-intro">
+        <p class="entrada__kicker"><span>03</span> Control de acceso</p>
+        <h2 id="titulo-acceso">Tu próxima<br>vuelta empieza aquí.</h2>
+        <p class="entrada__acceso-nota">Entra con tu correo para ver tus packs, mostrar tu QR en la puerta y seguir tus entradas en tiempo real.</p>
+      </div>
 
-      <!-- Registro -->
-      <form id="form-registro" role="tabpanel" aria-labelledby="pestana-registro" novalidate hidden>
-        <div class="campo">
-          <label for="registro-nombre">Nombre completo</label>
-          <input id="registro-nombre" name="fullName" type="text" autocomplete="name" required placeholder="Tu nombre y apellido">
-          <div class="campo__error"></div>
+      <div class="entrada__acceso-panel">
+        <div class="pestanas" role="tablist" aria-label="Entrar o crear cuenta">
+          <button class="pestana" role="tab" id="pestana-entrar" aria-controls="form-entrar" aria-selected="true" type="button">Entrar</button>
+          <button class="pestana" role="tab" id="pestana-registro" aria-controls="form-registro" aria-selected="false" type="button">Crear cuenta</button>
         </div>
-        <div class="campo">
-          <label for="registro-email">Correo electrónico</label>
-          <input id="registro-email" name="email" type="email" autocomplete="username" inputmode="email"
-                 required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="registro-telefono">Teléfono <span class="tenue-2">(opcional)</span></label>
-          <input id="registro-telefono" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+593 99 000 0000">
-          <div class="campo__error"></div>
-        </div>
-        <div class="campo">
-          <label for="registro-password">Contraseña</label>
-          <input id="registro-password" name="password" type="password" autocomplete="new-password" required>
-          <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Usa algo que solo tú recuerdes.</div>
-          <div class="campo__error"></div>
-        </div>
-        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Crear mi cuenta</button>
-      </form>
-    </div>
 
-    <p class="centrado tenue-2 pequeno mt-2">
-      ¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.
-    </p>
+        <div id="aviso" class="aviso" role="alert" hidden></div>
+
+        <!-- Entrar -->
+        <form id="form-entrar" role="tabpanel" aria-labelledby="pestana-entrar" novalidate>
+          <div class="campo">
+            <label for="entrar-email">Correo electrónico</label>
+            <input id="entrar-email" name="email" type="email" autocomplete="username" inputmode="email"
+                   required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="entrar-password">Contraseña</label>
+            <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
+            <div class="campo__error"></div>
+          </div>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>
+          <p class="entrada__acceso-pie" id="zona-olvido" hidden>
+            <button class="boton boton--enlace" id="btn-olvido" type="button">¿Olvidaste tu contraseña?</button>
+          </p>
+        </form>
+
+        <!-- Recuperar la contraseña -->
+        <form id="form-recuperar" aria-labelledby="titulo-recuperar" novalidate hidden>
+          <h2 id="titulo-recuperar" class="entrada__acceso-subtitulo">Recuperar tu contraseña</h2>
+          <p class="entrada__acceso-nota">
+            Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.
+          </p>
+          <div class="campo">
+            <label for="recuperar-email">Correo electrónico</label>
+            <input id="recuperar-email" name="email" type="email" autocomplete="username" inputmode="email"
+                   required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Enviarme el enlace</button>
+          <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
+        </form>
+
+        <!-- Registro -->
+        <form id="form-registro" role="tabpanel" aria-labelledby="pestana-registro" novalidate hidden>
+          <div class="campo">
+            <label for="registro-nombre">Nombre completo</label>
+            <input id="registro-nombre" name="fullName" type="text" autocomplete="name" required placeholder="Tu nombre y apellido">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="registro-email">Correo electrónico</label>
+            <input id="registro-email" name="email" type="email" autocomplete="username" inputmode="email"
+                   required placeholder="tu@correo.com" autocapitalize="off" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="registro-telefono">Teléfono <span class="tenue-2">(opcional)</span></label>
+            <input id="registro-telefono" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+593 99 000 0000">
+            <div class="campo__error"></div>
+          </div>
+          <div class="campo">
+            <label for="registro-password">Contraseña</label>
+            <input id="registro-password" name="password" type="password" autocomplete="new-password" required>
+            <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Usa algo que solo tú recuerdes.</div>
+            <div class="campo__error"></div>
+          </div>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Crear mi cuenta</button>
+        </form>
+      </div>
+    </section>
   </main>
+
+  <footer class="entrada__pie">
+    <div class="entrada__pie-interior contenedor contenedor--portada">
+      <p class="entrada__pie-marca">Miniápolis&nbsp;#3 <span>Racing Hobbies Ecuador</span></p>
+      <p class="entrada__pie-nota">¿Problemas para entrar? Acércate a recepción de la pista y te ayudamos.</p>
+    </div>
+  </footer>
 
   <script type="module" src="/js/login.js"></script>
 </body>

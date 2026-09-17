@@ -120,11 +120,16 @@ de repetirla.
 ## `flujo-completo.mjs` — el sistema instalado
 
 ```bash
-# En otra terminal, con la base recién creada:
-rm -f data/tickets.db* && npm start
+# En otra terminal:
+npm start
 
 npm run test:e2e
 ```
+
+Se puede repetir sobre el mismo servidor tantas veces como haga falta: cada
+ejecución se inventa los correos del cliente y del personal que da de alta, así
+que no choca con lo que dejó la anterior y no hay nada que borrar entre una y
+otra.
 
 Recorre el sistema tal y como queda instalado: contra un servidor de verdad,
 por su puerto, con la cuenta máster que se creó al arrancar. Un cliente se

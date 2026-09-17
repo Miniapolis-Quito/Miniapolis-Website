@@ -151,8 +151,12 @@ async function cargarResumen() {
 
   render(
     $('#metricas'),
+    // Solo un número de la fila va en verde: el que manda. `--acento` y `--ok`
+    // son dos verdes casi idénticos, así que pintarlos uno al lado del otro no
+    // distinguía nada —parecía un descuido— y le quitaba fuerza al dato que sí
+    // tiene que verse primero.
     metrica(String(datos.totals.pendingTickets), 'Entradas por usar', 'metrica--acento'),
-    metrica(String(datos.redemptions.today), 'Entradas usadas hoy', 'metrica--ok'),
+    metrica(String(datos.redemptions.today), 'Entradas usadas hoy'),
     metrica(String(datos.totals.activePacks), 'Packs activos'),
     metrica(dinero(datos.totals.revenueCents, datos.totals.currency), 'Ingresos registrados'),
     metrica(String(datos.users.customers), 'Clientes'),
@@ -181,30 +185,42 @@ async function cargarResumen() {
   );
   $('#grafico-desde').textContent = fecha(mediodiaDe(dias[0].date), { conHora: false });
 
-  $('#conexiones-vivas').textContent = `${plural(datos.liveConnections, 'pantalla conectada', 'pantallas conectadas')}`;
+  // El verde de la etiqueta dice «hay alguien mirando». Con cero pantallas
+  // conectadas no hay nada que celebrar: la etiqueta se queda neutra.
+  const conexiones = $('#conexiones-vivas');
+  conexiones.textContent = plural(datos.liveConnections, 'pantalla conectada', 'pantallas conectadas');
+  conexiones.classList.toggle('etiqueta--info', datos.liveConnections > 0);
 
+  const filaDeAcceso = (item) =>
+    el(
+      'li',
+      { class: 'lista__item' },
+      el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
+      el(
+        'div',
+        { class: 'crece' },
+        el('div', {}, item.customerName),
+        el('div', { class: 'tenue-2 pequeno' }, `${horaCorta(item.createdAt)} · ${item.packCode} · ${item.scannerName || 'sistema'}`),
+      ),
+      item.quantity > 1 ? el('span', { class: 'etiqueta etiqueta--info' }, `${item.quantity} entradas`) : null,
+      el('span', { class: 'etiqueta' }, `Quedan ${item.remainingAfter}`),
+    );
+
+  // La lista va en dos columnas dentro de un bloque ancho, y son dos listas de
+  // verdad: partirla en dos es lo único que deja que cada columna empiece sin
+  // línea encima sin depender de cuántos accesos haya devuelto el servidor.
+  const mitad = Math.ceil(datos.recent.length / 2);
   render(
     $('#ultimos-consumos'),
     datos.recent.length === 0
       ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Sin actividad todavía.'))
       : el(
-          'ul',
-          { class: 'lista' },
-          datos.recent.map((item) =>
-            el(
-              'li',
-              { class: 'lista__item' },
-              el('span', { class: 'icono-lista' }, icono(item.status === 'voided' ? 'devolver' : 'ok')),
-              el(
-                'div',
-                { class: 'crece' },
-                el('div', {}, item.customerName),
-                el('div', { class: 'tenue-2 pequeno' }, `${horaCorta(item.createdAt)} · ${item.packCode} · ${item.scannerName || 'sistema'}`),
-              ),
-              item.quantity > 1 ? el('span', { class: 'etiqueta etiqueta--info' }, `${item.quantity} entradas`) : null,
-              el('span', { class: 'etiqueta' }, `Quedan ${item.remainingAfter}`),
-            ),
-          ),
+          'div',
+          { class: 'columnas-lista' },
+          el('ul', { class: 'lista' }, datos.recent.slice(0, mitad).map(filaDeAcceso)),
+          datos.recent.length > mitad
+            ? el('ul', { class: 'lista' }, datos.recent.slice(mitad).map(filaDeAcceso))
+            : null,
         ),
   );
 

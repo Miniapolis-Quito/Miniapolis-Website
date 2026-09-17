@@ -34,6 +34,7 @@ const RECURSOS = [
   '/js/realtime.js',
   '/js/shell.js',
   '/js/cursor.js',
+  '/js/movimiento.js',
   '/js/cuenta.js',
   '/vendor/jsQR.js',
   '/fonts/anton-400.woff2',

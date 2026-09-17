@@ -189,16 +189,16 @@ a:hover { text-decoration-color: var(--acento); }
   white-space: nowrap;
 }
 .barra__marca span { font-size: 1rem; }
+/* El logotipo oficial ya trae su propio contorno oscuro y va suelto sobre el
+   negro de la interfaz. Sobre una placa verde se perdían el verde de «MINI»,
+   el del «#3» y las cuchillas de velocidad: la marca quedaba a medias. */
 .marca__sello {
   display: grid; flex: none; place-items: center;
-  width: 96px; height: 34px;
-  overflow: hidden;
-  background: var(--acento);
-  border-radius: var(--radio-xs);
-  transition: box-shadow var(--transicion), transform var(--transicion);
+  height: 34px;
+  transition: filter var(--transicion), transform var(--transicion);
 }
-.barra__marca:hover .marca__sello { box-shadow: 0 0 0 1px var(--acento), 0 6px 18px rgba(61, 254, 64, .28); transform: translateY(-1px); }
-.marca__logo { display: block; width: 90px; height: 30px; object-fit: contain; }
+.barra__marca:hover .marca__sello { filter: drop-shadow(0 4px 14px rgba(61, 254, 64, .3)); transform: translateY(-1px); }
+.marca__logo { display: block; width: auto; height: 34px; object-fit: contain; }
 .barra__nav { display: flex; gap: 4px; flex-wrap: wrap; }
 
 .encabezado-pista {
@@ -238,13 +238,10 @@ a:hover { text-decoration-color: var(--acento); }
 }
 .encabezado-pista p { margin-bottom: 0; color: var(--texto-2); }
 
-.brand-lockup {
-  display: inline-grid; place-items: center;
-  padding: 8px 12px;
-  background: var(--acento);
-  border-radius: var(--radio-xs);
-}
-.brand-lockup__logo { display: block; width: min(210px, 52vw); height: auto; }
+/* Mismo motivo que en `.marca__sello`: el logotipo se apoya en el lienzo
+   negro, sin recuadro que le tape la mitad verde. */
+.brand-lockup { display: inline-grid; place-items: center; }
+.brand-lockup__logo { display: block; width: min(250px, 62vw); height: auto; }
 
 main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 
@@ -257,7 +254,10 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 .rejilla--3 { grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
 /* Las métricas del panel se reparten en filas parejas en vez de dejar dos
    tarjetas sueltas al final. */
-.rejilla--metricas { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.rejilla--metricas { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+/* Resumen del panel: el gráfico manda y el estado del sistema lo acompaña. */
+.rejilla--resumen { grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr); }
+@media (max-width: 860px) { .rejilla--resumen { grid-template-columns: 1fr; } }
 /* Tres campos cortos por fila; en un teléfono, uno debajo de otro. */
 .rejilla--ajustes { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 14px; }
 
@@ -336,9 +336,13 @@ main { padding-block: clamp(18px, 3vw, 30px) clamp(96px, 14vh, 160px); }
 }
 .tarjeta__titulo h2, .tarjeta__titulo h3 { margin: 0; }
 
-.metrica { display: grid; gap: 4px; }
+/* Cada métrica se mide a sí misma: el número se escala con el ancho de su
+   propia columna, no con el de la ventana. Con `6vw` había un tramo —justo
+   donde la rejilla pasa de tres columnas a cuatro— en el que un importe como
+   «$1.185,00» se salía de su casilla y estiraba la página a lo ancho. */
+.metrica { display: grid; gap: 4px; container-type: inline-size; }
 .metrica__valor {
-  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-size: clamp(1.9rem, 20cqi, 3.6rem);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -846,22 +850,40 @@ fieldset { border: 0; margin: 0; padding: 0; }
   background: #fff;
   border-radius: var(--radio-s);
   min-height: 210px;
+  /* La caja se ajusta al código. Ocupando todo el ancho de la tarjeta, el
+     código quedaba perdido en medio de un rectángulo blanco enorme y los
+     ángulos de la mira enmarcaban el vacío que había a los lados, no el QR.
+     El `min-width` sostiene la caja mientras el código aún no ha llegado. */
+  width: fit-content;
+  min-width: min(304px, 100%);
+  max-width: 100%;
+  margin-inline: auto;
 }
 /* Esquinas de enfoque sobre el blanco del código: lo enmarcan como una mira
    sin tocar la zona silenciosa que el lector necesita. */
+/* Cuatro esquinas, no dos. Con un ángulo arriba a la izquierda y otro abajo a
+   la derecha no se leía como una mira, sino como un marco a medio dibujar. Los
+   cuatro ángulos se pintan con degradados —dos por pseudoelemento— para no
+   añadir nodos al HTML. */
 .qr-caja::before,
 .qr-caja::after {
   content: '';
   position: absolute;
-  width: 22px; height: 22px;
-  border: 2px solid var(--acento);
+  right: 8px; left: 8px;
+  height: 22px;
   pointer-events: none;
+  background:
+    linear-gradient(var(--acento), var(--acento)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) right top / 2px 22px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) right top / 22px 2px no-repeat;
 }
-.qr-caja::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
-.qr-caja::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+.qr-caja::before { top: 8px; }
+/* Volteado, los dos ángulos de arriba sirven de ángulos de abajo. */
+.qr-caja::after { bottom: 8px; transform: scaleY(-1); }
 .qr-caja svg { display: block; width: min(268px, 62vw); height: auto; }
 .qr-caja--cargando { background: var(--superficie-2); }
-.qr-caja--cargando::before, .qr-caja--cargando::after { border-color: var(--borde-fuerte); }
+.qr-caja--cargando::before, .qr-caja--cargando::after { filter: grayscale(1) brightness(.6); }
 .qr-pie { text-align: center; color: var(--texto-3); font-size: .82rem; }
 .qr-cuenta { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; color: var(--acento-2); }
 
@@ -1010,6 +1032,15 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 /* La primera fila no lleva línea: la del bloque que la contiene ya está ahí. */
 .lista__item:first-child { border-top: 0; }
+
+/* Una lista larga dentro de un bloque ancho se lee en dos columnas: la mitad de
+   arriba a la izquierda y la de abajo a la derecha, cada una hacia abajo. Son
+   dos listas de verdad (ver admin.js), así que cada columna empieza sin línea
+   encima sin tener que contar elementos desde el CSS. */
+/* `min(330px, 100%)` y no `330px` a secas: en una pantalla de 320 px el suelo
+   de la columna era más ancho que la pantalla y estiraba la página a lo ancho. */
+.columnas-lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); gap: 0 clamp(20px, 3.4vw, 44px); }
+.columnas-lista > * { min-width: 0; }
 /* Al pasar por encima, la fila se desplaza un poco y enciende una marca de
    acento a la izquierda. Es el mismo gesto en toda la interfaz. */
 .lista__item:hover {
@@ -1035,8 +1066,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border-radius: 0;
   margin-bottom: var(--e5);
   overflow-x: auto;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 .pestana {
   position: relative;
@@ -1051,20 +1080,12 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   -webkit-tap-highlight-color: transparent;
   transition: all var(--transicion);
 }
-.pestana:hover {
-  color: var(--texto);
-  background: rgba(255, 255, 255, .05);
-  border-color: rgba(255, 255, 255, .08);
-  transform: translateY(-1px);
-}
-.pestana[aria-selected="true"] {
-  background: rgba(255, 255, 255, .08);
-  color: #fff;
-  border-color: rgba(255, 255, 255, .16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 14px rgba(0, 0, 0, .35);
-}
-.pestana:hover { color: var(--texto-2); background: none; }
-.pestana[aria-selected="true"] { background: none; color: var(--texto); }
+/* Una pestaña no es una tecla: lo único que cambia al elegirla es su color y
+   el filete de abajo. El relleno y la sombra que llevaba antes dibujaban un
+   recuadro fantasma alrededor de la pestaña activa —muy visible sobre el
+   papel de la portada— y contradecían la regla de no simular relieve. */
+.pestana:hover { color: var(--texto-2); }
+.pestana[aria-selected="true"] { color: var(--texto); }
 /* Subrayado de acento que crece al seleccionar: dice cuál está activa sin
    depender solo del cambio de fondo. */
 .pestana[aria-selected="true"]::after {
@@ -1288,16 +1309,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   background: #000;
   border-bottom: 2mm solid #3dfe40;
 }
+/* La cabecera del pase ya es negra: el logotipo se imprime directamente sobre
+   ella, sin la placa verde que le borraba «MINI» y el «#3». */
 .pase__marca {
   display: grid;
   place-items: center;
-  padding: 2mm 3mm;
-  background: #3cfe3f;
 }
 .pase__logo {
   display: block;
   width: 100%;
-  max-width: 66mm;
+  max-width: 54mm;
   height: auto;
 }
 .pase__titulo  { margin-top: 3.5mm; color: #fff; font-family: var(--fuente-display); font-size: 13pt; line-height: 1; letter-spacing: .08em; text-transform: uppercase; }
@@ -1310,7 +1331,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   body { background: #fff; color: #000; }
   /* Nada de lo que espera a entrar en pantalla puede salir en blanco en papel. */
   .revelar { opacity: 1 !important; }
-  .barra, .boton, .brindis-zona { display: none !important; }
+  /* La portada tiene su propia cabecera y su propio pie, que no se llaman
+     `.barra`: en papel tampoco pintan nada. */
+  .barra, .boton, .brindis-zona,
+  .entrada__barra, .entrada__pie { display: none !important; }
   .tarjeta, .pack { border: 1px solid #ccc; box-shadow: none; background: #fff; color: #000; }
   .tarjeta::before, .pack::before { display: none; }
   .qr-caja { min-height: auto; }
@@ -1338,6 +1362,23 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .mb-3            { margin-bottom: 26px; }
 .pt-pagina       { padding-top: 7vh; }
 .pt-pagina-2     { padding-top: 14vh; }
+
+/* Un error, un enlace caducado, una contraseña nueva: pantallas de una sola
+   cosa. El bloque se centra en el alto en vez de quedarse pegado arriba con
+   media pantalla de negro debajo. */
+.pagina-sola {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  padding-block: clamp(36px, 8vh, 96px);
+}
+/* En una columna flexible todo hijo se estira a lo ancho. A un bloque le da
+   igual —es lo que ya hacía—, pero un rótulo o un botón, que en flujo normal
+   se ajustan a su contenido, se estiraban de lado a lado y su texto se quedaba
+   pegado a la izquierda. Esos dos se centran ellos mismos. */
+.pagina-sola > .seccion-marca,
+.pagina-sola > .boton { align-self: center; }
 .centro-flex     { justify-content: center; }
 .alinea-arriba   { align-items: start; }
 .sin-salto       { white-space: nowrap; }
@@ -1347,7 +1388,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .columna > *     { min-width: 0; }
 .lista-scroll    { max-height: 190px; overflow-y: auto; }
 
-.brand-lockup--entrada { margin: 0 auto 18px; }
+/* En bloque, no en línea. Siendo `inline-grid`, el rótulo de sección que va
+   justo detrás se colocaba en la misma línea —encima del «#3» del logotipo— y
+   el `margin: 0 auto` no centraba nada, porque en una caja en línea no hace
+   nada. */
+.brand-lockup--entrada { display: grid; margin: 0 auto 18px; }
 .cargando--grande { width: 30px; height: 30px; border-width: 3px; }
 
 .separador { border: 0; border-top: 1px solid var(--borde); margin: var(--e4) 0; }
@@ -1565,166 +1610,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .opcion-aviso label { display: grid; gap: 3px; cursor: pointer; }
 .opcion-aviso__nombre { font-weight: 650; }
 
-/* --------------------------------------------------------------------------
-   Cierre visual de la portada
-
-   La última capa de estilos deja la portada en un lienzo editorial luminoso.
-   El verde queda reservado para llamadas y detalles; el negro organiza la
-   lectura y los bloques de imagen aportan el contraste de Racing Hobbies.
-   -------------------------------------------------------------------------- */
-
-.pagina-entrada {
-  --entrada-paper: #f2f4ef;
-  --entrada-ink: #171b17;
-  --entrada-muted: #697269;
-  --entrada-line: rgba(23, 27, 23, .18);
-  --entrada-green: #68b82f;
-  color-scheme: light;
-  color: var(--entrada-ink);
-  background-color: var(--entrada-paper) !important;
-  background-image:
-    linear-gradient(rgba(23, 27, 23, .026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 27, 23, .026) 1px, transparent 1px) !important;
-  background-size: 92px 92px;
-}
-.pagina-entrada::before {
-  background:
-    radial-gradient(ellipse at 76% 0%, rgba(119, 222, 75, .16), transparent 32%),
-    radial-gradient(ellipse at 8% 28%, rgba(190, 217, 183, .25), transparent 38%) !important;
-  opacity: 1;
-  animation: none;
-}
-.pagina-entrada main { position: relative; z-index: 1; }
-.pagina-entrada .entrada__barra { border-bottom-color: var(--entrada-line); }
-.pagina-entrada .entrada__marca,
-.pagina-entrada .entrada__marca:hover { color: var(--entrada-ink); }
-.pagina-entrada .entrada__marca-sello {
-  width: 94px;
-  height: 35px;
-}
-.pagina-entrada .entrada__marca-sello img { filter: none; }
-.pagina-entrada .entrada__meta { color: var(--entrada-muted); }
-.pagina-entrada .entrada__punto { background: var(--entrada-ink); box-shadow: none; }
-.pagina-entrada .entrada__accion {
-  color: var(--entrada-paper);
-  background: var(--entrada-ink);
-  border-color: var(--entrada-ink);
-  box-shadow: none;
-}
-.pagina-entrada .entrada__accion:hover { background: #2a332b; color: var(--entrada-paper); }
-.pagina-entrada .entrada__hero h1,
-.pagina-entrada .entrada__hero h1 span + span { 
-  color: var(--entrada-ink);
-  font-family: var(--fuente);
-}
-.pagina-entrada .entrada__hero h1 span + span { color: var(--entrada-green); }
-.pagina-entrada .entrada__hero h1 .entrada__marca-registrada { color: var(--entrada-ink) !important; }
-.pagina-entrada .entrada__kicker { color: #4f8e2b; }
-.pagina-entrada .entrada__kicker span { color: var(--entrada-muted); }
-.pagina-entrada .entrada__hero-aside { border-left-color: var(--entrada-ink); }
-.pagina-entrada .entrada__marca-texto { color: #4f8e2b; }
-.pagina-entrada .entrada__descripcion { color: #485048; }
-.pagina-entrada .entrada__enlace { color: var(--entrada-ink); border-bottom-color: var(--entrada-ink); }
-.pagina-entrada .entrada__enlace:hover { color: #4f8e2b; }
-
-.pagina-entrada .presentacion-pista {
-  border-color: var(--entrada-ink);
-  border-radius: 3px;
-  box-shadow: 0 18px 42px rgba(23, 27, 23, .13);
-}
-.pagina-entrada .presentacion-pista::after {
-  background: linear-gradient(180deg, rgba(23, 27, 23, .03) 38%, rgba(23, 27, 23, .42) 100%);
-}
-.pagina-entrada .presentacion-pista img { filter: saturate(.9) contrast(1.04) brightness(1.03); }
-.pagina-entrada .presentacion-pista__barra {
-  right: clamp(20px, 10vw, 150px);
-  bottom: clamp(18px, 3vw, 35px);
-  left: clamp(20px, 10vw, 150px);
-  padding: 17px 20px;
-  color: var(--entrada-ink);
-  background: rgba(242, 244, 239, .9);
-  font-family: var(--fuente);
-  font-size: .73rem;
-  font-weight: 560;
-  letter-spacing: .02em;
-  text-transform: none;
-  backdrop-filter: blur(10px);
-}
-.pagina-entrada .presentacion-pista__barra span:last-child { color: var(--entrada-ink); }
-.pagina-entrada .presentacion-pista__barra i { background: #4f8e2b; box-shadow: none; }
-
-.pagina-entrada .entrada__pista-real {
-  margin-top: clamp(100px, 14vw, 190px);
-  padding-top: clamp(28px, 4vw, 48px);
-  border-top: 1px solid var(--entrada-line);
-}
-.pagina-entrada .entrada__seccion-cabeza { margin-bottom: clamp(38px, 5vw, 66px); }
-.pagina-entrada .entrada__seccion-cabeza h2,
-.pagina-entrada .entrada__media-destacada h3 {
-  font-family: var(--fuente);
-}
-.pagina-entrada .entrada__seccion-cabeza h2 { color: var(--entrada-ink); }
-.pagina-entrada .entrada__seccion-cabeza h2 em { color: var(--entrada-green); }
-.pagina-entrada .entrada__seccion-descripcion { color: #596259; }
-
-.pagina-entrada .entrada__media-destacada {
-  border: 0;
-  border-radius: 3px;
-  box-shadow: 0 22px 58px rgba(23, 27, 23, .15);
-}
-.pagina-entrada .entrada__media-destacada-copy { background: linear-gradient(145deg, #171b17, #263126); }
-.pagina-entrada .entrada__media-marca { border-inline-color: rgba(104, 184, 47, .2); }
-.pagina-entrada .entrada__foto { border-color: rgba(23, 27, 23, .14); }
-.pagina-entrada .entrada__foto figcaption { color: var(--entrada-muted); }
-.pagina-entrada .entrada__foto figcaption span { color: var(--entrada-green); }
-
-.pagina-entrada .entrada__acceso {
-  border-top: 1px solid var(--entrada-line);
-  border-right: 0;
-  border-bottom: 0;
-  border-left: 0;
-  border-radius: 0;
-  padding-inline: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.pagina-entrada .entrada__acceso-intro h2 { color: var(--entrada-ink); font-family: var(--fuente); }
-.pagina-entrada .entrada__acceso .pestanas { border-bottom-color: var(--entrada-line); }
-.pagina-entrada .entrada__acceso .pestana { color: var(--entrada-muted); }
-.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] { color: var(--entrada-ink); }
-.pagina-entrada .entrada__acceso .pestana::after { background: var(--entrada-ink); box-shadow: none; }
-.pagina-entrada .entrada__acceso input {
-  color: var(--entrada-ink);
-  border-color: rgba(23, 27, 23, .42);
-  background: transparent;
-}
-.pagina-entrada .entrada__acceso input::placeholder { color: #879087; }
-.pagina-entrada .entrada__acceso input:focus {
-  border-color: var(--entrada-ink);
-  box-shadow: 0 1px 0 var(--entrada-ink);
-}
-.pagina-entrada .entrada__acceso .boton--principal {
-  --bg: var(--entrada-ink);
-  --fg: var(--entrada-paper);
-  --bd: var(--entrada-ink);
-}
-.pagina-entrada .entrada__pie { color: var(--entrada-muted); }
-
-@media (max-width: 760px) {
-  .pagina-entrada .entrada__marca-sello { width: 78px; height: 30px; }
-  .pagina-entrada .entrada__seccion-cabeza { grid-template-columns: 1fr; gap: 24px; }
-  .pagina-entrada .entrada__seccion-descripcion { margin-left: 0; }
-  .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr; min-height: 570px; }
-  .pagina-entrada .entrada__media-destacada-copy { min-height: 300px; }
-  .pagina-entrada .entrada__media-marca { min-height: 270px; border-inline: 0; border-top: 1px solid rgba(104, 184, 47, .2); }
-  .pagina-entrada .entrada__logo-firma { display: none; }
-}
-
-@media (max-width: 480px) {
-  .pagina-entrada .entrada__pista-real { margin-top: 82px; }
-  .pagina-entrada .entrada__media-destacada { min-height: 540px; }
-  .pagina-entrada .entrada__media-marca { min-height: 240px; }
-}
 
 /* Selector de cantidad para escaneo en grupo: una fila de teclas, sin caja
    alrededor. El rótulo va como el resto de los rótulos técnicos. */
@@ -1784,3 +1669,981 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   border-color: var(--acento);
 }
 
+
+/* ==========================================================================
+   Portada pública — Miniápolis #3
+
+   La portada es la única pantalla clara del sistema: papel, tinta y una
+   retícula ancha de revista. El resto del producto vive en negro, así que
+   aquí lo que mantiene la unidad no es el color sino la gramática: rótulos
+   técnicos en monoespaciada, filetes de 1px, cantos vivos y el verde de la
+   marca reservado para lo que de verdad señala algo.
+   ========================================================================== */
+
+.pagina-entrada {
+  /* Paleta de papel. El verde de la interfaz oscura (#3dfe40) no llega ni a
+     2,3:1 sobre este fondo: sobre papel la marca se escribe con un verde de
+     tinta que alcanza 4,5:1 y se puede leer de verdad. */
+  --papel: #f4f5f1;
+  --papel-2: #eceee7;
+  --tinta: #141814;
+  --tinta-2: #3d453d;
+  /* 4,58:1 contra el papel apagado del pie, que es el fondo más exigente de la
+     portada. El tono anterior (#6b746b) se quedaba en 4,14:1 ahí. */
+  --tinta-3: #646d64;
+  --filete: rgba(20, 24, 20, .14);
+  --filete-fuerte: rgba(20, 24, 20, .34);
+  /* 5,2:1 contra el papel: el verde de marca llevado a tinta, con margen de
+     sobra para los rótulos pequeños en monoespaciada. */
+  --verde: #3a741a;
+  /* Solo para marcas que no son texto: puntos, filetes vivos, estados. */
+  --verde-vivo: #68b82f;
+  /* Estados en tinta: los del sistema oscuro son colores luminosos pensados
+     para brillar sobre negro y sobre papel se deshacen. */
+  --rojo: #a61a29;
+  --ambar: #8a5e00;
+
+  /* Ritmo vertical de la portada: un único escalón entre secciones y su mitad
+     para lo que va dentro de una. */
+  --aire-seccion: clamp(76px, 11vw, 168px);
+  --aire-bloque: clamp(28px, 4vw, 56px);
+
+  color-scheme: light;
+  color: var(--tinta);
+  background-color: var(--papel) !important;
+  /* Papel liso. La cuadrícula de taller es del lienzo negro; sobre el papel
+     solo añadía ruido por detrás de la tipografía. */
+  background-image: none !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+.pagina-entrada::before { display: none; }
+.pagina-entrada main { position: relative; z-index: 1; flex: 1 0 auto; padding-block: 0 var(--aire-seccion); }
+/* La cabecera va fija: sin este margen, saltar a «Acceso» dejaba el rótulo de
+   la sección debajo de la barra. */
+.pagina-entrada #acceso { scroll-margin-top: calc(74px + var(--e4)); }
+
+/* La portada usa la retícula ancha; el resto del sistema sigue con la suya. */
+.pagina-entrada .contenedor--portada {
+  width: min(1320px, 100%);
+  padding-inline: clamp(20px, 4vw, 56px);
+}
+
+.pagina-entrada ::selection { background: var(--verde-vivo); color: #000; }
+
+/* El cursor propio está calculado para el lienzo negro: el halo es luz verde
+   neón —sobre papel, un manchón— y la mezcla por diferencia convertía el punto
+   verde en magenta. En la portada el halo desaparece y el cursor se dibuja en
+   tinta, sin mezcla. */
+.pagina-entrada .cursor__halo { display: none; }
+.pagina-entrada .cursor__punto,
+.pagina-entrada .cursor__anillo { mix-blend-mode: normal; }
+.pagina-entrada .cursor__punto { background: var(--tinta); }
+.pagina-entrada .cursor__anillo { border-color: rgba(20, 24, 20, .5); }
+.pagina-entrada .cursor__anillo--activo { background: rgba(63, 127, 28, .12); border-color: var(--verde); }
+.pagina-entrada .cursor__anillo--pulsado { background: rgba(63, 127, 28, .24); border-color: var(--verde); }
+
+/* --------------------------------------------------------------------------
+   Rótulo técnico: el hilo que une la portada con el resto del producto.
+   -------------------------------------------------------------------------- */
+
+.entrada__kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 var(--aire-bloque);
+  color: var(--verde);
+  font-family: var(--mono);
+  font-size: .7rem;
+  font-weight: 500;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+}
+/* El número va en una cápsula de tinta: ordena la lectura de la página y
+   repite el gesto de las chapas del box. */
+.entrada__kicker > span:first-child {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 20px;
+  padding-inline: 5px;
+  color: var(--papel);
+  background: var(--tinta);
+  font-size: .64rem;
+  letter-spacing: .06em;
+}
+/* El rótulo se remata con un filete que llega al final de su columna. */
+.entrada__kicker::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  min-width: 18px;
+  background: var(--filete);
+}
+.entrada__kicker--tenue { color: var(--tinta-3); }
+
+/* --------------------------------------------------------------------------
+   Cabecera
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--filete);
+  background: rgba(244, 245, 241, .86);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+}
+.pagina-entrada .entrada__barra-interior {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 3vw, 28px);
+  min-height: 74px;
+}
+.pagina-entrada .entrada__marca { display: inline-flex; align-items: center; color: var(--tinta); text-decoration: none; }
+/* El logotipo oficial está dibujado con su propio contorno negro, así que se
+   apoya directamente sobre el papel. Lo único que necesitaba era tamaño: a 94
+   píxeles la palabra «Miniápolis» no se leía. */
+.pagina-entrada .entrada__marca-sello { display: block; width: clamp(104px, 11vw, 132px); }
+.pagina-entrada .entrada__marca-sello img { display: block; width: 100%; height: auto; filter: none; }
+.pagina-entrada .entrada__marca:hover .entrada__marca-sello { transform: none; filter: none; }
+
+.pagina-entrada .entrada__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 auto 0 0;
+  color: var(--tinta-3);
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.pagina-entrada .entrada__punto { display: block; width: 3px; height: 3px; background: var(--tinta-3); box-shadow: none; }
+
+.pagina-entrada .entrada__accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  color: var(--papel);
+  background: var(--tinta);
+  border: 1px solid var(--tinta);
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color var(--t-rapida) var(--curva), color var(--t-rapida) var(--curva);
+}
+.pagina-entrada .entrada__accion:hover { color: var(--papel); background: var(--verde); border-color: var(--verde); }
+.pagina-entrada .entrada__accion span { transition: transform var(--t-rapida) var(--curva); }
+.pagina-entrada .entrada__accion:hover span { transform: translate(2px, -2px); }
+
+/* --------------------------------------------------------------------------
+   Titular
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(250px, .62fr);
+  align-items: end;
+  gap: clamp(32px, 7vw, 110px);
+  padding-block: clamp(56px, 8vw, 104px) var(--aire-bloque);
+}
+/* El titular se mide contra su propia columna, no contra la ventana: con `vw`
+   no había un solo `clamp` que sirviera a la vez para una pantalla de 320 px
+   —donde «ADRENALINA» se salía— y para el escritorio, donde la misma regla lo
+   partía en tres líneas. Con `cqi` la palabra siempre cabe justo. */
+.pagina-entrada .entrada__hero-copy { min-width: 0; container-type: inline-size; }
+.pagina-entrada .entrada__hero h1 {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: clamp(2.4rem, 14.2cqi, 9.4rem);
+  font-weight: 600;
+  /* A 0,82 el acento de «Límites» se subía encima de la línea anterior y a
+     -0,085em la R y la E de «Adrenalina» se tocaban. Con 0,94 y -0,03em las
+     dos líneas respiran sin dejar de ser un bloque compacto. */
+  line-height: .94;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+}
+.pagina-entrada .entrada__hero h1 span { display: block; }
+.pagina-entrada .entrada__hero h1 span + span { color: var(--verde); }
+.entrada__marca-registrada {
+  font-size: .16em;
+  font-weight: 500;
+  color: var(--tinta-3);
+  vertical-align: super;
+  letter-spacing: 0;
+}
+
+.pagina-entrada .entrada__hero-aside {
+  padding-left: clamp(18px, 2vw, 28px);
+  border-left: 1px solid var(--tinta);
+}
+.entrada__marca-texto {
+  margin: 0 0 12px;
+  color: var(--verde);
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: var(--tracking-etiqueta);
+  text-transform: uppercase;
+}
+.entrada__descripcion {
+  max-width: 34ch;
+  margin: 0 0 22px;
+  color: var(--tinta-2);
+  font-size: clamp(.98rem, 1.2vw, 1.08rem);
+  line-height: 1.5;
+}
+/* El enlace se subraya con su propio filete para poder animarlo: el subrayado
+   del navegador no se puede desplazar al pasar por encima. */
+.entrada__enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 5px;
+  color: var(--tinta);
+  border-bottom: 1px solid var(--tinta);
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color var(--t-rapida) var(--curva), border-color var(--t-rapida) var(--curva);
+}
+.entrada__enlace:hover { color: var(--verde); border-color: var(--verde); }
+.entrada__enlace span { transition: transform var(--t-rapida) var(--curva); }
+.entrada__enlace:hover span { transform: translate(2px, -2px); }
+
+/* --------------------------------------------------------------------------
+   Fotografías
+
+   Una sola manera de presentar una foto en toda la portada: la imagen sobre el
+   papel con un filete finísimo y el pie debajo, en monoespaciada. Nada de
+   degradados encima de la imagen ni de barras flotando sobre ella.
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__foto { margin: 0; }
+.pagina-entrada .entrada__foto img {
+  display: block;
+  width: 100%;
+  /* Sin `height: auto` el atributo `height` del HTML fija la altura y
+     `aspect-ratio` deja de tener efecto. */
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border: 1px solid var(--filete);
+  background: var(--papel-2);
+}
+.pagina-entrada .entrada__foto figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  color: var(--tinta-3);
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.entrada__foto-nombre { color: var(--tinta-2); }
+.entrada__foto-nombre > span { margin-right: 7px; color: var(--verde); }
+.entrada__foto-estado i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: var(--verde-vivo);
+  animation: latidoPista 2.4s var(--curva-entrada) infinite;
+}
+@keyframes latidoPista { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* La de apertura es la única que cambia de proporción: a 3:2 y a todo lo ancho
+   medía 800 px de alto y se comía la pantalla entera antes de dejar ver nada
+   más. En banda ancha sigue enseñando el coche completo y ocupa lo que tiene
+   que ocupar una apertura. */
+.pagina-entrada .entrada__foto--apertura img { aspect-ratio: 16 / 9; object-position: center 45%; }
+
+/* --------------------------------------------------------------------------
+   La pista real
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__pista-real {
+  margin-top: var(--aire-seccion);
+  padding-top: var(--aire-bloque);
+  border-top: 1px solid var(--filete);
+}
+.pagina-entrada .entrada__seccion-cabeza {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(230px, .55fr);
+  align-items: end;
+  gap: clamp(26px, 5vw, 80px);
+  margin-bottom: var(--aire-bloque);
+}
+.pagina-entrada .entrada__seccion-cabeza h2 {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: clamp(2.3rem, 5vw, 4.6rem);
+  font-weight: 600;
+  line-height: .98;
+  letter-spacing: -.028em;
+  text-transform: uppercase;
+}
+.pagina-entrada .entrada__seccion-cabeza h2 em { color: var(--verde); font-style: normal; }
+.entrada__seccion-descripcion {
+  max-width: 38ch;
+  margin: 0 0 6px;
+  color: var(--tinta-2);
+  font-size: clamp(.98rem, 1.2vw, 1.08rem);
+  line-height: 1.5;
+}
+
+/* Tríptico: una columna de texto en tinta y dos verticales de la pista. Antes
+   repetía dos veces el mismo logotipo y el tercer panel lo cortaba a media
+   palabra; ahora la sección que promete «la pista real» enseña la pista. */
+.pagina-entrada .entrada__media-destacada {
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(200px, 1fr) minmax(200px, 1fr);
+  min-height: clamp(360px, 34vw, 480px);
+  border: 1px solid var(--tinta);
+  background: var(--tinta);
+  overflow: hidden;
+}
+.pagina-entrada .entrada__media-destacada-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: clamp(26px, 3vw, 42px);
+  color: var(--papel);
+}
+.pagina-entrada .entrada__media-destacada-copy h3 {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: clamp(1.7rem, 2.7vw, 2.7rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.025em;
+  text-transform: uppercase;
+}
+.pagina-entrada .entrada__media-destacada-copy > p {
+  max-width: 32ch;
+  margin: 0;
+  color: rgba(244, 245, 241, .74);
+  font-size: .95rem;
+  line-height: 1.5;
+}
+.entrada__media-meta {
+  display: flex;
+  gap: 4px 22px;
+  flex-wrap: wrap;
+  margin: 6px 0 0 !important;
+  padding-top: 16px;
+  border-top: 1px solid rgba(244, 245, 241, .18);
+  color: rgba(244, 245, 241, .56) !important;
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+/* Las fotos se sacan del flujo: si no, sus 2048 px de alto natural estiraban
+   la fila y el texto de la columna de al lado se quedaba flotando al fondo de
+   un vacío negro. Ahora la altura la marca el texto y la foto la rellena. */
+.pagina-entrada .entrada__media-foto { position: relative; min-width: 0; margin: 0; overflow: hidden; border-left: 1px solid rgba(244, 245, 241, .14); }
+.pagina-entrada .entrada__media-foto img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 58%; }
+
+/* --------------------------------------------------------------------------
+   Díptico del recinto
+
+   Antes había aquí una hoja de contactos de quince fotos de baja resolución
+   —360x640 la mayoría— que eran casi la misma toma del mismo galpón. Dos
+   fotografías buenas dicen más del sitio que quince repetidas, y la página
+   deja de pedir dos mil píxeles de scroll para enseñar lo mismo.
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__diptico {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2.2vw, 28px);
+  margin-top: var(--aire-bloque);
+}
+
+/* --------------------------------------------------------------------------
+   Control de acceso
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__acceso {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 460px);
+  column-gap: clamp(32px, 7vw, 120px);
+  row-gap: var(--aire-bloque);
+  align-items: start;
+  margin-top: var(--aire-seccion);
+  padding-top: var(--aire-bloque);
+  border-top: 1px solid var(--filete);
+  background: transparent;
+  box-shadow: none;
+}
+.pagina-entrada .entrada__acceso-intro h2 {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: clamp(2.2rem, 4.6vw, 4.2rem);
+  font-weight: 600;
+  line-height: .98;
+  letter-spacing: -.028em;
+  text-transform: uppercase;
+}
+.entrada__acceso-nota {
+  max-width: 46ch;
+  margin: 26px 0 0;
+  color: var(--tinta-2);
+  font-size: .98rem;
+  line-height: 1.55;
+}
+.entrada__acceso-subtitulo {
+  margin: 0 0 10px;
+  color: var(--tinta);
+  font-family: var(--fuente);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+}
+/* La columna del formulario es una sola caja de rejilla: antes las pestañas,
+   el aviso y el formulario eran tres filas que el titular de al lado estiraba
+   a lo alto, y entre las pestañas y el primer campo quedaba un hueco de casi
+   doscientos píxeles. */
+.pagina-entrada .entrada__acceso-panel { min-width: 0; }
+.pagina-entrada .entrada__acceso-panel form { margin: 0; }
+.pagina-entrada .entrada__acceso .pestanas { margin-bottom: var(--e4); border-bottom-color: var(--filete); }
+.pagina-entrada .entrada__acceso .pestana { color: var(--tinta-3); }
+.pagina-entrada .entrada__acceso .pestana:hover { color: var(--tinta); }
+.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] { color: var(--tinta); }
+.pagina-entrada .entrada__acceso .pestana::after { background: var(--tinta); box-shadow: none; }
+.pagina-entrada .entrada__acceso .campo > label { color: var(--tinta-3); }
+.pagina-entrada .entrada__acceso .campo__ayuda { color: var(--tinta-3); }
+.pagina-entrada .entrada__acceso input {
+  color: var(--tinta);
+  border-bottom-color: var(--filete-fuerte);
+  background: transparent;
+}
+.pagina-entrada .entrada__acceso input::placeholder { color: #949c94; }
+.pagina-entrada .entrada__acceso input:hover:not(:disabled) { border-bottom-color: var(--tinta-3); }
+.pagina-entrada .entrada__acceso input:focus {
+  border-bottom-color: var(--tinta);
+  box-shadow: 0 2px 0 -1px var(--tinta);
+}
+.pagina-entrada .entrada__acceso input[aria-invalid="true"] { border-bottom-color: var(--rojo); }
+.pagina-entrada .entrada__acceso .campo__error { color: var(--rojo); }
+
+/* Los avisos del sistema están escritos para el negro: sobre papel, un rosa
+   claro sobre un rosa más claro no se leía. Aquí el color vive en el filete
+   de la izquierda y en el texto, que va en tinta de su propio tono. */
+.pagina-entrada .aviso {
+  margin-bottom: var(--e3);
+  color: var(--tinta-2);
+  background: var(--papel-2);
+  border-left-width: 3px;
+  border-left-color: var(--filete-fuerte);
+}
+.pagina-entrada .aviso--error { color: var(--rojo); background: rgba(166, 26, 41, .07); border-left-color: var(--rojo); }
+.pagina-entrada .aviso--ok { color: var(--verde); background: rgba(63, 127, 28, .08); border-left-color: var(--verde); }
+.pagina-entrada .aviso--alerta { color: var(--ambar); background: rgba(138, 94, 0, .08); border-left-color: var(--ambar); }
+
+/* Sobre papel, los botones del sistema oscuro llegaban con su relieve y su
+   destello: aquí son bloques planos de tinta. */
+.pagina-entrada .boton {
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.pagina-entrada .boton::after { display: none; }
+.pagina-entrada .entrada__acceso .boton--principal { --bg: var(--tinta); --fg: var(--papel); --bd: var(--tinta); }
+.pagina-entrada .entrada__acceso .boton--principal:hover:not(:disabled) { --bg: var(--verde); --bd: var(--verde); --fg: var(--papel); }
+.pagina-entrada .entrada__acceso .boton--fantasma { --bg: transparent; --fg: var(--tinta); --bd: var(--filete-fuerte); }
+.pagina-entrada .entrada__acceso .boton--fantasma:hover:not(:disabled) { --bd: var(--tinta); --bg: transparent; }
+.pagina-entrada .entrada__acceso .boton--enlace { color: var(--tinta-3); text-decoration-color: var(--filete-fuerte); }
+.pagina-entrada .entrada__acceso .boton--enlace:hover:not(:disabled) { color: var(--verde); text-decoration-color: var(--verde); }
+.pagina-entrada .boton:focus-visible,
+.pagina-entrada a:focus-visible,
+.pagina-entrada .pestana:focus-visible { outline: 2px solid var(--verde); outline-offset: 3px; box-shadow: none; }
+.entrada__acceso-pie { margin: var(--e3) 0 0; text-align: center; }
+
+/* --------------------------------------------------------------------------
+   Pie
+   -------------------------------------------------------------------------- */
+
+.pagina-entrada .entrada__pie {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--filete);
+  background: var(--papel-2);
+}
+.pagina-entrada .entrada__pie-interior {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-block: 28px;
+}
+.entrada__pie-marca {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.entrada__pie-marca span { color: var(--tinta-3); margin-left: 10px; }
+.entrada__pie-nota { margin: 0; color: var(--tinta-3); font-size: .86rem; }
+
+/* --------------------------------------------------------------------------
+   Adaptaciones
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pagina-entrada .entrada__media-destacada-copy { min-height: 320px; }
+  .pagina-entrada .entrada__media-foto--segunda { display: none; }
+}
+
+@media (max-width: 860px) {
+  .pagina-entrada .entrada__hero { grid-template-columns: 1fr; align-items: start; gap: 34px; }
+  .pagina-entrada .entrada__hero-aside { max-width: 520px; }
+  .pagina-entrada .entrada__seccion-cabeza { grid-template-columns: 1fr; align-items: start; gap: 22px; }
+  .pagina-entrada .entrada__acceso { grid-template-columns: 1fr; }
+  .pagina-entrada .entrada__acceso-panel { max-width: 520px; }
+}
+
+@media (max-width: 620px) {
+  .pagina-entrada .entrada__meta { display: none; }
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr; min-height: 0; }
+  /* Apilada, la foto va absoluta dentro de una figura sin altura propia: es la
+     figura la que tiene que llevar la proporción o se queda en un hilo. */
+  .pagina-entrada .entrada__media-foto { aspect-ratio: 4 / 3; border-left: 0; border-top: 1px solid rgba(244, 245, 241, .14); }
+  .pagina-entrada .entrada__foto figcaption { flex-direction: column; gap: 5px; }
+  /* Dos fotos anchas una al lado de otra no caben en un teléfono. */
+  .pagina-entrada .entrada__diptico { grid-template-columns: 1fr; gap: var(--aire-bloque); }
+  .pagina-entrada .entrada__pie-interior { flex-direction: column; align-items: flex-start; gap: 14px; }
+}
+
+/* ==========================================================================
+   Capa de movimiento
+
+   Todo lo que se mueve por cuenta propia. Las clases de esta sección las pone
+   `movimiento.js`, nunca el HTML: sin JavaScript la página se ve entera, en su
+   sitio y opaca. El bloque de `prefers-reduced-motion` del final devuelve cada
+   pieza a su estado final, de modo que quien pide menos movimiento ve lo mismo
+   pero sin recorrido.
+   ========================================================================== */
+
+/* --- Titulares que se arman palabra a palabra --------------------------- */
+
+.palabra {
+  display: inline-block;
+  overflow: hidden;
+  /* Sin esto, el recorte se come los rabos de las letras («p», «g», «í»). */
+  padding-bottom: .12em;
+  margin-bottom: -.12em;
+  vertical-align: bottom;
+}
+.palabra__texto {
+  display: inline-block;
+  will-change: transform;
+}
+.titular-animado .palabra__texto {
+  transform: translateY(105%);
+  opacity: 0;
+}
+.titular-animado--visible .palabra__texto {
+  transform: none;
+  opacity: 1;
+  transition:
+    transform 760ms var(--curva) var(--retraso, 0ms),
+    opacity 520ms var(--curva-entrada) var(--retraso, 0ms);
+}
+
+/* El titular de la portada declara sus líneas con `span` sueltos y colorea la
+   segunda. Las palabras van dentro de esos `span`, así que heredan el color de
+   su línea y recuperan el flujo en línea que la regla general les quitaba. */
+.pagina-entrada .entrada__hero h1 .palabra,
+.pagina-entrada .entrada__hero h1 .palabra__texto {
+  display: inline-block;
+  color: inherit;
+}
+
+/* --- Fotografías: cortinilla al entrar ---------------------------------- */
+
+/* El recorte va en la imagen, nunca en la figura: un elemento recortado a
+   altura cero tiene área cero, y entonces `IntersectionObserver` no lo da
+   nunca por visible y la cortinilla no llega a dispararse. */
+.figura-revela img {
+  clip-path: inset(0 0 100% 0);
+  transform: scale(1.09);
+  transform-origin: center;
+}
+.figura-revela--visible img {
+  clip-path: inset(0 0 0 0);
+  transform: none;
+  transition:
+    clip-path 760ms var(--curva) var(--retraso, 0ms),
+    transform 1100ms var(--curva) var(--retraso, 0ms);
+}
+/* El pie de foto llega detrás de la imagen, no con ella. */
+.figura-revela figcaption {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.figura-revela--visible figcaption {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--t-lenta) var(--curva) calc(var(--retraso, 0ms) + 300ms),
+    transform var(--t-lenta) var(--curva) calc(var(--retraso, 0ms) + 300ms);
+}
+
+/* --- Paralaje ----------------------------------------------------------- */
+
+/* El desvío lo escribe `movimiento.js` en cada cuadro. Va combinado con la
+   escala de la cortinilla, así que se declara aquí y no en la regla de arriba:
+   una sola propiedad `transform` manda, y esta es la que gana cuando la
+   cortinilla ya terminó. */
+.figura-revela--visible img.con-paralaje {
+  transform: translate3d(0, var(--paralaje, 0px), 0);
+  transition:
+    clip-path 760ms var(--curva) var(--retraso, 0ms),
+    transform 1100ms var(--curva) var(--retraso, 0ms);
+}
+/* Una vez colocada la foto, el paralaje deja de suavizarse: tiene que ir
+   pegado al desplazamiento o se arrastra por detrás del dedo. */
+.figura-revela--visible img.con-paralaje[data-paralaje='1'] {
+  transition: none;
+}
+
+/* --- Progreso de lectura ------------------------------------------------ */
+
+.progreso-lectura {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--acento), var(--acento) 70%, rgba(61, 254, 64, .35));
+  transform: scaleX(var(--avance, 0));
+  transform-origin: 0 50%;
+}
+.pagina-entrada .progreso-lectura {
+  background: linear-gradient(90deg, var(--verde-vivo), var(--verde));
+}
+
+/* --- Cabecera que se compacta al desplazar ------------------------------ */
+
+.entrada__barra,
+.barra {
+  transition:
+    background-color var(--t-media) var(--curva),
+    border-color var(--t-media) var(--curva),
+    box-shadow var(--t-media) var(--curva);
+}
+.pagina-entrada .entrada__barra.esta-desplazada {
+  background: rgba(244, 245, 241, .95);
+  border-bottom-color: var(--filete-fuerte);
+  box-shadow: 0 1px 0 rgba(20, 24, 20, .05), 0 10px 30px rgba(20, 24, 20, .07);
+}
+.barra.esta-desplazada {
+  border-bottom-color: var(--acento-borde);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .55);
+}
+/* El sello de la marca encoge un punto: la cabecera gana altura útil sin que
+   se note un salto. */
+.entrada__barra.esta-desplazada .entrada__marca-sello,
+.barra.esta-desplazada .marca__sello {
+  transform: scale(.93);
+}
+.entrada__marca-sello,
+.marca__sello { transition: transform var(--t-media) var(--curva); }
+
+/* --- Subrayado que viaja entre pestañas --------------------------------- */
+
+.pestanas--con-indicador { position: relative; }
+.pestanas__indicador {
+  position: absolute;
+  /* Pegado al borde inferior por dentro, no a -1px: los grupos de pestañas se
+     desplazan de lado (`overflow-x: auto`), y eso recorta también en vertical,
+     así que un píxel por fuera desaparecía. */
+  bottom: 0;
+  left: 0;
+  width: var(--ancho, 0);
+  height: 2px;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--acento);
+  transform: translateX(var(--x, 0));
+  transition:
+    transform 420ms var(--curva),
+    width 420ms var(--curva),
+    opacity var(--t-rapida) var(--curva);
+}
+.pestanas__indicador--visible { opacity: 1; }
+.pagina-entrada .pestanas__indicador { background: var(--tinta); }
+/* Con el indicador deslizante sobra el subrayado propio de cada pestaña: eran
+   dos líneas en el mismo sitio, una fija y otra viajando. */
+.pestanas--con-indicador .pestana[aria-selected="true"]::after { opacity: 0; }
+
+/* --- La onda nace donde cayó el dedo ------------------------------------ */
+
+.boton::before,
+.pestana::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: var(--onda-y, 50%);
+  left: var(--onda-x, 50%);
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  background: currentColor;
+}
+.boton.con-onda::before,
+.pestana.con-onda::before {
+  animation: ondaPulsacion 620ms var(--curva-entrada);
+}
+@keyframes ondaPulsacion {
+  from { opacity: .3; transform: scale(0); }
+  to   { opacity: 0;  transform: scale(18); }
+}
+/* El contenido del botón va por encima de la onda. */
+.boton > *,
+.pestana > * { position: relative; z-index: 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .titular-animado .palabra__texto { transform: none; opacity: 1; }
+  .figura-revela img,
+  .figura-revela--visible img { clip-path: none; transform: none; }
+  .figura-revela figcaption { opacity: 1; transform: none; }
+  .progreso-lectura { display: none; }
+  .pestanas__indicador { transition: none; }
+  .boton.con-onda::before,
+  .pestana.con-onda::before { animation: none; }
+}
+
+/* --- El filete del rótulo se traza hacia la derecha --------------------- */
+
+/* El rótulo de sección («01 SISTEMA DE ENTRADAS») termina en una línea que
+   cruza la columna. Trazarla en vez de encenderla hace que la sección se lea
+   como algo que empieza. */
+.rotulo-traza::after {
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+.rotulo-traza--visible::after {
+  transform: scaleX(1);
+  transition: transform 900ms var(--curva) 120ms;
+}
+
+/* --- Un destello recorre el logotipo al cargar -------------------------- */
+
+.entrada__marca-sello,
+.marca__sello { position: relative; overflow: hidden; }
+.entrada__marca-sello::after,
+.marca__sello::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .55) 50%, transparent 62%);
+  transform: translateX(-130%);
+}
+.marca-destella::after {
+  animation: destelloMarca 1500ms var(--curva) 380ms;
+}
+@keyframes destelloMarca {
+  to { transform: translateX(130%); }
+}
+
+/* --- Las fotos respiran bajo el puntero --------------------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+  .pagina-entrada figure img { transition: transform 900ms var(--curva), filter 900ms var(--curva); }
+  .pagina-entrada .entrada__foto:hover img,
+  .pagina-entrada .entrada__media-foto:hover img { transform: scale(1.035); filter: saturate(1.06); }
+  /* Con paralaje manda el desvío del desplazamiento: se combinan en una sola
+     propiedad o se pisan entre ellas. */
+  .pagina-entrada .entrada__foto:hover img.con-paralaje,
+  .pagina-entrada .entrada__media-foto:hover img.con-paralaje {
+    transform: translate3d(0, var(--paralaje, 0px), 0) scale(1.035);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotulo-traza::after,
+  .rotulo-traza--visible::after { transform: none; }
+  .marca-destella::after { animation: none; }
+  .pagina-entrada .entrada__foto:hover img,
+  .pagina-entrada .entrada__media-foto:hover img { transform: none; }
+}
+
+/* --- Entrada del código QR ---------------------------------------------- */
+
+/* Nada se mueve *encima* del código. Una línea de barrido cruzándolo quedaría
+   muy bien y arruinaría lecturas: la cámara del puesto necesita el código
+   limpio y su zona silenciosa intacta. Se anima el marco, no el dato. */
+@keyframes entrarQr { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+.qr-caja svg { animation: entrarQr var(--t-lenta) var(--curva-rebote) both; }
+
+/* La mira se traza abriéndose desde el centro hacia los lados.
+   Antes animaba `width`/`height`, y con `animation-fill-mode: both` ese ancho
+   de 22 px quedaba fijado sobre el pseudoelemento. Al llevar además `left` y
+   `right`, la caja quedaba sobredeterminada: el navegador descartaba `right`,
+   el elemento medía 22 px y los dos ángulos de la derecha se dibujaban encima
+   de los de la izquierda. Con `clip-path` no se toca ni el tamaño ni la
+   transformación —que el ángulo de abajo necesita para voltearse—. */
+@keyframes trazarMira {
+  from { clip-path: inset(0 50% 0 50%); opacity: 0; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+.qr-caja::before { animation: trazarMira var(--t-media) var(--curva) 160ms both; }
+.qr-caja::after  { animation: trazarMira var(--t-media) var(--curva) 260ms both; }
+/* Mientras se espera al código no hay mira que trazar. */
+.qr-caja--cargando::before,
+.qr-caja--cargando::after { animation: none; }
+
+/* --- Filas y packs entran escalonados ----------------------------------- */
+
+@keyframes entrarFila { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+tbody tr { animation: entrarFila var(--t-media) var(--curva) backwards; }
+tbody tr:nth-child(1)  { animation-delay: 0ms; }
+tbody tr:nth-child(2)  { animation-delay: 26ms; }
+tbody tr:nth-child(3)  { animation-delay: 52ms; }
+tbody tr:nth-child(4)  { animation-delay: 78ms; }
+tbody tr:nth-child(5)  { animation-delay: 104ms; }
+tbody tr:nth-child(6)  { animation-delay: 130ms; }
+tbody tr:nth-child(7)  { animation-delay: 156ms; }
+tbody tr:nth-child(8)  { animation-delay: 182ms; }
+tbody tr:nth-child(n+9) { animation-delay: 208ms; }
+
+.pack { animation: entrarFila var(--t-lenta) var(--curva) backwards; }
+.pack:nth-child(1) { animation-delay: 0ms; }
+.pack:nth-child(2) { animation-delay: 70ms; }
+.pack:nth-child(3) { animation-delay: 140ms; }
+.pack:nth-child(n+4) { animation-delay: 210ms; }
+
+/* El pack ya tiene su barra de energía a la izquierda (`.pack::before`): al
+   pasar por encima se traza entera en vez de solo subir de opacidad. */
+@media (hover: hover) and (pointer: fine) {
+  .pack::before { transition: opacity var(--t-media) var(--curva), filter var(--t-media) var(--curva); }
+  .pack:hover::before { filter: drop-shadow(0 0 8px var(--acento)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-caja svg,
+  .qr-caja::before,
+  .qr-caja::after,
+  tbody tr,
+  .pack { animation: none; }
+  .pack:hover::before { filter: none; }
+}
+
+/* --- El momento de la lectura ------------------------------------------- */
+
+/* En la puerta, la confirmación se mira a un brazo de distancia y con prisa.
+   Todo lo de aquí es corto y de una sola pasada: informa, no entretiene. */
+
+/* Un destello del color del estado recorre el panel de lado a lado. */
+.resultado--destello::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 32%, var(--destello, rgba(255, 255, 255, .16)) 50%, transparent 68%);
+  transform: translateX(-120%);
+  animation: destelloResultado 620ms var(--curva-entrada);
+}
+@keyframes destelloResultado { to { transform: translateX(120%); } }
+.resultado--ok       { --destello: rgba(47, 208, 122, .3); }
+.resultado--guardada { --destello: rgba(61, 254, 64, .26); }
+.resultado--error    { --destello: rgba(255, 85, 102, .3); }
+.resultado--alerta   { --destello: rgba(255, 197, 61, .3); }
+
+/* La franja de estado se traza en vez de encenderse: se ve de dónde viene. */
+.resultado--destello::before { animation: trazarFranja 420ms var(--curva) both; }
+@keyframes trazarFranja { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.resultado::before { transform-origin: 0 50%; }
+
+/* El número que queda entra con un golpe seco. Es el dato que la persona de la
+   puerta necesita leer sin pensar. */
+@keyframes golpeRestantes {
+  from { opacity: 0; transform: scale(1.35); }
+  60%  { opacity: 1; }
+  to   { opacity: 1; transform: none; }
+}
+.resultado__restantes { animation: golpeRestantes 380ms var(--curva-rebote) both; }
+
+@keyframes entrarIconoResultado {
+  from { opacity: 0; transform: scale(.55) rotate(-12deg); }
+  to   { opacity: 1; transform: none; }
+}
+.resultado__icono { animation: entrarIconoResultado 420ms var(--curva-rebote) both; }
+
+/* La mira de la cámara late una vez con el color del resultado: confirma la
+   lectura sin apartar la vista del encuadre. */
+@keyframes lateMira {
+  0%   { box-shadow: 0 0 0 0 var(--mira); }
+  70%  { box-shadow: 0 0 0 14px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.escaner__mira--ok::before,
+.escaner__mira--ok::after,
+.escaner__mira--error::before,
+.escaner__mira--error::after { animation: lateMira 900ms var(--curva-entrada); }
+
+@media (prefers-reduced-motion: reduce) {
+  .resultado--destello::after { animation: none; content: none; }
+  .resultado--destello::before { animation: none; }
+  .resultado__restantes,
+  .resultado__icono { animation: none; }
+  .escaner__mira--ok::before,
+  .escaner__mira--ok::after,
+  .escaner__mira--error::before,
+  .escaner__mira--error::after { animation: none; }
+}
+
+/* --- Tiras de pestañas que se desplazan de lado ------------------------- */
+
+/* En un teléfono no caben seis pestañas en una línea y la tira se desplaza.
+   El degradado de los bordes avisa de que hay más a los lados: sin él, la
+   última pestaña se corta a hueso y parece que ahí se acaba la lista. */
+.pestanas--desplazable { scroll-behavior: smooth; }
+/* Las clases las pone `movimiento.js` según por dónde quede tira sin ver. */
+.pestanas--desplazable.hay-antes.hay-despues {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+}
+.pestanas--desplazable.hay-antes:not(.hay-despues) {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px);
+}
+.pestanas--desplazable:not(.hay-antes).hay-despues {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pestanas--desplazable { scroll-behavior: auto; }
+}

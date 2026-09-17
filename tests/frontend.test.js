@@ -197,8 +197,17 @@ test('cada página carga los módulos que sus scripts necesitan', () => {
   }
 });
 
-test('las pantallas usan el lienzo negro de la identidad Miniápolis', () => {
-  const paginas = [...Object.keys(PAGINAS), 'public/404.html'];
+/**
+ * La portada pública es la única pantalla clara del sistema: papel y tinta.
+ * Su `theme-color` tiene que ser el suyo, porque si declara el negro de marca
+ * el teléfono pinta una franja negra encima de una página blanca. El resto del
+ * producto —todo lo que hay detrás del acceso— sí usa el lienzo negro.
+ */
+const PORTADA = 'public/index.html';
+const PAPEL_PORTADA = '#f4f5f1';
+
+test('las pantallas del producto usan el lienzo negro de la identidad Miniápolis', () => {
+  const paginas = [...Object.keys(PAGINAS), 'public/404.html'].filter((html) => html !== PORTADA);
   for (const html of paginas) {
     const src = leer(html);
     assert.match(src, /<meta name="theme-color" content="#000000">/, `${html} debe declarar el negro de marca`);
@@ -207,6 +216,17 @@ test('las pantallas usan el lienzo negro de la identidad Miniápolis', () => {
   const manifest = JSON.parse(leer('public/manifest.webmanifest'));
   assert.equal(manifest.background_color, '#000000');
   assert.equal(manifest.theme_color, '#000000');
+});
+
+test('la portada declara su propio papel y comparte la hoja de estilos de marca', () => {
+  const src = leer(PORTADA);
+  assert.match(
+    src,
+    new RegExp(`<meta name="theme-color" content="${PAPEL_PORTADA}">`),
+    'la portada debe declarar el papel que de verdad pinta',
+  );
+  assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/, 'la portada debe cargar los estilos de marca');
+  assert.match(src, /<body class="pagina-entrada">/, 'la portada debe marcar su cuerpo como página de entrada');
 });
 
 test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la API', () => {

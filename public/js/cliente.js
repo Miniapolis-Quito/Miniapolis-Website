@@ -38,6 +38,11 @@ function pintarSaldo(anterior) {
       : `${disponibles === 1 ? 'entrada disponible' : 'entradas disponibles'}`;
   seccion.classList.toggle('saldo--vacio', disponibles === 0);
 
+  // La primera vez el saldo sube desde cero; a partir de ahí, cada cambio se
+  // marca con un latido. Contar también en los cambios en vivo se pisaría con
+  // el dato nuevo si llegan dos seguidos.
+  if (anterior === undefined) numero.dataset.contar = '';
+
   // Animación solo cuando el número cambia de verdad.
   if (anterior !== undefined && anterior !== disponibles) {
     numero.classList.remove('pulso');
