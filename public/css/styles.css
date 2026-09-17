@@ -649,7 +649,11 @@ input:focus, textarea:focus, select:focus { border-bottom-color: var(--acento); 
 input[aria-invalid="true"] { border-bottom-color: var(--error); }
 input[aria-invalid="true"]:focus { box-shadow: 0 2px 0 -1px var(--error); background: transparent; }
 input::placeholder, textarea::placeholder { color: var(--texto-3); }
-input[type="checkbox"] { width: 20px; height: 20px; min-height: 0; border-bottom: 0; background: none; accent-color: var(--acento); cursor: pointer; }
+/* 24 px, no 20: es el mínimo que pide WCAG 2.2 para un objetivo táctil, y
+   esta interfaz se usa en la pista con una mano, a veces con guantes. La
+   casilla va dentro de su etiqueta, así que subirla sube también el alto
+   de toda la zona que responde al toque. */
+input[type="checkbox"] { width: 24px; height: 24px; min-height: 0; border-bottom: 0; background: none; accent-color: var(--acento); cursor: pointer; }
 
 .campo--linea { display: flex; align-items: center; gap: 10px; }
 /* Junto a una casilla no hay un rótulo, hay una frase: se lee como texto
@@ -1766,73 +1770,159 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
    ========================================================================== */
 
 .pagina-entrada {
-  /* Paleta de papel. El verde de la interfaz oscura (#3dfe40) no llega ni a
-     2,3:1 sobre este fondo: sobre papel la marca se escribe con un verde de
-     tinta que alcanza 4,5:1 y se puede leer de verdad. */
-  --papel: #f4f5f1;
-  --papel-2: #eceee7;
-  --tinta: #141814;
-  --tinta-2: #3d453d;
-  /* 4,58:1 contra el papel apagado del pie, que es el fondo más exigente de la
-     portada. El tono anterior (#6b746b) se quedaba en 4,14:1 ahí. */
-  --tinta-3: #646d64;
-  --filete: rgba(20, 24, 20, .14);
-  --filete-fuerte: rgba(20, 24, 20, .34);
-  /* 5,2:1 contra el papel: el verde de marca llevado a tinta, con margen de
-     sobra para los rótulos pequeños en monoespaciada. */
-  --verde: #3a741a;
-  /* Solo para marcas que no son texto: puntos, filetes vivos, estados. */
-  --verde-vivo: #68b82f;
-  /* Estados en tinta: los del sistema oscuro son colores luminosos pensados
-     para brillar sobre negro y sobre papel se deshacen. */
-  --rojo: #a61a29;
-  --ambar: #8a5e00;
+  /* ==========================================================================
+     PALETA DE COMPETICIÓN — ASFALTO, FIBRA DE CARBONO Y TELEMETRÍA NEÓN
+     Diseño inspirado en el motorsport profesional y la alta velocidad RC:
+     asfalto negro intenso, verde neón de telemetría en vivo, rojo redline
+     de apex y bordillos oficiales de competición.
+     ========================================================================== */
+  --asfalto: #07090e;
+  --asfalto-2: #0e121a;
+  --asfalto-3: #141a24;
+  --panel-bg: rgba(14, 18, 26, 0.88);
+  --panel-borde: rgba(255, 255, 255, 0.12);
 
-  /* Ritmo vertical de la portada: un único escalón entre secciones y su mitad
-     para lo que va dentro de una. */
-  --aire-seccion: clamp(76px, 11vw, 168px);
+  --tinta: #f8fafc;
+  --tinta-2: #cbd5e1;
+  --tinta-3: #7e8c9f;
+  --filete: rgba(255, 255, 255, 0.09);
+  --filete-fuerte: rgba(255, 255, 255, 0.22);
+
+  /* Colores oficiales de competición */
+  --verde: #3dfe40;
+  --verde-vivo: #00ff66;
+  --verde-glow: rgba(61, 254, 64, 0.45);
+  --verde-glow-suave: rgba(61, 254, 64, 0.15);
+
+  --rojo: #ff2a4b;
+  --rojo-vivo: #ff1238;
+  --rojo-glow: rgba(255, 42, 75, 0.45);
+  --ambar: #ffb800;
+
+  /* Compatibilidad con tokens previos */
+  --papel: #07090e;
+  --papel-2: #0e121a;
+
+  --aire-seccion: clamp(80px, 11vw, 160px);
   --aire-bloque: clamp(28px, 4vw, 56px);
 
-  color-scheme: light;
+  color-scheme: dark;
   color: var(--tinta);
-  background-color: var(--papel) !important;
-  /* Papel liso. La cuadrícula de taller es del lienzo negro; sobre el papel
-     solo añadía ruido por detrás de la tipografía. */
-  background-image: none !important;
+  background-color: var(--asfalto) !important;
+  /* Atmósfera de circuito nocturno con trazado iluminado y retícula de boxes */
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(61, 254, 64, 0.15), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 100% 35%, rgba(255, 42, 75, 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 0% 75%, rgba(61, 254, 64, 0.06), transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 80px 80px, 80px 80px !important;
+  background-attachment: fixed !important;
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
 }
+
 .pagina-entrada::before { display: none; }
 .pagina-entrada main { position: relative; z-index: 1; flex: 1 0 auto; padding-block: 0 var(--aire-seccion); }
-/* La cabecera va fija: sin este margen, saltar a «Acceso» dejaba el rótulo de
-   la sección debajo de la barra. */
 .pagina-entrada #acceso { scroll-margin-top: calc(74px + var(--e4)); }
 
-/* La portada usa la retícula ancha; el resto del sistema sigue con la suya. */
 .pagina-entrada .contenedor--portada {
   width: min(1320px, 100%);
   padding-inline: clamp(20px, 4vw, 56px);
 }
 
-.pagina-entrada ::selection { background: var(--verde-vivo); color: #000; }
-
-/* El cursor propio está calculado para el lienzo negro: el halo es luz verde
-   neón —sobre papel, un manchón— y la mezcla por diferencia convertía el punto
-   verde en magenta. En la portada el halo desaparece y el cursor se dibuja en
-   tinta, sin mezcla. */
-.pagina-entrada .cursor__halo { display: none; }
-.pagina-entrada .cursor__punto,
-.pagina-entrada .cursor__anillo { mix-blend-mode: normal; }
-.pagina-entrada .cursor__punto { background: var(--tinta); }
-.pagina-entrada .cursor__anillo { border-color: rgba(20, 24, 20, .5); }
-.pagina-entrada .cursor__anillo--activo { background: rgba(63, 127, 28, .12); border-color: var(--verde); }
-.pagina-entrada .cursor__anillo--pulsado { background: rgba(63, 127, 28, .24); border-color: var(--verde); }
+.pagina-entrada ::selection { background: var(--verde); color: #000; }
 
 /* --------------------------------------------------------------------------
-   Rótulo técnico: el hilo que une la portada con el resto del producto.
+   Bordillo de competición (Chicane Kerb Pattern)
    -------------------------------------------------------------------------- */
+.panel-header-chicane,
+.foto-hud__kerb {
+  height: 4px;
+  width: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--rojo) 0,
+    var(--rojo) 12px,
+    #ffffff 12px,
+    #ffffff 24px
+  );
+  box-shadow: 0 0 10px rgba(255, 42, 75, 0.4);
+}
 
+/* --------------------------------------------------------------------------
+   Badges de telemetría y chips de carreras
+   -------------------------------------------------------------------------- */
+.entrada__telemetria-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  margin-bottom: 16px;
+  background: rgba(61, 254, 64, 0.08);
+  border: 1px solid rgba(61, 254, 64, 0.35);
+  border-radius: var(--radio);
+  color: var(--verde);
+  font-family: var(--mono);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  box-shadow: 0 0 16px rgba(61, 254, 64, 0.15);
+}
+
+.entrada__telemetria-badge--red {
+  background: rgba(255, 42, 75, 0.08);
+  border-color: rgba(255, 42, 75, 0.35);
+  color: var(--rojo);
+  box-shadow: 0 0 16px rgba(255, 42, 75, 0.15);
+}
+
+.badge-pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--verde-vivo);
+  box-shadow: 0 0 8px var(--verde-vivo);
+  animation: pulsoNeon 1.8s ease-in-out infinite;
+}
+
+.badge-pulse--red {
+  background: var(--rojo-vivo);
+  box-shadow: 0 0 8px var(--rojo-vivo);
+}
+
+@keyframes pulsoNeon {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+
+.telemetria-chip {
+  display: inline-block;
+  color: var(--verde);
+  font-family: var(--mono);
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.entrada__racing-tag {
+  color: var(--rojo);
+  font-family: var(--mono);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Rótulos técnicos y kickers
+   -------------------------------------------------------------------------- */
 .entrada__kicker {
   display: flex;
   align-items: center;
@@ -1841,253 +1931,452 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   color: var(--verde);
   font-family: var(--mono);
   font-size: .7rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: var(--tracking-etiqueta);
   text-transform: uppercase;
 }
-/* El número va en una cápsula de tinta: ordena la lectura de la página y
-   repite el gesto de las chapas del box. */
+
 .entrada__kicker > span:first-child {
   display: inline-grid;
   place-items: center;
   min-width: 26px;
   height: 20px;
   padding-inline: 5px;
-  color: var(--papel);
-  background: var(--tinta);
+  color: #000;
+  background: var(--verde);
   font-size: .64rem;
+  font-weight: 800;
   letter-spacing: .06em;
+  box-shadow: 0 0 10px rgba(61, 254, 64, 0.4);
 }
-/* El rótulo se remata con un filete que llega al final de su columna. */
+
 .entrada__kicker::after {
   content: '';
   flex: 1 1 auto;
   height: 1px;
   min-width: 18px;
-  background: var(--filete);
+  background: linear-gradient(90deg, rgba(61, 254, 64, 0.5), rgba(255, 255, 255, 0.08) 50%, transparent);
 }
-.entrada__kicker--tenue { color: var(--tinta-3); }
 
 /* --------------------------------------------------------------------------
-   Cabecera
+   Cabecera de pits (Barra superior)
    -------------------------------------------------------------------------- */
-
 .pagina-entrada .entrada__barra {
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--filete);
-  background: rgba(244, 245, 241, .86);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(7, 9, 14, 0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
+
 .pagina-entrada .entrada__barra-interior {
   display: flex;
   align-items: center;
   gap: clamp(14px, 3vw, 28px);
   min-height: 74px;
 }
-.pagina-entrada .entrada__marca { display: inline-flex; align-items: center; color: var(--tinta); text-decoration: none; }
-/* El logotipo oficial está dibujado con su propio contorno negro, así que se
-   apoya directamente sobre el papel. Lo único que necesitaba era tamaño: a 94
-   píxeles la palabra «Miniápolis» no se leía. */
-.pagina-entrada .entrada__marca-sello { display: block; width: clamp(104px, 11vw, 132px); }
-.pagina-entrada .entrada__marca-sello img { display: block; width: 100%; height: auto; filter: none; }
-.pagina-entrada .entrada__marca:hover .entrada__marca-sello { transform: none; filter: none; }
+
+.pagina-entrada .entrada__marca {
+  display: inline-flex;
+  align-items: center;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.pagina-entrada .entrada__marca-sello {
+  display: block;
+  width: clamp(110px, 12vw, 142px);
+  filter: drop-shadow(0 0 10px rgba(61, 254, 64, 0.25));
+  transition: filter var(--t-media) var(--curva-suave);
+}
+
+.pagina-entrada .entrada__marca-sello img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pagina-entrada .entrada__marca:hover .entrada__marca-sello {
+  filter: drop-shadow(0 0 16px rgba(61, 254, 64, 0.5));
+}
 
 .pagina-entrada .entrada__meta {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   margin: 0 auto 0 0;
   color: var(--tinta-3);
   font-family: var(--mono);
-  font-size: .66rem;
-  letter-spacing: .13em;
+  font-size: .68rem;
+  letter-spacing: .14em;
   text-transform: uppercase;
 }
-.pagina-entrada .entrada__punto { display: block; width: 3px; height: 3px; background: var(--tinta-3); box-shadow: none; }
+
+.pagina-entrada .entrada__punto {
+  display: block;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .pagina-entrada .entrada__estado-pista {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   color: var(--verde);
-  font-weight: 600;
-  letter-spacing: .12em;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-shadow: 0 0 10px rgba(61, 254, 64, 0.4);
 }
+
 .pagina-entrada .entrada__punto-vivo {
   position: relative;
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--verde-vivo);
+  box-shadow: 0 0 10px var(--verde-vivo);
 }
+
 .pagina-entrada .entrada__punto-vivo::after {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   border-radius: 50%;
   border: 1px solid var(--verde-vivo);
-  animation: pulsoRadar 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  animation: pulsoRadar 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 }
+
 @keyframes pulsoRadar {
-  0%   { transform: scale(0.6); opacity: 0.9; }
-  100% { transform: scale(2.6); opacity: 0; }
+  0%   { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.8); opacity: 0; }
 }
 
 .pagina-entrada .entrada__accion {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 18px;
-  color: var(--papel);
-  background: var(--tinta);
-  border: 1px solid var(--tinta);
+  padding: 10px 22px;
+  color: #000;
+  background: linear-gradient(135deg, #3dfe40 0%, #20c425 100%);
+  border: 1px solid var(--verde);
   border-radius: var(--radio);
-  font-family: var(--mono);
-  font-size: .7rem;
-  font-weight: 600;
-  letter-spacing: .14em;
+  font-family: var(--fuente-display);
+  font-size: .92rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  font-style: italic;
   text-transform: uppercase;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(20, 24, 20, 0.08);
+  box-shadow: 0 4px 18px rgba(61, 254, 64, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   position: relative;
   overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
   transition: all var(--t-media) var(--curva-suave);
 }
+
 .pagina-entrada .entrada__accion::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.18) 50%, transparent 70%);
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%);
   transform: translateX(-120%);
   transition: transform 600ms var(--curva-suave);
 }
+
 .pagina-entrada .entrada__accion:hover::before {
   transform: translateX(120%);
 }
+
 .pagina-entrada .entrada__accion:hover {
-  color: #fff;
-  background: var(--verde);
-  border-color: var(--verde);
-  box-shadow: 0 6px 20px rgba(58, 116, 26, 0.35);
-  transform: translateY(-1px);
+  color: #000;
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.6), 0 0 20px rgba(61, 254, 64, 0.4);
+  transform: translateY(-2px);
 }
+
 .pagina-entrada .entrada__accion:active {
   transform: translateY(1px) scale(0.98);
 }
+
 .pagina-entrada .entrada__accion span { transition: transform var(--t-rapida) var(--curva); }
-.pagina-entrada .entrada__accion:hover span { transform: translate(2px, -2px); }
+.pagina-entrada .entrada__accion:hover span { transform: translate(3px, -3px); }
 
 /* --------------------------------------------------------------------------
-   Titular
+   Hero de Alto Rendimiento (Titular con máxima adrenalina)
    -------------------------------------------------------------------------- */
-
 .pagina-entrada .entrada__hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(250px, .62fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .65fr);
   align-items: end;
-  gap: clamp(32px, 7vw, 110px);
-  padding-block: clamp(56px, 8vw, 104px) var(--aire-bloque);
-}
-/* El titular se mide contra su propia columna, no contra la ventana: con `vw`
-   no había un solo `clamp` que sirviera a la vez para una pantalla de 320 px
-   —donde «ADRENALINA» se salía— y para el escritorio, donde la misma regla lo
-   partía en tres líneas. Con `cqi` la palabra siempre cabe justo. */
-.pagina-entrada .entrada__hero-copy { min-width: 0; container-type: inline-size; }
-.pagina-entrada .entrada__hero h1 {
-  margin: 0;
-  color: var(--tinta);
-  font-family: var(--fuente);
-  font-size: clamp(2.4rem, 14.2cqi, 9.4rem);
-  font-weight: 600;
-  /* A 0,82 el acento de «Límites» se subía encima de la línea anterior y a
-     -0,085em la R y la E de «Adrenalina» se tocaban. Con 0,94 y -0,03em las
-     dos líneas respiran sin dejar de ser un bloque compacto. */
-  line-height: .94;
-  letter-spacing: -.03em;
-  text-transform: uppercase;
-}
-.pagina-entrada .entrada__hero h1 span { display: block; }
-.pagina-entrada .entrada__hero h1 span + span { color: var(--verde); }
-.entrada__marca-registrada {
-  font-size: .16em;
-  font-weight: 500;
-  color: var(--tinta-3);
-  vertical-align: super;
-  letter-spacing: 0;
+  gap: clamp(32px, 6vw, 90px);
+  padding-block: clamp(48px, 7vw, 92px) var(--aire-bloque);
 }
 
-.pagina-entrada .entrada__hero-aside {
-  padding-left: clamp(20px, 2.5vw, 32px);
-  border-left: 2px solid var(--tinta);
-  position: relative;
+.pagina-entrada .entrada__hero-copy {
+  min-width: 0;
+  container-type: inline-size;
 }
-.pagina-entrada .entrada__hero-aside::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -2px;
-  width: 2px;
-  height: 40%;
-  background: var(--verde);
-}
-.entrada__marca-texto {
-  margin: 0 0 12px;
-  color: var(--verde);
-  font-family: var(--mono);
-  font-size: .7rem;
-  letter-spacing: var(--tracking-etiqueta);
+
+.pagina-entrada .entrada__hero h1 {
+  margin: 0;
+  font-family: var(--fuente-display);
+  font-size: clamp(3.2rem, 15cqi, 9.6rem);
+  font-weight: 700;
+  font-style: italic;
+  line-height: .88;
+  letter-spacing: -.01em;
   text-transform: uppercase;
 }
+
+.pagina-entrada .entrada__hero h1 span {
+  display: block;
+}
+
+/* Primera línea: titanio pulido a alta velocidad */
+.pagina-entrada .entrada__hero h1 span:first-child {
+  background: linear-gradient(180deg, #ffffff 15%, #e2e8f0 55%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.25));
+}
+
+/* Segunda línea: descarga eléctrica de verde neón */
+.pagina-entrada .entrada__hero h1 span + span {
+  color: var(--verde);
+  text-shadow: 0 0 24px rgba(61, 254, 64, 0.6), 0 0 60px rgba(61, 254, 64, 0.3);
+}
+
+.entrada__marca-registrada {
+  font-size: .18em;
+  font-weight: 500;
+  color: var(--rojo);
+  vertical-align: super;
+  letter-spacing: 0;
+  text-shadow: 0 0 10px var(--rojo);
+}
+
+/* --------------------------------------------------------------------------
+   Speed Stats HUD (Telemetría debajo del titular)
+   -------------------------------------------------------------------------- */
+.entrada__speed-stats {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2.5vw, 24px);
+  flex-wrap: wrap;
+  margin-top: clamp(24px, 3.5vw, 38px);
+  padding: 16px 20px;
+  background: rgba(14, 18, 26, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 3px solid var(--verde);
+  border-radius: var(--radio);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.speed-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.speed-stat__num {
+  font-family: var(--fuente-display);
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: .02em;
+}
+
+.speed-stat__num small {
+  font-size: .55em;
+  color: var(--verde);
+  margin-left: 3px;
+  font-family: var(--mono);
+  font-style: normal;
+}
+
+.speed-stat__label {
+  font-family: var(--mono);
+  font-size: .64rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+.speed-stat__div {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   Hero Lateral (Paddock Pass Info)
+   -------------------------------------------------------------------------- */
+.pagina-entrada .entrada__hero-aside {
+  padding: 24px clamp(20px, 2.5vw, 30px);
+  background: rgba(14, 18, 26, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--rojo);
+  border-radius: var(--radio);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.entrada__marca-texto {
+  margin: 0 0 12px;
+  color: var(--tinta);
+  font-family: var(--fuente-display);
+  font-size: 1.15rem;
+  font-style: italic;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
 .entrada__descripcion {
-  max-width: 34ch;
+  max-width: 36ch;
   margin: 0 0 22px;
   color: var(--tinta-2);
-  font-size: clamp(.98rem, 1.2vw, 1.08rem);
-  line-height: 1.5;
+  font-size: clamp(.94rem, 1.1vw, 1.02rem);
+  line-height: 1.55;
 }
-/* El enlace se subraya con su propio filete para poder animarlo: el subrayado
-   del navegador no se puede desplazar al pasar por encima. */
+
 .entrada__enlace {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding-bottom: 5px;
-  color: var(--tinta);
-  border-bottom: 1px solid var(--tinta);
+  padding: 8px 14px;
+  background: rgba(61, 254, 64, 0.08);
+  border: 1px solid rgba(61, 254, 64, 0.3);
+  color: var(--verde);
   font-family: var(--mono);
-  font-size: .72rem;
+  font-size: .74rem;
+  font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: color var(--t-rapida) var(--curva), border-color var(--t-rapida) var(--curva);
+  border-radius: var(--radio);
+  box-shadow: 0 0 12px rgba(61, 254, 64, 0.15);
+  transition: all var(--t-rapida) var(--curva);
 }
-.entrada__enlace:hover { color: var(--verde); border-color: var(--verde); }
+
+.entrada__enlace:hover {
+  background: var(--verde);
+  color: #000;
+  border-color: var(--verde);
+  box-shadow: 0 0 20px rgba(61, 254, 64, 0.45);
+  transform: translateY(-1px);
+}
+
 .entrada__enlace span { transition: transform var(--t-rapida) var(--curva); }
 .entrada__enlace:hover span { transform: translate(2px, -2px); }
 
 /* --------------------------------------------------------------------------
-   Fotografías
-
-   Una sola manera de presentar una foto en toda la portada: la imagen sobre el
-   papel con un filete finísimo y el pie debajo, en monoespaciada. Nada de
-   degradados encima de la imagen ni de barras flotando sobre ella.
+   Fotografías con HUD de telemetría de carrera
    -------------------------------------------------------------------------- */
+.pagina-entrada .entrada__foto {
+  margin: 0;
+  position: relative;
+}
 
-.pagina-entrada .entrada__foto { margin: 0; }
+.entrada__foto--hud {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--asfalto-2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.foto-hud__top {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.foto-hud__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(7, 9, 14, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radio);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: .64rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.foto-hud__live {
+  color: var(--rojo);
+  border-color: rgba(255, 42, 75, 0.4);
+}
+
+.foto-hud__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rojo);
+  box-shadow: 0 0 8px var(--rojo);
+  animation: pulsoNeon 1.5s infinite;
+}
+
+.foto-hud__overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 3;
+  padding: 4px 10px;
+  background: rgba(7, 9, 14, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-left: 3px solid var(--verde);
+  border-radius: var(--radio);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
 .pagina-entrada .entrada__foto img {
   display: block;
   width: 100%;
-  /* Sin `height: auto` el atributo `height` del HTML fija la altura y
-     `aspect-ratio` deja de tener efecto. */
   height: auto;
   aspect-ratio: 3 / 2;
   object-fit: cover;
   border: 1px solid var(--filete);
+  border-radius: var(--radio, 2px);
   background: var(--papel-2);
+  transition:
+    transform 800ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 800ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .pagina-entrada .entrada__foto figcaption {
   display: flex;
   justify-content: space-between;
@@ -2096,38 +2385,44 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   margin-top: 12px;
   color: var(--tinta-3);
   font-family: var(--mono);
-  font-size: .66rem;
-  letter-spacing: .1em;
+  font-size: .68rem;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
+
 .entrada__foto-nombre { color: var(--tinta-2); }
-.entrada__foto-nombre > span { margin-right: 7px; color: var(--verde); }
+.entrada__foto-nombre > span { margin-right: 7px; color: var(--verde); font-weight: 700; }
+
+.entrada__foto-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--verde);
+}
+
 .entrada__foto-estado i {
   display: inline-block;
   width: 6px;
   height: 6px;
-  margin-left: 7px;
   border-radius: 50%;
   background: var(--verde-vivo);
-  animation: latidoPista 2.4s var(--curva-entrada) infinite;
+  box-shadow: 0 0 8px var(--verde-vivo);
+  animation: latidoPista 2s var(--curva-entrada) infinite;
 }
-@keyframes latidoPista { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 
-/* La de apertura es la única que cambia de proporción: a 3:2 y a todo lo ancho
-   medía 800 px de alto y se comía la pantalla entera antes de dejar ver nada
-   más. En banda ancha sigue enseñando el coche completo y ocupa lo que tiene
-   que ocupar una apertura. */
+@keyframes latidoPista { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(0.85); } }
+
 .pagina-entrada .entrada__foto--apertura img { aspect-ratio: 16 / 9; object-position: center 45%; }
 
 /* --------------------------------------------------------------------------
-   La pista real
+   Sección: La pista real (Trazado y Telemetría)
    -------------------------------------------------------------------------- */
-
 .pagina-entrada .entrada__pista-real {
   margin-top: var(--aire-seccion);
   padding-top: var(--aire-bloque);
   border-top: 1px solid var(--filete);
 }
+
 .pagina-entrada .entrada__seccion-cabeza {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(230px, .55fr);
@@ -2135,87 +2430,138 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   gap: clamp(26px, 5vw, 80px);
   margin-bottom: var(--aire-bloque);
 }
+
 .pagina-entrada .entrada__seccion-cabeza h2 {
   margin: 0;
-  color: var(--tinta);
-  font-family: var(--fuente);
-  font-size: clamp(2.3rem, 5vw, 4.6rem);
-  font-weight: 600;
-  line-height: .98;
-  letter-spacing: -.028em;
+  color: #fff;
+  font-family: var(--fuente-display);
+  font-size: clamp(2.4rem, 5.2vw, 4.8rem);
+  font-style: italic;
+  font-weight: 700;
+  line-height: .96;
+  letter-spacing: -.01em;
   text-transform: uppercase;
 }
-.pagina-entrada .entrada__seccion-cabeza h2 em { color: var(--verde); font-style: normal; }
-.entrada__seccion-descripcion {
-  max-width: 38ch;
-  margin: 0 0 6px;
-  color: var(--tinta-2);
-  font-size: clamp(.98rem, 1.2vw, 1.08rem);
-  line-height: 1.5;
+
+.pagina-entrada .entrada__seccion-cabeza h2 em {
+  color: var(--verde);
+  font-style: italic;
+  text-shadow: 0 0 20px rgba(61, 254, 64, 0.5);
 }
 
-/* Tríptico: una columna de texto en tinta y dos verticales de la pista. Antes
-   repetía dos veces el mismo logotipo y el tercer panel lo cortaba a media
-   palabra; ahora la sección que promete «la pista real» enseña la pista. */
+.entrada__seccion-descripcion {
+  max-width: 40ch;
+  margin: 0 0 6px;
+  color: var(--tinta-2);
+  font-size: clamp(.96rem, 1.2vw, 1.06rem);
+  line-height: 1.55;
+}
+
+/* Tríptico de Pista: cockpit telemático */
 .pagina-entrada .entrada__media-destacada {
   display: grid;
-  grid-template-columns: minmax(250px, 1fr) minmax(200px, 1fr) minmax(200px, 1fr);
-  min-height: clamp(360px, 34vw, 480px);
-  border: 1px solid var(--tinta);
-  background: var(--tinta);
+  grid-template-columns: minmax(260px, 1.15fr) minmax(200px, 1fr) minmax(200px, 1fr);
+  min-height: clamp(380px, 36vw, 500px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radio);
+  background: var(--asfalto-2);
   overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(61, 254, 64, 0.05);
 }
+
 .pagina-entrada .entrada__media-destacada-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 16px;
-  padding: clamp(26px, 3vw, 42px);
-  color: var(--papel);
+  padding: clamp(26px, 3.5vw, 46px);
+  background: linear-gradient(160deg, rgba(17, 22, 32, 0.95) 0%, rgba(9, 12, 18, 0.98) 100%);
+  color: #fff;
 }
+
 .pagina-entrada .entrada__media-destacada-copy h3 {
   margin: 0;
-  font-family: var(--fuente);
-  font-size: clamp(1.7rem, 2.7vw, 2.7rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -.025em;
+  font-family: var(--fuente-display);
+  font-size: clamp(1.8rem, 2.8vw, 2.9rem);
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -.01em;
   text-transform: uppercase;
 }
+
 .pagina-entrada .entrada__media-destacada-copy > p {
-  max-width: 32ch;
+  max-width: 34ch;
   margin: 0;
-  color: rgba(244, 245, 241, .74);
+  color: var(--tinta-2);
   font-size: .95rem;
-  line-height: 1.5;
+  line-height: 1.55;
 }
-.entrada__media-meta {
+
+.pista-specs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.spec-item {
   display: flex;
-  gap: 4px 22px;
-  flex-wrap: wrap;
-  margin: 6px 0 0 !important;
-  padding-top: 16px;
-  border-top: 1px solid rgba(244, 245, 241, .18);
-  color: rgba(244, 245, 241, .56) !important;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spec-label {
   font-family: var(--mono);
-  font-size: .66rem;
+  font-size: .62rem;
+  font-weight: 700;
+  color: var(--verde);
   letter-spacing: .12em;
   text-transform: uppercase;
 }
-/* Las fotos se sacan del flujo: si no, sus 2048 px de alto natural estiraban
-   la fila y el texto de la columna de al lado se quedaba flotando al fondo de
-   un vacío negro. Ahora la altura la marca el texto y la foto la rellena. */
-.pagina-entrada .entrada__media-foto { position: relative; min-width: 0; margin: 0; overflow: hidden; border-left: 1px solid rgba(244, 245, 241, .14); }
-.pagina-entrada .entrada__media-foto img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 58%; }
 
-/* --------------------------------------------------------------------------
-   Díptico del recinto
+.spec-value {
+  font-size: .86rem;
+  color: #fff;
+  line-height: 1.35;
+}
 
-   Antes había aquí una hoja de contactos de quince fotos de baja resolución
-   —360x640 la mayoría— que eran casi la misma toma del mismo galpón. Dos
-   fotografías buenas dicen más del sitio que quince repetidas, y la página
-   deja de pedir dos mil píxeles de scroll para enseñar lo mismo.
-   -------------------------------------------------------------------------- */
+.entrada__media-meta {
+  display: flex;
+  gap: 6px 20px;
+  flex-wrap: wrap;
+  margin: 4px 0 0 !important;
+  color: var(--tinta-3) !important;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.pagina-entrada .entrada__media-foto {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pagina-entrada .entrada__media-foto img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 58%;
+  transition: transform 700ms var(--curva-suave);
+}
+
+.pagina-entrada .entrada__media-foto:hover img {
+  transform: scale(1.05);
+}
 
 .pagina-entrada .entrada__diptico {
   display: grid;
@@ -2225,38 +2571,39 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 }
 
 /* --------------------------------------------------------------------------
-   Control de acceso
+   Control de Acceso (Paddock & Pit Lane Terminal)
    -------------------------------------------------------------------------- */
-
 .pagina-entrada .entrada__acceso {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 460px);
-  column-gap: clamp(32px, 7vw, 120px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
+  column-gap: clamp(32px, 7vw, 100px);
   row-gap: var(--aire-bloque);
   align-items: start;
   margin-top: var(--aire-seccion);
   padding-top: var(--aire-bloque);
   border-top: 1px solid var(--filete);
-  background: transparent;
-  box-shadow: none;
 }
+
 .pagina-entrada .entrada__acceso-intro h2 {
   margin: 0;
-  color: var(--tinta);
-  font-family: var(--fuente);
-  font-size: clamp(2.2rem, 4.6vw, 4.2rem);
-  font-weight: 600;
-  line-height: .98;
-  letter-spacing: -.028em;
+  color: #fff;
+  font-family: var(--fuente-display);
+  font-size: clamp(2.3rem, 4.8vw, 4.4rem);
+  font-style: italic;
+  font-weight: 700;
+  line-height: .96;
+  letter-spacing: -.01em;
   text-transform: uppercase;
 }
+
 .entrada__acceso-nota {
   max-width: 46ch;
-  margin: 26px 0 0;
+  margin: 22px 0 0;
   color: var(--tinta-2);
   font-size: .98rem;
   line-height: 1.55;
 }
+
 .entrada__acceso-subtitulo {
   margin: 0 0 10px;
   color: var(--tinta);
@@ -2266,148 +2613,290 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   letter-spacing: -.01em;
   text-transform: uppercase;
 }
-/* La columna del formulario es una sola caja de rejilla: antes las pestañas,
-   el aviso y el formulario eran tres filas que el titular de al lado estiraba
-   a lo alto, y entre las pestañas y el primer campo quedaba un hueco de casi
-   doscientos píxeles. */
+
+.paddock-highlights {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+  max-width: 48ch;
+}
+
+.paddock-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(14, 18, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radio);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.paddock-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.paddock-item strong {
+  display: block;
+  font-size: .92rem;
+  color: #fff;
+  margin-bottom: 4px;
+  letter-spacing: .02em;
+}
+
+.paddock-item p {
+  margin: 0;
+  font-size: .84rem;
+  color: var(--tinta-3);
+  line-height: 1.45;
+}
+
+/* Panel de Acceso — Chasis de competición */
 .pagina-entrada .entrada__acceso-panel {
   min-width: 0;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--filete);
+  background: linear-gradient(160deg, #111622 0%, #0c0f16 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radio);
   padding: clamp(24px, 4vw, 36px);
-  box-shadow: 0 20px 48px -12px rgba(20, 24, 20, 0.08), 0 1px 2px rgba(20, 24, 20, 0.04);
-}
-.pagina-entrada .entrada__acceso-panel form { margin: 0; }
-.pagina-entrada .entrada__acceso .pestanas { margin-bottom: var(--e4); border-bottom-color: var(--filete); }
-.pagina-entrada .entrada__acceso .pestana { color: var(--tinta-3); }
-.pagina-entrada .entrada__acceso .pestana:hover { color: var(--tinta); }
-.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] { color: var(--tinta); }
-.pagina-entrada .entrada__acceso .pestana::after { background: var(--tinta); box-shadow: none; }
-.pagina-entrada .entrada__acceso .campo > label { color: var(--tinta-3); }
-.pagina-entrada .entrada__acceso .campo__ayuda { color: var(--tinta-3); }
-.pagina-entrada .entrada__acceso input {
-  color: var(--tinta);
-  border: 1px solid rgba(20, 24, 20, 0.16);
-  border-radius: var(--radio);
-  background: rgba(255, 255, 255, 0.85);
-  padding: 12px 14px;
-  font-size: 0.95rem;
-  transition: all var(--t-rapida) var(--curva-suave);
-}
-.pagina-entrada .entrada__acceso input::placeholder { color: #8a948a; }
-.pagina-entrada .entrada__acceso input:hover:not(:disabled) {
-  border-color: rgba(20, 24, 20, 0.35);
-  background: #fff;
-}
-.pagina-entrada .entrada__acceso input:focus {
-  border-color: var(--verde);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(58, 116, 26, 0.15), 0 2px 8px rgba(20, 24, 20, 0.06);
-  outline: none;
-}
-.pagina-entrada .entrada__acceso input[aria-invalid="true"] { border-color: var(--rojo); }
-.pagina-entrada .entrada__acceso .campo__error { color: var(--rojo); }
-
-/* Los avisos del sistema están escritos para el negro: sobre papel, un rosa
-   claro sobre un rosa más claro no se leía. Aquí el color vive en el filete
-   de la izquierda y en el texto, que va en tinta de su propio tono. */
-.pagina-entrada .aviso {
-  margin-bottom: var(--e3);
-  color: var(--tinta-2);
-  background: var(--papel-2);
-  border-left-width: 3px;
-  border-left-color: var(--filete-fuerte);
-}
-.pagina-entrada .aviso--error { color: var(--rojo); background: rgba(166, 26, 41, .07); border-left-color: var(--rojo); }
-.pagina-entrada .aviso--ok { color: var(--verde); background: rgba(63, 127, 28, .08); border-left-color: var(--verde); }
-.pagina-entrada .aviso--alerta { color: var(--ambar); background: rgba(138, 94, 0, .08); border-left-color: var(--ambar); }
-
-/* Sobre papel, los botones del sistema oscuro llegaban con su relieve y su
-   destello: aquí son bloques de tinta pulidos. */
-.pagina-entrada .boton {
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-.pagina-entrada .boton::after { display: none; }
-.pagina-entrada .entrada__acceso .boton--principal {
-  --bg: var(--tinta);
-  --fg: var(--papel);
-  --bd: var(--tinta);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  border-radius: var(--radio);
-  box-shadow: 0 6px 18px rgba(20, 24, 20, 0.15);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(61, 254, 64, 0.06);
   position: relative;
   overflow: hidden;
-  transition: all var(--t-media) var(--curva-suave);
 }
-.pagina-entrada .entrada__acceso .boton--principal::before {
+
+.pagina-entrada .entrada__acceso-panel .panel-header-chicane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.pagina-entrada .entrada__acceso-panel form { margin: 0; }
+
+.pagina-entrada .entrada__acceso .pestanas {
+  margin-bottom: var(--e4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 8px;
+}
+
+.pagina-entrada .entrada__acceso .pestana {
+  color: var(--tinta-3);
+  font-family: var(--fuente-display);
+  font-size: 1.1rem;
+  font-style: italic;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  background: transparent;
+  border: none;
+  padding: 10px 18px;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--t-rapida) var(--curva);
+}
+
+.pagina-entrada .entrada__acceso .pestana:hover {
+  color: #fff;
+}
+
+.pagina-entrada .entrada__acceso .pestana[aria-selected="true"] {
+  color: #fff;
+}
+
+.pagina-entrada .entrada__acceso .pestana[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--verde);
+  box-shadow: 0 0 12px var(--verde);
+}
+
+.pagina-entrada .entrada__acceso .campo > label {
+  color: var(--tinta-2);
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.pagina-entrada .entrada__acceso .campo__ayuda {
+  color: var(--tinta-3);
+  font-size: .82rem;
+}
+
+.pagina-entrada .entrada__acceso input {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radio);
+  background: rgba(7, 9, 14, 0.8);
+  padding: 13px 15px;
+  font-size: 0.96rem;
+  transition: all var(--t-rapida) var(--curva-suave);
+}
+
+.pagina-entrada .entrada__acceso input::placeholder {
+  color: #526071;
+}
+
+.pagina-entrada .entrada__acceso input:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(10, 13, 20, 0.9);
+}
+
+.pagina-entrada .entrada__acceso input:focus {
+  border-color: var(--verde);
+  background: rgba(12, 16, 24, 1);
+  box-shadow: 0 0 0 3px rgba(61, 254, 64, 0.2), 0 0 20px rgba(61, 254, 64, 0.25);
+  outline: none;
+}
+
+.pagina-entrada .entrada__acceso input[aria-invalid="true"] {
+  border-color: var(--rojo);
+  box-shadow: 0 0 0 3px rgba(255, 42, 75, 0.2);
+}
+
+.pagina-entrada .entrada__acceso .campo__error { color: var(--rojo); }
+
+.pagina-entrada .aviso {
+  margin-bottom: var(--e3);
+  color: #fff;
+  background: rgba(14, 18, 26, 0.9);
+  border-left-width: 3px;
+  border-left-color: rgba(255, 255, 255, 0.3);
+}
+
+.pagina-entrada .aviso--error { color: #fff; background: rgba(255, 42, 75, 0.15); border-left-color: var(--rojo); }
+.pagina-entrada .aviso--ok { color: #fff; background: rgba(61, 254, 64, 0.15); border-left-color: var(--verde); }
+.pagina-entrada .aviso--alerta { color: #fff; background: rgba(255, 184, 0, 0.15); border-left-color: var(--ambar); }
+
+/* Botones de competición (Racing Buttons) */
+.pagina-entrada .boton--racing {
+  color: #000 !important;
+  background: linear-gradient(135deg, #3dfe40 0%, #15ba1b 100%) !important;
+  border: 1px solid var(--verde) !important;
+  font-family: var(--fuente-display) !important;
+  font-size: 1.25rem !important;
+  font-style: italic !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  padding-block: 15px !important;
+  border-radius: var(--radio) !important;
+  box-shadow: 0 8px 30px rgba(61, 254, 64, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition: all var(--t-media) var(--curva-suave) !important;
+}
+
+.pagina-entrada .boton--racing::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
   transform: translateX(-130%);
-  transition: transform 700ms var(--curva-suave);
+  transition: transform 650ms var(--curva-suave);
 }
-.pagina-entrada .entrada__acceso .boton--principal:hover::before {
+
+.pagina-entrada .boton--racing:hover::before {
   transform: translateX(130%);
 }
-.pagina-entrada .entrada__acceso .boton--principal:hover:not(:disabled) {
-  --bg: var(--verde);
-  --bd: var(--verde);
-  --fg: #fff;
-  box-shadow: 0 8px 26px rgba(58, 116, 26, 0.35);
+
+.pagina-entrada .boton--racing:hover:not(:disabled) {
+  background: #fff !important;
+  border-color: #fff !important;
+  color: #000 !important;
+  box-shadow: 0 10px 36px rgba(255, 255, 255, 0.6), 0 0 30px rgba(61, 254, 64, 0.5) !important;
   transform: translateY(-2px);
 }
-.pagina-entrada .entrada__acceso .boton--principal:active {
+
+.pagina-entrada .boton--racing:active {
   transform: translateY(1px) scale(0.98);
 }
-.pagina-entrada .entrada__acceso .boton--fantasma { --bg: transparent; --fg: var(--tinta); --bd: var(--filete-fuerte); }
-.pagina-entrada .entrada__acceso .boton--fantasma:hover:not(:disabled) { --bd: var(--tinta); --bg: transparent; }
-.pagina-entrada .entrada__acceso .boton--enlace { color: var(--tinta-3); text-decoration-color: var(--filete-fuerte); }
-.pagina-entrada .entrada__acceso .boton--enlace:hover:not(:disabled) { color: var(--verde); text-decoration-color: var(--verde); }
+
+.pagina-entrada .entrada__acceso .boton--fantasma {
+  --bg: transparent;
+  --fg: #fff;
+  --bd: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.pagina-entrada .entrada__acceso .boton--fantasma:hover:not(:disabled) {
+  --bd: var(--verde);
+  --fg: var(--verde);
+  background: rgba(61, 254, 64, 0.08);
+}
+
+.pagina-entrada .entrada__acceso .boton--enlace {
+  color: var(--tinta-3);
+}
+
+.pagina-entrada .entrada__acceso .boton--enlace:hover:not(:disabled) {
+  color: var(--verde);
+}
+
 .pagina-entrada .boton:focus-visible,
 .pagina-entrada a:focus-visible,
-.pagina-entrada .pestana:focus-visible { outline: 2px solid var(--verde); outline-offset: 3px; box-shadow: none; }
+.pagina-entrada .pestana:focus-visible {
+  outline: 2px solid var(--verde);
+  outline-offset: 3px;
+  box-shadow: 0 0 16px var(--verde);
+}
+
 .entrada__acceso-pie { margin: var(--e3) 0 0; text-align: center; }
 
 /* --------------------------------------------------------------------------
-   Pie
+   Pie de Pista (Footer)
    -------------------------------------------------------------------------- */
-
 .pagina-entrada .entrada__pie {
   position: relative;
   z-index: 1;
-  border-top: 1px solid var(--filete);
-  background: var(--papel-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 7, 10, 0.95);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
 }
+
 .pagina-entrada .entrada__pie-interior {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-block: 28px;
+  padding-block: 30px;
 }
+
 .entrada__pie-marca {
   margin: 0;
-  color: var(--tinta);
-  font-family: var(--mono);
-  font-size: .68rem;
-  letter-spacing: .13em;
+  color: #fff;
+  font-family: var(--fuente-display);
+  font-size: .95rem;
+  font-style: italic;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
-.entrada__pie-marca span { color: var(--tinta-3); margin-left: 10px; }
-.entrada__pie-nota { margin: 0; color: var(--tinta-3); font-size: .86rem; }
+
+.entrada__pie-marca span {
+  color: var(--verde);
+  margin-left: 10px;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  font-style: normal;
+}
+
+.entrada__pie-nota {
+  margin: 0;
+  color: var(--tinta-3);
+  font-size: .86rem;
+}
 
 /* --------------------------------------------------------------------------
-   Adaptaciones
+   Adaptaciones Responsivas
    -------------------------------------------------------------------------- */
-
 @media (max-width: 1000px) {
   .pagina-entrada .entrada__media-destacada { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .pagina-entrada .entrada__media-destacada-copy { min-height: 320px; }
@@ -2416,20 +2905,20 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 
 @media (max-width: 860px) {
   .pagina-entrada .entrada__hero { grid-template-columns: 1fr; align-items: start; gap: 34px; }
-  .pagina-entrada .entrada__hero-aside { max-width: 520px; }
+  .pagina-entrada .entrada__hero-aside { max-width: 540px; }
   .pagina-entrada .entrada__seccion-cabeza { grid-template-columns: 1fr; align-items: start; gap: 22px; }
   .pagina-entrada .entrada__acceso { grid-template-columns: 1fr; }
-  .pagina-entrada .entrada__acceso-panel { max-width: 520px; }
+  .pagina-entrada .entrada__acceso-panel { max-width: 540px; }
 }
 
 @media (max-width: 620px) {
   .pagina-entrada .entrada__meta { display: none; }
+  .pagina-entrada .entrada__speed-stats { gap: 14px; }
+  .pagina-entrada .speed-stat__div { display: none; }
+  .pagina-entrada .pista-specs-grid { grid-template-columns: 1fr; }
   .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr; min-height: 0; }
-  /* Apilada, la foto va absoluta dentro de una figura sin altura propia: es la
-     figura la que tiene que llevar la proporción o se queda en un hilo. */
-  .pagina-entrada .entrada__media-foto { aspect-ratio: 4 / 3; border-left: 0; border-top: 1px solid rgba(244, 245, 241, .14); }
+  .pagina-entrada .entrada__media-foto { aspect-ratio: 4 / 3; border-left: 0; border-top: 1px solid rgba(255, 255, 255, 0.1); }
   .pagina-entrada .entrada__foto figcaption { flex-direction: column; gap: 5px; }
-  /* Dos fotos anchas una al lado de otra no caben en un teléfono. */
   .pagina-entrada .entrada__diptico { grid-template-columns: 1fr; gap: var(--aire-bloque); }
   .pagina-entrada .entrada__pie-interior { flex-direction: column; align-items: flex-start; gap: 14px; }
 }
@@ -2479,52 +2968,40 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
   color: inherit;
 }
 
-/* --- Fotografías: cortinilla al entrar ---------------------------------- */
+/* --- Fotografías: revelado suave y delicado al entrar ------------------ */
 
-/* El recorte va en la imagen, nunca en la figura: un elemento recortado a
-   altura cero tiene área cero, y entonces `IntersectionObserver` no lo da
-   nunca por visible y la cortinilla no llega a dispararse. */
 .figura-revela img {
-  clip-path: inset(0 0 100% 0);
-  transform: scale(1.09);
-  transform-origin: center;
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  filter: brightness(0.96) contrast(0.98);
+  will-change: opacity, transform, filter;
 }
 .figura-revela--visible img {
-  clip-path: inset(0 0 0 0);
-  transform: none;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: brightness(1) contrast(1);
   transition:
-    clip-path 760ms var(--curva) var(--retraso, 0ms),
-    transform 1100ms var(--curva) var(--retraso, 0ms);
+    opacity 950ms cubic-bezier(0.16, 1, 0.3, 1) var(--retraso, 0ms),
+    transform 1050ms cubic-bezier(0.16, 1, 0.3, 1) var(--retraso, 0ms),
+    filter 950ms cubic-bezier(0.16, 1, 0.3, 1) var(--retraso, 0ms);
 }
-/* El pie de foto llega detrás de la imagen, no con ella. */
+/* El pie de foto acompaña con delicadeza, desvaneciéndose justo detrás. */
 .figura-revela figcaption {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
 }
 .figura-revela--visible figcaption {
   opacity: 1;
   transform: none;
   transition:
-    opacity var(--t-lenta) var(--curva) calc(var(--retraso, 0ms) + 300ms),
-    transform var(--t-lenta) var(--curva) calc(var(--retraso, 0ms) + 300ms);
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--retraso, 0ms) + 160ms),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--retraso, 0ms) + 160ms);
 }
 
-/* --- Paralaje ----------------------------------------------------------- */
+/* --- Paralaje sutil y continuo ----------------------------------------- */
 
-/* El desvío lo escribe `movimiento.js` en cada cuadro. Va combinado con la
-   escala de la cortinilla, así que se declara aquí y no en la regla de arriba:
-   una sola propiedad `transform` manda, y esta es la que gana cuando la
-   cortinilla ya terminó. */
 .figura-revela--visible img.con-paralaje {
   transform: translate3d(0, var(--paralaje, 0px), 0);
-  transition:
-    clip-path 760ms var(--curva) var(--retraso, 0ms),
-    transform 1100ms var(--curva) var(--retraso, 0ms);
-}
-/* Una vez colocada la foto, el paralaje deja de suavizarse: tiene que ir
-   pegado al desplazamiento o se arrastra por detrás del dedo. */
-.figura-revela--visible img.con-paralaje[data-paralaje='1'] {
-  transition: none;
 }
 
 /* --- Progreso de lectura ------------------------------------------------ */
@@ -2554,10 +3031,14 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
     border-color var(--t-media) var(--curva),
     box-shadow var(--t-media) var(--curva);
 }
+/* Al desplazar, la cabecera se asienta: mismo color que en reposo pero más
+   opaca y con más sombra. Nunca un color propio —antes fijaba el papel claro de
+   una versión anterior de la portada y, al pasar esta al asfalto, pintaba una
+   banda blanca encima de la página. */
 .pagina-entrada .entrada__barra.esta-desplazada {
-  background: rgba(244, 245, 241, .95);
-  border-bottom-color: var(--filete-fuerte);
-  box-shadow: 0 1px 0 rgba(20, 24, 20, .05), 0 10px 30px rgba(20, 24, 20, .07);
+  background: color-mix(in srgb, var(--asfalto, #07090e) 96%, transparent);
+  border-bottom-color: var(--acento-borde, rgba(61, 254, 64, .42));
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .6);
 }
 .barra.esta-desplazada {
   border-bottom-color: var(--acento-borde);
@@ -2594,7 +3075,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
     opacity var(--t-rapida) var(--curva);
 }
 .pestanas__indicador--visible { opacity: 1; }
-.pagina-entrada .pestanas__indicador { background: var(--tinta); }
 /* Con el indicador deslizante sobra el subrayado propio de cada pestaña: eran
    dos líneas en el mismo sitio, una fija y otra viajando. */
 .pestanas--con-indicador .pestana[aria-selected="true"]::after { opacity: 0; }

@@ -28,3 +28,4 @@ coverage/
 # Estado local de las herramientas de navegador automatizado.
 .playwright-cli/
 output/
+_site/

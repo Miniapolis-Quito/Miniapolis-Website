@@ -101,14 +101,15 @@
           <button class="boton boton--principal boton--chico" id="btn-nuevo-usuario" type="button">Nuevo usuario</button>
         </div>
         <div class="fila mb">
-          <input type="search" id="buscar-usuarios" placeholder="Buscar por nombre, correo o teléfono" class="crece min-200">
-          <select id="filtro-rol" class="ancho-auto">
+          <input type="search" id="buscar-usuarios" placeholder="Buscar por nombre, correo o teléfono"
+                 aria-label="Buscar clientes y personal" class="crece min-200">
+          <select id="filtro-rol" aria-label="Filtrar por rol" class="ancho-auto">
             <option value="">Todos los roles</option>
             <option value="customer">Clientes</option>
             <option value="staff">Personal</option>
             <option value="master">Máster</option>
           </select>
-          <select id="filtro-estado" class="ancho-auto">
+          <select id="filtro-estado" aria-label="Filtrar por estado de la cuenta" class="ancho-auto">
             <option value="">Todos los estados</option>
             <option value="active">Activos</option>
             <option value="suspended">Suspendidos</option>
@@ -126,8 +127,9 @@
           <button class="boton boton--principal boton--chico" id="btn-nuevo-pack" type="button">Vender pack</button>
         </div>
         <div class="fila mb">
-          <input type="search" id="buscar-packs" placeholder="Buscar por código o cliente" class="crece min-200">
-          <select id="filtro-pack-estado" class="ancho-auto">
+          <input type="search" id="buscar-packs" placeholder="Buscar por código o cliente"
+                 aria-label="Buscar packs" class="crece min-200">
+          <select id="filtro-pack-estado" aria-label="Filtrar packs por estado" class="ancho-auto">
             <option value="">Todos</option>
             <option value="usable">Con entradas</option>
             <option value="active">Activos</option>

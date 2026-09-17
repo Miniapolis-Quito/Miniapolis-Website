@@ -12,6 +12,7 @@
     "dev": "node --watch src/server.js",
     "seed": "node scripts/seed.js",
     "create-master": "node scripts/create-master.js",
+    "build:pages": "node scripts/preparar-pages.js",
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "test:watch": "node --test --watch \"tests/**/*.test.js\"",
     "test:e2e": "node tests/e2e/flujo-completo.mjs",
