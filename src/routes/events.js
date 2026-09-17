@@ -34,10 +34,17 @@ const REVALIDACION_MS = 10_000;
  */
 const MAXIMO_POR_USUARIO = 8;
 
-/** Canales a los que puede suscribirse cada rol. */
+/**
+ * Canales a los que puede suscribirse cada cuenta.
+ *
+ * Todo el mundo recibe el suyo. El canal del personal lleva el nombre del
+ * cliente, el código del pack y el saldo de cada consumo según ocurre, así que
+ * solo llega a quien está autorizado a escanear: una cuenta de personal sin
+ * ese permiso no tiene por qué ver pasar el movimiento de la pista.
+ */
 function channelsFor(user) {
   const list = [channels.user(user.id)];
-  if (user.role === 'staff' || user.role === 'master') list.push(channels.staff);
+  if ((user.role === 'staff' || user.role === 'master') && user.scanEnabled) list.push(channels.staff);
   if (user.role === 'master') list.push(channels.admin);
   return list;
 }
@@ -52,7 +59,11 @@ function channelsFor(user) {
 function sesionSigueViva(usuario) {
   if (!isSessionActive(usuario.sessionId)) return false;
   const fila = users.findById(usuario.id);
-  return Boolean(fila) && fila.status === 'active' && fila.role === usuario.role;
+  if (!fila || fila.status !== 'active' || fila.role !== usuario.role) return false;
+  // Perder el permiso de escaneo corta el canal: retirarlo revoca la sesión,
+  // y esta comprobación lo cubre también si el cambio vino de otro proceso.
+  // Ganarlo no cierra nada: los canales nuevos llegan al recargar la pantalla.
+  return !(usuario.scanEnabled && !fila.scan_enabled);
 }
 
 function writeEvent(res, { id, type, data }) {

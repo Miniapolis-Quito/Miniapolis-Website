@@ -128,6 +128,9 @@ export const createUserSchema = z.object({
   phone: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
   role: roleSchema.default('customer'),
   password: passwordSchema.optional(),
+  // Permiso para usar el escáner de la puerta. Nunca se activa solo: el rol
+  // de personal abre la pantalla, este permiso es el que deja descontar.
+  scanEnabled: z.boolean().optional(),
 });
 
 export const updateUserSchema = z
@@ -138,6 +141,7 @@ export const updateUserSchema = z
     status: z.enum(['active', 'suspended']).optional(),
     email: emailSchema.optional(),
     emailReminders: z.boolean().optional(),
+    scanEnabled: z.boolean().optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'No hay cambios que aplicar.');
 

@@ -36,6 +36,10 @@ export async function ensureMasterAccount() {
     password,
     fullName: config.bootstrap.masterName,
     role: 'master',
+    // La primera cuenta llega con el escáner habilitado: si no, una
+    // instalación nueva no podría abrir la puerta hasta autorizarse a sí
+    // misma. Desde la administración se puede retirar.
+    scanEnabled: true,
   });
 
   audit.record({ actor: null, action: 'sistema.master_inicial', entityType: 'user', entityId: user.id });

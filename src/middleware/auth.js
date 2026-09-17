@@ -55,6 +55,9 @@ export function authenticate(req, res, next) {
     fullName: row.full_name,
     role: row.role,
     status: row.status,
+    // Se lee de la base en cada petición, igual que el rol: retirar el permiso
+    // surte efecto en el siguiente escaneo, sin esperar a que caduque nada.
+    scanEnabled: Boolean(row.scan_enabled),
     sessionId: payload.sid,
   };
   return next();
@@ -87,3 +90,27 @@ export function requireRole(minimumRole) {
 
 export const requireMaster = requireRole('master');
 export const requireStaff = requireRole('staff');
+
+/**
+ * Exige permiso explícito para usar el escáner de la puerta.
+ *
+ * El rol de personal abre la pantalla; este permiso es el que deja descontar
+ * entradas. Se concede cuenta por cuenta desde la administración, incluso a
+ * los másteres, para que la respuesta a "¿quién puede tocar el saldo de un
+ * cliente?" sea siempre una lista corta y revisable.
+ */
+export function requireScanner(req, res, next) {
+  if (!req.user) return requireAuth(req, res, next);
+  if ((ROLE_RANK[req.user.role] ?? 0) < ROLE_RANK.staff) {
+    return next(forbidden('Tu cuenta no tiene permisos para esta acción.'));
+  }
+  if (!req.user.scanEnabled) {
+    return next(
+      forbidden(
+        'Tu cuenta no está autorizada para escanear. Pídele al administrador que te habilite el escáner.',
+        'escaneo_no_autorizado',
+      ),
+    );
+  }
+  return next();
+}

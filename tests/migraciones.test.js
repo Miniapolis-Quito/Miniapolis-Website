@@ -149,6 +149,33 @@ test('actualizar a migración 009 añade quantity a consumos, tabla transfers y 
   db.close();
 });
 
+test('al actualizar, el personal que ya trabajaba conserva el escáner y los clientes no lo reciben', () => {
+  // Una pista en marcha no puede quedarse sin operadores a mitad de jornada
+  // porque se actualizó el sistema; pero el permiso tampoco puede aparecer de
+  // la nada en las cuentas de los clientes.
+  const indice = migrations.findIndex((m) => m.name === '010-permiso-de-escaneo');
+  assert.ok(indice > 0, 'falta la migración 010-permiso-de-escaneo');
+  const db = baseEn(indice);
+  const ahora = new Date().toISOString();
+  const insertar = db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, role, password_hash,
+                        password_changed_at, created_at, updated_at, search_text)
+     VALUES (@id, @email, @email, @full_name, @role, 'x', @ahora, @ahora, @ahora, '')`,
+  );
+  insertar.run({ id: 'm1', email: 'jefa@pista.ec', full_name: 'Jefa', role: 'master', ahora });
+  insertar.run({ id: 's1', email: 'puerta@pista.ec', full_name: 'Puerta', role: 'staff', ahora });
+  insertar.run({ id: 'c1', email: 'piloto@pista.ec', full_name: 'Piloto', role: 'customer', ahora });
+
+  migrations[indice].up(db);
+
+  const permisos = Object.fromEntries(
+    db.prepare('SELECT id, scan_enabled FROM users ORDER BY id').all().map((f) => [f.id, f.scan_enabled]),
+  );
+  assert.deepEqual(permisos, { c1: 0, m1: 1, s1: 1 });
+
+  db.close();
+});
+
 test('aplicar todas las migraciones deja el esquema esperado', () => {
   const db = baseEn(migrations.length);
 
@@ -169,6 +196,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   for (const necesario of [
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
     'idx_password_resets_expiry', 'idx_notifications_queue', 'idx_transfers_sender',
+    'idx_users_scan_enabled',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }

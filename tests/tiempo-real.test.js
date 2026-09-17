@@ -10,84 +10,15 @@ import assert from 'node:assert/strict';
 import { levantarServidor, bajarServidor, limpiarBase, sembrarUsuarios } from './helpers.js';
 import { buildQrPayload } from '../src/lib/qr.js';
 import * as packsService from '../src/services/packs.js';
+import { abrirCanal, fijarBase } from './canal.js';
 
 let base;
 before(async () => {
   base = await levantarServidor();
+  fijarBase(base);
 });
 after(bajarServidor);
 beforeEach(limpiarBase);
-
-/**
- * Abre una conexión de eventos y devuelve un lector con `esperar(tipo)`.
- * Se usa fetch en streaming, igual que la interfaz real.
- */
-async function abrirCanal(token, { desdeEvento = null } = {}) {
-  const control = new AbortController();
-  const respuesta = await fetch(`${base}/api/events`, {
-    headers: {
-      Accept: 'text/event-stream',
-      Authorization: `Bearer ${token}`,
-      ...(desdeEvento ? { 'Last-Event-ID': String(desdeEvento) } : {}),
-    },
-    signal: control.signal,
-  });
-  assert.equal(respuesta.status, 200);
-
-  const recibidos = [];
-  const enEspera = [];
-  let pendiente = '';
-
-  const lector = respuesta.body.pipeThrough(new TextDecoderStream()).getReader();
-  (async () => {
-    try {
-      while (true) {
-        const { value, done } = await lector.read();
-        if (done) break;
-        pendiente += value;
-        let corte;
-        while ((corte = pendiente.indexOf('\n\n')) !== -1) {
-          const bloque = pendiente.slice(0, corte);
-          pendiente = pendiente.slice(corte + 2);
-          let tipo = 'message';
-          let datos = '';
-          let id = null;
-          for (const linea of bloque.split('\n')) {
-            if (linea.startsWith('event:')) tipo = linea.slice(6).trim();
-            else if (linea.startsWith('data:')) datos += linea.slice(5).trim();
-            else if (linea.startsWith('id:')) id = Number.parseInt(linea.slice(3).trim(), 10);
-          }
-          if (!datos) continue;
-          const evento = { tipo, id, datos: JSON.parse(datos) };
-          recibidos.push(evento);
-          for (let i = enEspera.length - 1; i >= 0; i -= 1) {
-            if (enEspera[i].tipo === tipo) enEspera.splice(i, 1)[0].resolver(evento);
-          }
-        }
-      }
-    } catch {
-      /* la conexión se cerró */
-    }
-  })();
-
-  return {
-    recibidos,
-    cerrar: () => control.abort(),
-    esperar(tipo, ms = 5000) {
-      const ya = recibidos.find((e) => e.tipo === tipo);
-      if (ya) return Promise.resolve(ya);
-      return new Promise((resolver, rechazar) => {
-        const espera = { tipo, resolver };
-        enEspera.push(espera);
-        setTimeout(() => {
-          const i = enEspera.indexOf(espera);
-          if (i !== -1) enEspera.splice(i, 1);
-          rechazar(new Error(`No llegó ningún evento "${tipo}" en ${ms} ms. Recibidos: ${recibidos.map((e) => e.tipo).join(', ') || 'ninguno'}`));
-        }, ms).unref?.();
-      });
-    },
-  };
-}
 
 test('al conectarse, el canal entrega el saldo actual del cliente', async () => {
   const { cMaster, cCliente, cliente } = await sembrarUsuarios();

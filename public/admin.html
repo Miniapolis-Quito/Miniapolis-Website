@@ -233,10 +233,21 @@
           <label for="usuario-rol">Rol</label>
           <select id="usuario-rol" name="role">
             <option value="customer">Cliente</option>
-            <option value="staff">Personal de pista (puede escanear)</option>
+            <option value="staff">Personal de pista</option>
             <option value="master">Máster (control total)</option>
           </select>
-          <div class="campo__ayuda">El personal solo puede escanear y consultar. El máster puede todo.</div>
+          <div class="campo__ayuda">El personal consulta packs; el máster puede todo. Escanear se autoriza aparte.</div>
+        </div>
+        <div class="campo" id="campo-escaner" hidden>
+          <label class="campo--linea sin-margen-todo" for="usuario-escaner">
+            <input type="checkbox" id="usuario-escaner">
+            <span>Puede escanear entradas en la puerta</span>
+          </label>
+          <div class="campo__ayuda">
+            Sin esta casilla, la cuenta entra al sistema pero no puede descontar entradas a ningún cliente.
+            Se puede dar y quitar en cualquier momento.
+          </div>
+          <div class="campo__error"></div>
         </div>
         <div class="campo">
           <label for="usuario-password">Contraseña <span class="tenue-2">(en blanco = se genera una)</span></label>
