@@ -17,6 +17,7 @@ import * as redemptions from './redemptions.js';
 import * as sinConexion from './sinConexion.js';
 import * as fidelidad from './fidelidad.js';
 import * as packRequests from './packRequests.js';
+import * as dosFactores from './dosFactores.js';
 import { hub } from '../lib/events.js';
 
 const DIAS_DEL_GRAFICO = 14;
@@ -132,6 +133,18 @@ export function resumen({ ahora = new Date() } = {}) {
     // Programa de fidelidad: lo regalado y a cuánta gente le falta poco. Va
     // aquí para que el resumen cuente también lo que la pista invita.
     loyalty: { status: fidelidad.estado(db), metrics: fidelidad.metricas({ now: ahora.getTime() }) },
+    // Cuántas cuentas con permisos siguen entrando solo con la contraseña. Va
+    // en el resumen —y no escondido en su pestaña— porque es lo que decide si
+    // una contraseña filtrada abre el escáner y la administración.
+    security: (() => {
+      const seguridad = dosFactores.panelDeSeguridad(db);
+      return {
+        requireTwoFactorForStaff: seguridad.requireTwoFactorForStaff,
+        team: seguridad.total,
+        withTwoFactor: seguridad.conSegundoFactor,
+        withoutTwoFactor: seguridad.sinSegundoFactor,
+      };
+    })(),
     serverTime: ahora.toISOString(),
   };
 }

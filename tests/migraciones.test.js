@@ -186,7 +186,8 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   assert.deepEqual(tablas, [
     'audit_log', 'idempotency_keys', 'loyalty_rewards', 'notifications', 'pack_movements', 'pack_requests',
     'packs', 'password_resets', 'rate_limits', 'redemptions', 'sessions', 'settings', 'transfers',
-    'used_nonces', 'users', 'wallet_devices', 'wallet_passes',
+    'two_factor_challenges', 'two_factor_recovery_codes', 'used_nonces', 'users', 'wallet_devices',
+    'wallet_passes',
   ]);
 
   assert.equal(db.pragma('user_version', { simple: true }), migrations.length);
@@ -197,6 +198,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
     'idx_password_resets_expiry', 'idx_notifications_queue', 'idx_transfers_sender',
     'idx_users_scan_enabled', 'idx_pack_requests_status', 'idx_loyalty_user', 'idx_packs_origin',
+    'idx_users_totp', 'idx_2fa_codigos_usuario', 'idx_2fa_desafios_expira',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }
