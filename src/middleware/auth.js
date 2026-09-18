@@ -97,6 +97,18 @@ export function bloqueoPorDosFactores(user) {
   );
 }
 
+/**
+ * ¿Esta cuenta ejerce de máster ahora mismo?
+ *
+ * No basta con mirar el rol: mientras la pista exija verificación en dos pasos
+ * y esa cuenta no la tenga, sus permisos están en suspenso. Lo usan las rutas
+ * que dejan a un máster mirar lo de otra persona (un pack, un pase) y que, por
+ * ser de uso propio, solo piden sesión y no pasan por `requireRole`.
+ */
+export function actuaComoMaster(user) {
+  return user?.role === 'master' && !pendienteDeActivar(user);
+}
+
 /** Exige un rol mínimo: master > staff > customer. */
 export function requireRole(minimumRole) {
   const required = ROLE_RANK[minimumRole];

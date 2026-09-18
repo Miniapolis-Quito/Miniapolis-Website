@@ -43,6 +43,11 @@ const ACCIONES_CUENTA = {
   'password.cambio_bloqueado': 'Sesión cerrada por fallar la contraseña actual al cambiarla',
   'login.exitoso': 'Inició sesión',
   'login.fallido': 'Intento de acceso fallido',
+  'login.segundo_paso_pendiente': 'Acertó la contraseña; se le pidió el segundo paso',
+  'dos_factores.activada': 'Activó la verificación en dos pasos',
+  'dos_factores.desactivada': 'Se desactivó la verificación en dos pasos',
+  'dos_factores.codigos_renovados': 'Generó códigos de respaldo nuevos',
+  'dos_factores.codigo_fallido': 'Código de dos pasos incorrecto',
   logout: 'Cerró sesión',
   'logout.todos': 'Cerró sesión en todos sus dispositivos',
   'escaneo.rechazado': 'Código rechazado en la puerta',
@@ -208,6 +213,7 @@ function cabecera(user, esUnoMismo) {
         { class: 'ficha__etiquetas' },
         el('span', { class: 'etiqueta etiqueta--info' }, ROLES[user.role] || user.role),
         user.scanEnabled ? el('span', { class: 'etiqueta etiqueta--ok' }, 'Escáner') : null,
+        user.twoFactorEnabled ? el('span', { class: 'etiqueta etiqueta--ok' }, 'Dos pasos') : null,
         el(
           'span',
           { class: `etiqueta etiqueta--${user.status === 'active' ? 'ok' : 'error'}` },
@@ -941,6 +947,9 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     'cuenta.registrada': 'nuevo', 'usuario.creado': 'nuevo',
     'usuario.desbloqueado': 'candado-abierto', 'usuario.sesiones_revocadas': 'puerta',
     'usuario.escaneo_autorizado': 'camara', 'usuario.escaneo_revocado': 'candado',
+    'dos_factores.activada': 'candado', 'dos_factores.desactivada': 'candado',
+    'dos_factores.codigos_renovados': 'candado', 'dos_factores.codigo_fallido': 'prohibido',
+    'login.segundo_paso_pendiente': 'candado',
     'escaneo.rechazado': 'prohibido',
     'escaneo_sin_conexion.rechazado': 'prohibido', 'escaneo_sin_conexion.resuelto': 'ok',
     'recordatorios.activados': 'campana', 'recordatorios.desactivados': 'campana-muda',
@@ -957,7 +966,8 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     ? evento.delta > 0
       ? 'tiempo__icono--suma'
       : 'tiempo__icono--resta'
-    : ['login.fallido', 'escaneo.rechazado', 'escaneo_sin_conexion.rechazado', 'pack_request.rechazada'].includes(evento.clave)
+    : ['login.fallido', 'escaneo.rechazado', 'escaneo_sin_conexion.rechazado', 'pack_request.rechazada',
+       'dos_factores.codigo_fallido'].includes(evento.clave)
       ? 'tiempo__icono--aviso'
       : ['pack_request.aprobada'].includes(evento.clave)
         ? 'tiempo__icono--suma'

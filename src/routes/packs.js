@@ -2,7 +2,7 @@
 import express from 'express';
 import QRCode from 'qrcode';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, actuaComoMaster } from '../middleware/auth.js';
 import { forbidden, notFound, badRequest } from '../lib/errors.js';
 import { paginationSchema, transferPackSchema, createPackRequestSchema, parseOrThrow } from '../lib/validate.js';
 import { buildQrPayload } from '../lib/qr.js';
@@ -21,7 +21,7 @@ router.use(requireAuth);
 function loadOwnPack(req) {
   const pack = packs.findById(req.params.id);
   if (!pack) throw notFound('Pack no encontrado.');
-  if (pack.user_id !== req.user.id && req.user.role !== 'master') {
+  if (pack.user_id !== req.user.id && !actuaComoMaster(req.user)) {
     throw forbidden('Este pack no te pertenece.');
   }
   const owner = pack.user_id === req.user.id ? { status: req.user.status } : users.findById(pack.user_id);

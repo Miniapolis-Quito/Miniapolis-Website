@@ -84,6 +84,9 @@ Puedes adquirir tus packs pagando por transferencia bancaria, DeUna o efectivo:
   acaban, están por vencer o hace tiempo que no vienes. ¿No los quieres? Toca el
   enlace del final del correo o desmarca **Recordatorios** en **Mi cuenta**. El
   comprobante de compra te sigue llegando.
+- Puedes pedirle a la app que, además de la contraseña, te pida un código que
+  cambia cada 30 segundos en tu teléfono: es la **verificación en dos pasos**,
+  en **Mi cuenta**. Si alguien averigua tu contraseña, sin tu teléfono no entra.
 - ¿Olvidaste la contraseña? En la página de acceso toca **¿Olvidaste tu
   contraseña?**, escribe tu correo y abre el enlace que te llega. Vale media hora
   y sirve una sola vez. Si no pediste ese correo, ignóralo: tu contraseña sigue
@@ -104,6 +107,13 @@ Puedes adquirir tus packs pagando por transferencia bancaria, DeUna o efectivo:
 Si en lugar del escáner te sale *Tu cuenta no puede escanear*, es que todavía
 no te han habilitado. No es un fallo: el permiso se da cuenta por cuenta.
 Pídeselo a administración y vuelve a entrar.
+
+Si te sale que la pista **exige verificación en dos pasos**, entra a tu cuenta y
+toca **Seguridad** arriba: escanea el QR con una aplicación de autenticación
+(Google Authenticator, Aegis, 1Password…), confirma con el primer código y
+**guarda los diez códigos de respaldo** que aparecen. Es la única vez que se
+muestran, y son lo que te deja entrar si un día te quedas sin teléfono. Desde
+ese momento, al entrar te pedirá el código después de la contraseña.
 
 ### Cobrar una entrada
 
@@ -287,7 +297,30 @@ cierran sus sesiones abiertas. Le llega un aviso por correo del cambio, sin la
 contraseña: esa se la das tú en mano.
 
 El personal y el máster cambian su propia contraseña desde el botón
-**Contraseña** de la cabecera.
+**Contraseña** de la cabecera, y configuran la verificación en dos pasos desde
+el botón **Seguridad**, al lado.
+
+Restablecer la contraseña **no** quita el segundo paso: si además perdió el
+teléfono y los códigos de respaldo, hay que quitárselo aparte desde
+**Seguridad** (más abajo).
+
+### Verificación en dos pasos del equipo
+
+En **Seguridad** ves quién del equipo tiene puesto el segundo paso, desde
+cuándo y cuántos códigos de respaldo le quedan.
+
+**Para exigirlo a todo el personal**, primero actívalo en tu propia cuenta
+(botón **Seguridad** de la cabecera): si lo exigieras sin tenerlo, te quedarías
+fuera de este panel. Después enciende el interruptor. A partir de ahí, quien no
+lo tenga puede entrar a su cuenta y configurarlo, pero no escanea ni abre la
+administración hasta hacerlo. A los clientes no les afecta.
+
+**Si alguien pierde el teléfono**, primero que pruebe con sus códigos de
+respaldo: entra igual y puede generar una tanda nueva desde **Seguridad**. Si
+también los perdió, toca **Quitar** en su fila: su cuenta vuelve a entrar solo
+con la contraseña, se cierran sus sesiones abiertas, le llega un correo y queda
+constancia en la bitácora con tu nombre. Dile que lo vuelva a configurar en
+cuanto pueda.
 
 ### Entradas sin cobrar
 

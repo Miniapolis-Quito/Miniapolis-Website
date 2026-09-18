@@ -29,7 +29,7 @@
  *    puesta: si no, el propio máster se dejaría fuera del panel.
  */
 import crypto from 'node:crypto';
-import { getDb, inTransaction } from '../db/index.js';
+import { getDb, inTransaction, prepareCached } from '../db/index.js';
 import { config } from '../config.js';
 import { newId, randomToken } from '../lib/ids.js';
 import { badRequest, forbidden, tooManyRequests, unauthorized } from '../lib/errors.js';
@@ -60,8 +60,11 @@ export const AJUSTES_PREDETERMINADOS = Object.freeze({
 // Política
 // ---------------------------------------------------------------------------
 
-export function leerAjustes(db = getDb()) {
-  const fila = db.prepare('SELECT value FROM settings WHERE key = ?').get(CLAVE_AJUSTES);
+export function leerAjustes() {
+  // Con la política encendida esto se consulta en cada petición con permisos,
+  // así que la sentencia se compila una sola vez. La aplicación tiene una
+  // única conexión, también dentro de una transacción.
+  const fila = prepareCached('SELECT value FROM settings WHERE key = ?').get(CLAVE_AJUSTES);
   let guardados = {};
   if (fila) {
     try {
@@ -86,10 +89,10 @@ export function rolPrivilegiado(role) {
  * ¿Esta cuenta tiene que llevar segundo factor y no lo lleva? Es lo que
  * consultan las rutas con permisos para responder «primero regístralo».
  */
-export function pendienteDeActivar(usuario, db = getDb()) {
+export function pendienteDeActivar(usuario) {
   if (!usuario || !rolPrivilegiado(usuario.role)) return false;
   if (usuario.twoFactorEnabled ?? usuario.totp_enabled) return false;
-  return leerAjustes(db).requireTwoFactorForStaff === true;
+  return leerAjustes().requireTwoFactorForStaff === true;
 }
 
 export function guardarAjustes(cambios, { actor = null, ip = null, userAgent = null, now = Date.now() } = {}) {
@@ -97,7 +100,7 @@ export function guardarAjustes(cambios, { actor = null, ip = null, userAgent = n
   const ahoraIso = iso(now);
 
   return inTransaction(() => {
-    const antes = leerAjustes(db);
+    const antes = leerAjustes();
     const despues = { ...antes, ...cambios };
 
     if (despues.requireTwoFactorForStaff && !antes.requireTwoFactorForStaff) {
@@ -138,7 +141,7 @@ export function guardarAjustes(cambios, { actor = null, ip = null, userAgent = n
 
 /** Lo que ve el panel: la política y cómo va el personal con ella. */
 export function panelDeSeguridad(db = getDb()) {
-  const ajustes = leerAjustes(db);
+  const ajustes = leerAjustes();
   const filas = db
     .prepare(
       `SELECT id, full_name, email, role, status, totp_enabled, totp_confirmed_at
@@ -240,7 +243,7 @@ export function estado(usuario, db = getDb()) {
     .prepare('SELECT role, totp_enabled, totp_secret, totp_confirmed_at FROM users WHERE id = ?')
     .get(usuario.id);
   if (!fila) return null;
-  const ajustes = leerAjustes(db);
+  const ajustes = leerAjustes();
   return {
     enabled: Boolean(fila.totp_enabled),
     since: fila.totp_confirmed_at,

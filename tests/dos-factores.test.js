@@ -8,10 +8,14 @@ import { levantarServidor, bajarServidor, limpiarBase, crearCliente, sembrarUsua
 import * as totp from '../src/lib/totp.js';
 import { cifrar, descifrar } from '../src/lib/cifrado.js';
 import * as dosFactores from '../src/services/dosFactores.js';
+import * as users from '../src/services/users.js';
 import { getDb } from '../src/db/index.js';
 import { config } from '../src/config.js';
+import { abrirCanal, fijarBase } from './canal.js';
+import * as packsService from '../src/services/packs.js';
+import { buildQrPayload } from '../src/lib/qr.js';
 
-before(levantarServidor);
+before(async () => fijarBase(await levantarServidor()));
 after(bajarServidor);
 beforeEach(limpiarBase);
 
@@ -344,6 +348,81 @@ test('exigido el segundo factor, el personal sin él pierde sus permisos hasta a
   assert.equal((await cliente.get('/api/auth/me')).status, 200);
 });
 
+test('exigido el segundo factor, la cuenta pendiente tampoco recibe el canal del equipo', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  await activarSegundoFactor(cMaster);
+  await cMaster.patch('/api/admin/security', { requireTwoFactorForStaff: true });
+
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  assert.equal(emitido.status, 201, JSON.stringify(emitido.datos));
+  const pack = packsService.findById(emitido.datos.pack.id);
+
+  // El operador, con los permisos en suspenso, solo debe recibir lo suyo: el
+  // canal del personal lleva el nombre del cliente, el código del pack y el
+  // saldo de cada consumo, justo lo que la API le acaba de negar.
+  const canalPendiente = await abrirCanal(cStaff.token);
+  try {
+    await canalPendiente.esperar('conectado');
+    // El máster, que sí lo tiene puesto, escanea.
+    const escaneo = await cMaster.post('/api/scan', { payload: buildQrPayload(pack) });
+    assert.equal(escaneo.status, 200, JSON.stringify(escaneo.datos));
+
+    await new Promise((listo) => setTimeout(listo, 300));
+    assert.equal(
+      canalPendiente.recibidos.some((e) => e.tipo === 'entrada.consumida'),
+      false,
+      'la cuenta pendiente no debe ver pasar el movimiento de la pista',
+    );
+  } finally {
+    canalPendiente.cerrar();
+  }
+
+  // En cuanto lo activa, vuelve a recibirlo.
+  await activarSegundoFactor(cStaff);
+  const canalAlDia = await abrirCanal(cStaff.token);
+  try {
+    await canalAlDia.esperar('conectado');
+    assert.equal((await cMaster.post('/api/scan', { payload: buildQrPayload(pack) })).status, 200);
+    const evento = await canalAlDia.esperar('entrada.consumida');
+    assert.ok(evento.datos);
+  } finally {
+    canalAlDia.cerrar();
+  }
+});
+
+test('exigido el segundo factor, el máster pendiente tampoco lee packs ni pases ajenos', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  assert.equal(emitido.status, 201);
+  const packId = emitido.datos.pack.id;
+
+  // Un segundo máster: el primero activa y exige; el segundo se queda pendiente.
+  const otro = await users.createUser({
+    email: 'segundo@pista.ec',
+    password: 'Neumatico-Lluvia-55',
+    fullName: 'Dora Segunda',
+    role: 'master',
+  });
+  const cOtro = crearCliente();
+  await cOtro.entrar('segundo@pista.ec', 'Neumatico-Lluvia-55');
+
+  // Mientras no se exige, el máster puede mirar los movimientos del pack ajeno.
+  assert.equal((await cOtro.get(`/api/packs/${packId}/movements`)).status, 200);
+
+  await activarSegundoFactor(cMaster);
+  await cMaster.patch('/api/admin/security', { requireTwoFactorForStaff: true });
+
+  // Con la política encendida y sin segundo factor, esa puerta también se cierra:
+  // no pasa por `requireRole`, así que sin esta comprobación seguiría abierta.
+  const pack = await cOtro.get(`/api/packs/${packId}/movements`);
+  assert.equal(pack.status, 403);
+  const pase = await cOtro.get(`/api/wallet/google/${packId}`);
+  assert.ok(pase.status === 403 || pase.status === 404, `estado inesperado: ${pase.status}`);
+
+  // Sus propios datos los sigue viendo: tiene que poder entrar a configurarlo.
+  assert.equal((await cOtro.get('/api/auth/me')).status, 200);
+});
+
 test('la administración puede quitar el segundo factor de quien perdió el teléfono', async () => {
   const { cMaster, cStaff, staff } = await sembrarUsuarios();
   await activarSegundoFactor(cStaff);
@@ -370,6 +449,23 @@ test('la administración puede quitar el segundo factor de quien perdió el tel�
     bitacora.datos.items.some((e) => e.action === 'dos_factores.desactivada' && e.entityId === staff.id),
     'el rescate queda en la bitácora',
   );
+});
+
+test('el resumen del panel dice cuántas cuentas con permisos entran solo con la contraseña', async () => {
+  const { cMaster, cStaff } = await sembrarUsuarios();
+
+  const antes = await cMaster.get('/api/admin/dashboard');
+  assert.deepEqual(antes.datos.security, {
+    requireTwoFactorForStaff: false,
+    team: 2,
+    withTwoFactor: 0,
+    withoutTwoFactor: 2,
+  });
+
+  await activarSegundoFactor(cStaff);
+  const despues = await cMaster.get('/api/admin/dashboard');
+  assert.equal(despues.datos.security.withTwoFactor, 1);
+  assert.equal(despues.datos.security.withoutTwoFactor, 1);
 });
 
 test('un cliente no puede tocar la política de seguridad', async () => {

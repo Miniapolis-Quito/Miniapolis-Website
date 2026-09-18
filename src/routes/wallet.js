@@ -12,7 +12,7 @@
 import crypto from 'node:crypto';
 import express from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, actuaComoMaster } from '../middleware/auth.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import { badRequest, forbidden, notFound, unauthorized } from '../lib/errors.js';
 import { config } from '../config.js';
@@ -91,7 +91,7 @@ function packDelCliente(req, { admitirTicket = false } = {}) {
 
   if (tieneTicketValido) return pack;
 
-  if (pack.user_id !== req.user.id && req.user.role !== 'master') {
+  if (pack.user_id !== req.user.id && !actuaComoMaster(req.user)) {
     throw forbidden('Este pack no te pertenece.');
   }
   return pack;

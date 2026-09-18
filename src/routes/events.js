@@ -7,6 +7,7 @@
  */
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { pendienteDeActivar } from '../services/dosFactores.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import { hub, channels } from '../lib/events.js';
 import { summaryForUser } from '../services/packs.js';
@@ -41,12 +42,23 @@ const MAXIMO_POR_USUARIO = 8;
  * cliente, el código del pack y el saldo de cada consumo según ocurre, así que
  * solo llega a quien está autorizado a escanear: una cuenta de personal sin
  * ese permiso no tiene por qué ver pasar el movimiento de la pista.
+ *
+ * Lo mismo vale para el segundo factor: mientras la pista lo exija y una
+ * cuenta del equipo no lo tenga, sus permisos están en suspenso. Cerrarle la
+ * API y dejarle el canal abierto sería entregarle por otra puerta exactamente
+ * los datos que se le acaban de negar.
  */
 function channelsFor(user) {
   const list = [channels.user(user.id)];
+  if (pendienteDeActivar(user)) return list;
   if ((user.role === 'staff' || user.role === 'master') && user.scanEnabled) list.push(channels.staff);
   if (user.role === 'master') list.push(channels.admin);
   return list;
+}
+
+/** ¿Este canal recibe algo más que lo de su propia cuenta? */
+function tieneCanalesDeEquipo(user) {
+  return channelsFor(user).length > 1;
 }
 
 /**
@@ -63,7 +75,15 @@ function sesionSigueViva(usuario) {
   // Perder el permiso de escaneo corta el canal: retirarlo revoca la sesión,
   // y esta comprobación lo cubre también si el cambio vino de otro proceso.
   // Ganarlo no cierra nada: los canales nuevos llegan al recargar la pantalla.
-  return !(usuario.scanEnabled && !fila.scan_enabled);
+  if (usuario.scanEnabled && !fila.scan_enabled) return false;
+  // Que la pista pase a exigir el segundo factor cierra el canal del equipo
+  // igual que retirar el permiso: al reconectar, esa cuenta ya solo recibe lo
+  // suyo hasta que lo active. Nadie se queda sin su propio canal por esto:
+  // quien solo tenía el suyo no entra aquí.
+  if (tieneCanalesDeEquipo(usuario) && pendienteDeActivar({ role: fila.role, totp_enabled: fila.totp_enabled })) {
+    return false;
+  }
+  return true;
 }
 
 function writeEvent(res, { id, type, data }) {
