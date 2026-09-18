@@ -506,9 +506,6 @@ function hashDesafio(token) {
   return crypto.createHmac('sha256', config.secrets.twoFactor).update(`desafio:${token}`).digest('hex');
 }
 
-/** El token del desafío: 32 bytes, con la misma forma que los de recuperación. */
-export const FORMATO_DESAFIO = /^[A-Za-z0-9_-]{43}$/;
-
 export function crearDesafio(usuario, { ip = null, userAgent = null, now = Date.now() } = {}) {
   const db = getDb();
   const token = randomToken(32);

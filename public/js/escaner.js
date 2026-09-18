@@ -148,7 +148,7 @@ function reposar() {
     tipo: 'neutro',
     icono: 'bandera',
     titulo: 'Listo para escanear',
-    detalle: 'Apunta la cámara al código del cliente.',
+    detalle: 'Apunta la cámara al código del cliente y listo.',
   });
 }
 
@@ -194,7 +194,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel, cantidad })
     marcarEnLinea();
     pitar(true, cant);
     vibrar(cant > 1 ? [60, 40, 60] : 60);
-    const titulo = cant > 1 ? `${cant} entradas registradas` : 'Entrada registrada';
+    const titulo = cant > 1 ? `${cant} entradas cobradas` : 'Entrada cobrada';
     mostrarResultado({
       tipo: 'ok',
       icono: 'ok',
@@ -203,7 +203,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel, cantidad })
       restantes: respuesta.remaining,
     });
     if (respuesta.remaining === 0) {
-      brindis(`${respuesta.pack.code} quedó sin entradas. Ofrécele un pack nuevo.`, 'error', 7000);
+      brindis(`${respuesta.pack.code} quedó sin entradas. Ofrécele otro pack.`, 'alerta', 7000);
     } else if (respuesta.remaining <= 2) {
       // Aviso, no error: al cliente le queda saldo; es el momento de ofrecerle
       // otro pack, no de alarmar a quien está en la puerta.
@@ -227,7 +227,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel, cantidad })
         tipo: 'alerta',
         icono: 'senal',
         titulo: 'Sin conexión',
-        detalle: 'No pudimos confirmar el registro. Reintenta cuando vuelva la señal: no se descontará dos veces.',
+        detalle: 'No pudimos confirmar el cobro. Intenta de nuevo cuando vuelva la señal: no se descontará dos veces.',
         acciones: el(
           'button',
           { class: 'boton boton--principal', type: 'button', onClick: () => reintentarPendiente() },
@@ -241,7 +241,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel, cantidad })
     mostrarResultado({
       tipo: esEspera ? 'alerta' : 'error',
       icono: esEspera ? 'reloj' : 'prohibido',
-      titulo: esEspera ? 'Ya se registró hace un momento' : 'No se pudo registrar',
+      titulo: esEspera ? 'Ya se cobró hace un momento' : 'No se pudo cobrar',
       detalle: error.message,
       restantes: error.detalles?.pack?.remaining,
     });
@@ -254,7 +254,7 @@ async function registrarConsumo({ payload, code, clave, deviceLabel, cantidad })
 async function reintentarPendiente() {
   if (!estado.pendiente) return;
   const intento = estado.pendiente;
-  mostrarResultado({ tipo: 'neutro', icono: 'reloj', titulo: 'Reintentando…', detalle: 'Confirmando con el servidor.' });
+  mostrarResultado({ tipo: 'neutro', icono: 'reloj', titulo: 'Intentando de nuevo…', detalle: 'Estamos confirmando con el servidor.' });
   await registrarConsumo(intento);
 }
 
@@ -285,7 +285,7 @@ function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoU
     mostrarResultado({
       tipo: resultado.tono === 'neutro' ? 'neutro' : resultado.tono,
       icono: resultado.tono === 'alerta' ? 'reloj' : resultado.tono === 'neutro' ? 'descarga' : 'prohibido',
-      titulo: resultado.tono === 'neutro' ? 'Ya estaba guardada' : 'No se guardó',
+      titulo: resultado.tono === 'neutro' ? 'Ya estaba guardada' : 'No se pudo guardar',
       detalle: resultado.mensaje,
     });
     return null;
@@ -299,14 +299,14 @@ function guardarSinConexion({ payload, code, clave, capturadaEn, puesto: puestoU
   mostrarResultado({
     tipo: 'guardada',
     icono: 'descarga',
-    titulo: 'Guardada sin conexión',
+    titulo: 'Guardada sin señal',
     detalle:
       `${resultado.lectura.codigo}${conocido ? ` · ${conocido}` : ''}. ` +
-      'Puede pasar: la entrada se cobrará sola cuando vuelva la señal.',
+      'No te preocupes: la entrada se cobrará sola cuando vuelva la señal.',
   });
   if (!resultado.persistente && !avisoNoPersistente) {
     avisoNoPersistente = true;
-    brindis('Este navegador no deja guardar datos: no cierres esta pestaña hasta que vuelva la señal.', 'alerta', 9000);
+    brindis('Este navegador no puede guardar datos. No cierres esta pestaña hasta que vuelva la señal.', 'alerta', 9000);
   }
   pintarSinConexion();
   return { guardada: true, lectura: resultado.lectura };
@@ -402,7 +402,7 @@ async function enviarGuardadas() {
   if (resultado.confirmadas.length) {
     marcarEnLinea();
     brindis(
-      `${plural(resultado.confirmadas.length, 'entrada guardada sin conexión ya se cobró', 'entradas guardadas sin conexión ya se cobraron')}.`,
+      `${plural(resultado.confirmadas.length, 'entrada guardada sin señal ya se cobró', 'entradas guardadas sin señal ya se cobraron')}.`,
       'ok',
       6000,
     );
@@ -413,7 +413,7 @@ async function enviarGuardadas() {
     vibrar([120, 60, 120]);
     brindis(
       `${plural(resultado.rechazadas.length, 'entrada guardada no se pudo cobrar', 'entradas guardadas no se pudieron cobrar')}. ` +
-        'Revísalas en «Guardadas sin conexión» y avisa en recepción.',
+        'Revísalas en «Guardadas sin señal» y avisa en recepción.',
       'error',
       10_000,
     );
@@ -436,7 +436,7 @@ function filaGuardada(lectura) {
       el('div', { class: 'mono' }, lectura.codigo),
       el('div', { class: 'tenue-2 pequeno' }, [horaDe(lectura.capturadaEn), via, lectura.puesto].filter(Boolean).join(' · ')),
     ),
-    el('span', { class: 'etiqueta etiqueta--alerta' }, 'Por cobrar'),
+    el('span', { class: 'etiqueta etiqueta--alerta' }, 'Pendiente de cobro'),
   );
 }
 
@@ -449,7 +449,7 @@ function filaRechazada(lectura) {
       'div',
       { class: 'crece' },
       el('div', {}, `No se cobró: `, el('span', { class: 'mono' }, lectura.codigo)),
-      el('div', { class: 'pequeno' }, lectura.mensaje || 'El servidor rechazó la lectura.'),
+      el('div', { class: 'pequeno' }, lectura.mensaje || 'El servidor no aceptó la lectura.'),
       el(
         'div',
         { class: 'tenue-2 pequeno' },
@@ -466,7 +466,7 @@ function filaRechazada(lectura) {
           pintarSinConexion();
         },
       },
-      'Entendido',
+      'Listo',
     ),
   );
 }
@@ -494,13 +494,13 @@ function pintarSinConexion() {
       : el(
           'div',
           { class: 'aviso aviso--alerta' },
-          'Este navegador no deja guardar datos: si se cierra la pestaña antes de que vuelva la señal, estas lecturas se pierden.',
+          'Este navegador no puede guardar datos: si cierras la pestaña antes de que vuelva la señal, estas lecturas se pierden.',
         ),
     rechazadas.length
       ? el(
           'div',
           {},
-          el('p', { class: 'tenue pequeno sin-margen' }, 'Estas personas entraron y su entrada no se pudo cobrar. Administración ya lo ve en su resumen.'),
+          el('p', { class: 'tenue pequeno sin-margen' }, 'Estas personas ya entraron, pero su entrada no se pudo cobrar. Administración ya lo ve en su resumen.'),
           el('ul', { class: 'lista' }, rechazadas.map(filaRechazada)),
         )
       : null,
@@ -510,7 +510,7 @@ function pintarSinConexion() {
           'p',
           { class: 'tenue pequeno' },
           `${plural(ajenas.length, 'lectura', 'lecturas')} de ${nombresAjenos.join(', ')} ` +
-            `${ajenas.length === 1 ? 'espera' : 'esperan'} a que esa persona entre en este teléfono para enviarse.`,
+            `${ajenas.length === 1 ? 'espera' : 'esperan'} a que esa persona vuelva a entrar en este celular para enviarse.`,
         )
       : null,
   );
@@ -548,12 +548,12 @@ function mostrarSinSesionGuardada() {
     el(
       'section',
       { class: 'tarjeta mt-2' },
-      el('h1', {}, 'Sin conexión'),
+      el('h1', {}, 'Sin señal'),
       el(
         'p',
         { class: 'tenue' },
-        'No hay conexión con el servidor y este teléfono no tiene una sesión reciente para trabajar sin ella. ' +
-          'Abre el escáner con señal al menos una vez al empezar el turno y podrás seguir escaneando aunque se caiga.',
+        'No hay conexión con el servidor y este celular no tiene una sesión reciente para usar el escáner sin señal. ' +
+          'Ábrelo con señal al empezar el turno y podrás seguir escaneando aunque se caiga.',
       ),
       el('button', { class: 'boton boton--principal', type: 'button', onClick: () => window.location.reload() }, 'Reintentar'),
     ),
@@ -597,7 +597,7 @@ async function encenderCamara() {
   if (!navigator.mediaDevices?.getUserMedia) {
     mostrarAviso(
       $('#aviso'),
-      'Este navegador no permite usar la cámara. Usa el código manual, o abre la página en Chrome o Safari sobre HTTPS.',
+      'Este navegador no puede usar la cámara. Usa el código manual o abre la página en Chrome o Safari con HTTPS.',
       'alerta',
     );
     return;
@@ -613,12 +613,12 @@ async function encenderCamara() {
     estado.flujo = await navigator.mediaDevices.getUserMedia(restricciones);
   } catch (error) {
     const mensajes = {
-      NotAllowedError: 'Diste "bloquear" al permiso de cámara. Habilítalo en el candado de la barra de direcciones.',
-      NotFoundError: 'No encontramos ninguna cámara en este dispositivo.',
-      NotReadableError: 'Otra aplicación está usando la cámara. Ciérrala e inténtalo de nuevo.',
-      SecurityError: 'El navegador exige HTTPS para usar la cámara. Usa el código manual mientras tanto.',
+      NotAllowedError: 'Bloqueaste el permiso de cámara. Habilítalo en el candado de la barra de direcciones.',
+      NotFoundError: 'No encontramos una cámara en este dispositivo.',
+      NotReadableError: 'Otra aplicación está usando la cámara. Ciérrala e intenta de nuevo.',
+      SecurityError: 'El navegador exige HTTPS para usar la cámara. Mientras tanto, usa el código manual.',
     };
-    mostrarAviso($('#aviso'), mensajes[error.name] || `No se pudo abrir la cámara: ${error.message}`, 'alerta');
+    mostrarAviso($('#aviso'), mensajes[error.name] || `No pudimos abrir la cámara: ${error.message}`, 'alerta');
     return;
   }
 
@@ -653,7 +653,7 @@ async function encenderCamara() {
     etiqueta.hidden = false;
     etiqueta.textContent = estado.motor === 'nativo' ? 'Lector nativo' : 'Lector jsQR';
   } else {
-    mostrarAviso($('#aviso'), 'No se pudo cargar el lector de códigos. Usa el ingreso manual.', 'alerta');
+    mostrarAviso($('#aviso'), 'No pudimos cargar el lector de códigos. Usa el ingreso manual.', 'alerta');
   }
 
   reposar();
@@ -763,7 +763,7 @@ async function cargarActividad() {
           'div',
           { class: 'vacio' },
           el('div', { class: 'vacio__icono' }, icono('reloj', { grande: true })),
-          el('p', { class: 'sin-margen' }, 'Sin escaneos todavía.'),
+          el('p', { class: 'sin-margen' }, 'Todavía no hay escaneos.'),
         ),
       );
       return;
@@ -793,7 +793,7 @@ function montarSelectorCantidad() {
       if (indicador) {
         indicador.hidden = cant <= 1;
         if (cant > 1) {
-          indicador.textContent = `Grupo: ${cant}`;
+          indicador.textContent = `Grupo de ${cant}`;
         }
       }
       if (btnManual) {
@@ -813,8 +813,8 @@ function mostrarConsultaSinConexion() {
     icono: 'senal',
     titulo: 'Sin conexión',
     detalle:
-      'Sin red no se puede consultar el saldo. Si el cliente tiene que entrar, usa «Descontar entrada»: ' +
-      'se guardará y se cobrará al volver la señal.',
+      'Sin señal no se puede consultar el saldo. Si el cliente tiene que entrar, usa «Descontar entrada»: ' +
+      'la lectura quedará guardada y se cobrará cuando vuelva la señal.',
   });
 }
 
@@ -899,7 +899,7 @@ function montarManual() {
     mostrarErroresCampo(formulario, {});
     const codigo = entrada.value.trim();
     if (!codigo) {
-      mostrarErroresCampo(formulario, { code: 'Ingresa el código del pack.' });
+      mostrarErroresCampo(formulario, { code: 'Escribe el código del pack.' });
       return;
     }
     await conCarga($('#btn-descontar-manual'), async () => {
@@ -959,7 +959,7 @@ async function alRecuperarSesion() {
   // Cuenta del personal sin permiso para escanear: se explica y se para aquí.
   // Nada de cámara, nada de peticiones al puesto; el servidor las rechazaría.
   if (sesion.sinPermisoDeEscaneo) {
-    $('#subtitulo').textContent = 'Esta cuenta no está autorizada para descontar entradas.';
+    $('#subtitulo').textContent = 'A esta cuenta no le han dado permiso para cobrar entradas.';
     $('#sin-permiso').hidden = false;
     $('#puesto').hidden = true;
     $('#seccion-actividad').hidden = true;

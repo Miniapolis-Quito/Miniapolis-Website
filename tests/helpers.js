@@ -44,7 +44,7 @@ export function limpiarBase() {
     'notifications', 'settings', 'password_resets', 'wallet_devices', 'wallet_passes', 'loyalty_rewards',
     'two_factor_recovery_codes', 'two_factor_challenges',
     'pack_movements', 'redemptions', 'pack_requests', 'packs', 'sessions', 'audit_log',
-    'used_nonces', 'rate_limits', 'idempotency_keys', 'users',
+    'used_nonces', 'rate_limits', 'idempotency_keys', 'transfers', 'users',
   ]) {
     db.prepare(`DELETE FROM ${tabla}`).run();
   }
@@ -56,8 +56,8 @@ export function crearCliente() {
   const cookies = new Map();
   let token = null;
 
-  async function pedir(ruta, { metodo = 'GET', cuerpo, cabeceras = {}, binario = false } = {}) {
-    const headers = { ...cabeceras };
+  async function pedir(ruta, { metodo = 'GET', cuerpo, cabeceras = {}, headers: opcionesHeaders = {}, binario = false } = {}) {
+    const headers = { ...cabeceras, ...opcionesHeaders };
     if (cuerpo !== undefined) headers['Content-Type'] = 'application/json';
     if (token) headers.Authorization = `Bearer ${token}`;
     if (cookies.size) {
@@ -96,6 +96,8 @@ export function crearCliente() {
     get: (ruta, opciones) => pedir(ruta, { ...opciones, metodo: 'GET' }),
     post: (ruta, cuerpo, opciones) => pedir(ruta, { ...opciones, metodo: 'POST', cuerpo }),
     patch: (ruta, cuerpo, opciones) => pedir(ruta, { ...opciones, metodo: 'PATCH', cuerpo }),
+    delete: (ruta, opciones) => pedir(ruta, { ...opciones, metodo: 'DELETE' }),
+    del: (ruta, opciones) => pedir(ruta, { ...opciones, metodo: 'DELETE' }),
     get token() { return token; },
     set token(valor) { token = valor; },
     async entrar(email, password) {

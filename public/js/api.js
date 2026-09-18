@@ -96,7 +96,7 @@ export class ErrorApi extends Error {
 
 export class ErrorRed extends Error {
   constructor() {
-    super('Sin conexión con el servidor. Revisa tu Internet e inténtalo de nuevo.');
+    super('No hay conexión con el servidor. Revisa tu Internet e intenta de nuevo.');
     this.name = 'ErrorRed';
     this.status = 0;
     this.codigo = 'sin_conexion';

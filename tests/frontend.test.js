@@ -233,9 +233,17 @@ test('la portada se marca como página de entrada', () => {
 test('la portada usa la pista real y los recursos fotográficos inmersivos', () => {
   const src = leer(PORTADA);
   assert.match(src, /\/images\/pista\/miniapolis-track-wide\.webp/);
-  assert.match(src, /\/images\/pista\/miniapolis-track-vertical\.webp/);
+  assert.match(src, /\/images\/pista\/miniapolis-track-corner-wide\.webp/);
+  assert.match(src, /\/images\/pista\/miniapolis-hangar-vertical\.webp/);
+  assert.match(src, /\/images\/pista\/miniapolis-curb-detail-vertical\.webp/);
   assert.match(src, /data-depth="[0-9.]+"/);
   assert.doesNotMatch(src, /césped|cesped|grass/i, 'la pista debe describirse como asfalto');
+});
+
+test('la portada no repite el mismo encuadre fotográfico en dos bloques', () => {
+  const imagenes = [...leer(PORTADA).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
+  const repetidas = imagenes.filter((src, indice) => imagenes.indexOf(src) !== indice);
+  assert.deepEqual(repetidas, [], 'cada bloque visual debe tener una imagen principal distinta');
 });
 
 test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
@@ -244,6 +252,39 @@ test('la portada carga su capa de movimiento y respeta el movimiento reducido', 
   const movimiento = leer('public/js/portada.js');
   assert.match(movimiento, /prefers-reduced-motion/);
   assert.match(movimiento, /IntersectionObserver/);
+  assert.match(movimiento, /entrada__mira/);
+  assert.match(leer('public/css/styles.css'), /entrada__mira--segmento/);
+});
+
+test('la mira del puntero se posiciona sin interpolación ni transición espacial', () => {
+  const movimiento = leer('public/js/portada.js');
+  const estilos = leer('public/css/styles.css');
+  assert.doesNotMatch(movimiento, /requestAnimationFrame\(pintar\)/, 'la posición no debe esperar a otro frame');
+  assert.match(movimiento, /root\.style\.setProperty\('--puntero-x'/, 'el puntero debe actualizar las coordenadas directamente');
+  assert.doesNotMatch(estilos, /\.entrada__mira\s*\{[^}]*transition:\s*[^;}]*\btransform\b/s, 'la mira no debe interpolar su posición');
+});
+
+test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /--fondo:\s*#000000/);
+  assert.match(css, /--acento:\s*#3dfe40/);
+  assert.match(css, /\.barra[\s\S]*\.tarjeta/);
+});
+
+test('la capa de movimiento tiene una salida global para movimiento reducido', () => {
+  const css = leer('public/css/styles.css');
+  const js = leer('public/js/portada.js');
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(js, /prefers-reduced-motion/);
+  assert.match(js, /portada-revela--visible/);
+});
+
+test('las páginas operativas conservan el shell y la hoja de estilos compartida', () => {
+  for (const html of ['public/app.html', 'public/scan.html', 'public/admin.html']) {
+    const src = leer(html);
+    assert.match(src, /<header[^>]+id="cabecera"|<header[^>]+class="barra"/);
+    assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/);
+  }
 });
 
 test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la API', () => {

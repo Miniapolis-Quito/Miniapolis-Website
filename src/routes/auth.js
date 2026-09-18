@@ -50,7 +50,7 @@ const registerLimiter = rateLimit({
   name: 'registro-ip',
   limit: 10,
   windowSeconds: 60 * 60,
-  message: 'Demasiadas cuentas creadas desde esta conexión. Inténtalo más tarde.',
+  message: 'Hay demasiadas cuentas creadas desde esta conexión. Intenta más tarde.',
 });
 
 const refreshLimiter = rateLimit({ name: 'refresh-ip', limit: 120, windowSeconds: 15 * 60 });
@@ -105,7 +105,7 @@ router.post(
   registerLimiter,
   asyncHandler(async (req, res) => {
     if (!config.security.allowSelfRegistration) {
-      throw forbidden('El registro público está desactivado. Pide tu cuenta en recepción.', 'registro_cerrado');
+      throw forbidden('El registro público está desactivado. Pide que te creen la cuenta en recepción.', 'registro_cerrado');
     }
     const data = parseOrThrow(registerSchema, req.body, badRequest);
 
@@ -179,7 +179,7 @@ router.post(
         );
       }
       if (result.reason === 'suspendido') {
-        throw forbidden('Tu cuenta está suspendida. Contacta con el administrador.', 'cuenta_suspendida');
+      throw forbidden('Tu cuenta está suspendida. Pregunta en recepción.', 'cuenta_suspendida');
       }
       throw unauthorized('Correo o contraseña incorrectos.', 'credenciales_invalidas');
     }
@@ -267,7 +267,7 @@ router.post(
         expirado: 'Tu sesión expiró. Vuelve a entrar.',
         suspendido: 'Tu cuenta está suspendida. Contacta con el administrador.',
       };
-      throw unauthorized(messages[result.reason] || 'Tu sesión ya no es válida. Vuelve a entrar.', `refresh_${result.reason}`);
+      throw unauthorized(messages[result.reason] || 'Tu sesión ya no es válida. Ingresa otra vez.', `refresh_${result.reason}`);
     }
 
     setRefreshCookie(res, result.refreshToken);
@@ -339,7 +339,7 @@ function registrarFalloDePasswordActual(req, res) {
     userAgent: req.get('user-agent'),
   });
   throw unauthorized(
-    'Demasiados intentos con la contraseña actual. Por seguridad cerramos esta sesión: vuelve a entrar.',
+    'Hubo demasiados intentos con la contraseña actual. Por seguridad cerramos esta sesión: ingresa otra vez.',
     'sesion_cerrada_por_intentos',
   );
 }
@@ -517,7 +517,7 @@ const recuperacionLimiter = rateLimit({
   name: 'recuperacion-ip',
   limit: 10,
   windowSeconds: 60 * 60,
-  message: 'Demasiadas solicitudes desde esta conexión. Inténtalo más tarde.',
+  message: 'Hay demasiadas solicitudes desde esta conexión. Intenta más tarde.',
 });
 
 const canjeLimiter = rateLimit({
@@ -587,7 +587,7 @@ router.post(
     clearRefreshCookie(res);
     res.json({
       ok: true,
-      message: 'Contraseña cambiada. Cerramos la sesión en todos tus dispositivos; entra con la nueva.',
+      message: 'Contraseña cambiada. Cerramos la sesión en todos tus dispositivos; ingresa con la nueva.',
     });
   }),
 );
@@ -638,6 +638,34 @@ router.get(
         .listForUser(req.user.id)
         .map((fila) => sessions.toPublicSession(fila, { currentSessionId: req.user.sessionId })),
     });
+  }),
+);
+
+/** Cierra una sesión concreta del usuario (por ejemplo un teléfono antiguo o equipo ajeno). */
+router.delete(
+  '/sessions/:id',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const sessionId = req.params.id;
+    const targetSession = sessions.findById(sessionId);
+    if (!targetSession || targetSession.user_id !== req.user.id) {
+      throw notFound('Sesión no encontrada.');
+    }
+    const isCurrent = req.user.sessionId === sessionId;
+    sessions.revokeSession(sessionId, 'revocada_por_usuario');
+    if (isCurrent) {
+      clearRefreshCookie(res);
+    }
+    audit.record({
+      actor: req.user,
+      action: 'sesion.revocada',
+      entityType: 'session',
+      entityId: sessionId,
+      metadata: { esSesionActual: isCurrent },
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    res.json({ ok: true, message: 'Sesión cerrada correctamente.', esSesionActual: isCurrent });
   }),
 );
 

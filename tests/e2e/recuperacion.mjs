@@ -165,7 +165,8 @@ await paso('recargar la página no resucita el enlace', async () => {
 await paso('el mismo enlace, abierto otra vez, ya no sirve', async () => {
   await enlace.goto(`${B}/restablecer#token=${token}`, { waitUntil: 'domcontentloaded' });
   await enlace.waitForSelector('#aviso.aviso--error', { timeout: 10000 });
-  comprobar((await textoDe(enlace, '#aviso')).includes('no es válido'), 'debería decir que el enlace no sirve');
+  const txt = await textoDe(enlace, '#aviso');
+  comprobar(txt.includes('no sirve') || txt.includes('no es válido'), 'debería decir que el enlace no sirve');
 });
 
 const cliente = await abrirPestana('cliente');

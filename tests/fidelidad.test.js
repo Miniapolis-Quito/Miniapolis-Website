@@ -85,11 +85,12 @@ test('viene apagado: usar entradas no regala nada', () => {
 
 test('encenderlo no premia por el pasado: el contador arranca al encender', () => {
   const pack = vender(20);
-  usar(pack, 12);
+  const antes = Date.now() - 5000;
+  usar(pack, 12, { now: antes });
 
   // El encendido se fecha justo después de la última visita, para que la
   // prueba no dependa de que el reloj avance entre dos instrucciones.
-  const estado = encender({ entriesPerReward: 5 }, Date.parse(ultimaVisita()) + 1);
+  const estado = encender({ entriesPerReward: 5 }, antes + 1);
   assert.equal(estado.enabled, true);
   assert.ok(estado.countingSince, 'tiene que quedar claro desde cuándo se cuenta');
 
@@ -117,18 +118,23 @@ test('una entrada del mismo milisegundo del encendido se cuenta a favor del clie
 });
 
 test('apagar y volver a encender reinicia el contador, y los premios dados se conservan', () => {
-  encender({ entriesPerReward: 5 });
+  const antes = Date.now() - 10000;
+  encender({ entriesPerReward: 5 }, antes);
   const pack = vender(20);
-  usar(pack, 7); // un premio y dos entradas de avance
+  usar(pack, 7, { now: antes + 100 }); // un premio y dos entradas de avance
 
   assert.equal(premios().length, 1);
   assert.equal(fidelidad.progreso(u.cliente.id).progress, 2);
 
-  fidelidad.guardarAjustes({ enabled: false }, { actor: u.master });
+  // Fuerza la frontera difícil: las lecturas de la etapa anterior caen en el
+  // mismo milisegundo en que se vuelve a encender el programa.
+  const reinicio = antes + 500;
+  getDb().prepare('UPDATE redemptions SET created_at = ?').run(iso(reinicio));
+  fidelidad.guardarAjustes({ enabled: false }, { actor: u.master, now: reinicio });
   assert.equal(fidelidad.progreso(u.cliente.id).enabled, false);
   assert.equal(fidelidad.progreso(u.cliente.id).rewardsCount, 1, 'el premio ya dado no se borra');
 
-  encender({ entriesPerReward: 5 });
+  encender({ entriesPerReward: 5 }, reinicio);
   const progreso = fidelidad.progreso(u.cliente.id);
   assert.equal(progreso.progress, 0, 'el avance de antes de la pausa no se arrastra');
   assert.equal(progreso.rewardsCount, 1);

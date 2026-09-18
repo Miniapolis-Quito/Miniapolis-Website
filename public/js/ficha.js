@@ -18,7 +18,7 @@ const ROLES ={ customer: 'Cliente', staff: 'Personal de pista', master: 'Máster
 
 const RAZONES_MOVIMIENTO = {
   issue: 'Pack emitido',
-  redeem: 'Entrada usada',
+  redeem: 'Entrada cobrada',
   void: 'Entrada devuelta',
   adjust: 'Ajuste manual',
   cancel: 'Pack anulado',
@@ -52,13 +52,13 @@ const ACCIONES_CUENTA = {
   'logout.todos': 'Cerró sesión en todos sus dispositivos',
   'escaneo.rechazado': 'Código rechazado en la puerta',
   'escaneo_sin_conexion.rechazado': 'Entró durante un corte de red y su entrada no se pudo cobrar',
-  'escaneo_sin_conexion.resuelto': 'Entrada sin cobrar marcada como resuelta',
+  'escaneo_sin_conexion.resuelto': 'Entrada pendiente de cobro resuelta',
   'recordatorios.activados': 'Recordatorios por correo activados',
   'recordatorios.desactivados': 'Recordatorios por correo desactivados',
-  'pack_request.creada': 'Solicitó recarga de pack',
-  'pack_request.aprobada': 'Solicitud de recarga aprobada',
-  'pack_request.rechazada': 'Solicitud de recarga rechazada',
-  'pack_request.cancelada': 'Canceló solicitud de recarga',
+  'pack_request.creada': 'Solicitó comprar un pack',
+  'pack_request.aprobada': 'Solicitud de compra aprobada',
+  'pack_request.rechazada': 'Solicitud de compra rechazada',
+  'pack_request.cancelada': 'Canceló la solicitud de compra',
 };
 
 /** Desde dónde se cambiaron los recordatorios. */
@@ -233,7 +233,7 @@ function cabecera(user, esUnoMismo) {
           type: 'button',
           onClick: () => estado.opciones.onVenderPack(estado.datos.user),
         },
-        'Vender pack',
+        'Vender un pack',
       ),
       el(
         'button',
@@ -454,7 +454,7 @@ function panelResumen() {
                 el('span', { class: 'tenue-2 pequeno' }, 'esta semana'),
               ),
             )
-          : vacio('calendario', 'Sin visitas registradas todavía.'),
+          : vacio('calendario', 'Todavía no hay visitas registradas.'),
       ),
     ),
     el(
@@ -496,7 +496,7 @@ function panelResumen() {
                 'Ver toda la actividad',
               ),
             )
-          : vacio('reloj', 'Sin actividad registrada.'),
+          : vacio('reloj', 'Todavía no hay actividad registrada.'),
       ),
     ),
   );
@@ -838,7 +838,7 @@ function panelActividad() {
                 )
               : el('p', { class: 'tenue-2 pequeno mt sin-margen' }, 'Fin del historial.'),
           )
-        : vacio('reloj', 'Sin actividad registrada.'),
+        : vacio('reloj', 'Todavía no hay actividad registrada.'),
     );
   };
 
@@ -858,7 +858,7 @@ function panelActividad() {
     { class: 'columna' },
     seccion('Todo lo que ha pasado', el('p', { class: 'tenue pequeno' }, 'Movimientos de entradas y eventos de la cuenta, del más reciente al más antiguo.'), contenedor),
     seccion(
-      'Bitácora técnica',
+      'Registro técnico',
       el('p', { class: 'tenue pequeno' }, 'El registro sin interpretar, tal como quedó guardado. Útil para revisar un caso a fondo.'),
       estado.datos.audit.items.length
         ? el(
@@ -889,7 +889,7 @@ function panelActividad() {
               ),
             ),
           )
-        : vacio('registro', 'Sin registros.'),
+        : vacio('registro', 'Todavía no hay registros.'),
     ),
   );
 }
@@ -901,7 +901,7 @@ function filaAviso(evento) {
   const nombre = NOMBRES_DE_AVISO[evento.clave] || evento.clave;
 
   let titulo;
-  if (fallido) titulo = `No se pudo enviar el correo: ${nombre.toLowerCase()}`;
+  if (fallido) titulo = `No pudimos enviar el correo: ${nombre.toLowerCase()}`;
   else if (channel === 'email') titulo = CORREOS_RECIBIDOS[evento.clave] || nombre;
   else titulo = channel === 'whatsapp' ? 'Contactado por WhatsApp' : 'Contactado por teléfono';
 
@@ -1096,7 +1096,7 @@ function panelAcceso() {
                   type: 'button',
                   onClick: async () => {
                     await api.post(`/api/admin/users/${user.id}/unlock`, {});
-                    brindis('Cuenta desbloqueada.', 'ok');
+                    brindis('Listo, cuenta desbloqueada.', 'ok');
                     recargar();
                   },
                 },
@@ -1166,7 +1166,7 @@ function panelAcceso() {
 async function restablecerPassword(user) {
   const seguro = await confirmar({
     titulo: 'Restablecer contraseña',
-    mensaje: `Se generará una contraseña temporal para ${user.fullName} y se cerrarán todas sus sesiones. Tendrás que entregársela.`,
+    mensaje: `Generaremos una contraseña temporal para ${user.fullName} y cerraremos todas sus sesiones. Tendrás que pasársela.`,
     textoAceptar: 'Generar contraseña',
   });
   if (!seguro) return;
@@ -1178,8 +1178,8 @@ async function restablecerPassword(user) {
       mensaje:
         `${respuesta.temporaryPassword}\n\n` +
         (copiada ? 'Ya está copiada al portapapeles. ' : '') +
-        'Entrégasela al cliente y pídele que la cambie al entrar. No se volverá a mostrar.',
-      textoAceptar: 'Entendido',
+        'Pásasela al cliente y pídele que la cambie al entrar. No volverá a mostrarse.',
+      textoAceptar: 'Listo',
     });
     recargar();
   } catch (error) {
@@ -1190,7 +1190,7 @@ async function restablecerPassword(user) {
 async function cerrarSesiones(user) {
   const seguro = await confirmar({
     titulo: 'Cerrar sesiones',
-    mensaje: `${user.fullName} tendrá que volver a entrar en todos sus dispositivos. Si tiene la app abierta, volverá a la pantalla de acceso en el acto.`,
+    mensaje: `${user.fullName} tendrá que volver a entrar en todos sus dispositivos. Si tiene la app abierta, volverá a la pantalla de acceso de una.`,
     textoAceptar: 'Cerrar sesiones',
     peligro: true,
   });
@@ -1229,7 +1229,7 @@ function panelDatos() {
     el(
       'div',
       { class: 'campo__ayuda' },
-      'Sin esto, la cuenta entra al sistema pero no puede descontarle una entrada a nadie. ' +
+      'Sin esto, la cuenta entra al sistema, pero no puede cobrarle una entrada a nadie. ' +
         'Quitarlo cierra sus sesiones al instante.',
     ),
     el('div', { class: 'campo__error' }),
@@ -1262,7 +1262,7 @@ function panelDatos() {
         }
 
         if (Object.keys(cambios).length === 0) {
-          mostrarAviso(aviso, 'No hay cambios que guardar.', 'alerta');
+          mostrarAviso(aviso, 'No hay cambios para guardar.', 'alerta');
           return;
         }
 
@@ -1285,7 +1285,7 @@ function panelDatos() {
         await conCarga(form.querySelector('button[type="submit"]'), async () => {
           try {
             await api.patch(`/api/admin/users/${user.id}`, cambios);
-            brindis('Datos actualizados.', 'ok');
+            brindis('Listo, datos actualizados.', 'ok');
             await recargar();
           } catch (error) {
             mostrarErroresCampo(form, error.campos || {});
@@ -1345,7 +1345,7 @@ function panelDatos() {
           { class: 'campo__ayuda' },
           esUnoMismo
             ? 'No puedes cambiarte el rol a ti mismo.'
-            : 'El personal consulta packs; el máster puede todo. Escanear se autoriza aparte.',
+            : 'El personal consulta packs; el máster puede hacer todo. El permiso para escanear se da aparte.',
         ),
         el('div', { class: 'campo__error' }),
       ),
@@ -1426,7 +1426,7 @@ async function alternarSuspension(user) {
   const seguro = await confirmar({
     titulo: suspender ? `Suspender a ${user.fullName}` : `Reactivar a ${user.fullName}`,
     mensaje: suspender
-      ? 'No podrá entrar ni usar sus entradas, y su sesión se cerrará en el acto. Sus packs se conservan.'
+      ? 'No podrá entrar ni usar sus entradas, y su sesión se cerrará de una. Sus packs se conservan.'
       : 'Volverá a tener acceso normal y podrá usar sus entradas.',
     textoAceptar: suspender ? 'Suspender' : 'Reactivar',
     peligro: suspender,

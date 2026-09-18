@@ -120,7 +120,9 @@ export function guardarAjustes(cambios, { actor = null, ip = null, userAgent = n
     if (despues.enabled && !antes.enabled) {
       despues.enabledAt = ahoraIso;
       // El contador arranca aquí: lo usado mientras estaba apagado no cuenta.
-      despues.countingSince = ahoraIso;
+      // Al reactivarlo, la frontera exclusiva evita que una lectura anterior
+      // con el mismo milisegundo vuelva a entrar en el nuevo ciclo.
+      despues.countingSince = antes.countingSince ? iso(now + 1) : ahoraIso;
     }
 
     db.prepare(

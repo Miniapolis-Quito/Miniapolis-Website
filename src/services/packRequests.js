@@ -5,7 +5,8 @@
  * pago (transferencia bancaria, DeUna, efectivo), y a la administración aprobar o
  * rechazar la solicitud con un solo clic y emisión atómica del pack.
  */
-import { getDb } from '../db/index.js';
+import crypto from 'node:crypto';
+import { getDb, inTransaction } from '../db/index.js';
 import { newId } from '../lib/ids.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { config } from '../config.js';
@@ -78,13 +79,64 @@ export function findById(id, db = getDb()) {
   return row ? toPublicRequest(row) : null;
 }
 
+const IDEMPOTENCY_TTL_SECONDS = 24 * 3600;
+
+function hashRequestPayload(value) {
+  return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function lookupIdempotentRequest(db, key, userId, endpoint, requestHash) {
+  if (!key) return null;
+  const row = db.prepare('SELECT * FROM idempotency_keys WHERE user_id = ? AND key = ?').get(userId, key);
+  if (!row) return null;
+  if (row.expires_at <= new Date().toISOString()) {
+    db.prepare('DELETE FROM idempotency_keys WHERE user_id = ? AND key = ?').run(userId, key);
+    return null;
+  }
+  if (row.endpoint !== endpoint || row.request_hash !== requestHash) {
+    throw conflict(
+      'Esa clave de idempotencia ya se usó para otra operación. Genera una nueva.',
+      'idempotencia_conflicto',
+    );
+  }
+  return JSON.parse(row.response);
+}
+
+function saveIdempotentRequest(db, { key, userId, endpoint, requestHash, statusCode = 201, body }) {
+  if (!key) return;
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO idempotency_keys (key, user_id, endpoint, request_hash, status_code, response, created_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, key) DO NOTHING`,
+  ).run(
+    key,
+    userId,
+    endpoint,
+    requestHash,
+    statusCode,
+    JSON.stringify(body),
+    new Date(now).toISOString(),
+    new Date(now + IDEMPOTENCY_TTL_SECONDS * 1000).toISOString(),
+  );
+}
+
 /** Crea una solicitud de recarga enviada por un cliente. */
-export function createRequest({ userId, size, paymentMethod, paymentReference, note, actor, ip, userAgent }) {
+export function createRequest({ userId, size, paymentMethod, paymentReference, note, idempotencyKey = null, actor, ip, userAgent }) {
   const db = getDb();
   const usuario = users.findById(userId, db);
   if (!usuario) throw notFound('Usuario no encontrado.');
   if (usuario.status !== 'active') {
     throw forbidden('Tu cuenta no está activa. Consulta en recepción.');
+  }
+
+  const rawReference = paymentReference ? paymentReference.trim() : '';
+  const rawNote = note ? note.trim() : null;
+  const requestHash = hashRequestPayload({ size, paymentMethod, paymentReference: rawReference, note: rawNote });
+
+  if (idempotencyKey && userId) {
+    const cached = lookupIdempotentRequest(db, idempotencyKey, userId, 'pack_request', requestHash);
+    if (cached) return { ...cached, idempotentReplay: true };
   }
 
   // Prevenir abusos: máximo 3 solicitudes pendientes al mismo tiempo por usuario.
@@ -122,8 +174,8 @@ export function createRequest({ userId, size, paymentMethod, paymentReference, n
     priceCents: precioCentavos,
     currency: config.currency,
     paymentMethod,
-    paymentReference: paymentReference.trim(),
-    note: note ? note.trim() : null,
+    paymentReference: rawReference,
+    note: rawNote,
     ahora,
   });
 
@@ -139,7 +191,7 @@ export function createRequest({ userId, size, paymentMethod, paymentReference, n
       size,
       priceCents: precioCentavos,
       paymentMethod,
-      paymentReference: paymentReference.trim(),
+      paymentReference: rawReference,
     },
     ip,
     userAgent,
@@ -151,6 +203,17 @@ export function createRequest({ userId, size, paymentMethod, paymentReference, n
     request,
     user: { id: usuario.id, fullName: usuario.full_name, email: usuario.email, phone: usuario.phone },
   });
+
+  if (idempotencyKey && userId) {
+    saveIdempotentRequest(db, {
+      key: idempotencyKey,
+      userId,
+      endpoint: 'pack_request',
+      requestHash,
+      statusCode: 201,
+      body: request,
+    });
+  }
 
   return request;
 }
@@ -198,36 +261,40 @@ export function cancelRequest(requestId, { userId, actor, ip, userAgent }) {
 /** La administración aprueba la solicitud y emite el pack atómicamente. */
 export function approveRequest(requestId, { actor, ip, userAgent }) {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM pack_requests WHERE id = ?').get(requestId);
-  if (!row) throw notFound('Solicitud no encontrada.');
-  if (row.status !== 'pending') {
-    throw conflict('Esta solicitud ya fue procesada anteriormente.');
-  }
 
-  const usuario = users.findById(row.user_id, db);
-  if (!usuario) throw notFound('El cliente de esta solicitud ya no existe.');
+  const outcome = inTransaction(() => {
+    const row = db.prepare('SELECT * FROM pack_requests WHERE id = ?').get(requestId);
+    if (!row) throw notFound('Solicitud no encontrada.');
+    if (row.status !== 'pending') {
+      throw conflict('Esta solicitud ya fue procesada anteriormente.');
+    }
 
-  // Actualización atómica del estado para ganar cualquier carrera concurrente
-  const ahora = new Date().toISOString();
-  const res = db
-    .prepare(
-      `UPDATE pack_requests
-          SET status = 'approved',
-              reviewed_by = ?,
-              reviewed_at = ?,
-              updated_at = ?
-        WHERE id = ? AND status = 'pending'`,
-    )
-    .run(actor.id, ahora, ahora, requestId);
+    const usuario = users.findById(row.user_id, db);
+    if (!usuario) throw notFound('El cliente de esta solicitud ya no existe.');
+    if (usuario.status !== 'active') {
+      throw conflict('La cuenta del cliente está suspendida y no puede recibir packs.');
+    }
 
-  if (res.changes === 0) {
-    throw conflict('Esta solicitud ya fue procesada anteriormente.');
-  }
+    // Actualización atómica del estado para ganar cualquier carrera concurrente
+    const ahora = new Date().toISOString();
+    const res = db
+      .prepare(
+        `UPDATE pack_requests
+            SET status = 'approved',
+                reviewed_by = ?,
+                reviewed_at = ?,
+                updated_at = ?
+          WHERE id = ? AND status = 'pending'`,
+      )
+      .run(actor.id, ahora, ahora, requestId);
 
-  // Emitir el pack contablemente usando el servicio central de packs.
-  const notaEmision = row.note ? `Recarga en línea: ${row.note}` : 'Recarga solicitada en línea';
-  const pack = packsService.issuePack(
-    {
+    if (res.changes === 0) {
+      throw conflict('Esta solicitud ya fue procesada anteriormente.');
+    }
+
+    // Emitir el pack contablemente usando el servicio central de packs.
+    const notaEmision = row.note ? `Recarga en línea: ${row.note}` : 'Recarga solicitada en línea';
+    const pack = packsService.issuePack({
       userId: row.user_id,
       size: row.size,
       priceCents: row.price_cents,
@@ -237,39 +304,39 @@ export function approveRequest(requestId, { actor, ip, userAgent }) {
       actor,
       ip,
       userAgent,
-    },
-    db,
-  );
+    });
 
-  db.prepare('UPDATE pack_requests SET pack_id = ? WHERE id = ?').run(pack.id, requestId);
+    db.prepare('UPDATE pack_requests SET pack_id = ? WHERE id = ?').run(pack.id, requestId);
 
-  audit.record({
-    actor,
-    action: 'pack_request.aprobada',
-    entityType: 'pack_request',
-    entityId: requestId,
-    metadata: {
-      userId: row.user_id,
-      size: row.size,
-      priceCents: row.price_cents,
-      packId: pack.id,
-      packCode: pack.code,
-    },
-    ip,
-    userAgent,
-    db,
+    audit.record({
+      actor,
+      action: 'pack_request.aprobada',
+      entityType: 'pack_request',
+      entityId: requestId,
+      metadata: {
+        userId: row.user_id,
+        size: row.size,
+        priceCents: row.price_cents,
+        packId: pack.id,
+        packCode: pack.code,
+      },
+      ip,
+      userAgent,
+      db,
+    });
+
+    const request = findById(requestId, db);
+    return { request, pack, row };
   });
-
-  const request = findById(requestId, db);
 
   // Notificar en tiempo real tanto al cliente como al panel máster.
-  hub.publish([channels.admin, channels.user(row.user_id)], 'pack_request.aprobada', {
-    request,
-    pack,
-    userId: row.user_id,
+  hub.publish([channels.admin, channels.user(outcome.row.user_id)], 'pack_request.aprobada', {
+    request: outcome.request,
+    pack: outcome.pack,
+    userId: outcome.row.user_id,
   });
 
-  return { request, pack };
+  return { request: outcome.request, pack: outcome.pack };
 }
 
 /** La administración rechaza la solicitud indicando el motivo. */

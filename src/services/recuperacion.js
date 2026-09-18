@@ -25,9 +25,9 @@ import { escaparHtml, momento, saludo, envolverHtml, boton } from '../lib/planti
 import * as users from './users.js';
 import * as audit from './audit.js';
 import { notificarSesionInvalida } from './sessions.js';
+import { FORMATO_TOKEN } from '../lib/validate.js';
 
-/** 32 bytes en base64url, sin relleno. */
-export const FORMATO_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+export { FORMATO_TOKEN };
 
 /** Entre dos correos de recuperación a la misma dirección. */
 const ESPERA_ENTRE_ENVIOS_SECONDS = 60;
@@ -83,24 +83,24 @@ export function correoDeRecuperacion(usuario, token, { ip = null, instante = Dat
   const texto = [
     saludo(usuario),
     '',
-    `Alguien pidió restablecer la contraseña de tu cuenta de ${config.brandName}. Si fuiste tú, abre este enlace para elegir una nueva:`,
+    `Recibimos una solicitud para cambiar la contraseña de tu cuenta de ${config.brandName}. Si fuiste tú, abre este enlace para elegir una nueva:`,
     '',
     enlace,
     '',
-    `El enlace vale ${minutos} minutos y sirve una sola vez.`,
+    `El enlace dura ${minutos} minutos y sirve una sola vez.`,
     '',
-    'Si no lo pediste, ignora este correo: tu contraseña sigue siendo la misma y nadie puede cambiarla sin este enlace.',
+    'Si no lo pediste, ignora este correo: tu contraseña sigue igual y nadie puede cambiarla sin este enlace.',
     '',
     origen,
   ].join('\n');
 
   const html = envolverHtml([
     escaparHtml(saludo(usuario)),
-    `Alguien pidió restablecer la contraseña de tu cuenta de ${escaparHtml(config.brandName)}. Si fuiste tú, usa este botón para elegir una nueva:`,
+    `Recibimos una solicitud para cambiar la contraseña de tu cuenta de ${escaparHtml(config.brandName)}. Si fuiste tú, usa este botón para elegir una nueva:`,
     boton(enlace, 'Elegir una contraseña nueva'),
     `Si el botón no funciona, copia esta dirección en tu navegador:<br><span style="word-break:break-all">${escaparHtml(enlace)}</span>`,
-    `El enlace vale ${minutos} minutos y sirve una sola vez.`,
-    'Si no lo pediste, ignora este correo: tu contraseña sigue siendo la misma y nadie puede cambiarla sin este enlace.',
+    `El enlace dura ${minutos} minutos y sirve una sola vez.`,
+    'Si no lo pediste, ignora este correo: tu contraseña sigue igual y nadie puede cambiarla sin este enlace.',
     `<span style="color:#666;font-size:13px">${escaparHtml(origen)}</span>`,
   ]);
 
@@ -120,7 +120,7 @@ export function correoDeCambio(usuario, { via, ip = null, instante = Date.now() 
 
   const lineas = [
     `La contraseña de tu cuenta de ${config.brandName} se cambió ${como}, ${cuando}.`,
-    'Por seguridad cerramos la sesión en todos tus dispositivos.',
+    'Por seguridad, cerramos la sesión en todos tus dispositivos.',
     'Si fuiste tú, no tienes que hacer nada.',
     `Si no fuiste tú, restablécela ahora ${dondeRestablecer} con «¿Olvidaste tu contraseña?» y avisa en recepción.`,
   ];

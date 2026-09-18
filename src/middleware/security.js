@@ -29,10 +29,12 @@ export function securityHeaders(req, res, next) {
   res.set('Referrer-Policy', 'same-origin');
   res.set('Cross-Origin-Opener-Policy', 'same-origin');
   res.set('Cross-Origin-Resource-Policy', 'same-origin');
+  res.set('X-Permitted-Cross-Domain-Policies', 'none');
+  res.set('X-Download-Options', 'noopen');
   // La cámara se usa en /scan; el resto de capacidades del navegador se apaga.
   res.set(
     'Permissions-Policy',
-    'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), display-capture=()',
+    'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), display-capture=(), browsing-topics=(), sync-xhr=()',
   );
   res.removeHeader('X-Powered-By');
   if (config.security.cookieSecure) {

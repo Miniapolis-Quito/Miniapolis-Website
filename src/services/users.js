@@ -2,17 +2,17 @@
 import { getDb, inTransaction } from '../db/index.js';
 import { newId } from '../lib/ids.js';
 import { hashPassword, verifyPassword, needsRehash, HASH_FICTICIO } from '../lib/passwords.js';
-import { conflict, notFound, badRequest } from '../lib/errors.js';
+import { conflict, notFound, badRequest, forbidden } from '../lib/errors.js';
 import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
 import { consume, reset as resetRateLimit } from '../lib/rateLimit.js';
 import { notificarSesionInvalida } from './sessions.js';
+import * as audit from './audit.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
 export function normalizeEmail(email) {
   return String(email || '').normalize('NFKC').trim().toLowerCase();
 }
-
 /**
  * Solo el personal y el máster pueden llevar el permiso de escaneo.
  *
@@ -297,7 +297,7 @@ export async function setPassword(userId, newPassword, { expectedPasswordHash = 
       const actual = findById(userId, db);
       if (!actual || actual.password_hash !== expectedPasswordHash) {
         throw badRequest(
-          'La cuenta cambió mientras se actualizaba. Comprueba la contraseña actual e inténtalo de nuevo.',
+          'La cuenta cambió mientras se actualizaba. Comprueba la contraseña actual e intenta de nuevo.',
           null,
           'password_cambio_concurrente',
         );
@@ -487,4 +487,69 @@ export function listUsers({ limit = 50, offset = 0, search = '', role = null, st
       totalPacks: r.packs_totales,
     })),
   };
+}
+
+/**
+ * Elimina de forma segura un usuario que no posea transacciones contables ni operativas.
+ * Si tiene packs, consumos, transferencias o solicitudes, se deniega para preservar la auditoría.
+ */
+export function deleteUser(userId, { actor = null, ip = null, userAgent = null } = {}) {
+  const db = getDb();
+  const user = findById(userId, db);
+  if (!user) throw notFound('Usuario no encontrado.');
+
+  if (actor && actor.id === userId) {
+    throw forbidden('No puedes eliminar tu propia cuenta.', 'auto_eliminacion');
+  }
+
+  if (user.role === 'master' && countActiveByRole('master', db) <= 1) {
+    throw conflict('Debe quedar al menos un usuario máster activo.', 'ultimo_master');
+  }
+
+  return inTransaction(() => {
+    // Comprobar si tiene historial contable u operativo
+    const packsCount = db.prepare('SELECT COUNT(*) AS n FROM packs WHERE user_id = ?').get(userId).n;
+    if (packsCount > 0) {
+      throw conflict('Esta cuenta tiene packs emitidos y no se puede eliminar. Suspéndela en su lugar.', 'cuenta_con_historial');
+    }
+
+    const redemptionsCount = db.prepare('SELECT COUNT(*) AS n FROM redemptions WHERE user_id = ?').get(userId).n;
+    if (redemptionsCount > 0) {
+      throw conflict('Esta cuenta tiene consumos registrados y no se puede eliminar. Suspéndela en su lugar.', 'cuenta_con_historial');
+    }
+
+    const transfersCount = db.prepare('SELECT COUNT(*) AS n FROM transfers WHERE sender_id = ? OR recipient_id = ?').get(userId, userId).n;
+    if (transfersCount > 0) {
+      throw conflict('Esta cuenta tiene transferencias registradas y no se puede eliminar. Suspéndela en su lugar.', 'cuenta_con_historial');
+    }
+
+    const requestsCount = db.prepare('SELECT COUNT(*) AS n FROM pack_requests WHERE user_id = ?').get(userId).n;
+    if (requestsCount > 0) {
+      throw conflict('Esta cuenta tiene solicitudes de recarga y no se puede eliminar. Suspéndela en su lugar.', 'cuenta_con_historial');
+    }
+
+    // Sin historial: eliminar sesiones, tokens y la fila del usuario
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+
+    resetRateLimit(`login-cuenta:${user.email_normalized}`);
+    resetRateLimit(`login-fantasma:${user.email_normalized}`);
+    resetRateLimit(`password-actual-fallos:${userId}`);
+
+    audit.record({
+      actor,
+      action: 'usuario.eliminado',
+      entityType: 'user',
+      entityId: userId,
+      metadata: { email: user.email, fullName: user.full_name, role: user.role },
+      ip,
+      userAgent,
+      db,
+    });
+
+    notificarSesionInvalida(userId, 'cuenta_eliminada');
+    return { ok: true, message: 'Usuario eliminado correctamente.', id: userId };
+  });
 }

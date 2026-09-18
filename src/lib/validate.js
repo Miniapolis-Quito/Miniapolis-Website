@@ -100,10 +100,13 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+/** Formato de token de recuperación: 32 bytes en base64url (43 caracteres). */
+export const FORMATO_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
 /** Un token de recuperación: 32 bytes en base64url. */
 const tokenRecuperacionSchema = z
   .string()
-  .regex(/^[A-Za-z0-9_-]{43}$/, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
+  .regex(FORMATO_TOKEN, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });
 
@@ -126,10 +129,10 @@ export const twoFactorCodeSchema = z
   .min(6, 'Escribe el código de 6 dígitos de tu aplicación.')
   .max(24, 'Ese código es demasiado largo.');
 
-/** Token del desafío intermedio: 32 bytes en base64url. */
+/** Token del desafío intermedio: los mismos 32 bytes en base64url. */
 const desafioSchema = z
   .string()
-  .regex(/^[A-Za-z0-9_-]{43}$/, 'Este acceso caducó. Vuelve a escribir tu correo y tu contraseña.');
+  .regex(FORMATO_TOKEN, 'Este acceso caducó. Vuelve a escribir tu correo y tu contraseña.');
 
 export const twoFactorLoginSchema = z.object({
   challengeToken: desafioSchema,
