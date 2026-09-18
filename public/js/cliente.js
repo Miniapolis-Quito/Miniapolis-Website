@@ -6,6 +6,7 @@ import { $, el, render, icono, brindis, fecha, horaCorta, dinero, plural, estado
 import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, cambiarPassword, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca, revelarAlEntrar } from './shell.js';
+import { montarSeguridad } from './dos-factores.js';
 
 const estado = {
   resumen: null,
@@ -786,6 +787,10 @@ function montarComprarPack() {
 
 function montarCuenta() {
   const dialogo = $('#dialogo-cuenta');
+  // El panel de seguridad se pinta la primera vez que se abre «Mi cuenta» y se
+  // refresca en cada apertura: así refleja lo que se haya hecho desde otro
+  // dispositivo sin recargar la página.
+  let refrescarSeguridad = null;
 
   $('#btn-cuenta').addEventListener('click', () => {
     $('#perfil-nombre').value = getUsuario()?.fullName ?? '';
@@ -795,6 +800,8 @@ function montarCuenta() {
     mostrarAviso($('#aviso-perfil'), '');
     mostrarAviso($('#aviso-password'), '');
     mostrarAviso($('#aviso-recordatorios'), '');
+    if (refrescarSeguridad) refrescarSeguridad();
+    else refrescarSeguridad = montarSeguridad($('#seccion-dos-factores'));
     dialogo.showModal();
   });
 

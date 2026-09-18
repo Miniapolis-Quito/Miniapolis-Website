@@ -4,6 +4,7 @@ import { montarMovimiento } from './movimiento.js';
 import { cerrarSesion, getUsuario, puedeEscanear } from './api.js';
 import { textoEstado } from './realtime.js';
 import { abrirCambioPassword } from './cuenta.js';
+import { abrirSeguridad } from './dos-factores.js';
 
 /** Marca de fábrica: la que traen escritas las páginas y el logotipo oficial.
  *  Si el despliegue configura otra, `aplicarMarca` la sustituye. */
@@ -86,13 +87,20 @@ export function montarCabecera(contenedor, { marca = MARCA_CORTA_POR_DEFECTO } =
         ),
         nav,
         el('span', { class: 'estado-conexion', title: 'Estado de la conexión en vivo' }, indicador, textoIndicador),
-        // Los clientes cambian su contraseña en «Mi cuenta»; el personal y el
-        // máster, desde aquí.
+        // Los clientes cambian su contraseña y configuran el segundo factor en
+        // «Mi cuenta»; el personal y el máster, desde aquí.
         usuario && usuario.role !== 'customer'
           ? el(
               'button',
               { class: 'boton boton--fantasma boton--chico', type: 'button', onClick: () => abrirCambioPassword() },
               'Contraseña',
+            )
+          : null,
+        usuario && usuario.role !== 'customer'
+          ? el(
+              'button',
+              { class: 'boton boton--fantasma boton--chico', type: 'button', onClick: () => abrirSeguridad() },
+              'Seguridad',
             )
           : null,
         usuario

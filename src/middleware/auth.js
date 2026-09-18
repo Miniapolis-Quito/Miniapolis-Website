@@ -2,6 +2,7 @@
 import { verifyAccessToken } from '../lib/jwt.js';
 import { getDb } from '../db/index.js';
 import { isSessionActive } from '../services/sessions.js';
+import { pendienteDeActivar } from '../services/dosFactores.js';
 import { unauthorized, forbidden } from '../lib/errors.js';
 
 const ROLE_RANK = { customer: 1, staff: 2, master: 3 };
@@ -58,6 +59,9 @@ export function authenticate(req, res, next) {
     // Se lee de la base en cada petición, igual que el rol: retirar el permiso
     // surte efecto en el siguiente escaneo, sin esperar a que caduque nada.
     scanEnabled: Boolean(row.scan_enabled),
+    // También se lee en cada petición: si la administración retira el segundo
+    // factor de una cuenta, la siguiente petición ya lo sabe.
+    twoFactorEnabled: Boolean(row.totp_enabled),
     sessionId: payload.sid,
   };
   return next();
@@ -78,13 +82,32 @@ export function requireAuth(req, res, next) {
   );
 }
 
+/**
+ * Si la pista exige verificación en dos pasos al personal y esta cuenta aún no
+ * la tiene, sus permisos quedan en suspenso: puede entrar y configurarla desde
+ * su cuenta, pero no tocar el panel ni descontar entradas. La comprobación se
+ * hace aquí, en el guardián de permisos, y no en cada ruta: así ninguna ruta
+ * nueva puede olvidarse de ella.
+ */
+export function bloqueoPorDosFactores(user) {
+  if (!pendienteDeActivar(user)) return null;
+  return forbidden(
+    'Esta pista exige verificación en dos pasos al personal. Actívala en «Seguridad», dentro de tu cuenta, para recuperar tus permisos.',
+    'dos_factores_requerido',
+  );
+}
+
 /** Exige un rol mínimo: master > staff > customer. */
 export function requireRole(minimumRole) {
   const required = ROLE_RANK[minimumRole];
   return (req, res, next) => {
     if (!req.user) return requireAuth(req, res, next);
-    if ((ROLE_RANK[req.user.role] ?? 0) >= required) return next();
-    return next(forbidden('Tu cuenta no tiene permisos para esta acción.'));
+    if ((ROLE_RANK[req.user.role] ?? 0) < required) {
+      return next(forbidden('Tu cuenta no tiene permisos para esta acción.'));
+    }
+    const pendiente = bloqueoPorDosFactores(req.user);
+    if (pendiente) return next(pendiente);
+    return next();
   };
 }
 
@@ -104,6 +127,8 @@ export function requireScanner(req, res, next) {
   if ((ROLE_RANK[req.user.role] ?? 0) < ROLE_RANK.staff) {
     return next(forbidden('Tu cuenta no tiene permisos para esta acción.'));
   }
+  const pendiente = bloqueoPorDosFactores(req.user);
+  if (pendiente) return next(pendiente);
   if (!req.user.scanEnabled) {
     return next(
       forbidden(

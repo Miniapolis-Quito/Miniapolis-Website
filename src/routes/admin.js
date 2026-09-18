@@ -16,6 +16,7 @@ import {
   notificationContactSchema,
   notificationTestSchema,
   notificationListSchema,
+  securitySettingsSchema,
   paginationSchema,
   passwordSchema,
   rejectPackRequestSchema,
@@ -36,6 +37,7 @@ import * as sinConexion from '../services/sinConexion.js';
 import * as avisos from '../services/avisos.js';
 import * as fidelidad from '../services/fidelidad.js';
 import * as packRequests from '../services/packRequests.js';
+import * as dosFactores from '../services/dosFactores.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -291,6 +293,58 @@ router.post(
     if (!user) throw notFound('Usuario no encontrado.');
     audit.record({ ...actorContext(req), action: 'usuario.desbloqueado', entityType: 'user', entityId: user.id });
     res.json({ user: users.toPublicUser(user) });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Seguridad de las cuentas del equipo
+// ---------------------------------------------------------------------------
+
+/** La política de verificación en dos pasos y cómo va el equipo con ella. */
+router.get(
+  '/security',
+  asyncHandler(async (req, res) => {
+    res.json(dosFactores.panelDeSeguridad());
+  }),
+);
+
+router.patch(
+  '/security',
+  asyncHandler(async (req, res) => {
+    const cambios = parseOrThrow(securitySettingsSchema, req.body, badRequest);
+    dosFactores.guardarAjustes(cambios, actorContext(req));
+    res.json(dosFactores.panelDeSeguridad());
+  }),
+);
+
+/**
+ * Quita el segundo factor de una cuenta. Es el rescate para quien pierde el
+ * teléfono y se quedó también sin códigos de respaldo.
+ *
+ * Quien lo hace queda en la bitácora y la persona recibe un correo: retirar el
+ * segundo factor de una cuenta ajena es justo lo que intentaría alguien que se
+ * hiciera con el panel, así que no puede pasar en silencio.
+ */
+router.post(
+  '/users/:id/2fa/disable',
+  asyncHandler(async (req, res) => {
+    const target = users.findById(req.params.id);
+    if (!target) throw notFound('Usuario no encontrado.');
+    if (!target.totp_enabled) {
+      throw conflict('Esa cuenta no tiene la verificación en dos pasos activa.', 'dos_factores_no_activa');
+    }
+
+    dosFactores.desactivar(target, {
+      motivo: 'administracion',
+      actor: req.user,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    // Sus sesiones abiertas se cierran: si el teléfono se perdió, quien lo
+    // tenga no debe seguir dentro mientras se reconfigura la cuenta.
+    const cerradas = sessions.revokeAllForUser(target.id, 'dos_factores_retirada');
+
+    res.json({ ok: true, sesionesCerradas: cerradas, user: users.toPublicUser(users.findById(target.id)) });
   }),
 );
 

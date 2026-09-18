@@ -11,13 +11,16 @@ import { tooManyRequests } from './errors.js';
 const CLEANUP_EVERY_MS = 60_000;
 let lastCleanup = 0;
 
-/** Limpieza periódica de claves expiradas en rate_limits, nonces y sesiones. */
+/** Limpieza periódica de claves expiradas: cuotas, nonces, sesiones y desafíos. */
 export function cleanupExpired(nowIso = new Date().toISOString()) {
   try {
     prepareCached('DELETE FROM rate_limits WHERE expires_at <= ?').run(nowIso);
     prepareCached('DELETE FROM used_nonces WHERE expires_at <= ?').run(nowIso);
     prepareCached('DELETE FROM idempotency_keys WHERE expires_at <= ?').run(nowIso);
     prepareCached('DELETE FROM sessions WHERE expires_at <= ?').run(nowIso);
+    // Los desafíos del segundo paso viven minutos; los vencidos no sirven ni
+    // para auditar, porque el intento fallido ya quedó en la bitácora.
+    prepareCached('DELETE FROM two_factor_challenges WHERE expires_at <= ?').run(nowIso);
   } catch {
     /* no crítico si la base está temporalmente ocupada */
   }

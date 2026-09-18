@@ -1942,6 +1942,59 @@ tbody tr:nth-child(n+9) { animation-delay: 192ms; }
 .pase__cliente { font-size: 10pt; margin-top: 1mm; }
 .pase__pie { font-size: 8pt; margin-top: 3mm; color: #555; }
 
+/* ---------------------------------------------------------------------------
+   Verificación en dos pasos
+   El QR se dibuja en el servidor y llega como imagen: se le pone fondo blanco
+   propio porque un QR sobre el negro de la marca no lo lee ninguna cámara.
+   --------------------------------------------------------------------------- */
+.qr-dos-factores {
+  display: block;
+  width: min(220px, 60vw);
+  height: auto;
+  margin: var(--e3) auto;
+  padding: 10px;
+  border-radius: var(--radio);
+  background: #fff;
+  border: 1px solid var(--borde);
+}
+
+/* La clave escrita a mano: en grupos de cuatro y con espacio entre caracteres,
+   que es lo que hace que no se confunda una letra al teclearla. */
+.clave-manual {
+  display: block;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+  background: var(--superficie-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1rem;
+  letter-spacing: .12em;
+  word-break: break-all;
+  user-select: all;
+}
+
+.lista-codigos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 6px 12px;
+  margin: var(--e3) 0;
+  padding: 0;
+  list-style: none;
+}
+.lista-codigos code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .95rem;
+  letter-spacing: .08em;
+  user-select: all;
+}
+
+.tarjeta--suave { background: var(--superficie-2); border-color: var(--borde); }
+
+.fila-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--e3); }
+
+.pasos { margin: var(--e3) 0; padding-left: 1.2em; display: grid; gap: 6px; color: var(--texto-2); }
+
 @media print {
   /* En papel no hay lienzo negro: los tipos vuelven a la tinta y las
      superficies al blanco, o la hoja saldría en negativo. */

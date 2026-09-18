@@ -31,6 +31,7 @@
       <button class="pestana" role="tab" id="pestana-consumos" aria-controls="panel-consumos" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
       <button class="pestana" role="tab" id="pestana-avisos" aria-controls="panel-avisos" data-panel="avisos" aria-selected="false" type="button">Avisos</button>
       <button class="pestana" role="tab" id="pestana-fidelidad" aria-controls="panel-fidelidad" data-panel="fidelidad" aria-selected="false" type="button">Fidelidad</button>
+      <button class="pestana" role="tab" id="pestana-seguridad" aria-controls="panel-seguridad" data-panel="seguridad" aria-selected="false" type="button">Seguridad</button>
       <button class="pestana" role="tab" id="pestana-auditoria" aria-controls="panel-auditoria" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
     </div>
 
@@ -249,6 +250,29 @@
     </section>
 
     <!-- Auditoría -->
+    <section id="panel-seguridad" role="tabpanel" aria-labelledby="pestana-seguridad" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Verificación en dos pasos</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-seguridad-recargar" type="button">Actualizar</button>
+        </div>
+        <p class="tenue pequeno">
+          La contraseña del personal es lo único que separa a cualquiera del escáner y de esta administración.
+          El segundo paso añade un código que cambia cada 30 segundos y que solo sale del teléfono de esa persona.
+        </p>
+        <div id="seguridad-estado"></div>
+      </div>
+
+      <div class="rejilla rejilla--metricas mt-2" id="seguridad-metricas"></div>
+
+      <div class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>El equipo</h2>
+        </div>
+        <div id="seguridad-equipo"></div>
+      </div>
+    </section>
+
     <section id="panel-auditoria" role="tabpanel" aria-labelledby="pestana-auditoria" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">

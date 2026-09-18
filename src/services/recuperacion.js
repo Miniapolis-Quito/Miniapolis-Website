@@ -16,6 +16,7 @@ import { getDb, inTransaction } from '../db/index.js';
 import { config } from '../config.js';
 import { newId } from '../lib/ids.js';
 import { logger } from '../lib/logger.js';
+import { despuesDeResponder } from '../lib/tareasDiferidas.js';
 import { badRequest } from '../lib/errors.js';
 import { consume, reset as resetRateLimit } from '../lib/rateLimit.js';
 import { hashPassword, verifyPassword, validatePasswordStrength } from '../lib/passwords.js';
@@ -62,24 +63,13 @@ export function hashToken(token) {
 // Tareas después de responder
 // ---------------------------------------------------------------------------
 
-const tareasEnCurso = new Set();
-
 /**
- * Ejecuta `tarea` cuando la respuesta ya salió. Así ni el tiempo de respuesta
- * ni un fallo del servidor de correo dicen nada a quien hizo la petición.
+ * Los envíos van después de la respuesta, en la cola compartida de
+ * `lib/tareasDiferidas`: ni el tiempo de respuesta ni un fallo del servidor de
+ * correo pueden decir nada a quien hizo la petición. Se reexporta la espera
+ * porque las pruebas de recuperación la usan por su nombre de siempre.
  */
-function despuesDeResponder(tarea, descripcionDelFallo) {
-  const promesa = new Promise((listo) => setImmediate(listo))
-    .then(tarea)
-    .catch((error) => logger.error(descripcionDelFallo, { message: error.message }))
-    .finally(() => tareasEnCurso.delete(promesa));
-  tareasEnCurso.add(promesa);
-}
-
-/** Espera a que terminen los envíos pendientes. Lo usan las pruebas. */
-export async function esperarTareas() {
-  while (tareasEnCurso.size > 0) await Promise.all([...tareasEnCurso]);
-}
+export { esperarTareas } from '../lib/tareasDiferidas.js';
 
 // ---------------------------------------------------------------------------
 // Correos

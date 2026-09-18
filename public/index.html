@@ -195,6 +195,25 @@
           <button class="boton boton--fantasma boton--bloque mt" id="btn-volver-entrar" type="button">Volver a entrar</button>
         </form>
 
+        <!-- Segundo paso: código de la aplicación de autenticación -->
+        <form id="form-segundo-paso" aria-labelledby="titulo-segundo-paso" novalidate hidden>
+          <h2 id="titulo-segundo-paso" class="entrada__acceso-subtitulo">Verificación en dos pasos</h2>
+          <p class="entrada__acceso-nota">
+            Escribe el código de 6 dígitos que muestra tu aplicación de autenticación.
+          </p>
+          <div class="campo">
+            <label for="segundo-paso-codigo">Código</label>
+            <input id="segundo-paso-codigo" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                   required placeholder="000000" maxlength="11" autocapitalize="characters" spellcheck="false">
+            <div class="campo__error"></div>
+          </div>
+          <p class="entrada__acceso-nota pequeno" id="segundo-paso-ayuda">
+            ¿Perdiste el teléfono? Escribe aquí uno de tus códigos de respaldo.
+          </p>
+          <button class="boton boton--principal boton--bloque boton--grande" type="submit">Verificar y entrar</button>
+          <button class="boton boton--fantasma boton--bloque mt" id="btn-cancelar-segundo-paso" type="button">Cancelar</button>
+        </form>
+
         <!-- Registro -->
         <form id="form-registro" role="tabpanel" aria-labelledby="pestana-registro" novalidate hidden>
           <div class="campo">

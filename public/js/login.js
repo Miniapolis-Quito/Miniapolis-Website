@@ -1,6 +1,15 @@
 /** Página de acceso: iniciar sesión y crear cuenta. */
 import { $, mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga } from './ui.js';
-import { api, iniciarSesion, registrarse, refrescarSesion, destinoPorRol, ErrorApi, ErrorRed } from './api.js';
+import {
+  api,
+  iniciarSesion,
+  completarSegundoPaso,
+  registrarse,
+  refrescarSesion,
+  destinoPorRol,
+  ErrorApi,
+  ErrorRed,
+} from './api.js';
 import { aplicarMarca } from './shell.js';
 
 const aviso = $('#aviso');
@@ -9,7 +18,15 @@ const formRegistro = $('#form-registro');
 const pestanaEntrar = $('#pestana-entrar');
 const pestanaRegistro = $('#pestana-registro');
 const formRecuperar = $('#form-recuperar');
+const formSegundoPaso = $('#form-segundo-paso');
 const zonaOlvido = $('#zona-olvido');
+
+/**
+ * Desafío en curso del segundo paso. Vive solo en memoria y solo mientras se
+ * escribe el código: ni localStorage ni cookie, para que cerrar la pestaña a
+ * medias no deje nada aprovechable.
+ */
+let desafioEnCurso = null;
 
 /** Lo decide /api/config: sin correo configurado no se ofrece. */
 let recuperacionDisponible = false;
@@ -30,6 +47,8 @@ function seleccionarPestana(cual) {
   formEntrar.hidden = !esEntrar;
   formRegistro.hidden = esEntrar;
   formRecuperar.hidden = true;
+  formSegundoPaso.hidden = true;
+  desafioEnCurso = null;
   zonaOlvido.hidden = !esEntrar || !recuperacionDisponible;
   mostrarAviso(aviso, '');
   (esEntrar ? formEntrar : formRegistro).querySelector('input')?.focus({ preventScroll: true });
@@ -83,6 +102,57 @@ formRecuperar.addEventListener('submit', async (evento) => {
   });
 });
 
+/** Muestra el segundo paso y deja el foco en el código. */
+function pedirSegundoPaso(datos) {
+  desafioEnCurso = datos.challengeToken;
+  formEntrar.hidden = true;
+  formRegistro.hidden = true;
+  formRecuperar.hidden = true;
+  zonaOlvido.hidden = true;
+  formSegundoPaso.hidden = false;
+  mostrarErroresCampo(formSegundoPaso, {});
+  $('#segundo-paso-codigo').value = '';
+  $('#segundo-paso-codigo').focus();
+}
+
+$('#btn-cancelar-segundo-paso').addEventListener('click', () => {
+  // El desafío se abandona: si alguien vuelve, empieza por la contraseña.
+  seleccionarPestana('entrar');
+  $('#entrar-password').value = '';
+});
+
+formSegundoPaso.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  mostrarAviso(aviso, '');
+  mostrarErroresCampo(formSegundoPaso, {});
+  const codigo = $('#segundo-paso-codigo').value.trim();
+  if (!codigo) {
+    mostrarErroresCampo(formSegundoPaso, { code: 'Escribe el código.' });
+    return;
+  }
+
+  await conCarga(formSegundoPaso.querySelector('button[type="submit"]'), async () => {
+    try {
+      const sesion = await completarSegundoPaso(desafioEnCurso, codigo);
+      window.location.replace(destino(sesion.user));
+    } catch (error) {
+      // Si el desafío caducó o se agotaron los intentos, se vuelve al principio:
+      // insistir con el código ya no lleva a ninguna parte.
+      const caducado =
+        error instanceof ErrorApi &&
+        (error.codigo === 'dos_factores_desafio_invalido' || error.status === 429 || error.status === 403);
+      manejarError(error, formSegundoPaso);
+      if (caducado) {
+        const mensaje = error.message;
+        seleccionarPestana('entrar');
+        mostrarAviso(aviso, mensaje, 'alerta');
+      } else {
+        $('#segundo-paso-codigo').select();
+      }
+    }
+  });
+});
+
 formEntrar.addEventListener('submit', async (evento) => {
   evento.preventDefault();
   mostrarAviso(aviso, '');
@@ -92,6 +162,10 @@ formEntrar.addEventListener('submit', async (evento) => {
   await conCarga(formEntrar.querySelector('button[type="submit"]'), async () => {
     try {
       const sesion = await iniciarSesion(datos.email, datos.password);
+      if (sesion.twoFactorRequired) {
+        pedirSegundoPaso(sesion);
+        return;
+      }
       window.location.replace(destino(sesion.user));
     } catch (error) {
       manejarError(error, formEntrar);

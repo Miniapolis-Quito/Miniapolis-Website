@@ -35,6 +35,9 @@ export function toPublicUser(row) {
     role: row.role,
     status: row.status,
     scanEnabled: Boolean(row.scan_enabled),
+    /** Si la cuenta pide un código además de la contraseña para entrar. */
+    twoFactorEnabled: Boolean(row.totp_enabled),
+    twoFactorSince: row.totp_confirmed_at ?? null,
     lastLoginAt: row.last_login_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

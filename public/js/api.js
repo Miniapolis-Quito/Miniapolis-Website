@@ -208,8 +208,28 @@ export function tokenActual() {
 // Sesión
 // ---------------------------------------------------------------------------
 
+/**
+ * Primer paso del acceso.
+ *
+ * Con verificación en dos pasos, el servidor no devuelve sesión sino un
+ * desafío: `{ twoFactorRequired: true, challengeToken }`. Ese token no se
+ * guarda en ninguna parte del navegador —vive en la variable de quien llama
+ * mientras se escribe el código— y no sirve para nada más que para el segundo
+ * paso.
+ */
 export async function iniciarSesion(email, password) {
   const datos = await peticion('/api/auth/login', { metodo: 'POST', cuerpo: { email, password } });
+  olvidarOperadorSinConexion();
+  if (datos?.twoFactorRequired) return datos;
+  return guardarSesion(datos);
+}
+
+/** Segundo paso: el código de la aplicación o uno de respaldo. */
+export async function completarSegundoPaso(challengeToken, code) {
+  const datos = await peticion('/api/auth/login/2fa', {
+    metodo: 'POST',
+    cuerpo: { challengeToken, code },
+  });
   olvidarOperadorSinConexion();
   return guardarSesion(datos);
 }
