@@ -100,10 +100,13 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+/** Formato de token de recuperación: 32 bytes en base64url (43 caracteres). */
+export const FORMATO_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
 /** Un token de recuperación: 32 bytes en base64url. */
 const tokenRecuperacionSchema = z
   .string()
-  .regex(/^[A-Za-z0-9_-]{43}$/, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
+  .regex(FORMATO_TOKEN, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });
 

@@ -24,9 +24,9 @@ import { escaparHtml, momento, saludo, envolverHtml, boton } from '../lib/planti
 import * as users from './users.js';
 import * as audit from './audit.js';
 import { notificarSesionInvalida } from './sessions.js';
+import { FORMATO_TOKEN } from '../lib/validate.js';
 
-/** 32 bytes en base64url, sin relleno. */
-export const FORMATO_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+export { FORMATO_TOKEN };
 
 /** Entre dos correos de recuperación a la misma dirección. */
 const ESPERA_ENTRE_ENVIOS_SECONDS = 60;

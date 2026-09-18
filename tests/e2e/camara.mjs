@@ -84,7 +84,7 @@ async function escanearConCamara({ pack, forzarRespaldo }) {
     await pagina.click('#btn-camara');
     await pagina.waitForSelector('#escaner:not([hidden]) video', { timeout: 20000 });
     await pagina.waitForFunction(
-      () => document.querySelector('.resultado__titulo')?.textContent.includes('Entrada registrada'),
+      () => /Entrada (registrada|cobrada)/.test(document.querySelector('.resultado__titulo')?.textContent || ''),
       { timeout: 30000 },
     );
 
