@@ -175,7 +175,9 @@ await paso('el pack de cortesía aparece en la app del cliente como regalo', asy
   await app.locator('.pack', { hasText: 'cortesía de la casa' }).first().waitFor({ timeout: 15000 });
   const saldo = await app.locator('#saldo-numero').innerText();
   comprobar(saldo === '9', `7 de pago + 2 de regalo son 9 entradas: ${saldo}`);
-  const tarjeta = await app.locator('#seccion-fidelidad').innerText();
+  // Igual que en el panel: el rótulo va en versalitas y `innerText` devuelve
+  // el texto tal y como se ve, así que la comparación ignora mayúsculas.
+  const tarjeta = (await app.locator('#seccion-fidelidad').innerText()).toLowerCase();
   comprobar(tarjeta.includes('2 entradas regaladas'), `la etiqueta debería contar lo regalado: ${tarjeta}`);
   comprobar(tarjeta.includes('1 premio ganado'), `debería contar el premio: ${tarjeta}`);
 });
@@ -203,11 +205,17 @@ await paso('el panel cuenta lo invitado y a quién le falta poco', async () => {
   comprobar(premiados.includes('Carlos Piloto'), `debería aparecer el cliente: ${premiados}`);
   comprobar(premiados.includes('2 entradas por 3 entradas usadas'), `debería explicar el premio: ${premiados}`);
 
-  const metricas = await admin.locator('#fidelidad-metricas').innerText();
-  comprobar(/\b2\b/.test(metricas) && metricas.includes('Entradas regaladas'), `faltan las cifras: ${metricas}`);
+  // `innerText` devuelve el texto tal y como se ve, y el rótulo de una métrica
+  // va en versalitas: comparar respetando mayúsculas nunca podía coincidir.
+  const metricas = (await admin.locator('#fidelidad-metricas').innerText()).toLowerCase();
+  comprobar(/\b2\b/.test(metricas) && metricas.includes('entradas regaladas'), `faltan las cifras: ${metricas}`);
 
   const cerca = await admin.locator('#fidelidad-cerca').innerText();
-  comprobar(cerca.includes('Carlos Piloto') && cerca.includes('Le faltan 2'), `debería decir cuánto le falta: ${cerca}`);
+  // El nombre se muestra tal cual; «le faltan N» es un rótulo en versalitas.
+  comprobar(
+    cerca.includes('Carlos Piloto') && cerca.toLowerCase().includes('le faltan 2'),
+    `debería decir cuánto le falta: ${cerca}`,
+  );
 });
 
 await paso('la ficha del cliente lleva su tarjeta y sus premios', async () => {
