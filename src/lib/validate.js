@@ -213,7 +213,7 @@ export const resolveOfflineRejectionSchema = z.object({
 // Avisos a clientes
 // ---------------------------------------------------------------------------
 
-const TIPOS_DE_AVISO = ['purchase', 'low_balance', 'depleted', 'expiring', 'inactive'];
+const TIPOS_DE_AVISO = ['purchase', 'loyalty_reward', 'low_balance', 'depleted', 'expiring', 'inactive'];
 const TIPOS_DE_RECORDATORIO = ['low_balance', 'depleted', 'expiring', 'inactive'];
 
 const entero = (minimo, maximo, mensaje) =>
@@ -246,6 +246,20 @@ export const notificationContactSchema = z.object({
 export const notificationTestSchema = z.object({
   kind: z.enum(TIPOS_DE_AVISO).default('low_balance'),
 });
+
+// ---------------------------------------------------------------------------
+// Programa de fidelidad
+// ---------------------------------------------------------------------------
+
+export const loyaltySettingsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    entriesPerReward: entero(2, 100, 'Indica entre 2 y 100 entradas.').optional(),
+    rewardTickets: entero(1, 20, 'El premio puede ser de 1 a 20 entradas.').optional(),
+    rewardExpiryDays: entero(0, 365, 'Indica entre 0 y 365 días; 0 significa que no vence.').optional(),
+  })
+  .strict()
+  .refine((v) => Object.values(v).some((x) => x !== undefined), 'No hay cambios que aplicar.');
 
 export const transferPackSchema = z.object({
   quantity: z.coerce.number().int().min(1, 'Debes transferir al menos 1 entrada.').max(50, 'No puedes transferir más de 50 entradas a la vez.'),

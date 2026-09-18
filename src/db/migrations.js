@@ -459,6 +459,100 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '011-programa-de-fidelidad',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Programa de fidelidad: "la casa invita"
+        --
+        -- Cada tantas entradas usadas, el sistema regala un pack de
+        -- cortesía. Para que eso funcione hacen falta dos cosas:
+        --
+        --  1. Saber de dónde salió cada pack. Un pack regalado no genera
+        --     comprobante de compra, no suma a los ingresos y sus entradas
+        --     no cuentan para ganar el siguiente premio: si contaran, la
+        --     casa se estaría invitando a sí misma.
+        --  2. Un registro de los premios dados, que es lo que hace el
+        --     cálculo idempotente: el progreso de una persona son sus
+        --     entradas contadas menos las que ya se le acreditaron, así
+        --     que volver a evaluar lo mismo no regala nada dos veces.
+        -- ---------------------------------------------------------------
+        ALTER TABLE packs ADD COLUMN origin TEXT NOT NULL DEFAULT 'sale'
+          CHECK (origin IN ('sale','transfer','loyalty'));
+
+        -- Los packs que ya existían y nacieron de una transferencia se
+        -- reconocen por cómo los crea el propio sistema; el resto son ventas.
+        UPDATE packs SET origin = 'transfer'
+         WHERE payment_method = 'transferencia' AND price_cents = 0
+           AND payment_reference LIKE 'from:%';
+
+        -- Los informes y el conteo de fidelidad preguntan siempre por lo que
+        -- no es una venta, que es la minoría: un índice parcial basta.
+        CREATE INDEX idx_packs_origin ON packs(origin) WHERE origin <> 'sale';
+
+        CREATE TABLE loyalty_rewards (
+          id         TEXT PRIMARY KEY,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          -- El pack de cortesía que se le emitió. Si algún día se borrara,
+          -- el premio sigue constando: es lo que impide volver a darlo.
+          pack_id    TEXT REFERENCES packs(id) ON DELETE SET NULL,
+          -- Cuántos premios lleva esa persona (1, 2, 3…). Es único por
+          -- cliente, así que dos evaluaciones simultáneas no pueden crear
+          -- el mismo premio ni siquiera si ganaran la carrera las dos.
+          sequence   INTEGER NOT NULL,
+          tickets    INTEGER NOT NULL CHECK (tickets > 0),
+          -- Entradas que hicieron falta para este premio. Se guarda aquí y
+          -- no se lee de los ajustes porque el umbral puede cambiar, y el
+          -- progreso de quien ya ganó tiene que seguir cuadrando.
+          threshold  INTEGER NOT NULL CHECK (threshold > 0),
+          -- Entradas contadas de esa persona en el momento de otorgarlo.
+          counted    INTEGER NOT NULL,
+          created_at TEXT NOT NULL,
+          UNIQUE (user_id, sequence)
+        );
+        CREATE INDEX idx_loyalty_user    ON loyalty_rewards(user_id, created_at DESC);
+        CREATE INDEX idx_loyalty_created ON loyalty_rewards(created_at DESC);
+      `);
+
+      // El aviso del premio es un tipo más de la cola de correos, y la
+      // columna `kind` lo limita con un CHECK. SQLite no sabe cambiar un
+      // CHECK, así que la tabla se rehace con la lista nueva y se copia lo
+      // que hubiera pendiente o enviado.
+      db.exec(`
+        CREATE TABLE notifications_new (
+          id              TEXT PRIMARY KEY,
+          user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          pack_id         TEXT REFERENCES packs(id) ON DELETE SET NULL,
+          kind            TEXT NOT NULL
+                            CHECK (kind IN ('purchase','low_balance','depleted','expiring','inactive','loyalty_reward')),
+          channel         TEXT NOT NULL CHECK (channel IN ('email','whatsapp','phone')),
+          dedupe_key      TEXT UNIQUE,
+          status          TEXT NOT NULL
+                            CHECK (status IN ('pending','sending','sent','failed','discarded','logged')),
+          reason          TEXT,
+          attempts        INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at TEXT,
+          sent_at         TEXT,
+          data            TEXT,
+          actor_id        TEXT REFERENCES users(id) ON DELETE SET NULL,
+          created_at      TEXT NOT NULL,
+          updated_at      TEXT NOT NULL
+        );
+        INSERT INTO notifications_new
+          (id, user_id, pack_id, kind, channel, dedupe_key, status, reason, attempts,
+           next_attempt_at, sent_at, data, actor_id, created_at, updated_at)
+          SELECT id, user_id, pack_id, kind, channel, dedupe_key, status, reason, attempts,
+                 next_attempt_at, sent_at, data, actor_id, created_at, updated_at
+            FROM notifications;
+        DROP TABLE notifications;
+        ALTER TABLE notifications_new RENAME TO notifications;
+        CREATE INDEX idx_notifications_queue   ON notifications(status, next_attempt_at);
+        CREATE INDEX idx_notifications_user    ON notifications(user_id, sent_at DESC);
+        CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
+      `);
+    },
+  },
 ];
 
 export default migrations;

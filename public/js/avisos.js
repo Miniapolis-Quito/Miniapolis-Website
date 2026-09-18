@@ -10,10 +10,11 @@
 import { $, el, render, brindis, fecha, relativo, plural, metrica, telefono, conCarga, mostrarAviso, mostrarErroresCampo, confirmar } from './ui.js';
 import { api, peticion } from './api.js';
 
-const TIPOS = ['purchase', 'low_balance', 'depleted', 'expiring', 'inactive'];
+const TIPOS = ['purchase', 'loyalty_reward', 'low_balance', 'depleted', 'expiring', 'inactive'];
 
 export const NOMBRES_DE_AVISO = {
   purchase: 'Comprobante de compra',
+  loyalty_reward: 'Premio de fidelidad',
   low_balance: 'Quedan pocas entradas',
   depleted: 'Sin entradas',
   expiring: 'Entradas por vencer',
@@ -22,6 +23,7 @@ export const NOMBRES_DE_AVISO = {
 
 const DESCRIPCIONES = {
   purchase: 'Al vender un pack: código, entradas, importe y vencimiento. Llega aunque la persona se haya dado de baja de los recordatorios.',
+  loyalty_reward: 'Cuando el programa «la casa invita» le regala entradas. Es una buena noticia de su saldo, así que llega aunque se haya dado de baja.',
   low_balance: 'Tras usar una entrada, cuando le quedan pocas. Lleva los packs a la venta.',
   depleted: 'Cuando usa su última entrada, con los packs a la venta.',
   expiring: 'Unos días antes de que venza un pack que todavía tiene entradas.',
@@ -49,6 +51,7 @@ export const MOTIVOS_DE_DESCARTE = {
   sin_correo: 'No hay correo configurado',
   caducado: 'No se pudo enviar en una semana',
   pack_anulado: 'El pack se anuló',
+  tipo_desconocido: 'Ese tipo de aviso ya no existe',
 };
 
 const GRUPOS = [

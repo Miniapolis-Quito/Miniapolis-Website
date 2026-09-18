@@ -569,6 +569,29 @@ fieldset { border: 0; margin: 0; padding: 0; }
   transition: width var(--t-lenta) var(--curva);
 }
 
+/* Programa de fidelidad: la tarjeta de sellos del cliente. Cada entrada usada
+   llena un sello, y el último es el que la casa invita. */
+.fidelidad { border-color: var(--acento-borde); }
+.fidelidad__sellos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+.sello {
+  width: 20px; height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-fuerte);
+  background: var(--fondo-2);
+  transition: background var(--transicion), border-color var(--transicion);
+}
+.sello--lleno { background: var(--acento); border-color: var(--acento); }
+.sello--premio {
+  border: 1px dashed var(--acento);
+  background: var(--acento-suave);
+}
+.fidelidad--completa { border-color: var(--acento-borde); background: var(--ok-suave); }
+
 .qr-caja {
   position: relative;
   display: grid; place-items: center; gap: 12px;

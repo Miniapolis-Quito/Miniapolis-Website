@@ -30,6 +30,7 @@
       <button class="pestana" role="tab" id="pestana-packs" aria-controls="panel-packs" data-panel="packs"    aria-selected="false" type="button">Packs</button>
       <button class="pestana" role="tab" id="pestana-consumos" aria-controls="panel-consumos" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
       <button class="pestana" role="tab" id="pestana-avisos" aria-controls="panel-avisos" data-panel="avisos" aria-selected="false" type="button">Avisos</button>
+      <button class="pestana" role="tab" id="pestana-fidelidad" aria-controls="panel-fidelidad" data-panel="fidelidad" aria-selected="false" type="button">Fidelidad</button>
       <button class="pestana" role="tab" id="pestana-auditoria" aria-controls="panel-auditoria" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
     </div>
 
@@ -195,6 +196,43 @@
           </select>
         </div>
         <div id="tabla-avisos"></div>
+      </div>
+    </section>
+
+    <!-- Programa de fidelidad «la casa invita» (ver fidelidad.js) -->
+    <section id="panel-fidelidad" role="tabpanel" aria-labelledby="pestana-fidelidad" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>La casa invita</h2>
+          <div class="fila">
+            <button class="boton boton--fantasma boton--chico" id="btn-fidelidad-revisar" type="button" hidden>Otorgar ahora</button>
+            <button class="boton boton--principal boton--chico" id="btn-fidelidad-ajustes" type="button">Configurar</button>
+          </div>
+        </div>
+        <p class="tenue pequeno">
+          Cada tantas entradas usadas, el cliente recibe un pack de cortesía sin que nadie tenga que acordarse de
+          dárselo. Las entradas regaladas no cuentan para ganar la siguiente y cada premio queda en la bitácora.
+        </p>
+        <div id="fidelidad-estado"></div>
+      </div>
+
+      <div class="rejilla rejilla--metricas mt-2" id="fidelidad-metricas"></div>
+
+      <div class="rejilla rejilla--resumen mt-2">
+        <div class="tarjeta">
+          <div class="tarjeta__titulo">
+            <h2>Últimos premios</h2>
+          </div>
+          <div id="fidelidad-premios"></div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="tarjeta__titulo">
+            <h2>A quién le falta poco</h2>
+          </div>
+          <p class="tenue pequeno">Para poder decírselo cuando pase por recepción.</p>
+          <div id="fidelidad-cerca"></div>
+        </div>
       </div>
     </section>
 

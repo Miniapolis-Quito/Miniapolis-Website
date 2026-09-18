@@ -333,8 +333,77 @@ function panelActual() {
 // Pestaña: Resumen
 // ---------------------------------------------------------------------------
 
+/**
+ * Cómo va con el programa de fidelidad. Es la pregunta que llega al mostrador
+ * («¿y mi entrada gratis?») y tiene que responderse sin abrir otra pantalla.
+ */
+function bloqueDeFidelidad(loyalty) {
+  if (!loyalty || (!loyalty.enabled && !loyalty.rewardsCount)) return null;
+
+  const umbral = loyalty.entriesPerReward;
+  const sellos = umbral <= 12
+    ? el(
+        'div',
+        { class: 'fidelidad__sellos', 'aria-hidden': 'true' },
+        Array.from({ length: umbral }, (_, i) =>
+          el('div', {
+            class: `sello${i < loyalty.progress ? ' sello--lleno' : ''}${i === umbral - 1 ? ' sello--premio' : ''}`,
+          }),
+        ),
+      )
+    : el(
+        'div',
+        { class: 'barra-progreso' },
+        el('div', { class: 'barra-progreso__relleno', style: `width:${Math.round((loyalty.progress / umbral) * 100)}%` }),
+      );
+
+  return seccion(
+    'La casa invita',
+    loyalty.enabled
+      ? el(
+          'div',
+          {},
+          el(
+            'p',
+            { class: 'sin-margen' },
+            `${loyalty.progress} de ${umbral} entradas de este ciclo · ` +
+              `le ${loyalty.remaining === 1 ? 'falta' : 'faltan'} ${plural(loyalty.remaining, 'entrada', 'entradas')} ` +
+              `para ${plural(loyalty.rewardTickets, 'entrada de cortesía', 'entradas de cortesía')}`,
+          ),
+          sellos,
+        )
+      : el('p', { class: 'tenue pequeno sin-margen' }, 'El programa está apagado ahora mismo.'),
+    loyalty.rewardsCount
+      ? el(
+          'ul',
+          { class: 'lista mt' },
+          loyalty.rewards.slice(0, 5).map((premio) =>
+            el(
+              'li',
+              { class: 'lista__item' },
+              el(
+                'div',
+                { class: 'crece' },
+                el('div', {}, `Premio ${premio.sequence}: ${plural(premio.tickets, 'entrada', 'entradas')} de cortesía`),
+                el(
+                  'div',
+                  { class: 'tenue-2 pequeno' },
+                  `${fecha(premio.createdAt)}${premio.packCode ? ` · pack ${premio.packCode}` : ' · pack pendiente de emitir'}` +
+                    ` · tras ${plural(premio.threshold, 'entrada usada', 'entradas usadas')}`,
+                ),
+              ),
+              premio.packRemaining !== null
+                ? el('span', { class: 'etiqueta' }, `${premio.packRemaining} sin usar`)
+                : null,
+            ),
+          ),
+        )
+      : el('p', { class: 'tenue-2 pequeno mt sin-margen' }, 'Todavía no ha ganado ningún premio.'),
+  );
+}
+
 function panelResumen() {
-  const { stats, packs, timeline } = estado.datos;
+  const { stats, packs, timeline, loyalty } = estado.datos;
   const activos = packs.filter((p) => p.usable);
   const maximoSemana = Math.max(1, ...stats.porSemana.map((s) => s.visitas));
   const maximoDia = Math.max(1, ...stats.porDiaSemana.map((d) => d.visitas));
@@ -403,6 +472,7 @@ function panelResumen() {
             )
           : vacio('bandera', 'Aún no hay un patrón que mostrar.'),
       ),
+      bloqueDeFidelidad(loyalty),
       seccion(
         'Lo último que pasó',
         timeline.items.length

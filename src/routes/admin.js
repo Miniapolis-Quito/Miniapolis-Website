@@ -12,6 +12,7 @@ import {
   voidRedemptionSchema,
   resolveOfflineRejectionSchema,
   notificationSettingsSchema,
+  loyaltySettingsSchema,
   notificationContactSchema,
   notificationTestSchema,
   notificationListSchema,
@@ -32,6 +33,7 @@ import * as expediente from '../services/expediente.js';
 import * as recuperacion from '../services/recuperacion.js';
 import * as sinConexion from '../services/sinConexion.js';
 import * as avisos from '../services/avisos.js';
+import * as fidelidad from '../services/fidelidad.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -475,6 +477,33 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
+// Programa de fidelidad
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/loyalty',
+  asyncHandler(async (req, res) => {
+    res.json(fidelidad.resumen());
+  }),
+);
+
+router.put(
+  '/loyalty/settings',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(loyaltySettingsSchema, req.body, badRequest);
+    res.json(fidelidad.guardarAjustes(data, actorContext(req)));
+  }),
+);
+
+/** Otorga ahora lo que esté ganado, sin esperar al barrido de mantenimiento. */
+router.post(
+  '/loyalty/run',
+  asyncHandler(async (req, res) => {
+    res.json(fidelidad.evaluarPendientes());
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // Auditoría, integridad y exportación
 // ---------------------------------------------------------------------------
 
@@ -530,8 +559,8 @@ router.get(
     if (entity === 'packs') {
       const { items } = packsService.listPacks({ limit: 5000 });
       csv = toCsv(
-        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'precio', 'moneda', 'vence', 'creado'],
-        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
+        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'origen', 'precio', 'moneda', 'vence', 'creado'],
+        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, p.origin, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
       );
     } else if (entity === 'consumos') {
       const { items } = redemptions.listRedemptions({ limit: 5000 });

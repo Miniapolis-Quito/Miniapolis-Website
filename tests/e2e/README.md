@@ -69,6 +69,23 @@ puede dar de baja y deshacerlo.
 Con `CAPTURAS=carpeta` guarda capturas de la sección, los ajustes, «Mi cuenta» y
 la página de baja.
 
+## `fidelidad.mjs` — «la casa invita», de punta a punta
+
+```bash
+npm run test:e2e:fidelidad
+```
+
+Levanta la aplicación en el propio proceso con tres pestañas abiertas a la vez
+—administración, la app del cliente y la puerta— y recorre el programa de
+fidelidad como ocurre en la pista: el máster lo enciende desde el panel (con su
+confirmación y con el formulario rechazando un premio mayor que el umbral), el
+cliente ve su tarjeta de sellos llenarse entrada a entrada sin recargar, y al
+completarla el premio llega a la vez a su teléfono y a la pantalla de quien
+está escaneando. Después comprueba lo que no se puede ver desde la API: que el
+pack regalado se presenta como cortesía y no como un pack de precio cero, que
+usarlo no acerca el premio siguiente, y que el panel y la ficha del cliente lo
+cuentan bien.
+
 ## `camara.mjs` — el escáner leyendo un QR de verdad
 
 ```bash

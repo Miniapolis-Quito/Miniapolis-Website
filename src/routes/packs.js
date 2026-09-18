@@ -10,6 +10,7 @@ import { rateLimit } from '../lib/rateLimit.js';
 import * as packs from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
 import * as users from '../services/users.js';
+import * as fidelidad from '../services/fidelidad.js';
 import { config } from '../config.js';
 
 export const router = express.Router();
@@ -34,6 +35,9 @@ router.get(
     res.json({
       summary: packs.summaryForUser(req.user.id),
       packs: packs.listPacksForUser(req.user.id, { includeQr: true }),
+      // Cómo va con el programa de fidelidad. Llega siempre: con el programa
+      // apagado viene en `enabled: false` y la app no muestra nada.
+      loyalty: fidelidad.progreso(req.user.id),
       qrConfig: { ttlSeconds: config.qr.ttlSeconds, refreshSeconds: config.qr.refreshSeconds },
       serverTime: new Date().toISOString(),
     });
@@ -45,7 +49,11 @@ router.get(
   '/mine/summary',
   asyncHandler(async (req, res) => {
     res.set('Cache-Control', 'no-store');
-    res.json({ summary: packs.summaryForUser(req.user.id), serverTime: new Date().toISOString() });
+    res.json({
+      summary: packs.summaryForUser(req.user.id),
+      loyalty: fidelidad.progreso(req.user.id, { incluirPremios: false }),
+      serverTime: new Date().toISOString(),
+    });
   }),
 );
 

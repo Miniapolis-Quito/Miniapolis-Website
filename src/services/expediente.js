@@ -14,6 +14,7 @@ import * as packsService from './packs.js';
 import * as redemptions from './redemptions.js';
 import * as sessions from './sessions.js';
 import * as avisos from './avisos.js';
+import * as fidelidad from './fidelidad.js';
 
 /** Acciones que ya aparecen como movimiento contable; no se repiten en la línea de tiempo. */
 const ACCIONES_DUPLICADAS = [
@@ -244,6 +245,10 @@ export function expediente(userId) {
     timeline: lineaDeTiempo(userId, { limit: 40 }),
     audit: auditoria(userId, { limit: 30 }),
     sessions: sessions.listForUser(userId).map((fila) => sessions.toPublicSession(fila)),
+    // Cómo va con el programa de fidelidad y los premios que ya se le dieron:
+    // es lo primero que se pregunta en el mostrador cuando alguien dice «¿y mi
+    // entrada gratis?».
+    loyalty: fidelidad.progreso(userId),
     // Para escribirle por WhatsApp desde la cabecera de la ficha.
     whatsappUrl: avisos.enlaceDeWhatsapp(usuario.phone, avisos.leerAjustes().whatsappCountryCode),
     currency: config.currency,

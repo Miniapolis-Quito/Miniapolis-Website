@@ -14,6 +14,10 @@
  * Además, el UPDATE del saldo lleva la condición `remaining = <valor leído>`,
  * así que si dos procesos compitieran, solo uno puede ganar.
  *
+ * Cobrada la entrada, se evalúa el programa de fidelidad: si con esta visita el
+ * cliente llegó al premio, se le emite el pack de cortesía. Va después del
+ * cobro y en silencio, porque la puerta nunca puede detenerse por un regalo.
+ *
  * Lecturas sin conexión: cuando se cae la red en la pista, el escáner guarda
  * cada lectura con su hora y la envía al volver la señal. Esa lectura se juzga
  * a la hora en que se hizo —vigencia del QR, vencimiento del pack y tiempo de
@@ -30,6 +34,7 @@ import { hub, channels } from '../lib/events.js';
 import * as packsService from './packs.js';
 import * as audit from './audit.js';
 import * as sinConexion from './sinConexion.js';
+import * as fidelidad from './fidelidad.js';
 
 /**
  * Cuánto se recuerda la respuesta de un consumo. Al menos un día, y siempre más
@@ -565,6 +570,9 @@ function canjearQr({ payload, quantity = 1, scanner, deviceLabel, idempotencyKey
   });
 
   publishRedemption(result, owner, scanner);
+  // El premio de fidelidad se evalúa después de cobrar y nunca puede tumbar el
+  // cobro: la entrada ya está descontada y la persona ya pasó.
+  fidelidad.evaluarEnSilencio(pack.user_id, { now, ip, userAgent });
   return { statusCode: 200, body };
 }
 
@@ -653,6 +661,7 @@ function canjearCodigo({ code, quantity = 1, scanner, deviceLabel, idempotencyKe
   });
 
   publishRedemption(result, owner, scanner);
+  fidelidad.evaluarEnSilencio(pack.user_id, { now, ip, userAgent });
   return { statusCode: 200, body };
 }
 
