@@ -561,3 +561,36 @@ test('el desbloqueo administrativo de un usuario también limpia la cuota de rat
   });
   assert.equal(login.status, 200, JSON.stringify(login.datos));
 });
+
+test('un OPTIONS que no es consulta previa de CORS pasa por el límite de peticiones', async () => {
+  const anonimo = crearCliente();
+
+  // El que sí es consulta previa se contesta y se acaba ahí: es lo que el
+  // navegador necesita antes de una petición con CORS.
+  const previa = await anonimo.pedir('/api/auth/login', {
+    metodo: 'OPTIONS',
+    cabeceras: { Origin: 'https://otro.ec', 'Access-Control-Request-Method': 'POST' },
+  });
+  assert.equal(previa.status, 204);
+  assert.equal(previa.headers.get('access-control-allow-origin'), null, 'un origen ajeno no recibe permiso');
+
+  // Uno escrito a mano, no. Antes se le contestaba 204 gratis, para cualquier
+  // ruta y sin gastar cuota: una respuesta ilimitada con la que tantear el
+  // servidor sin dejar rastro en ningún contador.
+  const suelto = await anonimo.pedir('/api/auth/login', { metodo: 'OPTIONS' });
+  assert.ok(suelto.headers.get('ratelimit-limit'), 'debe contar en el límite de peticiones');
+});
+
+test('las páginas se sirven aunque la instalación cuelgue de una carpeta oculta', async () => {
+  // Esta suite corre desde donde esté el repositorio, que puede ser una ruta
+  // con un tramo oculto (un worktree bajo «.claude», «/home/x/.local/...»).
+  // `sendFile` se niega a servir rutas así, y sin acotar la comprobación a la
+  // carpeta pública la web entera respondía 500 por el nombre de una carpeta
+  // del servidor que el visitante nunca ve.
+  const anonimo = crearCliente();
+  for (const ruta of ['/', '/app', '/escanear', '/admin', '/restablecer', '/recordatorios']) {
+    const r = await anonimo.get(ruta);
+    assert.equal(r.status, 200, `${ruta} debe servirse desde cualquier ruta de instalación`);
+    assert.ok(String(r.datos).startsWith('<!doctype html>'), `${ruta} debe devolver la página`);
+  }
+});

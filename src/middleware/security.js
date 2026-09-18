@@ -77,6 +77,19 @@ export function clientIp(req, res, next) {
   next();
 }
 
+/**
+ * ¿Es esta petición la consulta previa que hace el navegador antes de una
+ * petición con CORS? Lo es solo si trae origen y dice qué método pretende usar;
+ * un OPTIONS suelto, escrito a mano, no lo es.
+ */
+function esConsultaPrevia(req) {
+  return (
+    req.method === 'OPTIONS' &&
+    typeof req.headers.origin === 'string' &&
+    typeof req.headers['access-control-request-method'] === 'string'
+  );
+}
+
 /** CORS explícito: por defecto solo mismo origen. */
 export function cors(req, res, next) {
   const origin = req.headers.origin;
@@ -91,7 +104,11 @@ export function cors(req, res, next) {
     res.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     res.set('Access-Control-Max-Age', '600');
   }
-  if (req.method === 'OPTIONS') return res.status(204).end();
+  // Solo la consulta previa termina aquí. Antes contestaba 204 cualquier
+  // OPTIONS, para cualquier ruta, antes de pasar por el límite de peticiones:
+  // una respuesta gratis e ilimitada que servía para tantear el servidor sin
+  // dejar rastro en ninguna cuota. El resto sigue el camino normal.
+  if (esConsultaPrevia(req)) return res.status(204).end();
   return next();
 }
 

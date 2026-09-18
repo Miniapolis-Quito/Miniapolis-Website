@@ -165,9 +165,23 @@ export function createApp() {
     }),
   );
 
-  const page = (file) => (req, res) => {
+  /**
+   * Sirve una página de `public/`.
+   *
+   * El archivo se nombra relativo a `root` y no como ruta absoluta a propósito:
+   * `sendFile` se niega a servir cualquier ruta que tenga un tramo oculto (uno
+   * que empiece por punto), y esa comprobación recae sobre la ruta entera
+   * cuando no hay `root`. Una instalación colgada de, por ejemplo,
+   * `/home/pista/.local/share/entradas` respondía 500 en todas las páginas —la
+   * web entera caída— por el punto de una carpeta del servidor que nada tiene
+   * que ver con lo que pide el visitante. Con `root`, la comprobación se aplica
+   * solo a `file`, que es un nombre fijo escrito aquí.
+   */
+  const page = (file) => (req, res, next) => {
     res.set('Cache-Control', 'no-cache');
-    res.sendFile(path.join(PUBLIC_DIR, file));
+    res.sendFile(file, { root: PUBLIC_DIR }, (error) => {
+      if (error && !res.headersSent) next(error);
+    });
   };
 
   app.get('/', page('index.html'));
@@ -177,19 +191,22 @@ export function createApp() {
   // La página del enlace de recuperación no manda Referer a ninguna parte. El
   // token viaja en el fragmento y la página lo borra, pero no cuesta nada
   // cerrar también esta vía.
-  app.get('/restablecer', (req, res) => {
+  app.get('/restablecer', (req, res, next) => {
     res.set('Referrer-Policy', 'no-referrer');
-    page('restablecer.html')(req, res);
+    page('restablecer.html')(req, res, next);
   });
   // El enlace de baja de los recordatorios, con el mismo cuidado: su token va
   // en el fragmento y la página tampoco manda Referer.
-  app.get('/recordatorios', (req, res) => {
+  app.get('/recordatorios', (req, res, next) => {
     res.set('Referrer-Policy', 'no-referrer');
-    page('recordatorios.html')(req, res);
+    page('recordatorios.html')(req, res, next);
   });
 
-  app.use((req, res) => {
-    res.status(404).set('Cache-Control', 'no-cache').sendFile(path.join(PUBLIC_DIR, '404.html'));
+  app.use((req, res, next) => {
+    res.status(404).set('Cache-Control', 'no-cache');
+    res.sendFile('404.html', { root: PUBLIC_DIR }, (error) => {
+      if (error && !res.headersSent) next(error);
+    });
   });
 
   app.use(errorHandler);
