@@ -176,7 +176,7 @@ await paso('el pack de cortesía aparece en la app del cliente como regalo', asy
   const saldo = await app.locator('#saldo-numero').innerText();
   comprobar(saldo === '9', `7 de pago + 2 de regalo son 9 entradas: ${saldo}`);
   const tarjeta = await app.locator('#seccion-fidelidad').innerText();
-  comprobar(tarjeta.includes('2 entradas regaladas'), `la etiqueta debería contar lo regalado: ${tarjeta}`);
+  comprobar(/2 entradas regaladas/i.test(tarjeta), `la etiqueta debería contar lo regalado: ${tarjeta}`);
   comprobar(tarjeta.includes('1 premio ganado'), `debería contar el premio: ${tarjeta}`);
 });
 
@@ -204,10 +204,10 @@ await paso('el panel cuenta lo invitado y a quién le falta poco', async () => {
   comprobar(premiados.includes('2 entradas por 3 entradas usadas'), `debería explicar el premio: ${premiados}`);
 
   const metricas = await admin.locator('#fidelidad-metricas').innerText();
-  comprobar(/\b2\b/.test(metricas) && metricas.includes('Entradas regaladas'), `faltan las cifras: ${metricas}`);
+  comprobar(/\b2\b/.test(metricas) && /entradas regaladas/i.test(metricas), `faltan las cifras: ${metricas}`);
 
   const cerca = await admin.locator('#fidelidad-cerca').innerText();
-  comprobar(cerca.includes('Carlos Piloto') && cerca.includes('Le faltan 2'), `debería decir cuánto le falta: ${cerca}`);
+  comprobar(cerca.includes('Carlos Piloto') && /le faltan 2/i.test(cerca), `debería decir cuánto le falta: ${cerca}`);
 });
 
 await paso('la ficha del cliente lleva su tarjeta y sus premios', async () => {
