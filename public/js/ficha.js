@@ -50,6 +50,10 @@ const ACCIONES_CUENTA = {
   'escaneo_sin_conexion.resuelto': 'Entrada sin cobrar marcada como resuelta',
   'recordatorios.activados': 'Recordatorios por correo activados',
   'recordatorios.desactivados': 'Recordatorios por correo desactivados',
+  'pack_request.creada': 'Solicitó recarga de pack',
+  'pack_request.aprobada': 'Solicitud de recarga aprobada',
+  'pack_request.rechazada': 'Solicitud de recarga rechazada',
+  'pack_request.cancelada': 'Canceló solicitud de recarga',
 };
 
 /** Desde dónde se cambiaron los recordatorios. */
@@ -525,11 +529,72 @@ function miniPack(pack) {
 // ---------------------------------------------------------------------------
 
 function panelPacks() {
-  const { packs } = estado.datos;
-  if (!packs.length) {
-    return seccion('Packs', vacio('entrada', 'Este cliente todavía no tiene packs.'));
+  const { packs, packRequests } = estado.datos;
+  const contenido = [];
+
+  if (packRequests?.items?.length) {
+    contenido.push(
+      seccion(
+        'Solicitudes de compra y recarga',
+        el(
+          'ul',
+          { class: 'lista' },
+          packRequests.items.map((req) => {
+            const estadoClase = {
+              pending: 'alerta',
+              approved: 'ok',
+              rejected: 'error',
+              cancelled: 'tenue',
+            }[req.status] || 'info';
+            const estadoTexto = {
+              pending: 'Pendiente',
+              approved: 'Aprobada',
+              rejected: 'Rechazada',
+              cancelled: 'Cancelada',
+            }[req.status] || req.status;
+
+            return el(
+              'li',
+              { class: 'lista__item' },
+              el('span', { class: 'icono-lista' }, icono('pack')),
+              el(
+                'div',
+                { class: 'crece' },
+                el(
+                  'div',
+                  { class: 'fila' },
+                  el('strong', {}, `${req.tickets} entradas`),
+                  el('span', { class: 'etiqueta' }, dinero(req.priceCents, req.currency)),
+                  el('span', { class: `etiqueta etiqueta--${estadoClase}` }, estadoTexto),
+                ),
+                el(
+                  'div',
+                  { class: 'tenue-2 pequeno' },
+                  [
+                    req.paymentMethod,
+                    req.paymentReference ? `Ref: ${req.paymentReference}` : 'Sin comprobante',
+                    fecha(req.createdAt),
+                  ].filter(Boolean).join(' · '),
+                ),
+                req.adminNotes ? el('div', { class: 'pequeno mt tenue' }, `Admin: «${req.adminNotes}»`) : null,
+                req.customerNotes ? el('div', { class: 'pequeno mt tenue' }, `Cliente: «${req.customerNotes}»`) : null,
+              ),
+            );
+          }),
+        ),
+      ),
+    );
   }
-  return el('div', { class: 'columna' }, packs.map((pack) => tarjetaPackDetallada(pack)));
+
+  if (!packs.length) {
+    if (!contenido.length) {
+      return seccion('Packs', vacio('entrada', 'Este cliente todavía no tiene packs.'));
+    }
+  } else {
+    contenido.push(el('div', { class: 'columna mt-2' }, packs.map((pack) => tarjetaPackDetallada(pack))));
+  }
+
+  return el('div', { class: 'columna' }, contenido);
 }
 
 function tarjetaPackDetallada(pack) {
@@ -879,6 +944,8 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     'escaneo.rechazado': 'prohibido',
     'escaneo_sin_conexion.rechazado': 'prohibido', 'escaneo_sin_conexion.resuelto': 'ok',
     'recordatorios.activados': 'campana', 'recordatorios.desactivados': 'campana-muda',
+    'pack_request.creada': 'pack', 'pack_request.aprobada': 'ok',
+    'pack_request.rechazada': 'prohibido', 'pack_request.cancelada': 'devolver',
   };
 
   const titulo = esMovimiento
@@ -890,9 +957,11 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     ? evento.delta > 0
       ? 'tiempo__icono--suma'
       : 'tiempo__icono--resta'
-    : ['login.fallido', 'escaneo.rechazado', 'escaneo_sin_conexion.rechazado'].includes(evento.clave)
+    : ['login.fallido', 'escaneo.rechazado', 'escaneo_sin_conexion.rechazado', 'pack_request.rechazada'].includes(evento.clave)
       ? 'tiempo__icono--aviso'
-      : '';
+      : ['pack_request.aprobada'].includes(evento.clave)
+        ? 'tiempo__icono--suma'
+        : '';
 
   const detalles = [];
   if (esMovimiento) {
@@ -908,12 +977,18 @@ function filaTiempo(evento, { ocultarPack = false } = {}) {
     if (evento.clave.startsWith('recordatorios.') && VIAS_RECORDATORIOS[evento.metadata?.via]) {
       detalles.push(VIAS_RECORDATORIOS[evento.metadata.via]);
     }
+    if (evento.metadata?.tickets && evento.clave.startsWith('pack_request.')) {
+      detalles.push(`${evento.metadata.tickets} entradas`);
+      if (evento.metadata.paymentMethod) detalles.push(evento.metadata.paymentMethod);
+      if (evento.metadata.paymentReference) detalles.push(`Ref: ${evento.metadata.paymentReference}`);
+    }
     if (evento.actorName && !evento.porElCliente) detalles.push(`por ${evento.actorName}`);
     if (evento.ip) detalles.push(evento.ip);
   }
   const notaCuenta =
     evento.clave === 'escaneo_sin_conexion.rechazado' ? evento.metadata?.message
     : evento.clave === 'escaneo_sin_conexion.resuelto' ? evento.metadata?.note
+    : evento.clave === 'pack_request.rechazada' ? (evento.metadata?.adminNotes || evento.nota)
     : null;
 
   return el(

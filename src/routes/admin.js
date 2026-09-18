@@ -18,6 +18,7 @@ import {
   notificationListSchema,
   paginationSchema,
   passwordSchema,
+  rejectPackRequestSchema,
   parseOrThrow,
 } from '../lib/validate.js';
 import { validatePasswordStrength, generarPasswordTemporal } from '../lib/passwords.js';
@@ -34,6 +35,7 @@ import * as recuperacion from '../services/recuperacion.js';
 import * as sinConexion from '../services/sinConexion.js';
 import * as avisos from '../services/avisos.js';
 import * as fidelidad from '../services/fidelidad.js';
+import * as packRequests from '../services/packRequests.js';
 
 export const router = express.Router();
 router.use(requireMaster);
@@ -416,6 +418,37 @@ router.post(
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(resolveOfflineRejectionSchema, req.body, badRequest);
     res.json(sinConexion.resolver(req.params.id, { note: data.note, ...actorContext(req) }));
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Solicitudes de compra y recarga de packs
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/pack-requests',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    const status = typeof req.query.status === 'string' ? req.query.status : null;
+    const userId = typeof req.query.userId === 'string' ? req.query.userId : null;
+    res.json(packRequests.listRequests({ status, userId, limit, offset }));
+  }),
+);
+
+router.post(
+  '/pack-requests/:id/approve',
+  asyncHandler(async (req, res) => {
+    const result = packRequests.approveRequest(req.params.id, actorContext(req));
+    res.json({ ok: true, ...result });
+  }),
+);
+
+router.post(
+  '/pack-requests/:id/reject',
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(rejectPackRequestSchema, req.body, badRequest);
+    const request = packRequests.rejectRequest(req.params.id, { reason: data.reason, ...actorContext(req) });
+    res.json({ ok: true, request });
   }),
 );
 

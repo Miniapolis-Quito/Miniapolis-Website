@@ -29,3 +29,5 @@ coverage/
 .playwright-cli/
 output/
 _site/
+.claude/
+

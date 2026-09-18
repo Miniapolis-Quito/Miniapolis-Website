@@ -184,8 +184,8 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
     .all()
     .map((r) => r.name);
   assert.deepEqual(tablas, [
-    'audit_log', 'idempotency_keys', 'loyalty_rewards', 'notifications', 'pack_movements', 'packs',
-    'password_resets', 'rate_limits', 'redemptions', 'sessions', 'settings', 'transfers',
+    'audit_log', 'idempotency_keys', 'loyalty_rewards', 'notifications', 'pack_movements', 'pack_requests',
+    'packs', 'password_resets', 'rate_limits', 'redemptions', 'sessions', 'settings', 'transfers',
     'used_nonces', 'users', 'wallet_devices', 'wallet_passes',
   ]);
 
@@ -196,7 +196,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   for (const necesario of [
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
     'idx_password_resets_expiry', 'idx_notifications_queue', 'idx_transfers_sender',
-    'idx_users_scan_enabled', 'idx_loyalty_user', 'idx_packs_origin',
+    'idx_users_scan_enabled', 'idx_pack_requests_status', 'idx_loyalty_user', 'idx_packs_origin',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }
@@ -324,6 +324,25 @@ test('los avisos llegan a una base con clientes, que quedan con los recordatorio
   assert.throws(() => insertarAviso('n2', 'inactive:u1:x'), /UNIQUE/, 'la clave impide duplicar un aviso');
   assert.doesNotThrow(() => insertarAviso('n3', null), 'los contactos a mano no llevan clave');
   assert.throws(() => db.prepare("UPDATE users SET email_reminders = 2").run(), /CHECK/);
+
+  db.close();
+});
+
+test('la migración 012 crea los índices de cobertura y aceleración de consultas', () => {
+  const indice = migrations.findIndex((m) => m.name === '012-optimizacion-rendimiento-indices');
+  const db = baseEn(indice);
+
+  migrations[indice].up(db);
+
+  const indices = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'index'")
+    .all()
+    .map((r) => r.name);
+
+  assert.ok(indices.includes('idx_redemptions_pack_status_qty'), 'debe crear idx_redemptions_pack_status_qty');
+  assert.ok(indices.includes('idx_movements_reason_pack'), 'debe crear idx_movements_reason_pack');
+  assert.ok(indices.includes('idx_sessions_user_active'), 'debe crear idx_sessions_user_active');
+  assert.ok(indices.includes('idx_users_role_status'), 'debe crear idx_users_role_status');
 
   db.close();
 });

@@ -42,7 +42,7 @@ export function limpiarBase() {
   db.pragma('foreign_keys = OFF');
   for (const tabla of [
     'notifications', 'settings', 'password_resets', 'wallet_devices', 'wallet_passes', 'loyalty_rewards',
-    'pack_movements', 'redemptions', 'packs', 'sessions', 'audit_log',
+    'pack_movements', 'redemptions', 'pack_requests', 'packs', 'sessions', 'audit_log',
     'used_nonces', 'rate_limits', 'idempotency_keys', 'users',
   ]) {
     db.prepare(`DELETE FROM ${tabla}`).run();

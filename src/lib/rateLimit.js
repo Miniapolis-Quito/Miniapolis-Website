@@ -5,20 +5,31 @@
  * reinicio del proceso: si alguien está probando contraseñas, reiniciar el
  * servidor no debe regalarle una cuota nueva.
  */
-import { getDb, inTransaction } from '../db/index.js';
+import { getDb, inTransaction, prepareCached } from '../db/index.js';
 import { tooManyRequests } from './errors.js';
 
 const CLEANUP_EVERY_MS = 60_000;
 let lastCleanup = 0;
 
-function cleanup(db, nowIso) {
+/** Limpieza periódica de claves expiradas en rate_limits, nonces y sesiones. */
+export function cleanupExpired(nowIso = new Date().toISOString()) {
+  try {
+    prepareCached('DELETE FROM rate_limits WHERE expires_at <= ?').run(nowIso);
+    prepareCached('DELETE FROM used_nonces WHERE expires_at <= ?').run(nowIso);
+    prepareCached('DELETE FROM idempotency_keys WHERE expires_at <= ?').run(nowIso);
+    prepareCached('DELETE FROM sessions WHERE expires_at <= ?').run(nowIso);
+  } catch {
+    /* no crítico si la base está temporalmente ocupada */
+  }
+}
+
+function programarLimpiezaAsincrona(nowIso) {
   const now = Date.now();
   if (now - lastCleanup < CLEANUP_EVERY_MS) return;
   lastCleanup = now;
-  db.prepare('DELETE FROM rate_limits WHERE expires_at <= ?').run(nowIso);
-  db.prepare('DELETE FROM used_nonces WHERE expires_at <= ?').run(nowIso);
-  db.prepare('DELETE FROM idempotency_keys WHERE expires_at <= ?').run(nowIso);
-  db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(nowIso);
+  // Desacoplado de la petición del cliente: se ejecuta en el siguiente ciclo
+  // de eventos para no retener el bloqueo de la base de datos.
+  setImmediate(() => cleanupExpired(nowIso));
 }
 
 /**
@@ -26,19 +37,18 @@ function cleanup(db, nowIso) {
  * @returns {{allowed:boolean, remaining:number, retryAfterSeconds:number, limit:number}}
  */
 export function consume(key, { limit, windowSeconds, now = Date.now() }) {
-  const db = getDb();
   const nowIso = new Date(now).toISOString();
+  programarLimpiezaAsincrona(nowIso);
+
   // La lectura y el incremento deben ser indivisibles. Sin la transacción,
   // dos procesos Node que compartan la misma base podían leer la misma cuota y
   // ambos autorizar una petición adicional.
   return inTransaction(() => {
-    cleanup(db, nowIso);
-
-    const row = db.prepare('SELECT count, window_start, expires_at FROM rate_limits WHERE key = ?').get(key);
+    const row = prepareCached('SELECT count, window_start, expires_at FROM rate_limits WHERE key = ?').get(key);
 
     if (!row || row.expires_at <= nowIso) {
       const expiresAt = new Date(now + windowSeconds * 1000).toISOString();
-      db.prepare(
+      prepareCached(
         `INSERT INTO rate_limits (key, count, window_start, expires_at) VALUES (?, 1, ?, ?)
          ON CONFLICT(key) DO UPDATE SET count = 1, window_start = excluded.window_start, expires_at = excluded.expires_at`,
       ).run(key, nowIso, expiresAt);
@@ -50,14 +60,15 @@ export function consume(key, { limit, windowSeconds, now = Date.now() }) {
       return { allowed: false, remaining: 0, retryAfterSeconds, limit };
     }
 
-    db.prepare('UPDATE rate_limits SET count = count + 1 WHERE key = ?').run(key);
+    prepareCached('UPDATE rate_limits SET count = count + 1 WHERE key = ?').run(key);
     return { allowed: true, remaining: limit - row.count - 1, retryAfterSeconds, limit };
   });
 }
 
 export function reset(key) {
-  getDb().prepare('DELETE FROM rate_limits WHERE key = ?').run(key);
+  prepareCached('DELETE FROM rate_limits WHERE key = ?').run(key);
 }
+
 
 /**
  * Middleware de Express. `keyFn` decide el ámbito del límite (IP, usuario, ...).

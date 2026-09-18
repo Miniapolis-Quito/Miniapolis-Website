@@ -61,6 +61,18 @@ compañeros de pista:
    genera un nuevo pack con su propio código y se le envía un correo con el
    detalle. Ambos verán el movimiento en su historial y en sus carteras digitales.
 
+### Comprar o recargar packs en línea
+
+Puedes adquirir tus packs pagando por transferencia bancaria, DeUna o efectivo:
+
+1. En la app toca el botón **Comprar / Recargar pack**.
+2. Selecciona la opción deseada del catálogo (por ejemplo, 5 entradas por $15 o 10 entradas por $25).
+3. Consulta los datos de la cuenta bancaria oficial de Miniápolis o el código DeUna.
+4. Realiza la transferencia desde tu banca móvil y copia el número de comprobante o referencia.
+5. Pega el número de comprobante, agrega cualquier nota opcional y toca **Enviar solicitud**.
+6. En tu pantalla verás la tarjeta de solicitud en estado **En revisión**. Puedes cancelarla si te equivocaste de monto o referencia.
+7. En cuanto el personal de administración verifique el pago y lo apruebe, recibirás tu pack de inmediato sin necesidad de recargar la página.
+
 ### Consejos
 
 - Guarda la página en la pantalla de inicio del celular para abrirla más rápido.
@@ -187,6 +199,16 @@ cambio queda firmado con tu nombre en la pestaña **Actividad**, que es adonde
 hay que ir cuando alguien reclama algo.
 
 El enlace de la ficha se puede copiar y compartir: lleva directo a esa persona.
+
+### Aprobar solicitudes de compra y recarga en línea
+
+Cuando un cliente solicita un pack desde la app tras realizar su pago bancario o DeUna:
+
+1. En **Resumen** aparece de inmediato la tarjeta destacada **Solicitudes de recarga pendientes**.
+2. Cada solicitud muestra el nombre del cliente, pack pedido, valor a pagar, método seleccionado, fecha y número de comprobante/referencia.
+3. Si el cliente tiene teléfono registrado, dispones de un botón directo de **WhatsApp** con un mensaje predefinido para pedirle la foto del comprobante o contactarlo al instante.
+4. Al verificar el pago en la cuenta bancaria, toca **Aprobar**: el sistema emite el pack de forma contable oficial y atómica, notificando al cliente en tiempo real y acreditando su saldo.
+5. Si el pago no aparece o no corresponde, toca **Rechazar**: dispones de motivos rápidos como *Transferencia no recibida*, *Comprobante ilegible* o *Monto incorrecto*, y puedes redactar una nota personalizada.
 
 ### Vender un pack
 

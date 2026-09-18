@@ -38,6 +38,18 @@
     <section id="panel-resumen" role="tabpanel" aria-labelledby="pestana-resumen">
       <div class="rejilla rejilla--metricas" id="metricas"></div>
 
+      <!-- Solicitudes de recarga / compra en línea pendientes de revisión -->
+      <div class="tarjeta tarjeta--atencion mt-2" id="tarjeta-solicitudes-recarga" aria-labelledby="titulo-solicitudes-recarga" hidden>
+        <div class="tarjeta__titulo">
+          <h2 id="titulo-solicitudes-recarga">Solicitudes de recarga pendientes</h2>
+          <span class="etiqueta etiqueta--alerta" id="contador-solicitudes-recarga"></span>
+        </div>
+        <p class="tenue pequeno">
+          Clientes que pagaron su pack por transferencia bancaria, DeUna o efectivo. Verifica el comprobante y aprueba con un clic para emitir el pack de inmediato.
+        </p>
+        <div id="lista-solicitudes-recarga"></div>
+      </div>
+
       <!-- Personas que entraron con el escáner sin conexión y cuya entrada no se
            pudo cobrar al volver la señal. Solo aparece si hay alguna. -->
       <div class="tarjeta tarjeta--atencion mt-2" id="tarjeta-no-cobradas" aria-labelledby="titulo-no-cobradas" hidden>
@@ -370,6 +382,29 @@
     <div class="modal__pie">
       <button class="boton boton--fantasma" type="button" data-cerrar>Cerrar</button>
     </div>
+  </dialog>
+
+  <!-- Diálogo para rechazar solicitud de recarga -->
+  <dialog id="dialogo-rechazar-solicitud">
+    <form id="form-rechazar-solicitud" class="modal__cuerpo" novalidate>
+      <h2>Rechazar solicitud de recarga</h2>
+      <p class="tenue pequeno" id="rechazar-solicitud-subtitulo">Indica el motivo por el cual no se puede aprobar este pago.</p>
+      <div class="campo">
+        <label for="rechazar-solicitud-motivo">Motivo del rechazo</label>
+        <input id="rechazar-solicitud-motivo" name="reason" type="text" maxlength="300" placeholder="Ej: Transferencia no encontrada en el banco" required>
+        <div class="campo__error"></div>
+      </div>
+      <div class="fila mt">
+        <button class="boton boton--fantasma boton--chico" type="button" id="btn-motivo-no-recibida">No recibida</button>
+        <button class="boton boton--fantasma boton--chico" type="button" id="btn-motivo-ilegible">Comprobante ilegible</button>
+        <button class="boton boton--fantasma boton--chico" type="button" id="btn-motivo-monto">Monto incorrecto</button>
+      </div>
+      <div id="aviso-rechazar-solicitud" class="aviso mt" role="alert" hidden></div>
+      <div class="modal__pie mt-2">
+        <button class="boton boton--fantasma" id="btn-cerrar-rechazar-solicitud" type="button">Volver</button>
+        <button class="boton boton--peligro" type="submit">Rechazar solicitud</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- Solo se rellena al imprimir un pase físico. -->

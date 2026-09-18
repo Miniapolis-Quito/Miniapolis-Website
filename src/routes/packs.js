@@ -4,13 +4,14 @@ import QRCode from 'qrcode';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { forbidden, notFound, badRequest } from '../lib/errors.js';
-import { paginationSchema, transferPackSchema, parseOrThrow } from '../lib/validate.js';
+import { paginationSchema, transferPackSchema, createPackRequestSchema, parseOrThrow } from '../lib/validate.js';
 import { buildQrPayload } from '../lib/qr.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import * as packs from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
 import * as users from '../services/users.js';
 import * as fidelidad from '../services/fidelidad.js';
+import * as packRequests from '../services/packRequests.js';
 import { config } from '../config.js';
 
 export const router = express.Router();
@@ -157,6 +158,56 @@ router.get(
       currency: config.currency,
       items: config.packCatalog.map((p) => ({ size: p.size, priceCents: p.priceCents, label: p.label })),
     });
+  }),
+);
+
+const requestLimiter = rateLimit({
+  name: 'pack-request-user',
+  limit: 15,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => req.user?.id,
+  message: 'Demasiadas solicitudes en poco tiempo. Espera unos minutos.',
+});
+
+/** El cliente solicita la compra o recarga de un pack con su comprobante de pago. */
+router.post(
+  '/requests',
+  requestLimiter,
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(createPackRequestSchema, req.body, badRequest);
+    const request = packRequests.createRequest({
+      userId: req.user.id,
+      ...data,
+      actor: req.user,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(201).json({ ok: true, request });
+  }),
+);
+
+/** Consulta las solicitudes de recarga del usuario autenticado. */
+router.get(
+  '/requests/mine',
+  asyncHandler(async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const limit = Math.min(Math.max(1, Number(req.query.limit) || 10), 50);
+    const offset = Math.max(0, Number(req.query.offset) || 0);
+    res.json(packRequests.listRequests({ userId: req.user.id, limit, offset }));
+  }),
+);
+
+/** Cancela una solicitud pendiente propia. */
+router.post(
+  '/requests/:id/cancel',
+  asyncHandler(async (req, res) => {
+    const request = packRequests.cancelRequest(req.params.id, {
+      userId: req.user.id,
+      actor: req.user,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    res.json({ ok: true, request });
   }),
 );
 

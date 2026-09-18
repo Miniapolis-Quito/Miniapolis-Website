@@ -233,6 +233,7 @@ async function cargarResumen() {
 
   pintarIntegridad(datos.integrity);
   pintarNoCobradas(datos.offlineRejections);
+  pintarSolicitudesRecarga(datos.pendingPackRequests);
 }
 
 /** Motivos de rechazo más frecuentes, dichos como los diría recepción. */
@@ -313,6 +314,187 @@ async function resolverNoCobrada(lectura) {
   await api.post(`/api/admin/offline-rejections/${encodeURIComponent(lectura.id)}/resolve`, { note: nota });
   brindis('Entrada marcada como resuelta.', 'ok');
   await cargarResumen();
+}
+
+const METODOS_PAGO = {
+  transfer: 'Transferencia bancaria',
+  deuna: 'DeUna',
+  cash: 'Efectivo',
+};
+
+let solicitudARechazar = null;
+
+function pintarSolicitudesRecarga(solicitudes) {
+  const tarjeta = $('#tarjeta-solicitudes-recarga');
+  tarjeta.hidden = !solicitudes?.count;
+  if (tarjeta.hidden) return;
+
+  $('#contador-solicitudes-recarga').textContent = plural(solicitudes.count, 'pendiente', 'pendientes');
+  render(
+    $('#lista-solicitudes-recarga'),
+    el(
+      'ul',
+      { class: 'lista' },
+      solicitudes.items.map((req) => {
+        let waUrl = null;
+        if (req.customerPhone) {
+          const limpio = req.customerPhone.replace(/\D/g, '');
+          const telIntl = limpio.startsWith('0') ? `593${limpio.slice(1)}` : limpio;
+          if (telIntl.length >= 8) {
+            waUrl = `https://wa.me/${telIntl}?text=${encodeURIComponent(`Hola ${req.customerName || ''}, te escribimos de Miniápolis sobre tu solicitud de pack de ${req.tickets} entradas (${req.paymentReference || ''}).`)}`;
+          }
+        }
+
+        return el(
+          'li',
+          { class: 'lista__item' },
+          el('span', { class: 'icono-lista' }, icono('pack')),
+          el(
+            'div',
+            { class: 'crece' },
+            el(
+              'div',
+              { class: 'fila' },
+              req.userId
+                ? el('a', { href: `#cliente/${req.userId}` }, req.customerName || 'Cliente')
+                : el('strong', {}, req.customerName || 'Cliente'),
+              el('span', { class: 'etiqueta etiqueta--info' }, `${req.tickets} entradas`),
+              el('span', { class: 'etiqueta' }, dinero(req.priceCents, req.currency)),
+            ),
+            el(
+              'div',
+              { class: 'tenue-2 pequeno' },
+              [
+                METODOS_PAGO[req.paymentMethod] || req.paymentMethod,
+                req.paymentReference ? `Ref: ${req.paymentReference}` : 'Sin comprobante',
+                relativo(req.createdAt),
+              ].filter(Boolean).join(' · '),
+            ),
+            req.customerNotes
+              ? el('div', { class: 'pequeno mt tenue' }, `Nota: «${req.customerNotes}»`)
+              : null,
+          ),
+          el(
+            'div',
+            { class: 'fila' },
+            waUrl
+              ? el(
+                  'a',
+                  {
+                    class: 'boton boton--chico boton--fantasma',
+                    href: waUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    title: 'Contactar por WhatsApp',
+                  },
+                  icono('chat'),
+                  'WhatsApp',
+                )
+              : null,
+            el(
+              'button',
+              {
+                class: 'boton boton--chico boton--fantasma',
+                type: 'button',
+                onClick: alPulsar(() => abrirRechazoSolicitud(req)),
+              },
+              'Rechazar',
+            ),
+            el(
+              'button',
+              {
+                class: 'boton boton--chico boton--primario',
+                type: 'button',
+                onClick: alPulsar(() => aprobarSolicitud(req)),
+              },
+              icono('ok'),
+              'Aprobar',
+            ),
+          ),
+        );
+      }),
+    ),
+    solicitudes.count > solicitudes.items.length
+      ? el('p', { class: 'tenue-2 pequeno mt' }, `Se muestran las ${solicitudes.items.length} solicitudes más recientes.`)
+      : null,
+  );
+}
+
+async function aprobarSolicitud(req) {
+  const confirmado = await confirmar({
+    titulo: 'Aprobar pago y emitir pack',
+    mensaje: `¿Confirmas que recibiste el pago de ${dinero(req.priceCents, req.currency)} (${req.paymentReference || 'sin comprobante'}) de ${req.customerName || 'el cliente'}? Se emitirá inmediatamente el pack de ${req.tickets} entradas.`,
+    textoAceptar: 'Sí, aprobar y emitir pack',
+  });
+  if (!confirmado) return;
+
+  await api.post(`/api/admin/pack-requests/${encodeURIComponent(req.id)}/approve`);
+  brindis(`Pack de ${req.tickets} entradas emitido exitosamente para ${req.customerName || 'el cliente'}.`, 'ok');
+  await cargarResumen();
+}
+
+function abrirRechazoSolicitud(req) {
+  solicitudARechazar = req;
+  const dialogo = $('#dialogo-rechazar-solicitud');
+  const form = $('#form-rechazar-solicitud');
+  form.reset();
+  mostrarErroresCampo(form, {});
+  mostrarAviso($('#aviso-rechazar-solicitud'), null);
+
+  $('#rechazar-solicitud-subtitulo').textContent =
+    `Cliente: ${req.customerName || 'Cliente'} · ${req.tickets} entradas (${dinero(req.priceCents, req.currency)}) · Ref: ${req.paymentReference || 'Sin comprobante'}`;
+
+  dialogo.showModal();
+  $('#rechazar-solicitud-motivo').focus();
+}
+
+function montarDialogoRechazo() {
+  const dialogo = $('#dialogo-rechazar-solicitud');
+  const form = $('#form-rechazar-solicitud');
+  const motivoInput = $('#rechazar-solicitud-motivo');
+
+  $('#btn-cerrar-rechazar-solicitud').addEventListener('click', () => {
+    dialogo.close();
+  });
+
+  $('#btn-motivo-no-recibida').addEventListener('click', () => {
+    motivoInput.value = 'Transferencia no reflejada en la cuenta bancaria.';
+    motivoInput.focus();
+  });
+
+  $('#btn-motivo-ilegible').addEventListener('click', () => {
+    motivoInput.value = 'Comprobante o número de referencia ilegible/inválido.';
+    motivoInput.focus();
+  });
+
+  $('#btn-motivo-monto').addEventListener('click', () => {
+    motivoInput.value = 'El monto transferido no coincide con el valor del pack.';
+    motivoInput.focus();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!solicitudARechazar) return;
+
+    const motivo = motivoInput.value.trim();
+    if (!motivo) {
+      mostrarErroresCampo(form, { reason: 'Indica el motivo del rechazo.' });
+      return;
+    }
+
+    try {
+      await conCarga(form.querySelector('button[type="submit"]'), async () => {
+        await api.post(`/api/admin/pack-requests/${encodeURIComponent(solicitudARechazar.id)}/reject`, {
+          adminNotes: motivo,
+        });
+      });
+      dialogo.close();
+      brindis('Solicitud rechazada.', 'aviso');
+      await cargarResumen();
+    } catch (err) {
+      mostrarAviso($('#aviso-rechazar-solicitud'), err.message, 'error');
+    }
+  });
 }
 
 function pintarIntegridad(integridad) {
@@ -1089,6 +1271,7 @@ function montarDialogoPack() {
   montarDialogoPack();
   montarAvisos();
   montarFidelidad();
+  montarDialogoRechazo();
 
   const buscarUsuarios = temporizador(() => cargarUsuarios().catch(() => {}), 280);
   $('#buscar-usuarios').addEventListener('input', buscarUsuarios);

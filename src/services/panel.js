@@ -16,6 +16,7 @@ import * as packsService from './packs.js';
 import * as redemptions from './redemptions.js';
 import * as sinConexion from './sinConexion.js';
 import * as fidelidad from './fidelidad.js';
+import * as packRequests from './packRequests.js';
 import { hub } from '../lib/events.js';
 
 const DIAS_DEL_GRAFICO = 14;
@@ -126,6 +127,8 @@ export function resumen({ ahora = new Date() } = {}) {
     // Personas que entraron con el escáner sin conexión y cuya entrada no se
     // pudo cobrar después. Siguen aquí hasta que alguien las resuelva.
     offlineRejections: sinConexion.pendientes(),
+    // Solicitudes de compra/recarga pendientes enviadas por clientes.
+    pendingPackRequests: packRequests.listPendingRequests(30, db),
     // Programa de fidelidad: lo regalado y a cuánta gente le falta poco. Va
     // aquí para que el resumen cuente también lo que la pista invita.
     loyalty: { status: fidelidad.estado(db), metrics: fidelidad.metricas({ now: ahora.getTime() }) },

@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <meta name="description" content="Entradas para la pista de autos a control remoto de Miniápolis #3: compra tus packs, muestra tu QR en la puerta y sigue tus entradas en tiempo real.">
-  <title>Entrar · Miniápolis #3</title>
+  <meta name="description" content="Miniápolis #3: circuito indoor de asfalto para autos a control remoto. Guarda tu pase, muestra tu QR y entra a rodar.">
+  <title>Miniápolis #3 · Entra a rodar</title>
   <link rel="stylesheet" href="/css/styles.css">
+
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="./images/oficial/pista-senna-vertical.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="./images/pista/miniapolis-track-wide.webp" as="image" fetchpriority="high">
 </head>
 <body class="pagina-entrada">
   <header class="entrada__barra">
@@ -24,35 +25,46 @@
       </p>
       <a class="entrada__accion" href="#acceso">Entrar</a>
     </div>
+    <div class="entrada__progreso" aria-hidden="true"><span id="progreso-pista"></span></div>
   </header>
 
   <main class="contenedor contenedor--portada">
-    <section class="entrada__hero" aria-labelledby="titulo-entrada">
+    <section class="entrada__hero entrada__hero--inmersiva" aria-labelledby="titulo-entrada">
       <div class="entrada__hero-copy">
-        <p class="entrada__kicker">Racing Hobbies Ecuador</p>
-        <h1 id="titulo-entrada">Tu pase para la pista de radiocontrol.</h1>
+        <p class="entrada__kicker"><span class="entrada__kicker-punto" aria-hidden="true"></span>Racing Hobbies Ecuador · Track 03</p>
+        <h1 id="titulo-entrada"><span class="entrada__titulo-linea">La pista</span><span class="entrada__titulo-linea entrada__titulo-linea--acento">te está esperando.</span></h1>
         <p class="entrada__descripcion">
-          Compra tus packs de entradas, guarda el QR en el teléfono y entra a rodar.
-          Cada entrada se descuenta en la puerta y la ves al instante en tu cuenta.
+          Asfalto real, luz de hangar y vueltas que se quedan en la memoria.
+          Compra tu pack, guarda el pase en el teléfono y entra a rodar.
         </p>
         <div class="entrada__hero-acciones">
           <a class="boton boton--principal boton--grande" href="#acceso">Entrar a mi cuenta</a>
           <a class="entrada__enlace" href="#pista">Conocer la pista</a>
         </div>
+        <div class="entrada__telemetria" aria-label="Datos de la pista">
+          <div><span class="entrada__telemetria-valor">400</span><span class="entrada__telemetria-unidad">m²</span><span class="entrada__telemetria-label">de asfalto indoor</span></div>
+          <div><span class="entrada__telemetria-valor">1:10</span><span class="entrada__telemetria-label">escala de carrera</span></div>
+          <div><span class="entrada__telemetria-valor">24/7</span><span class="entrada__telemetria-label">tu pase contigo</span></div>
+        </div>
       </div>
-      <div class="entrada__hero-aside">
-        <figure class="entrada__hero-foto">
-          <img src="./images/oficial/pista-senna-vertical.webp" width="1100" height="1956"
-               alt="Un coche de radiocontrol a escala junto al bordillo de la pista de Miniápolis #3"
+      <div class="entrada__hero-aside" data-depth="0.15">
+        <figure class="entrada__hero-foto entrada__hero-foto--wide">
+          <img src="./images/pista/miniapolis-track-wide.webp" width="1675" height="939"
+               alt="Panorámica real del circuito de asfalto de Miniápolis #3 dentro del hangar"
+               srcset="./images/pista/miniapolis-track-wide-960.webp 960w, ./images/pista/miniapolis-track-wide-1440.webp 1440w, ./images/pista/miniapolis-track-wide.webp 1675w"
+               sizes="(max-width: 900px) 100vw, 58vw"
                fetchpriority="high" decoding="async">
+          <figcaption><span>LIVE / TRACK 03</span><span>Asfalto · Ecuador</span></figcaption>
         </figure>
+        <span class="entrada__hero-coordenada entrada__hero-coordenada--top" aria-hidden="true">0°13' S · 78°29' W</span>
+        <span class="entrada__hero-coordenada entrada__hero-coordenada--bottom" aria-hidden="true">MINIÁPOLIS / 03</span>
       </div>
     </section>
 
     <section class="entrada__cifras" aria-label="La pista en cifras">
       <div class="cifra">
         <span class="cifra__num">400 m²</span>
-        <span class="cifra__texto">Circuito indoor de asfalto y césped técnico</span>
+        <span class="cifra__texto">Circuito indoor de asfalto</span>
       </div>
       <div class="cifra">
         <span class="cifra__num">1/10</span>
@@ -66,18 +78,21 @@
 
     <section id="pista" class="entrada__pista-real" aria-labelledby="titulo-pista">
       <div class="entrada__seccion-cabeza">
+        <p class="entrada__seccion-indice">01 / EL TRAZADO</p>
         <h2 id="titulo-pista">La pista, tal como es.</h2>
         <p class="entrada__seccion-descripcion">
-          Un circuito indoor de asfalto y césped técnico, con bordillos de competición
-          y sitio para rodar con calma o cronometrar a fondo.
+          Un circuito indoor de asfalto, con bordillos de competición, rectas largas y
+          chicanes para rodar con calma o cronometrar a fondo.
         </p>
       </div>
 
-      <figure class="entrada__foto entrada__foto--apertura">
-        <img src="./images/oficial/pista-circuito-panorama.webp" width="1920" height="1077"
-             alt="Panorámica del circuito de Miniápolis #3 con el trazado de césped y asfalto"
+      <figure class="entrada__foto entrada__foto--apertura entrada__foto--marquesina" data-depth="0.06">
+        <img src="./images/pista/miniapolis-track-wide.webp" width="1675" height="939"
+             alt="Panorámica real del circuito de asfalto de Miniápolis #3 con sus bordillos"
+             srcset="./images/pista/miniapolis-track-wide-960.webp 960w, ./images/pista/miniapolis-track-wide-1440.webp 1440w, ./images/pista/miniapolis-track-wide.webp 1675w"
+             sizes="100vw"
              loading="lazy" decoding="async">
-        <figcaption><span class="entrada__foto-nombre">El trazado completo</span> · Miniápolis&nbsp;#3, Track 03</figcaption>
+        <figcaption><span class="entrada__foto-nombre">El trazado completo</span><span>· Miniápolis&nbsp;#3, Track 03</span></figcaption>
       </figure>
 
       <article class="entrada__media-destacada">
@@ -88,37 +103,44 @@
             para dar las primeras vueltas que para bajar tiempos.
           </p>
           <ul class="entrada__media-lista">
-            <li><span>Superficie</span><span>Asfalto y césped técnico</span></li>
+            <li><span>Superficie</span><span>Asfalto de competición</span></li>
             <li><span>Curvas</span><span>Bordillos oficiales de competición</span></li>
             <li><span>Dónde</span><span>Miniápolis #3, Track 03 · Ecuador</span></li>
           </ul>
         </div>
-        <figure class="entrada__media-foto">
-          <img src="./images/oficial/pista-hangar-vertical.webp" width="1100" height="1956"
-               alt="Nave de Miniápolis #3 con el trazado de césped y bordillos"
+        <figure class="entrada__media-foto" data-depth="0.09">
+          <img src="./images/pista/miniapolis-track-vertical.webp" width="941" height="1671"
+               alt="Vista vertical del hangar y el circuito de asfalto de Miniápolis #3"
+               srcset="./images/pista/miniapolis-track-vertical-640.webp 640w, ./images/pista/miniapolis-track-vertical.webp 941w"
+               sizes="(max-width: 900px) 100vw, 50vw"
                loading="lazy" decoding="async">
         </figure>
       </article>
 
       <div class="entrada__diptico">
         <figure class="entrada__foto">
-          <img src="./images/oficial/pista-senna-wide.webp" width="1200" height="675"
-               alt="Un McLaren Senna a escala sobre el asfalto de la pista"
+          <img src="./images/pista/miniapolis-asphalt-detail.webp" width="941" height="1672"
+               alt="Detalle de la textura del asfalto y los bordillos del circuito"
+               srcset="./images/pista/miniapolis-asphalt-detail-640.webp 640w, ./images/pista/miniapolis-asphalt-detail.webp 941w"
+               sizes="(max-width: 620px) 100vw, 50vw"
                loading="lazy" decoding="async">
-          <figcaption><span class="entrada__foto-nombre">Asfalto</span> · Salida de boxes</figcaption>
+          <figcaption><span class="entrada__foto-nombre">Asfalto</span><span>· Textura de carrera</span></figcaption>
         </figure>
         <figure class="entrada__foto">
-          <img src="./images/oficial/pista-hangar-curva.webp" width="1200" height="800"
-               alt="Curva de la pista con bordillo rojo y blanco sobre el césped"
+          <img src="./images/pista/miniapolis-track-vertical.webp" width="941" height="1671"
+               alt="Curva del circuito de asfalto con bordillo rojo y blanco"
+               srcset="./images/pista/miniapolis-track-vertical-640.webp 640w, ./images/pista/miniapolis-track-vertical.webp 941w"
+               sizes="(max-width: 620px) 100vw, 50vw"
                loading="lazy" decoding="async">
-          <figcaption><span class="entrada__foto-nombre">Curva</span> · Bordillo de competición</figcaption>
+          <figcaption><span class="entrada__foto-nombre">Curva</span><span>· Bordillo de competición</span></figcaption>
         </figure>
       </div>
     </section>
 
     <section id="acceso" class="entrada__acceso" aria-labelledby="titulo-acceso">
       <div class="entrada__acceso-intro">
-        <h2 id="titulo-acceso">Entra y mira tus entradas.</h2>
+        <p class="entrada__seccion-indice">02 / TU PASE</p>
+        <h2 id="titulo-acceso">Entra y sal a pista.</h2>
         <p class="entrada__acceso-nota">
           Con tu correo ves tus packs, muestras el QR en la puerta y sigues cada
           entrada que usas, desde cualquier teléfono.
@@ -211,5 +233,6 @@
   </footer>
 
   <script type="module" src="/js/login.js"></script>
+  <script type="module" src="/js/portada.js"></script>
 </body>
 </html>

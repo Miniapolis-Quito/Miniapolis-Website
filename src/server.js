@@ -3,11 +3,12 @@ import http from 'node:http';
 import { config } from './config.js';
 import { createApp } from './app.js';
 import { logger } from './lib/logger.js';
-import { closeDb } from './db/index.js';
+import { closeDb, checkpointDb } from './db/index.js';
 import { ensureMasterAccount } from './bootstrap.js';
 import { purgeExpired } from './services/sessions.js';
 import { expireDuePacks } from './services/packs.js';
 import { purgar as purgarRecuperaciones } from './services/recuperacion.js';
+import { cleanupExpired } from './lib/rateLimit.js';
 import * as avisos from './services/avisos.js';
 import * as fidelidad from './services/fidelidad.js';
 
@@ -34,6 +35,8 @@ const maintenance = setInterval(
       const purged = purgeExpired();
       const enlaces = purgarRecuperaciones();
       const descartados = avisos.purgar();
+      cleanupExpired();
+      checkpointDb();
       // Premios ganados que no se llegaron a entregar: un proceso que se cayó a
       // mitad, una cuenta que estaba suspendida, un umbral que se bajó.
       const premios = fidelidad.evaluarPendientes().premios;

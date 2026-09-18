@@ -18,6 +18,7 @@ import notificationRoutes from './routes/notifications.js';
 import * as wallet from './services/wallet.js';
 import * as recuperacion from './services/recuperacion.js';
 import * as avisos from './services/avisos.js';
+import { compression } from './middleware/compression.js';
 
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
@@ -38,9 +39,12 @@ export function createApp() {
     app.set('trust proxy', config.security.trustedProxyIps);
   }
 
+  app.use(compression());
   app.use(clientIp);
   app.use(securityHeaders);
   app.use(cors);
+
+
   app.use(cookieParser);
   app.use(express.json({ limit: config.security.maxBodyBytes, strict: true }));
   app.use(sameOriginOnly);
@@ -114,6 +118,8 @@ export function createApp() {
       // «Mi cuenta» solo ofrece el interruptor de recordatorios si la pista
       // los manda de verdad.
       emailReminders: avisos.recordatoriosDisponibles(),
+      // Datos para que el cliente realice transferencias o pagos móviles.
+      payment: config.payment,
     });
   });
 
@@ -145,10 +151,16 @@ export function createApp() {
       maxAge: 0,
       setHeaders: (res, filePath) => {
         const esVendor = filePath.includes(`${path.sep}vendor${path.sep}`);
-        res.setHeader(
-          'Cache-Control',
-          esVendor && config.isProduction ? 'public, max-age=31536000, immutable' : 'no-cache',
-        );
+        const esFont = filePath.includes(`${path.sep}fonts${path.sep}`);
+        const esImagen = filePath.includes(`${path.sep}images${path.sep}`) || filePath.endsWith('.svg');
+
+        if ((esVendor || esFont) && config.isProduction) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else if (esImagen && config.isProduction) {
+          res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+        } else {
+          res.setHeader('Cache-Control', 'no-cache');
+        }
       },
     }),
   );

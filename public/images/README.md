@@ -30,16 +30,28 @@ ese mismo par de archivos y hay que regenerarlos a la vez.
 
 ## Material oficial de la pista
 
-En `oficial/` está lo que entregó Miniápolis. La portada pública usa hoy las
-cinco fotografías del recinto:
+En `oficial/` está el material de origen que entregó Miniápolis. La portada
+pública usa ahora el set optimizado de `pista/`, generado a partir de las fotos
+reales del recinto:
 
 | Archivo | Escena |
 | --- | --- |
 | `pista-senna-wide.webp` | El McLaren Senna a escala sobre el asfalto — foto de apertura |
 | `pista-senna-vertical.webp` | El mismo coche detenido junto a un bordillo |
-| `pista-hangar-vertical.webp` | La nave con el trazado de césped y bordillos |
-| `pista-hangar-curva.webp` | Curva con bordillo rojo y blanco sobre el césped |
+| `pista-hangar-vertical.webp` | La nave con el trazado de asfalto y bordillos |
+| `pista-hangar-curva.webp` | Curva con bordillo rojo y blanco sobre el asfalto |
 | `pista-circuito-panorama.webp` | Panorámica del circuito completo |
+
+### Set optimizado de la portada
+
+| Archivo | Escena |
+| --- | --- |
+| `pista/miniapolis-track-wide.webp` | Hero y panorama del circuito indoor de asfalto |
+| `pista/miniapolis-track-vertical.webp` | Vista vertical del hangar y del trazado de asfalto |
+| `pista/miniapolis-asphalt-detail.webp` | Textura de asfalto, curvas y bordillos |
+
+Las superficies del trazado se presentan como asfalto continuo; las líneas y
+los bordillos conservan sus colores reales de pista.
 
 Las tres composiciones de marca (`miniapolis-bandera-hero.webp`,
 `miniapolis-logo-dark.webp`, `miniapolis-logo-light.webp`) se conservan como

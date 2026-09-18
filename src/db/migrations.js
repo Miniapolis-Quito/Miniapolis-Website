@@ -460,7 +460,67 @@ export const migrations = [
     },
   },
   {
-    name: '011-programa-de-fidelidad',
+    name: '011-solicitudes-de-recarga',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Solicitudes de compra y recarga de packs desde la app del cliente
+        --
+        -- Permite al piloto solicitar un pack pagado por transferencia bancaria,
+        -- DeUna o efectivo, enviando su comprobante de pago para que la
+        -- administración lo apruebe o rechace con un solo clic.
+        -- ---------------------------------------------------------------
+        CREATE TABLE pack_requests (
+          id                TEXT PRIMARY KEY,
+          user_id           TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+          size              INTEGER NOT NULL CHECK (size > 0),
+          price_cents       INTEGER NOT NULL CHECK (price_cents >= 0),
+          currency          TEXT NOT NULL DEFAULT 'USD',
+          payment_method    TEXT NOT NULL CHECK (payment_method IN ('transferencia','deuna','efectivo','tarjeta','otro')),
+          payment_reference TEXT NOT NULL,
+          note              TEXT,
+          status            TEXT NOT NULL DEFAULT 'pending'
+                              CHECK (status IN ('pending','approved','rejected','cancelled')),
+          pack_id           TEXT REFERENCES packs(id) ON DELETE SET NULL,
+          reviewed_by       TEXT REFERENCES users(id) ON DELETE SET NULL,
+          reviewed_at       TEXT,
+          rejection_reason  TEXT,
+          created_at        TEXT NOT NULL,
+          updated_at        TEXT NOT NULL
+        );
+        CREATE INDEX idx_pack_requests_user   ON pack_requests(user_id, created_at DESC);
+        CREATE INDEX idx_pack_requests_status ON pack_requests(status, created_at DESC);
+      `);
+    },
+  },
+  {
+    name: '012-optimizacion-rendimiento-indices',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Índices de cobertura y aceleración de consultas
+        -- ---------------------------------------------------------------
+        -- Índice de cobertura para el recuento de consumos confirmados por pack:
+        -- permite calcular used_tickets en listados de packs sin tocar la tabla.
+        CREATE INDEX IF NOT EXISTS idx_redemptions_pack_status_qty
+          ON redemptions(pack_id, status, quantity);
+
+        -- Índice para acelerar la suma de entradas emitidas y arqueo del libro mayor.
+        CREATE INDEX IF NOT EXISTS idx_movements_reason_pack
+          ON pack_movements(reason, pack_id, delta);
+
+        -- Índice compuesto para búsqueda y rotación de sesiones vigentes por usuario.
+        CREATE INDEX IF NOT EXISTS idx_sessions_user_active
+          ON sessions(user_id, revoked_at, expires_at);
+
+        -- Índice compuesto para conteos rápidos por rol y estado en el panel.
+        CREATE INDEX IF NOT EXISTS idx_users_role_status
+          ON users(role, status);
+      `);
+    },
+  },
+  {
+    name: '013-programa-de-fidelidad',
     up: (db) => {
       db.exec(`
         -- ---------------------------------------------------------------
