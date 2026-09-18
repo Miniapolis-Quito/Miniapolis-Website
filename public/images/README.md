@@ -46,12 +46,17 @@ reales del recinto:
 
 | Archivo | Escena |
 | --- | --- |
-| `pista/miniapolis-track-wide.webp` | Hero y panorama del circuito indoor de asfalto |
-| `pista/miniapolis-track-vertical.webp` | Vista vertical del hangar y del trazado de asfalto |
-| `pista/miniapolis-asphalt-detail.webp` | Textura de asfalto, curvas y bordillos |
+| `pista/miniapolis-track-wide.webp` | Hero del circuito indoor de asfalto |
+| `pista/miniapolis-track-corner-wide.webp` | Vista baja y única de una curva del trazado |
+| `pista/miniapolis-hangar-vertical.webp` | Arcos y ventanas del hangar sobre el circuito |
+| `pista/miniapolis-curb-detail-vertical.webp` | Detalle vertical del bordillo rojo y blanco |
+| `pista/miniapolis-asphalt-detail.webp` | Textura vertical del asfalto y línea de carrera |
+| `pista/miniapolis-track-vertical.webp` | Reserva optimizada del trazado vertical real |
 
-Las superficies del trazado se presentan como asfalto continuo; las líneas y
-los bordillos conservan sus colores reales de pista.
+Cada bloque visual de la portada usa un encuadre distinto. Las variantes `-640`,
+`-960` y `-1440` son únicamente alternativas responsive del mismo encuadre, no
+repeticiones dentro de la página. Las superficies del trazado se presentan como
+asfalto continuo; las líneas y los bordillos conservan sus colores reales.
 
 Las tres composiciones de marca (`miniapolis-bandera-hero.webp`,
 `miniapolis-logo-dark.webp`, `miniapolis-logo-light.webp`) se conservan como
