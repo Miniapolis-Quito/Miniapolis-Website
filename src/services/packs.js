@@ -6,6 +6,7 @@
  * un asiento con su saldo resultante. Eso permite auditar cualquier diferencia
  * y detectar corrupción (ver `checkIntegrity`).
  */
+import crypto from 'node:crypto';
 import { getDb, inTransaction } from '../db/index.js';
 import { newId, newPackCode, randomHex, normalizePackCode } from '../lib/ids.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
@@ -81,11 +82,11 @@ export function isUsable(pack, { now = Date.now(), owner = null } = {}) {
     return {
       ok: false,
       reason: 'cliente_suspendido',
-      message: 'La cuenta de este cliente está suspendida. Consulta en recepción.',
+      message: 'La cuenta de este cliente está suspendida. Pregunta en recepción.',
     };
   }
   if (pack.status === 'cancelled') return { ok: false, reason: 'cancelado', message: 'Este pack fue anulado.' };
-  if (pack.status === 'suspended') return { ok: false, reason: 'suspendido', message: 'Este pack está suspendido. Consulta en recepción.' };
+  if (pack.status === 'suspended') return { ok: false, reason: 'suspendido', message: 'Este pack está suspendido. Pregunta en recepción.' };
   if (pack.expires_at && Date.parse(pack.expires_at) <= now) {
     return { ok: false, reason: 'expirado', message: 'Este pack venció.' };
   }
@@ -132,7 +133,7 @@ function generateUniqueCode(db) {
     const code = newPackCode();
     if (!db.prepare('SELECT 1 FROM packs WHERE code = ?').get(code)) return code;
   }
-  throw conflict('No se pudo generar un código único para el pack. Inténtalo de nuevo.', 'codigo_colision');
+      throw conflict('No se pudo generar un código único para el pack. Intenta de nuevo.', 'codigo_colision');
 }
 
 /** Emite un pack nuevo para un cliente. */
@@ -456,11 +457,61 @@ export function adjustPack(packId, { delta, reason, actor, ip, userAgent }) {
   return publicPack;
 }
 
+const IDEMPOTENCY_TTL_SECONDS = 24 * 3600;
+
+function hashTransferPayload(value) {
+  return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function lookupIdempotentTransfer(db, key, userId, endpoint, requestHash) {
+  if (!key) return null;
+  const row = db.prepare('SELECT * FROM idempotency_keys WHERE user_id = ? AND key = ?').get(userId, key);
+  if (!row) return null;
+  if (row.expires_at <= new Date().toISOString()) {
+    db.prepare('DELETE FROM idempotency_keys WHERE user_id = ? AND key = ?').run(userId, key);
+    return null;
+  }
+  if (row.endpoint !== endpoint || row.request_hash !== requestHash) {
+    throw conflict(
+      'Esa clave de idempotencia ya se usó para otra operación. Genera una nueva.',
+      'idempotencia_conflicto',
+    );
+  }
+  return JSON.parse(row.response);
+}
+
+function saveIdempotentTransfer(db, { key, userId, endpoint, requestHash, statusCode = 200, body }) {
+  if (!key) return;
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO idempotency_keys (key, user_id, endpoint, request_hash, status_code, response, created_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, key) DO NOTHING`,
+  ).run(
+    key,
+    userId,
+    endpoint,
+    requestHash,
+    statusCode,
+    JSON.stringify(body),
+    new Date(now).toISOString(),
+    new Date(now + IDEMPOTENCY_TTL_SECONDS * 1000).toISOString(),
+  );
+}
+
 /**
  * Transfiere una cantidad de entradas de un pack propio a otro cliente registrado.
  */
-export function transferTickets(sourcePackId, { quantity, recipient, note = null, actor, ip = null, userAgent = null }) {
+export function transferTickets(sourcePackId, { quantity, recipient, note = null, idempotencyKey = null, actor, ip = null, userAgent = null }) {
   const db = getDb();
+
+  const rawRecipient = String(recipient || '').trim().toLowerCase();
+  const requestHash = hashTransferPayload({ sourcePackId, quantity, recipient: rawRecipient, note });
+
+  if (idempotencyKey && actor?.id) {
+    const cached = lookupIdempotentTransfer(db, idempotencyKey, actor.id, 'transfer', requestHash);
+    if (cached) return { ...cached, idempotentReplay: true };
+  }
 
   const outcome = inTransaction(() => {
     const sourcePack = findById(sourcePackId, db);
@@ -547,7 +598,7 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
       .prepare('UPDATE packs SET remaining = ?, status = ?, updated_at = ? WHERE id = ? AND remaining = ?')
       .run(remainingAfter, newStatus, now, sourcePack.id, remainingBefore);
     if (updatedSource.changes !== 1) {
-      throw conflict('El saldo del pack cambió mientras se procesaba. Inténtalo de nuevo.', 'conflicto_concurrencia');
+      throw conflict('El saldo del pack cambió mientras se procesaba. Intenta de nuevo.', 'conflicto_concurrencia');
     }
 
     const noteSender = `Transferido a ${targetUser.full_name}${note ? `: ${note}` : ''}`;
@@ -647,7 +698,7 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
     const notaTexto = outcome.note ? `\nMensaje de ${outcome.sender.full_name}: "${outcome.note}"\n` : '';
     const cuerpoTexto =
       `${saludo(outcome.recipient)}\n\n` +
-      `${outcome.sender.full_name} te ha transferido ${cantTexto} para la pista de ${config.brandName}.\n` +
+      `${outcome.sender.full_name} te envió ${cantTexto} para la pista de ${config.brandName}.\n` +
       notaTexto +
       `\nCódigo de tu nuevo pack: ${publicNew.code}\n` +
       `Entradas disponibles: ${publicNew.remaining}\n\n` +
@@ -657,7 +708,7 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
 
     const bloquesHtml = [
       saludo(outcome.recipient),
-      `<strong>${escaparHtml(outcome.sender.full_name)}</strong> te ha transferido <strong>${cantTexto}</strong> para la pista de ${escaparHtml(config.brandName)}.`,
+      `<strong>${escaparHtml(outcome.sender.full_name)}</strong> te envió <strong>${cantTexto}</strong> para la pista de ${escaparHtml(config.brandName)}.`,
       ...(outcome.note
         ? [`<blockquote style="margin:0 0 16px;padding:8px 16px;border-left:4px solid #3cfe3f;background:#f9f9f9;font-style:italic">"${escaparHtml(outcome.note)}"</blockquote>`]
         : []),
@@ -679,14 +730,135 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
     });
   }
 
-  return {
+  const responseData = {
     ok: true,
-    message: `Has transferido ${outcome.quantity} ${outcome.quantity === 1 ? 'entrada' : 'entradas'} a ${outcome.recipient.full_name}.`,
+    message: `Le pasaste ${outcome.quantity} ${outcome.quantity === 1 ? 'entrada' : 'entradas'} a ${outcome.recipient.full_name}.`,
     transferred: outcome.quantity,
     sourcePack: publicSource,
     destinationPack: publicNew,
     newPack: publicNew,
     recipient: { id: outcome.recipient.id, fullName: outcome.recipient.full_name, email: outcome.recipient.email },
+  };
+
+  if (idempotencyKey && actor?.id) {
+    saveIdempotentTransfer(db, {
+      key: idempotencyKey,
+      userId: actor.id,
+      endpoint: 'transfer',
+      requestHash,
+      statusCode: 200,
+      body: responseData,
+    });
+  }
+
+  return responseData;
+}
+
+/**
+ * Lista las transferencias en las que participó un cliente (como emisor o como receptor).
+ */
+export function listTransfersForUser(userId, { limit = 50, offset = 0, direction = 'all' } = {}) {
+  const db = getDb();
+  const where = [];
+  const params = { userId, limit, offset };
+
+  if (direction === 'sent') {
+    where.push('t.sender_id = @userId');
+  } else if (direction === 'received') {
+    where.push('t.recipient_id = @userId');
+  } else {
+    where.push('(t.sender_id = @userId OR t.recipient_id = @userId)');
+  }
+
+  const clause = `WHERE ${where.join(' AND ')}`;
+  const rows = db
+    .prepare(
+      `SELECT t.*,
+              s.full_name AS sender_name, s.email AS sender_email,
+              r.full_name AS recipient_name, r.email AS recipient_email,
+              sp.code AS source_pack_code, dp.code AS destination_pack_code
+         FROM transfers t
+         JOIN users s ON s.id = t.sender_id
+         JOIN users r ON r.id = t.recipient_id
+         JOIN packs sp ON sp.id = t.source_pack_id
+         JOIN packs dp ON dp.id = t.destination_pack_id
+         ${clause}
+        ORDER BY t.created_at DESC
+        LIMIT @limit OFFSET @offset`,
+    )
+    .all(params);
+
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM transfers t ${clause}`).get(params).n;
+
+  return {
+    total,
+    items: rows.map((row) => ({
+      id: row.id,
+      direction: row.sender_id === userId ? 'sent' : 'received',
+      quantity: row.quantity,
+      note: row.note,
+      createdAt: row.created_at,
+      sender: { id: row.sender_id, fullName: row.sender_name, email: row.sender_email },
+      recipient: { id: row.recipient_id, fullName: row.recipient_name, email: row.recipient_email },
+      counterparty:
+        row.sender_id === userId
+          ? { id: row.recipient_id, fullName: row.recipient_name, email: row.recipient_email }
+          : { id: row.sender_id, fullName: row.sender_name, email: row.sender_email },
+      sourcePackCode: row.source_pack_code,
+      destinationPackCode: row.destination_pack_code,
+    })),
+  };
+}
+
+/**
+ * Lista todas las transferencias de la pista para el panel de administración.
+ */
+export function listAllTransfers({ limit = 50, offset = 0, senderId = null, recipientId = null } = {}) {
+  const db = getDb();
+  const where = [];
+  const params = { limit, offset };
+
+  if (senderId) {
+    where.push('t.sender_id = @senderId');
+    params.senderId = senderId;
+  }
+  if (recipientId) {
+    where.push('t.recipient_id = @recipientId');
+    params.recipientId = recipientId;
+  }
+
+  const clause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+  const rows = db
+    .prepare(
+      `SELECT t.*,
+              s.full_name AS sender_name, s.email AS sender_email,
+              r.full_name AS recipient_name, r.email AS recipient_email,
+              sp.code AS source_pack_code, dp.code AS destination_pack_code
+         FROM transfers t
+         JOIN users s ON s.id = t.sender_id
+         JOIN users r ON r.id = t.recipient_id
+         JOIN packs sp ON sp.id = t.source_pack_id
+         JOIN packs dp ON dp.id = t.destination_pack_id
+         ${clause}
+        ORDER BY t.created_at DESC
+        LIMIT @limit OFFSET @offset`,
+    )
+    .all(params);
+
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM transfers t ${clause}`).get(params).n;
+
+  return {
+    total,
+    items: rows.map((row) => ({
+      id: row.id,
+      quantity: row.quantity,
+      note: row.note,
+      createdAt: row.created_at,
+      sender: { id: row.sender_id, fullName: row.sender_name, email: row.sender_email },
+      recipient: { id: row.recipient_id, fullName: row.recipient_name, email: row.recipient_email },
+      sourcePackCode: row.source_pack_code,
+      destinationPackCode: row.destination_pack_code,
+    })),
   };
 }
 

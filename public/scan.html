@@ -17,7 +17,7 @@
       <div>
         <span class="seccion-marca">Puerta</span>
         <h1 class="sin-margen">Control de acceso</h1>
-        <p class="tenue sin-margen" id="subtitulo">Escanea el QR del cliente para descontar una entrada.</p>
+        <p class="tenue sin-margen" id="subtitulo">Escanea el QR del cliente y descuéntale una entrada.</p>
       </div>
       <div class="fila">
         <label class="campo__etiqueta sin-salto" for="dispositivo">Puesto</label>
@@ -27,7 +27,7 @@
 
     <div id="aviso" class="aviso" role="alert" hidden></div>
     <div id="estado-sin-conexion" class="aviso aviso--alerta aviso--sin-conexion" role="status" hidden>
-      <span><strong>Sin conexión.</strong> Sigue escaneando: cada entrada se guarda en este teléfono y se cobra sola cuando vuelva la señal.</span>
+      <span><strong>Sin conexión.</strong> Sigue escaneando: cada entrada queda guardada en este celular y se cobra sola cuando vuelva la señal.</span>
     </div>
 
     <!-- Cuenta sin permiso para escanear: el servidor la rechaza igualmente,
@@ -41,9 +41,9 @@
           </svg>
         </div>
         <h2 class="sin-margen">Tu cuenta no puede escanear</h2>
-        <p class="sin-margen">El escáner se habilita cuenta por cuenta desde la administración.</p>
+        <p class="sin-margen">Administración debe habilitar el escáner en tu cuenta.</p>
         <p class="pequeno tenue-2">
-          Pídele al administrador que active «Puede escanear» en tu usuario. Tus entradas las tienes
+          Pídele a administración que active «Puede escanear» en tu usuario. Tus entradas están
           en «Mis entradas», arriba.
         </p>
       </div>
@@ -86,7 +86,7 @@
 
         <div class="fila mt">
           <button class="boton boton--principal boton--grande crece" id="btn-camara" type="button">Encender cámara</button>
-          <button class="boton boton--fantasma" id="btn-cambiar-camara" type="button" hidden>Cambiar cámara</button>
+          <button class="boton boton--fantasma" id="btn-cambiar-camara" type="button" hidden>Usar otra cámara</button>
         </div>
 
         <div class="fila mt">
@@ -111,12 +111,12 @@
             </svg>
           </div>
           <div class="resultado__titulo">Listo para escanear</div>
-          <div class="resultado__detalle">Apunta la cámara al código del cliente.</div>
+          <div class="resultado__detalle">Apunta la cámara al código del cliente y listo.</div>
         </div>
 
         <div class="tarjeta">
           <h2>Código manual</h2>
-          <p class="tenue pequeno">Si la cámara falla o el cliente no trae el teléfono, ingresa el código del pack.</p>
+          <p class="tenue pequeno">Si la cámara falla o el cliente no trae el celular, escribe el código del pack.</p>
           <form id="form-manual" novalidate>
             <div class="campo">
               <label for="codigo-manual">Código del pack</label>
@@ -136,7 +136,7 @@
     <!-- Lecturas guardadas sin conexión -->
     <section class="tarjeta mt-2" id="tarjeta-sin-conexion" aria-labelledby="titulo-sin-conexion" hidden>
       <div class="tarjeta__titulo">
-        <h2 id="titulo-sin-conexion">Guardadas sin conexión</h2>
+        <h2 id="titulo-sin-conexion">Guardadas sin señal</h2>
         <div class="fila">
           <span class="etiqueta etiqueta--alerta" id="contador-sin-conexion"></span>
           <button class="boton boton--principal boton--chico" id="btn-enviar-guardadas" type="button">Enviar ahora</button>

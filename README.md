@@ -15,7 +15,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   minutos, así que una captura de pantalla ajena sirve de poco — y de nada en
   cuanto ese código se usa una vez.
 - Puede **transferir entradas a otro piloto** registrado por correo o teléfono,
-  dejando un mensaje opcional. El destinatario recibe un pack nuevo de inmediato,
+  dejando un mensaje opcional. Al destinatario le llega un pack nuevo de una,
   ambos ven sus saldos y movimientos actualizados en vivo por SSE y carteras,
   y se envía un aviso por correo electrónico.
 - Puede **comprar y recargar packs en línea** desde su app (transferencia bancaria,
@@ -59,7 +59,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   entrada al cliente.
 - Imprime pases físicos con QR fijo, para los packs donde lo habilite.
 - Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
-- Aviso de **entradas sin cobrar**: quien entró durante un corte de red y cuya
+- Aviso de **entradas pendientes de cobro**: quien entró durante un corte de red y cuya
   entrada no se pudo descontar después, para resolverlo con una nota.
 - **Ficha de cliente**: todo lo que se sabe de una persona en una pantalla —
   saldo, hábitos, packs, consumos, actividad y dispositivos— con las acciones a
@@ -70,7 +70,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   Ver más abajo.
 - **La casa invita**: cada tantas entradas usadas, el cliente recibe un pack de
   cortesía sin que nadie tenga que acordarse. Ver más abajo.
-- Bitácora de auditoría de todo lo que ocurre y exportación a CSV.
+- Registro de auditoría de todo lo que ocurre y exportación a CSV.
 - Verificación de integridad contable con un clic.
 
 ---
@@ -364,7 +364,7 @@ encienden desde el panel.
 
 ## Operación diaria
 
-**Vender un pack.** Administración → Packs → *Vender pack*. Se busca al cliente
+**Vender un pack.** Administración → Packs → *Vender un pack*. Se busca al cliente
 (o se le crea antes en *Clientes y personal*), se elige el tamaño, se ajusta el
 precio si hubo descuento y se registra la forma de pago. El cliente ve el pack
 aparecer en su teléfono en el momento, sin recargar.
@@ -419,7 +419,7 @@ pestañas:
 | **Resumen** | Packs con entradas, visitas por semana, qué días suele venir y lo último que pasó |
 | **Packs** | Cada pack con su historial de movimientos, y las acciones: ajustar, suspender, anular, QR impreso, imprimir pase |
 | **Consumos** | Cuándo entró, con qué pack, por qué vía, quién se lo registró y en qué puesto — con la opción de anular |
-| **Actividad** | Un solo hilo cronológico con movimientos de entradas y eventos de la cuenta, más la bitácora técnica sin interpretar |
+| **Actividad** | Un solo hilo cronológico con movimientos de entradas y eventos de la cuenta, más el registro técnico sin interpretar |
 | **Acceso** | Estado de la cuenta, dispositivos con sesión abierta, restablecer contraseña, desbloquear, cerrar sesiones |
 | **Datos** | Editar nombre, correo, teléfono, rol y estado, con la ficha técnica completa |
 
@@ -547,8 +547,8 @@ El diseño completo está en
 
 Si se cae Internet en la pista, el puesto no se detiene. El operador sigue
 leyendo QR y tecleando códigos: cada lectura se guarda en el teléfono y el
-recuadro lo dice con un borde discontinuo y dos pitidos cortos —**Guardada sin
-conexión: puede pasar**—. En cuanto vuelve la señal, el teléfono las envía solo,
+  recuadro lo dice con un borde discontinuo y dos pitidos cortos —**Guardada sin
+  señal: puede pasar**—. En cuanto vuelve la señal, el teléfono las envía solo,
 en orden, y avisa de cuántas se cobraron.
 
 Si alguien recarga la página o el teléfono se reinicia durante el corte, el

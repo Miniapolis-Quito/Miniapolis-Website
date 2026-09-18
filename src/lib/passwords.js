@@ -43,7 +43,7 @@ async function conTurno(tarea) {
       throw new AppError(
         503,
         'servidor_ocupado',
-        'Hay muchas personas entrando a la vez. Inténtalo de nuevo en unos segundos.',
+        'Hay muchas personas entrando a la vez. Intenta de nuevo en unos segundos.',
       );
     }
     // El turno lo cede directamente quien termina: así nadie que llegue justo

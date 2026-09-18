@@ -36,7 +36,7 @@ const scanLimiter = rateLimit({
   limit: 600,
   windowSeconds: 15 * 60,
   keyFn: (req) => req.user?.id,
-  message: 'Se registraron demasiados escaneos seguidos desde este dispositivo. Espera un momento.',
+  message: 'Se hicieron demasiados escaneos seguidos desde este dispositivo. Espera un momento.',
 });
 
 /**

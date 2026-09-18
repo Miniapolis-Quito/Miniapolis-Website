@@ -126,12 +126,28 @@ router.get(
   }),
 );
 
+/** La clave de idempotencia puede venir por cabecera (lo habitual) o en el cuerpo. */
+function idempotencyKey(req, body) {
+  const header = req.get('Idempotency-Key');
+  const fromBody = body?.idempotencyKey;
+  if (header && fromBody && header.trim() !== fromBody.trim()) {
+    throw badRequest('La clave de idempotencia de la cabecera no coincide con la del cuerpo.', null, 'idempotencia_invalida');
+  }
+  const key = header || fromBody;
+  if (!key) return undefined;
+  const value = String(key).trim();
+  if (value.length < 8 || value.length > 80 || !/^[A-Za-z0-9_:-]+$/.test(value)) {
+    throw badRequest('La clave de idempotencia no tiene un formato válido.', null, 'idempotencia_invalida');
+  }
+  return value;
+}
+
 const transferLimiter = rateLimit({
   name: 'transfer-user',
   limit: 20,
   windowSeconds: 15 * 60,
   keyFn: (req) => req.user?.id,
-  message: 'Demasiadas transferencias en poco tiempo. Espera unos minutos.',
+  message: 'Has hecho demasiadas transferencias en poco tiempo. Espera unos minutos.',
 });
 
 /** Transfiere entradas de un pack propio a otro cliente registrado. */
@@ -142,11 +158,24 @@ router.post(
     const data = parseOrThrow(transferPackSchema, req.body, badRequest);
     const result = packs.transferTickets(req.params.id, {
       ...data,
+      idempotencyKey: idempotencyKey(req, req.body),
       actor: req.user,
       ip: req.clientIp,
       userAgent: req.get('user-agent'),
     });
+    if (result.idempotentReplay) res.set('Idempotent-Replay', 'true');
     res.json(result);
+  }),
+);
+
+/** Historial de transferencias (enviadas y recibidas) del cliente autenticado. */
+router.get(
+  '/transfers',
+  asyncHandler(async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    const direction = ['all', 'sent', 'received'].includes(req.query.direction) ? req.query.direction : 'all';
+    res.json(packs.listTransfersForUser(req.user.id, { limit, offset, direction }));
   }),
 );
 
@@ -166,7 +195,7 @@ const requestLimiter = rateLimit({
   limit: 15,
   windowSeconds: 15 * 60,
   keyFn: (req) => req.user?.id,
-  message: 'Demasiadas solicitudes en poco tiempo. Espera unos minutos.',
+  message: 'Has hecho demasiadas solicitudes en poco tiempo. Espera unos minutos.',
 });
 
 /** El cliente solicita la compra o recarga de un pack con su comprobante de pago. */
@@ -175,14 +204,17 @@ router.post(
   requestLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(createPackRequestSchema, req.body, badRequest);
+    const key = idempotencyKey(req, req.body);
     const request = packRequests.createRequest({
       userId: req.user.id,
       ...data,
+      idempotencyKey: key,
       actor: req.user,
       ip: req.clientIp,
       userAgent: req.get('user-agent'),
     });
-    res.status(201).json({ ok: true, request });
+    if (request.idempotentReplay) res.set('Idempotent-Replay', 'true');
+    res.status(request.idempotentReplay ? 200 : 201).json({ ok: true, request });
   }),
 );
 

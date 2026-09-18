@@ -39,7 +39,7 @@ function pintarSaldo(anterior) {
   numero.textContent = String(disponibles);
   $('#saldo-texto').textContent =
     disponibles === 0
-      ? 'No te quedan entradas — compra tu pack arriba'
+      ? 'Ya no te quedan entradas. Compra otro pack arriba.'
       : `${disponibles === 1 ? 'entrada disponible' : 'entradas disponibles'}`;
   seccion.classList.toggle('saldo--vacio', disponibles === 0);
 
@@ -64,7 +64,7 @@ function pintarSaldo(anterior) {
     detalle += ` · ${plural(activos, 'pack activo', 'packs activos')}`;
     $('#subtitulo').textContent = detalle;
   } else {
-    $('#subtitulo').textContent = 'Todavía no tienes packs. Compra tus entradas con el botón de arriba.';
+    $('#subtitulo').textContent = 'Todavía no tienes packs. Compra uno con el botón de arriba y queda listo al instante.';
   }
 }
 
@@ -211,8 +211,8 @@ function pintarPacks() {
         'div',
         { class: 'tarjeta vacio' },
         el('div', { class: 'vacio__icono' }, icono('entrada', { grande: true })),
-        el('p', { class: 'sin-margen' }, 'Todavía no tienes packs de entradas.'),
-        el('p', { class: 'pequeno sin-margen' }, 'Compra uno en recepción y aparecerá aquí al instante.'),
+        el('p', { class: 'sin-margen' }, 'Todavía no tienes packs.'),
+        el('p', { class: 'pequeno sin-margen' }, 'Compra uno en recepción y te aparecerá aquí de una.'),
       ),
     );
     return;
@@ -241,7 +241,7 @@ function pintarSelectorPacks() {
   selector.hidden = false;
   render(
     selector,
-    el('span', { class: 'tenue pequeno' }, 'Usar el pack:'),
+    el('span', { class: 'tenue pequeno' }, 'Ver este pack:'),
     usables.map((pack) =>
       el(
         'button',
@@ -298,7 +298,7 @@ function pintarCarteras() {
           {
             class: 'boton boton--chico boton--fantasma',
             type: 'button',
-            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/apple/ticket', 'No se pudo preparar el pase.'),
+            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/apple/ticket', 'No pudimos preparar el pase.'),
           },
           'Apple Wallet',
         )
@@ -309,7 +309,7 @@ function pintarCarteras() {
           {
             class: 'boton boton--chico boton--fantasma',
             type: 'button',
-            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/google/pass', 'No se pudo preparar el pase.'),
+            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/google/pass', 'No pudimos preparar el pase.'),
           },
           'Google Wallet',
         )
@@ -375,11 +375,11 @@ async function refrescarQr({ inmediato = false } = {}) {
         { class: 'centrado' },
         el('div', { class: 'vacio__icono' }, icono('senal', { grande: true })),
         el('p', { class: 'tenue sin-margen' }, 'No pudimos generar el código.'),
-        el('p', { class: 'pequeno tenue-2 sin-margen' }, `Muestra tu código ${pack.code} en recepción.`),
+        el('p', { class: 'pequeno tenue-2 sin-margen' }, `Enseña tu código ${pack.code} en recepción.`),
       ),
     );
     if (error instanceof ErrorRed) {
-      mostrarAviso($('#aviso'), 'Sin conexión. Tu código de pack sigue sirviendo: el personal puede ingresarlo a mano.', 'alerta');
+      mostrarAviso($('#aviso'), 'Sin conexión. Tu código sigue sirviendo: el personal puede escribirlo a mano.', 'alerta');
     } else {
       mostrarAviso($('#aviso'), error.message, 'alerta');
     }
@@ -419,7 +419,7 @@ async function cargarHistorial() {
           'div',
           { class: 'vacio' },
           el('div', { class: 'vacio__icono' }, icono('bandera', { grande: true })),
-          el('p', { class: 'sin-margen' }, 'Todavía no has usado ninguna entrada.'),
+          el('p', { class: 'sin-margen' }, 'Todavía no has usado ninguna entrada. Cuando vengas, aquí queda tu historial.'),
         ),
       );
       return;
@@ -531,7 +531,7 @@ function manejarEvento(tipo, datos) {
 
   if (tipo === 'pack_request.aprobada') {
     vibrar([50, 50, 80]);
-    brindis('¡Tu solicitud de recarga fue aprobada! Tus entradas ya están listas.', 'ok', 7000);
+      brindis('¡Listo! Aprobaron tu solicitud y tus entradas ya están disponibles.', 'ok', 7000);
     cargarTodo({ conHistorial: true }).catch(() => {});
     cargarSolicitudActiva().catch(() => {});
     return;
@@ -539,7 +539,7 @@ function manejarEvento(tipo, datos) {
 
   if (tipo === 'pack_request.rechazada') {
     vibrar([100]);
-    brindis(`Solicitud no aprobada: ${datos.reason || 'Consulta en recepción'}`, 'alerta', 8000);
+    brindis(`No aprobaron la solicitud: ${datos.reason || 'Pregunta en recepción'}`, 'alerta', 8000);
     cargarSolicitudActiva().catch(() => {});
     return;
   }
@@ -575,20 +575,21 @@ function manejarEvento(tipo, datos) {
   }
 
   if (tipo === 'pack.emitido') {
+    brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
     // El pack de cortesía lo anuncia su propio evento, con su propia
     // celebración: dos avisos seguidos por lo mismo sobran.
     if (datos.pack?.origin === 'loyalty') {
       cargarTodo({ conHistorial: false }).catch(() => {});
       return;
     }
-    brindis(`¡Nuevo pack ${datos.pack.code} con ${datos.pack.size} entradas!`, 'ok', 6000);
+    brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
     cargarTodo({ conHistorial: false }).catch(() => {});
     return;
   }
 
   if (tipo === 'pack.recibido') {
     vibrar([60, 40, 60]);
-    brindis(`¡${datos.from?.fullName || 'Un piloto'} te transfirió ${datos.quantity} ${datos.quantity === 1 ? 'entrada' : 'entradas'}!`, 'ok', 7000);
+    brindis(`¡${datos.from?.fullName || 'Otro piloto'} te pasó ${datos.quantity} ${datos.quantity === 1 ? 'entrada' : 'entradas'}!`, 'ok', 7000);
     cargarTodo({ conHistorial: false }).catch(() => {});
     return;
   }
@@ -726,14 +727,14 @@ function montarComprarPack() {
     if (!estado.solicitudActiva) return;
     const ok = await confirmar({
       titulo: 'Cancelar solicitud',
-      mensaje: '¿Deseas cancelar esta solicitud de recarga?',
+      mensaje: '¿Seguro que quieres cancelar esta solicitud?',
       textoAceptar: 'Cancelar solicitud',
       peligro: true,
     });
     if (!ok) return;
     try {
       await api.post(`/api/packs/requests/${estado.solicitudActiva.id}/cancel`);
-      brindis('Solicitud cancelada.', 'info');
+      brindis('Listo, cancelamos la solicitud.', 'info');
       await cargarSolicitudActiva();
     } catch (error) {
       brindis(error.message, 'error');
@@ -747,13 +748,13 @@ function montarComprarPack() {
     mostrarAviso($('#aviso-compra-pack'), '');
 
     if (!inputSize.value) {
-      errorSize.textContent = 'Elige uno de los packs disponibles.';
+      errorSize.textContent = 'Escoge uno de los packs disponibles.';
       return;
     }
 
     const ref = $('#compra-referencia').value.trim();
     if (!ref) {
-      mostrarErroresCampo(formulario, { paymentReference: 'Ingresa el número de comprobante.' });
+      mostrarErroresCampo(formulario, { paymentReference: 'Escribe el número del comprobante.' });
       return;
     }
 
@@ -768,7 +769,7 @@ function montarComprarPack() {
         await api.post('/api/packs/requests', datos);
         dialogo.close();
         formulario.reset();
-        brindis('Solicitud enviada. Estamos verificando tu pago.', 'ok', 6000);
+        brindis('Solicitud enviada. Estamos revisando tu pago.', 'ok', 6000);
         await cargarSolicitudActiva();
       } catch (error) {
         if (error.detalles?.fields) {
@@ -808,7 +809,7 @@ function montarCuenta() {
       Object.assign(getUsuario() ?? {}, datos.user);
       mostrarAviso(
         $('#aviso-recordatorios'),
-        activar ? 'Listo: te avisaremos por correo.' : 'Listo: ya no te enviaremos recordatorios.',
+        activar ? 'Listo: te avisaremos por correo.' : 'Listo: ya no te mandaremos recordatorios.',
         'ok',
       );
     } catch (error) {
@@ -829,8 +830,8 @@ function montarCuenta() {
         const datos = await api.patch('/api/auth/me', datosFormulario(formulario));
         // Sin esto, al volver a abrir «Mi cuenta» aparecían los datos de antes.
         Object.assign(getUsuario() ?? {}, datos.user);
-        mostrarAviso($('#aviso-perfil'), 'Datos guardados.', 'ok');
-        brindis('Datos actualizados.', 'ok');
+        mostrarAviso($('#aviso-perfil'), 'Cambios guardados.', 'ok');
+        brindis('Listo, tus datos ya están actualizados.', 'ok');
       } catch (error) {
         mostrarErroresCampo(formulario, error.campos || {});
         mostrarAviso($('#aviso-perfil'), error.message, 'error');
@@ -847,13 +848,13 @@ function montarCuenta() {
         // Sin recortar espacios: la contraseña se manda tal cual se escribió.
         const valor = (nombre) => formulario.querySelector(`[name="${nombre}"]`).value;
         if (valor('newPassword') !== valor('confirmPassword')) {
-          mostrarErroresCampo(formulario, { confirmPassword: 'Las dos contraseñas no coinciden.' });
+          mostrarErroresCampo(formulario, { confirmPassword: 'Las contraseñas no coinciden.' });
           return;
         }
         await cambiarPassword(valor('currentPassword'), valor('newPassword'));
         formulario.reset();
-        mostrarAviso($('#aviso-password'), 'Contraseña cambiada. Cerramos la sesión en tus demás dispositivos.', 'ok');
-        brindis('Contraseña actualizada.', 'ok');
+        mostrarAviso($('#aviso-password'), 'Contraseña cambiada. Cerramos la sesión en tus otros dispositivos.', 'ok');
+        brindis('Listo, contraseña actualizada.', 'ok');
       } catch (error) {
         mostrarErroresCampo(formulario, error.campos || {});
         mostrarAviso($('#aviso-password'), error.message, 'error');
@@ -864,7 +865,7 @@ function montarCuenta() {
   $('#btn-cerrar-todo').addEventListener('click', async () => {
     const seguro = await confirmar({
       titulo: 'Cerrar todas las sesiones',
-      mensaje: 'Se cerrará tu sesión en este y en cualquier otro dispositivo. Tendrás que volver a entrar.',
+      mensaje: 'Vamos a cerrar tu sesión en este y en todos tus otros dispositivos. Después tendrás que volver a entrar.',
       textoAceptar: 'Cerrar todo',
       peligro: true,
     });
@@ -904,7 +905,7 @@ function montarCuenta() {
   $('#btn-copiar-codigo').addEventListener('click', async () => {
     const codigo = estado.packSeleccionado?.code;
     if (!codigo) return;
-    brindis((await copiar(codigo)) ? `Código ${codigo} copiado.` : `Tu código es ${codigo}.`, 'ok');
+    brindis((await copiar(codigo)) ? `Listo, copiamos el código ${codigo}.` : `Tu código es ${codigo}.`, 'ok');
   });
   $('#btn-recargar-historial').addEventListener('click', () => cargarHistorial());
 

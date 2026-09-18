@@ -157,12 +157,12 @@ async function cargarResumen() {
     // son dos verdes casi idénticos, así que pintarlos uno al lado del otro no
     // distinguía nada —parecía un descuido— y le quitaba fuerza al dato que sí
     // tiene que verse primero.
-    metrica(String(datos.totals.pendingTickets), 'Entradas por usar', 'metrica--acento'),
+    metrica(String(datos.totals.pendingTickets), 'Entradas por cobrar', 'metrica--acento'),
     metrica(String(datos.redemptions.today), 'Entradas usadas hoy'),
     metrica(String(datos.totals.activePacks), 'Packs activos'),
     metrica(dinero(datos.totals.revenueCents, datos.totals.currency), 'Ingresos registrados'),
     metrica(String(datos.users.customers), 'Clientes'),
-    metrica(String(datos.redemptions.week), 'Usadas esta semana'),
+    metrica(String(datos.redemptions.week), 'Cobradas esta semana'),
     metrica(String(datos.totals.issuedTickets), 'Entradas emitidas'),
     metrica(String(datos.users.staff), 'Personal de pista'),
     // Solo cuando el programa está encendido: una fila de cifras no debe
@@ -220,7 +220,7 @@ async function cargarResumen() {
   render(
     $('#ultimos-consumos'),
     datos.recent.length === 0
-      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Sin actividad todavía.'))
+      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Todavía no hay actividad.'))
       : el(
           'div',
           { class: 'columnas-lista' },
@@ -238,16 +238,16 @@ async function cargarResumen() {
 
 /** Motivos de rechazo más frecuentes, dichos como los diría recepción. */
 const MOTIVOS_NO_COBRADA = {
-  pack_sin_entradas: 'El pack ya no tenía entradas',
+  pack_sin_entradas: 'Al pack ya no le quedaban entradas',
   pack_expirado: 'El pack estaba vencido',
   pack_suspendido: 'El pack estaba suspendido',
   pack_cancelado: 'El pack estaba anulado',
   cliente_suspendido: 'La cuenta estaba suspendida',
   qr_expirado: 'Mostró un QR vencido',
-  qr_ya_usado: 'El QR ya se había usado',
+  qr_ya_usado: 'Ese QR ya se había usado',
   qr_firma: 'El QR no era auténtico',
-  espera_activa: 'Lectura repetida del mismo pack',
-  pack_no_encontrado: 'El código no existe',
+  espera_activa: 'Se intentó cobrar el mismo pack otra vez',
+  pack_no_encontrado: 'Ese código no existe',
   lectura_vencida: 'Se envió demasiado tarde',
 };
 
@@ -292,7 +292,7 @@ function pintarNoCobradas(lecturas) {
               type: 'button',
               onClick: alPulsar(() => resolverNoCobrada(lectura)),
             },
-            'Marcar resuelta',
+            'Resolver',
           ),
         ),
       ),
@@ -305,14 +305,14 @@ function pintarNoCobradas(lecturas) {
 
 async function resolverNoCobrada(lectura) {
   const nota = await pedirTexto({
-    titulo: 'Marcar como resuelta',
-    mensaje: `${lectura.customerName || 'Cliente desconocido'} · ${lectura.packCode || 'sin código'}. Explica qué se hizo: queda en su ficha.`,
-    etiqueta: 'Cómo se resolvió',
-    textoAceptar: 'Marcar resuelta',
+    titulo: 'Resolver entrada pendiente',
+    mensaje: `${lectura.customerName || 'Cliente desconocido'} · ${lectura.packCode || 'sin código'}. Cuenta qué hiciste: queda en su ficha.`,
+    etiqueta: 'Qué hiciste',
+    textoAceptar: 'Marcar como resuelta',
   });
   if (!nota) return;
   await api.post(`/api/admin/offline-rejections/${encodeURIComponent(lectura.id)}/resolve`, { note: nota });
-  brindis('Entrada marcada como resuelta.', 'ok');
+  brindis('Entrada resuelta.', 'ok');
   await cargarResumen();
 }
 
@@ -423,13 +423,13 @@ function pintarSolicitudesRecarga(solicitudes) {
 async function aprobarSolicitud(req) {
   const confirmado = await confirmar({
     titulo: 'Aprobar pago y emitir pack',
-    mensaje: `¿Confirmas que recibiste el pago de ${dinero(req.priceCents, req.currency)} (${req.paymentReference || 'sin comprobante'}) de ${req.customerName || 'el cliente'}? Se emitirá inmediatamente el pack de ${req.tickets} entradas.`,
-    textoAceptar: 'Sí, aprobar y emitir pack',
+    mensaje: `¿Confirmas que recibiste el pago de ${dinero(req.priceCents, req.currency)} (${req.paymentReference || 'sin comprobante'}) de ${req.customerName || 'el cliente'}? Emitiremos de una el pack de ${req.tickets} entradas.`,
+    textoAceptar: 'Sí, aprobar y emitir',
   });
   if (!confirmado) return;
 
   await api.post(`/api/admin/pack-requests/${encodeURIComponent(req.id)}/approve`);
-  brindis(`Pack de ${req.tickets} entradas emitido exitosamente para ${req.customerName || 'el cliente'}.`, 'ok');
+  brindis(`Listo, emitimos el pack de ${req.tickets} entradas para ${req.customerName || 'el cliente'}.`, 'ok');
   await cargarResumen();
 }
 
@@ -458,17 +458,17 @@ function montarDialogoRechazo() {
   });
 
   $('#btn-motivo-no-recibida').addEventListener('click', () => {
-    motivoInput.value = 'Transferencia no reflejada en la cuenta bancaria.';
+    motivoInput.value = 'La transferencia no aparece en la cuenta bancaria.';
     motivoInput.focus();
   });
 
   $('#btn-motivo-ilegible').addEventListener('click', () => {
-    motivoInput.value = 'Comprobante o número de referencia ilegible/inválido.';
+    motivoInput.value = 'El comprobante o número de referencia no se puede leer.';
     motivoInput.focus();
   });
 
   $('#btn-motivo-monto').addEventListener('click', () => {
-    motivoInput.value = 'El monto transferido no coincide con el valor del pack.';
+    motivoInput.value = 'El monto transferido no coincide con el precio del pack.';
     motivoInput.focus();
   });
 
@@ -489,7 +489,7 @@ function montarDialogoRechazo() {
         });
       });
       dialogo.close();
-      brindis('Solicitud rechazada.', 'aviso');
+      brindis('Solicitud rechazada.', 'alerta');
       await cargarResumen();
     } catch (err) {
       mostrarAviso($('#aviso-rechazar-solicitud'), err.message, 'error');
@@ -505,7 +505,7 @@ function pintarIntegridad(integridad) {
           'div',
           { class: 'aviso aviso--ok' },
           icono('ok'),
-          'Contabilidad correcta: el saldo de todos los packs coincide con su historial de movimientos.',
+          'Todo cuadra: el saldo de los packs coincide con su historial de movimientos.',
         )
       : el(
           'div',
@@ -514,12 +514,12 @@ function pintarIntegridad(integridad) {
           el(
             'div',
             {},
-            el('strong', {}, 'Se detectaron diferencias contables.'),
+            el('strong', {}, 'Hay diferencias en la contabilidad.'),
             el(
               'div',
               { class: 'pequeno' },
-              `${integridad.mismatches.length} pack(s) con saldo distinto al de su historial. ` +
-                'Revisa la bitácora de auditoría y avisa al soporte técnico.',
+              `${integridad.mismatches.length} pack(s) tienen un saldo distinto al de su historial. ` +
+                'Revisa el registro de auditoría y avisa a soporte técnico.',
             ),
             el('div', { class: 'mono pequeno mt' }, integridad.mismatches.map((m) => m.code).join(', ')),
           ),
@@ -552,7 +552,7 @@ async function cargarUsuarios() {
   const { items, total } = await api.get(`/api/admin/users?${parametros}`);
 
   if (items.length === 0) {
-    render($('#tabla-usuarios'), el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Ningún usuario coincide con la búsqueda.')));
+    render($('#tabla-usuarios'), el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'No encontramos usuarios con esa búsqueda.')));
     return;
   }
 
@@ -667,12 +667,12 @@ async function cambiarPermisoDeEscaneo(usuario) {
   const propio = usuario.id === getUsuario()?.id;
 
   const confirmado = await confirmar({
-    titulo: quitar ? 'Quitar el escáner' : 'Autorizar el escáner',
+    titulo: quitar ? 'Quitar permiso para escanear' : 'Dar permiso para escanear',
     mensaje: quitar
-      ? `${usuario.fullName} dejará de poder descontar entradas y se cerrará su sesión.` +
+        ? `${usuario.fullName} ya no podrá cobrar entradas y su sesión se cerrará.` +
         (propio ? ' Es tu propia cuenta: tendrás que volver a entrar y autorizarte otra vez.' : '')
-      : `${usuario.fullName} podrá descontar entradas a cualquier cliente desde la puerta.`,
-    textoAceptar: quitar ? 'Quitar permiso' : 'Autorizar',
+      : `${usuario.fullName} podrá cobrar entradas a cualquier cliente desde la puerta.`,
+    textoAceptar: quitar ? 'Quitar permiso' : 'Dar permiso',
     peligro: quitar,
   });
   if (!confirmado) return;
@@ -702,7 +702,7 @@ async function cargarPacks() {
   const { items, total } = await api.get(`/api/admin/packs?${parametros}`);
 
   if (items.length === 0) {
-    render($('#tabla-packs'), el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Ningún pack coincide con la búsqueda.')));
+    render($('#tabla-packs'), el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'No encontramos packs con esa búsqueda.')));
     return;
   }
 
@@ -800,9 +800,9 @@ async function verPack(packId) {
             'div',
             { class: 'crece' },
             el('div', { class: 'pequeno' }, {
-              issue: 'Emisión del pack',
-              redeem: 'Entrada consumida',
-              void: 'Consumo anulado',
+              issue: 'Pack emitido',
+              redeem: 'Entrada cobrada',
+              void: 'Cobro anulado',
               adjust: 'Ajuste manual',
               cancel: 'Anulación',
               restore: 'Restauración',
@@ -817,7 +817,7 @@ async function verPack(packId) {
 
     el('h3', { class: 'mt-2' }, 'Consumos'),
     datos.redemptions.length === 0
-      ? el('p', { class: 'tenue pequeno' }, 'Sin consumos.')
+      ? el('p', { class: 'tenue pequeno' }, 'Todavía no hay cobros.')
       : el('ul', { class: 'lista' }, datos.redemptions.map((item) => filaConsumo(item, recargar))),
   );
   $('#dialogo-detalle').showModal();
@@ -940,7 +940,7 @@ async function cargarConsumos() {
   render(
     $('#tabla-consumos'),
     items.length === 0
-      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Sin consumos registrados.'))
+      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Todavía no hay entradas cobradas.'))
       : el('ul', { class: 'lista' }, items.map((item) =>
           el(
             'li',
@@ -956,7 +956,7 @@ async function cargarConsumos() {
                 `${fecha(item.createdAt)} · ${item.packCode} · ${METODOS[item.method] || item.method} · ${item.scannerName || 'sistema'}`,
               ),
               item.syncedAt
-                ? el('div', { class: 'tenue-2 pequeno' }, `Leída sin conexión; cobrada el ${fecha(item.syncedAt)}`)
+                ? el('div', { class: 'tenue-2 pequeno' }, `Leída sin señal; cobrada el ${fecha(item.syncedAt)}`)
                 : null,
               item.voidReason ? el('div', { class: 'tenue-2 pequeno' }, `Anulado: ${item.voidReason}`) : null,
             ),
@@ -985,7 +985,7 @@ async function cargarAuditoria() {
   render(
     $('#tabla-auditoria'),
     items.length === 0
-      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Sin registros todavía.'))
+      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Todavía no hay registros.'))
       : el(
           'div',
           { class: 'tabla-envoltura' },
@@ -1100,12 +1100,12 @@ function montarDialogoUsuario() {
           await confirmar({
             titulo: 'Usuario creado',
             mensaje:
-              `Contraseña temporal de ${respuesta.user.fullName} (copiada al portapapeles): ` +
-              `${respuesta.temporaryPassword}. Entrégasela y pídele que la cambie al entrar.`,
-            textoAceptar: 'Entendido',
+              `La contraseña temporal de ${respuesta.user.fullName} ya quedó copiada: ` +
+              `${respuesta.temporaryPassword}. Pásasela y pídele que la cambie al entrar.`,
+            textoAceptar: 'Listo',
           });
         } else {
-          brindis(`${respuesta.user.fullName} creado.`, 'ok');
+          brindis(`${respuesta.user.fullName} ya tiene usuario.`, 'ok');
         }
       } catch (error) {
         mostrarErroresCampo(formulario, error.campos || {});
@@ -1157,7 +1157,7 @@ function montarDialogoPack() {
       render(
         resultados,
         items.length === 0
-          ? el('div', { class: 'tenue pequeno' }, 'Sin coincidencias. Crea el usuario primero.')
+          ? el('div', { class: 'tenue pequeno' }, 'No encontramos coincidencias. Agrega el usuario primero.')
           : items.map((cliente) =>
               el(
                 'button',
@@ -1207,7 +1207,7 @@ function montarDialogoPack() {
 
     const userId = $('#pack-user-id').value;
     if (!userId) {
-      mostrarAviso($('#aviso-pack'), 'Selecciona primero un cliente de la lista.', 'error');
+        mostrarAviso($('#aviso-pack'), 'Escoge primero un cliente de la lista.', 'error');
       return;
     }
 
@@ -1233,7 +1233,7 @@ function montarDialogoPack() {
       try {
         const respuesta = await api.post('/api/admin/packs', cuerpo);
         dialogo.close();
-        brindis(`Pack ${respuesta.pack.code} emitido con ${respuesta.pack.size} entradas.`, 'ok', 6000);
+        brindis(`Listo, el pack ${respuesta.pack.code} ya tiene ${respuesta.pack.size} entradas.`, 'ok', 6000);
         await Promise.all([cargarUsuarios().catch(() => {}), cargarPacks().catch(() => {})]);
         verPack(respuesta.pack.id);
       } catch (error) {
@@ -1289,7 +1289,7 @@ function montarDialogoPack() {
           const nombre = await descargarReporte(boton.dataset.exportar);
           brindis(`Reporte ${nombre} descargado.`, 'ok');
         } catch (error) {
-          brindis(`No se pudo exportar: ${error.message}`, 'error');
+          brindis(`No pudimos exportar: ${error.message}`, 'error');
         }
       }),
     );
@@ -1302,7 +1302,7 @@ function montarDialogoPack() {
     alPulsar(async () => {
       const integridad = await api.get('/api/admin/integrity');
       pintarIntegridad(integridad);
-      brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Se encontraron diferencias.', integridad.ok ? 'ok' : 'error');
+      brindis(integridad.ok ? 'Contabilidad verificada: todo cuadra.' : 'Encontramos diferencias.', integridad.ok ? 'ok' : 'error');
     }),
   );
 

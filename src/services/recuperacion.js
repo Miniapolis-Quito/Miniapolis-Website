@@ -93,24 +93,24 @@ export function correoDeRecuperacion(usuario, token, { ip = null, instante = Dat
   const texto = [
     saludo(usuario),
     '',
-    `Alguien pidió restablecer la contraseña de tu cuenta de ${config.brandName}. Si fuiste tú, abre este enlace para elegir una nueva:`,
+    `Recibimos una solicitud para cambiar la contraseña de tu cuenta de ${config.brandName}. Si fuiste tú, abre este enlace para elegir una nueva:`,
     '',
     enlace,
     '',
-    `El enlace vale ${minutos} minutos y sirve una sola vez.`,
+    `El enlace dura ${minutos} minutos y sirve una sola vez.`,
     '',
-    'Si no lo pediste, ignora este correo: tu contraseña sigue siendo la misma y nadie puede cambiarla sin este enlace.',
+    'Si no lo pediste, ignora este correo: tu contraseña sigue igual y nadie puede cambiarla sin este enlace.',
     '',
     origen,
   ].join('\n');
 
   const html = envolverHtml([
     escaparHtml(saludo(usuario)),
-    `Alguien pidió restablecer la contraseña de tu cuenta de ${escaparHtml(config.brandName)}. Si fuiste tú, usa este botón para elegir una nueva:`,
+    `Recibimos una solicitud para cambiar la contraseña de tu cuenta de ${escaparHtml(config.brandName)}. Si fuiste tú, usa este botón para elegir una nueva:`,
     boton(enlace, 'Elegir una contraseña nueva'),
     `Si el botón no funciona, copia esta dirección en tu navegador:<br><span style="word-break:break-all">${escaparHtml(enlace)}</span>`,
-    `El enlace vale ${minutos} minutos y sirve una sola vez.`,
-    'Si no lo pediste, ignora este correo: tu contraseña sigue siendo la misma y nadie puede cambiarla sin este enlace.',
+    `El enlace dura ${minutos} minutos y sirve una sola vez.`,
+    'Si no lo pediste, ignora este correo: tu contraseña sigue igual y nadie puede cambiarla sin este enlace.',
     `<span style="color:#666;font-size:13px">${escaparHtml(origen)}</span>`,
   ]);
 
@@ -130,7 +130,7 @@ export function correoDeCambio(usuario, { via, ip = null, instante = Date.now() 
 
   const lineas = [
     `La contraseña de tu cuenta de ${config.brandName} se cambió ${como}, ${cuando}.`,
-    'Por seguridad cerramos la sesión en todos tus dispositivos.',
+    'Por seguridad, cerramos la sesión en todos tus dispositivos.',
     'Si fuiste tú, no tienes que hacer nada.',
     `Si no fuiste tú, restablécela ahora ${dondeRestablecer} con «¿Olvidaste tu contraseña?» y avisa en recepción.`,
   ];
