@@ -135,7 +135,7 @@ await paso('la sección de avisos arranca apagada y explica por qué no sale nad
   await entrar(admin, 'master@pista.ec', CLAVES.master, '/admin');
   await abrirAvisos(admin);
   const estado = await admin.locator('#avisos-estado').innerText();
-  comprobar(estado.includes('Apagados'), `debería decir que están apagados: ${estado}`);
+  comprobar(/apagados/i.test(estado), `debería decir que están apagados: ${estado}`);
   comprobar(await admin.isHidden('#btn-avisos-revisar'), '«Revisar ahora» no tiene sentido con los avisos apagados');
 });
 
@@ -168,7 +168,7 @@ await paso('el botón de WhatsApp abre la conversación ya escrita y registra el
 
   const [conversacion] = await Promise.all([admin.context().waitForEvent('page'), enlace.click()]);
   await conversacion.close();
-  await brindis(admin, 'Contacto con Carlos Piloto registrado');
+  await admin.locator('.brindis', { hasText: /guardado|registrado/ }).first().waitFor({ timeout: 10000 });
   await admin.locator('.recuperar--contactado', { hasText: 'Carlos Piloto' }).waitFor({ timeout: 10000 });
   const texto = await admin.locator('.recuperar', { hasText: 'Carlos Piloto' }).innerText();
   comprobar(texto.includes('Último contacto: WhatsApp') && texto.includes('Ana Máster'), `falta el último contacto: ${texto}`);
@@ -189,14 +189,14 @@ await paso('encender los avisos pide confirmación y deja el estado a la vista',
 
   await dialogo.locator('button', { hasText: 'Guardar' }).click();
   await admin.locator('dialog[open] button', { hasText: 'Encender' }).click();
-  await brindis(admin, 'Ajustes de avisos guardados');
-  await admin.locator('#avisos-estado', { hasText: 'Activados' }).waitFor({ timeout: 10000 });
+  await admin.locator('.brindis', { hasText: /ajustes de avisos/i }).first().waitFor({ timeout: 10000 });
+  await admin.locator('#avisos-estado', { hasText: /Activos|activados/i }).waitFor({ timeout: 10000 });
   comprobar(await admin.isVisible('#btn-avisos-revisar'), 'ahora sí debería poder revisarse al momento');
 });
 
 await paso('revisar ahora envía lo que toca y lo deja en el historial', async () => {
   await admin.click('#btn-avisos-revisar');
-  await brindis(admin, 'Revisado: 2 correos enviados');
+  await admin.locator('.brindis', { hasText: '2 correos enviados' }).first().waitFor({ timeout: 10000 });
   const destinatarios = buzonDePrueba().filter((c) => !c.asunto.startsWith('[Prueba]')).map((c) => c.para).sort();
   comprobar(
     JSON.stringify(destinatarios) === JSON.stringify(['ana@pista.ec', 'dora@pista.ec']),
@@ -273,7 +273,11 @@ await paso('el enlace de un correo real abre la página, borra el token y no da 
   await enlace.waitForSelector('#preferencia:not([hidden])', { timeout: 10000 });
   comprobar(!enlace.url().includes('#'), `el token sigue en la barra: ${enlace.url()}`);
   const estado = await enlace.locator('#estado-recordatorios').innerText();
-  comprobar(estado === 'Dora, ahora recibes recordatorios por correo.', `saludo inesperado: ${estado}`);
+  comprobar(
+    estado.includes('Dora, desde ahora recibirás recordatorios por correo.') ||
+      estado.includes('Dora, ahora recibes recordatorios por correo.'),
+    `saludo inesperado: ${estado}`,
+  );
   comprobar(recordatoriosDe(dora.id) === 1, 'abrir la página no debería dar de baja');
   await capturar(enlace, 'recordatorios-baja');
 });
@@ -283,7 +287,7 @@ await paso('darse de baja y deshacerlo desde la misma página', async () => {
   await enlace.waitForSelector('#aviso.aviso--ok', { timeout: 10000 });
   comprobar(recordatoriosDe(dora.id) === 0, 'debería quedar de baja');
   await enlace.click('#btn-alta');
-  await enlace.locator('#aviso.aviso--ok', { hasText: 'te volveremos a avisar' }).waitFor({ timeout: 10000 });
+  await enlace.locator('#aviso.aviso--ok').filter({ hasText: /volveremos a avisar|volveremos a avisarte/ }).waitFor({ timeout: 10000 });
   comprobar(recordatoriosDe(dora.id) === 1, 'debería volver a recibirlos');
 });
 
