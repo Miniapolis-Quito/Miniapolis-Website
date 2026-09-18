@@ -150,15 +150,19 @@ export function verificar(secreto, codigo, {
  * de los dos y así ninguna acaba mostrando la cuenta sin nombre.
  */
 export function uriOtpauth({ secreto, cuenta, emisor, digitos = 6, periodoSegundos = 30 }) {
-  const etiqueta = encodeURIComponent(`${emisor}:${cuenta}`);
-  const parametros = new URLSearchParams({
-    secret: secreto,
-    issuer: emisor,
-    algorithm: 'SHA1',
-    digits: String(digitos),
-    period: String(periodoSegundos),
-  });
-  return `otpauth://totp/${etiqueta}?${parametros.toString()}`;
+  // Codificación por porcentaje a mano, y no con `URLSearchParams`: este
+  // convierte los espacios en «+» (que es lo correcto en un formulario, no en
+  // una URI), y varias aplicaciones de autenticación lo enseñan tal cual —
+  // «Miniápolis+#3»— en la lista de cuentas.
+  const cod = encodeURIComponent;
+  const parametros = [
+    `secret=${cod(secreto)}`,
+    `issuer=${cod(emisor)}`,
+    'algorithm=SHA1',
+    `digits=${digitos}`,
+    `period=${periodoSegundos}`,
+  ].join('&');
+  return `otpauth://totp/${cod(`${emisor}:${cuenta}`)}?${parametros}`;
 }
 
 /** El secreto en grupos de cuatro, para teclearlo sin perder la cuenta. */

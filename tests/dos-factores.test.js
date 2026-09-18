@@ -106,6 +106,10 @@ test('configurar el segundo factor entrega QR, secreto y códigos de respaldo', 
   assert.match(alta.datos.qrDataUrl, /^data:image\/png;base64,/);
   assert.ok(alta.datos.otpauthUri.startsWith('otpauth://totp/'));
   assert.ok(alta.datos.otpauthUri.includes(`secret=${alta.datos.secret}`));
+  // Codificación por porcentaje, no de formulario: con «+» las aplicaciones de
+  // autenticación enseñan el nombre de la pista con los signos a la vista.
+  assert.equal(alta.datos.otpauthUri.includes('+'), false, alta.datos.otpauthUri);
+  assert.ok(alta.datos.otpauthUri.includes(encodeURIComponent(config.brandName)));
 
   // Mientras no se confirme, la cuenta entra como siempre.
   assert.equal((await cStaff.get('/api/auth/2fa')).datos.enabled, false);
