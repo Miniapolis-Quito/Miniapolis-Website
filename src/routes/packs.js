@@ -3,10 +3,10 @@ import express from 'express';
 import QRCode from 'qrcode';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
-import { forbidden, notFound, badRequest } from '../lib/errors.js';
+import { forbidden, notFound, badRequest, tooManyRequests } from '../lib/errors.js';
 import { paginationSchema, transferPackSchema, createPackRequestSchema, parseOrThrow } from '../lib/validate.js';
 import { buildQrPayload } from '../lib/qr.js';
-import { rateLimit } from '../lib/rateLimit.js';
+import { rateLimit, consume } from '../lib/rateLimit.js';
 import * as packs from '../services/packs.js';
 import * as redemptions from '../services/redemptions.js';
 import * as users from '../services/users.js';
@@ -134,18 +134,48 @@ const transferLimiter = rateLimit({
   message: 'Demasiadas transferencias en poco tiempo. Espera unos minutos.',
 });
 
+/**
+ * Rechazos que solo ocurren al buscar al destinatario. Son los que dicen algo
+ * —aunque sea poco— sobre quién tiene cuenta, así que se cuentan aparte.
+ */
+const SONDEO_DE_DESTINATARIO = new Set(['destinatario_no_encontrado', 'telefono_ambiguo']);
+
+/**
+ * Cuántos destinatarios que no sirven se toleran por cuenta en una hora.
+ *
+ * Una persona se equivoca al teclear el correo de su amigo una o dos veces;
+ * quien va probando direcciones para ver cuáles están registradas, muchas. El
+ * límite no toca las transferencias que sí se completan: solo se gasta cuota
+ * cuando la búsqueda falla, así que quien transfiere de verdad nunca lo nota.
+ */
+const FALLOS_DE_DESTINATARIO = { limit: 8, windowSeconds: 60 * 60 };
+
 /** Transfiere entradas de un pack propio a otro cliente registrado. */
 router.post(
   '/:id/transfer',
   transferLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(transferPackSchema, req.body, badRequest);
-    const result = packs.transferTickets(req.params.id, {
-      ...data,
-      actor: req.user,
-      ip: req.clientIp,
-      userAgent: req.get('user-agent'),
-    });
+    let result;
+    try {
+      result = packs.transferTickets(req.params.id, {
+        ...data,
+        actor: req.user,
+        ip: req.clientIp,
+        userAgent: req.get('user-agent'),
+      });
+    } catch (error) {
+      if (!SONDEO_DE_DESTINATARIO.has(error?.code)) throw error;
+      const cuota = consume(`transfer-destinatario:${req.user.id}`, FALLOS_DE_DESTINATARIO);
+      if (!cuota.allowed) {
+        res.set('Retry-After', String(cuota.retryAfterSeconds));
+        throw tooManyRequests(
+          'Demasiados intentos con destinatarios que no existen. Espera un rato e inténtalo de nuevo.',
+          { retryAfterSeconds: cuota.retryAfterSeconds },
+        );
+      }
+      throw error;
+    }
     res.json(result);
   }),
 );

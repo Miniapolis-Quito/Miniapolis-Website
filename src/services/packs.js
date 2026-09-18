@@ -457,10 +457,31 @@ export function adjustPack(packId, { delta, reason, actor, ip, userAgent }) {
 }
 
 /**
+ * Un destinatario que no sirve se responde siempre igual, diga lo que diga el
+ * motivo: no existe, está suspendido o no es una cuenta de cliente.
+ *
+ * El buscador de destinatarios es el único sitio donde alguien de fuera puede
+ * preguntar por una dirección o un teléfono ajeno. Si contestara «suspendido»
+ * a unos y «no existe» a otros, serviría para averiguar quién tiene cuenta
+ * probando correos, que es justo lo que no debe poder hacerse. Recepción
+ * resuelve los dos casos, y eso es lo que dice el mensaje.
+ */
+const MENSAJE_DESTINATARIO_NO_DISPONIBLE =
+  'No encontramos una cuenta de cliente disponible con ese correo o teléfono. ' +
+  'Pídele que cree la suya en la app, o acércate a recepción y lo resolvemos.';
+
+function destinatarioNoDisponible() {
+  return notFound(MENSAJE_DESTINATARIO_NO_DISPONIBLE, 'destinatario_no_encontrado');
+}
+
+/**
  * Transfiere una cantidad de entradas de un pack propio a otro cliente registrado.
  */
 export function transferTickets(sourcePackId, { quantity, recipient, note = null, actor, ip = null, userAgent = null }) {
   const db = getDb();
+  // Solo el máster ve a quién fue a parar la entrada con todos sus datos. Un
+  // cliente recibe lo justo para confirmar que acertó de persona: el nombre.
+  const esMaster = actor?.role === 'master';
 
   const outcome = inTransaction(() => {
     const sourcePack = findById(sourcePackId, db);
@@ -521,20 +542,20 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
       }
     }
 
-    if (!targetUser) {
-      throw notFound(
-        'No encontramos ningún usuario con ese correo o teléfono. Pídele que cree su cuenta en recepción o en la app.',
-        'destinatario_no_encontrado',
-      );
-    }
+    if (!targetUser) throw destinatarioNoDisponible();
 
     if (targetUser.id === sender.id) {
       throw badRequest('No puedes transferirte entradas a ti mismo.', null, 'auto_transferencia');
     }
 
-    if (targetUser.status !== 'active') {
-      throw badRequest('La cuenta del destinatario está suspendida.', null, 'destinatario_suspendido');
-    }
+    // Una transferencia va de un cliente a otro. Admitirla hacia una cuenta de
+    // personal o máster convertiría el buscador de destinatarios en una forma
+    // de confirmar la dirección del administrador —y de colarle entradas que
+    // nadie le vendió—. El máster sí puede mover entradas a donde haga falta.
+    if (!esMaster && targetUser.role !== 'customer') throw destinatarioNoDisponible();
+
+    // Mismo error que si no existiera: ver MENSAJE_DESTINATARIO_NO_DISPONIBLE.
+    if (targetUser.status !== 'active') throw destinatarioNoDisponible();
 
     const now = new Date().toISOString();
 
@@ -686,7 +707,14 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
     sourcePack: publicSource,
     destinationPack: publicNew,
     newPack: publicNew,
-    recipient: { id: outcome.recipient.id, fullName: outcome.recipient.full_name, email: outcome.recipient.email },
+    // El nombre basta para confirmar que la entrada fue a la persona correcta.
+    // El correo y el identificador interno solo los ve el máster: devolvérselos
+    // a cualquier cliente convertía la transferencia en una forma de sacar la
+    // dirección de cualquier titular con solo saber su teléfono.
+    recipient: {
+      fullName: outcome.recipient.full_name,
+      ...(esMaster ? { id: outcome.recipient.id, email: outcome.recipient.email } : {}),
+    },
   };
 }
 
