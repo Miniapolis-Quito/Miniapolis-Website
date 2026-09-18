@@ -36,6 +36,17 @@ número baja solo cada vez que usas una: no hace falta que hagas nada.
 Para entrar a la pista sigue siendo mejor el QR de la app, que cambia cada
 pocos segundos. El pase de la cartera es para llevar la cuenta.
 
+### La casa invita
+
+Si en tu pantalla aparece la tarjeta **La casa invita**, la pista te regala
+entradas por venir: cada tantas entradas usadas, la siguiente la pone ella. Los
+puntos de la tarjeta se van llenando solos cada vez que entras, y cuando se
+completa te llega el pack de regalo al momento, sin canjear nada ni decir nada
+en la puerta.
+
+Las entradas de regalo no cuentan para ganar la siguiente, y el pack de
+cortesía puede tener fecha de vencimiento: mírala en tu lista de packs.
+
 ### Transferir entradas a otro piloto
 
 Si compraste un pack y quieres compartir entradas con amigos, familiares o
@@ -322,6 +333,32 @@ como **Falló** con un botón para reintentar.
 Si un cliente pide no recibir más correos, ábrele la ficha y en **Datos**
 desmarca **Recibe recordatorios por correo**.
 
+### Regalar entradas a quien vuelve («la casa invita»)
+
+**Fidelidad → Configurar**. Eliges cada cuántas entradas usadas se regala una
+(o varias) y cuántos días dura el regalo, y lo enciendes. A partir de ahí el
+sistema lo hace solo: cuando un cliente completa su tarjeta, se le acredita un
+pack de cortesía en el acto, se le avisa en su teléfono y el operador que está
+escaneando lo ve en su pantalla para poder felicitarlo.
+
+Tres cosas que conviene saber antes de encenderlo:
+
+- **No premia por el pasado.** El contador arranca en el momento en que lo
+  enciendes: nadie recibe un pack de golpe por lo que ya usó.
+- **Si lo apagas, los contadores se detienen.** Los premios ya dados se
+  conservan, pero el avance acumulado se pierde: al volver a encenderlo, todos
+  empiezan de cero.
+- **Las entradas regaladas no cuentan** para ganar la siguiente, y anular un
+  cobro devuelve también el avance.
+
+En la misma pantalla ves cuánto has invitado (en entradas y en dinero), los
+últimos premios y **a quién le falta poco**, que es la lista para decirle a
+alguien en recepción «te falta una visita para la entrada gratis». La tarjeta
+de cada cliente también está en su ficha.
+
+Si quieres que además le llegue un correo al ganarlo, enciende el aviso
+**Premio de fidelidad** en *Avisos → Configurar*.
+
 ### Cierre de caja
 
 **Resumen → Exportar packs / consumos / clientes**. Los archivos abren
@@ -373,6 +410,16 @@ administración para resolverlas.
 Sí: el pack es del cliente y él decide. Ten en cuenta la espera de unos
 segundos entre escaneos del mismo pack; para un grupo, escanea uno por uno con
 pausa.
+
+**Un cliente dice que le falta una entrada para la gratis. ¿Cómo lo compruebo?**
+Abre su ficha: en **Resumen** está su tarjeta, con cuántas entradas lleva de
+este ciclo y los premios que ya ganó. La lista **Fidelidad → A quién le falta
+poco** responde lo mismo para todos a la vez.
+
+**¿Y si el premio no le llegó?**
+Se entrega solo, pero si la cuenta estaba suspendida en ese momento queda
+esperando. En **Fidelidad** verás el aviso de premios sin entregar y el botón
+**Otorgar ahora** los entrega en el acto.
 
 **Un cliente pregunta si puede llevar sus entradas en la cartera del teléfono.**
 Sí, si el sistema tiene configuradas las carteras: bajo su QR le aparece el

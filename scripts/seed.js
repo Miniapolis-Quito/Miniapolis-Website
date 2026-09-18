@@ -12,6 +12,7 @@ import { getDb, closeDb } from '../src/db/index.js';
 import * as users from '../src/services/users.js';
 import * as packsService from '../src/services/packs.js';
 import * as redemptions from '../src/services/redemptions.js';
+import * as fidelidad from '../src/services/fidelidad.js';
 
 if (config.isProduction) {
   process.stderr.write('\nLos datos de demostración no se cargan en producción.\n\n');
@@ -121,13 +122,24 @@ for (const definicion of CLIENTES) {
   }
 }
 
+// Programa de fidelidad encendido «desde hace un mes», para que los datos de
+// demostración tengan también premios ya entregados. En una instalación de
+// verdad viene apagado y lo enciende el máster cuando quiere.
+fidelidad.guardarAjustes(
+  { enabled: true, entriesPerReward: 3, rewardTickets: 1, rewardExpiryDays: 60 },
+  { actor: { id: master.id, email: master.email }, now: Date.now() - 30 * 86400000 },
+);
+fidelidad.evaluarPendientes();
+const premios = db.prepare('SELECT COUNT(*) AS n FROM loyalty_rewards').get().n;
+
 process.stdout.write(
   `\n  Datos de demostración cargados.\n\n` +
     `    Máster    : admin@racinghobbies.ec\n` +
     `    Operador  : operador@racinghobbies.ec\n` +
     `    Clientes  : ${CLIENTES.map((c) => c.correo).join(', ')}\n` +
     `    Contraseña: ${CLAVE_DEMO}\n\n` +
-    `    ${packsCreados} packs y ${consumosCreados} consumos creados.\n\n` +
+    `    ${packsCreados} packs y ${consumosCreados} consumos creados.\n` +
+    `    Fidelidad: una entrada de regalo cada 3 usadas; ${premios} ${premios === 1 ? 'premio' : 'premios'} ya ${premios === 1 ? 'entregado' : 'entregados'}.\n\n` +
     `  Cambia estas contraseñas antes de usar el sistema de verdad.\n\n`,
 );
 

@@ -9,6 +9,7 @@ import { montarCabecera, aplicarMarca } from './shell.js';
 import { abrirFicha, cerrarFicha } from './ficha.js';
 import { botonesDePack, anularConsumo } from './acciones.js';
 import { cargarAvisos, montarAvisos } from './avisos.js';
+import { cargarFidelidad, montarFidelidad } from './fidelidad.js';
 
 const estado = {
   configuracion: null,
@@ -51,6 +52,7 @@ const CARGADORES = {
   packs: cargarPacks,
   consumos: cargarConsumos,
   avisos: cargarAvisos,
+  fidelidad: cargarFidelidad,
   auditoria: cargarAuditoria,
 };
 
@@ -163,6 +165,11 @@ async function cargarResumen() {
     metrica(String(datos.redemptions.week), 'Usadas esta semana'),
     metrica(String(datos.totals.issuedTickets), 'Entradas emitidas'),
     metrica(String(datos.users.staff), 'Personal de pista'),
+    // Solo cuando el programa está encendido: una fila de cifras no debe
+    // hablar de algo que la pista no usa.
+    datos.loyalty?.status?.enabled
+      ? metrica(String(datos.loyalty.metrics.ticketsGiven), 'Entradas de cortesía', 'metrica--ok')
+      : null,
   );
 
   // Gráfico de barras de los últimos 14 días. El calendario lo arma el
@@ -1263,6 +1270,7 @@ function montarDialogoPack() {
   montarDialogoUsuario();
   montarDialogoPack();
   montarAvisos();
+  montarFidelidad();
   montarDialogoRechazo();
 
   const buscarUsuarios = temporizador(() => cargarUsuarios().catch(() => {}), 280);

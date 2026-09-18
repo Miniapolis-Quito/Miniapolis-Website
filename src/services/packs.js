@@ -46,6 +46,10 @@ export function toPublicPack(row, { includeQr = false, owner = null } = {}) {
     note: row.note,
     paymentMethod: row.payment_method,
     paymentReference: row.payment_reference,
+    // De dónde salió el pack: vendido, recibido por transferencia o regalado
+    // por el programa de fidelidad. La app lo usa para decir «cortesía» en vez
+    // de mostrar un precio de cero.
+    origin: row.origin ?? 'sale',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     usable: isUsable(row, { owner: packOwner }).ok,
@@ -141,6 +145,8 @@ export function issuePack({
   note = null,
   expiresAt = null,
   allowStaticQr = false,
+  /** 'sale' lo normal; 'loyalty' un pack de cortesía del programa de fidelidad. */
+  origin = 'sale',
   actor = null,
   ip = null,
   userAgent = null,
@@ -173,6 +179,7 @@ export function issuePack({
       note: note || null,
       payment_method: paymentMethod || null,
       payment_reference: paymentReference || null,
+      origin,
       created_by: actor?.id ?? null,
       created_at: now,
       updated_at: now,
@@ -180,10 +187,10 @@ export function issuePack({
     db.prepare(
       `INSERT INTO packs (id, code, user_id, size, remaining, price_cents, currency, secret, status,
                           allow_static_qr, expires_at, note, payment_method, payment_reference,
-                          created_by, created_at, updated_at)
+                          origin, created_by, created_at, updated_at)
        VALUES (@id, @code, @user_id, @size, @remaining, @price_cents, @currency, @secret, @status,
                @allow_static_qr, @expires_at, @note, @payment_method, @payment_reference,
-               @created_by, @created_at, @updated_at)`,
+               @origin, @created_by, @created_at, @updated_at)`,
     ).run(row);
 
     db.prepare(
@@ -196,7 +203,7 @@ export function issuePack({
       action: 'pack.emitido',
       entityType: 'pack',
       entityId: row.id,
-      metadata: { code: row.code, size, userId, priceCents: finalPrice, paymentMethod },
+      metadata: { code: row.code, size, userId, priceCents: finalPrice, paymentMethod, origin },
       ip,
       userAgent,
       db,
@@ -559,8 +566,8 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
     db.prepare(
       `INSERT INTO packs (id, code, user_id, size, remaining, price_cents, currency, secret, status,
                           allow_static_qr, expires_at, note, payment_method, payment_reference,
-                          created_by, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'active', 0, ?, ?, 'transferencia', ?, ?, ?, ?)`,
+                          origin, created_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'active', 0, ?, ?, 'transferencia', ?, 'transfer', ?, ?, ?)`,
     ).run(
       newPackId,
       newCode,
