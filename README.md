@@ -18,6 +18,10 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   dejando un mensaje opcional. El destinatario recibe un pack nuevo de inmediato,
   ambos ven sus saldos y movimientos actualizados en vivo por SSE y carteras,
   y se envía un aviso por correo electrónico.
+- Puede **comprar y recargar packs en línea** desde su app (transferencia bancaria,
+  DeUna o efectivo): elige el pack del catálogo, revisa los datos bancarios oficiales,
+  registra el comprobante/referencia y sigue el estado de aprobación en vivo con
+  opción de cancelar antes de la emisión.
 - Consulta su historial: cuándo usó cada entrada, en qué pack, transferencias
   enviadas/recibidas y con qué saldo quedó.
 - Si se queda sin señal, su código de pack (`RHE-XXXX-XXXX`) sigue sirviendo:
@@ -44,6 +48,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
 
 **Para el usuario máster**
 - Vende packs, da de alta clientes y personal, y asigna roles.
+- **Aprobación de compras y recargas en 1 clic**: tarjeta en el resumen con las
+  solicitudes pendientes, comprobantes, enlace directo a WhatsApp para validar
+  pagos y emisión contable atómica automática del pack.
 - Decide quién puede escanear, de uno en uno, y se lo quita cuando quiera.
 - Ajusta saldos, suspende o anula packs, y anula un consumo devolviendo la
   entrada al cliente.

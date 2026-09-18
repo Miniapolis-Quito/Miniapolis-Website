@@ -221,12 +221,29 @@ test('todas las pantallas se pintan sobre el negro de la marca', () => {
   assert.equal(manifest.theme_color, PAPEL);
 });
 
+
 test('la portada se marca como página de entrada', () => {
   assert.match(
     leer(PORTADA),
     /<body class="pagina-entrada">/,
     'la portada debe marcar su cuerpo como página de entrada',
   );
+});
+
+test('la portada usa la pista real y los recursos fotográficos inmersivos', () => {
+  const src = leer(PORTADA);
+  assert.match(src, /\/images\/pista\/miniapolis-track-wide\.webp/);
+  assert.match(src, /\/images\/pista\/miniapolis-track-vertical\.webp/);
+  assert.match(src, /data-depth="[0-9.]+"/);
+  assert.doesNotMatch(src, /césped|cesped|grass/i, 'la pista debe describirse como asfalto');
+});
+
+test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
+  const src = leer(PORTADA);
+  assert.match(src, /\/js\/portada\.js/);
+  const movimiento = leer('public/js/portada.js');
+  assert.match(movimiento, /prefers-reduced-motion/);
+  assert.match(movimiento, /IntersectionObserver/);
 });
 
 test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la API', () => {

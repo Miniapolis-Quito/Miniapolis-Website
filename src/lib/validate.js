@@ -149,11 +149,24 @@ export const issuePackSchema = z.object({
   userId: z.string().uuid('Selecciona un cliente válido.'),
   size: packSizeSchema,
   priceCents: z.number().int().min(0).max(100_000_000).optional(),
-  paymentMethod: z.enum(['efectivo', 'transferencia', 'tarjeta', 'cortesia', 'otro']).optional(),
+  paymentMethod: z.enum(['efectivo', 'transferencia', 'deuna', 'tarjeta', 'cortesia', 'otro']).optional(),
   paymentReference: trimmed(120).optional(),
   note: trimmed(500).optional(),
   expiresAt: z.string().datetime({ offset: true }).optional().nullable(),
   allowStaticQr: z.boolean().optional(),
+});
+
+export const createPackRequestSchema = z.object({
+  size: packSizeSchema,
+  paymentMethod: z.enum(['transferencia', 'deuna', 'efectivo', 'tarjeta', 'otro'], {
+    message: 'Elige una forma de pago válida.',
+  }),
+  paymentReference: trimmed(120).min(2, 'Ingresa el número de comprobante o referencia.'),
+  note: trimmed(300).optional(),
+});
+
+export const rejectPackRequestSchema = z.object({
+  reason: trimmed(300).min(3, 'Explica el motivo del rechazo.'),
 });
 
 export const adjustPackSchema = z.object({

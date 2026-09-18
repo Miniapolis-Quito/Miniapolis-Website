@@ -25,7 +25,10 @@
           <h1 class="sin-margen" id="titulo">Mis entradas</h1>
           <p class="tenue sin-margen" id="subtitulo"></p>
         </div>
-        <button class="boton boton--fantasma boton--chico" id="btn-cuenta" type="button">Mi cuenta</button>
+        <div class="fila">
+          <button class="boton boton--principal boton--chico" id="btn-comprar-pack" type="button">Comprar entradas</button>
+          <button class="boton boton--fantasma boton--chico" id="btn-cuenta" type="button">Mi cuenta</button>
+        </div>
       </div>
 
       <div id="aviso" class="aviso" role="status" hidden></div>
@@ -34,6 +37,19 @@
       <section class="saldo" id="saldo" aria-live="polite">
         <div class="saldo__numero" id="saldo-numero">—</div>
         <div class="saldo__texto" id="saldo-texto">entradas disponibles</div>
+      </section>
+
+      <!-- Solicitud de recarga en revisión -->
+      <section id="seccion-solicitud-activa" class="tarjeta tarjeta--atencion mt-2" hidden>
+        <div class="tarjeta__titulo">
+          <h2 id="solicitud-activa-titulo">Solicitud de compra en revisión</h2>
+          <span class="etiqueta etiqueta--alerta" id="solicitud-activa-estado">En revisión</span>
+        </div>
+        <p class="tenue pequeno sin-margen" id="solicitud-activa-detalle"></p>
+        <div class="fila mt fila--entre">
+          <span class="tenue-2 pequeno" id="solicitud-activa-fecha"></span>
+          <button class="boton boton--fantasma boton--chico" id="btn-cancelar-solicitud-activa" type="button">Cancelar solicitud</button>
+        </div>
       </section>
 
       <!-- Pase activo con QR -->
@@ -176,6 +192,62 @@
         <div class="fila mt">
           <button class="boton boton--fantasma" id="btn-cancelar-transferir" type="button">Cancelar</button>
           <button class="boton boton--principal crece" id="btn-confirmar-transferir" type="submit">Transferir entradas</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Diálogo para comprar / recargar pack -->
+  <dialog id="dialogo-comprar-pack" class="dialogo-ancho">
+    <div class="modal__cuerpo">
+      <h2>Comprar pack de entradas</h2>
+      <p class="tenue pequeno">Elige tu pack y realiza el pago mediante transferencia bancaria o DeUna.</p>
+
+      <form id="form-comprar-pack" novalidate>
+        <div class="campo">
+          <label>Selecciona tu pack</label>
+          <div class="rejilla rejilla--2" id="catalogo-opciones-pack"></div>
+          <input type="hidden" id="compra-pack-size" name="size">
+          <div class="campo__error" id="error-compra-pack-size"></div>
+        </div>
+
+        <!-- Instrucciones de pago -->
+        <div class="caja-pago" id="bloque-datos-pago">
+          <div class="tarjeta__titulo">
+            <h3 class="sin-margen pequeno">Datos para el pago</h3>
+            <span class="etiqueta" id="pago-banco-nombre">Banco</span>
+          </div>
+          <div class="pequeno" id="pago-instrucciones-cuerpo"></div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-metodo-pago">Forma de pago</label>
+          <select id="compra-metodo-pago" name="paymentMethod" required>
+            <option value="deuna">DeUna (QR / celular)</option>
+            <option value="transferencia" selected>Transferencia bancaria</option>
+            <option value="efectivo">Efectivo en mostrador</option>
+          </select>
+          <div class="campo__error"></div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-referencia">Número de comprobante o referencia</label>
+          <input id="compra-referencia" name="paymentReference" type="text" maxlength="120" placeholder="Ej: 0849201 o número de recibo" required>
+          <div class="campo__ayuda">Pega el código de transacción emitido por tu banco o DeUna.</div>
+          <div class="campo__error"></div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-nota">Nota o mensaje <span class="tenue-2">(opcional)</span></label>
+          <input id="compra-nota" name="note" type="text" maxlength="300" placeholder="Ej: Transferí desde la cuenta de Juan">
+          <div class="campo__error"></div>
+        </div>
+
+        <div id="aviso-compra-pack" class="aviso" role="alert" hidden></div>
+
+        <div class="fila mt">
+          <button class="boton boton--fantasma" id="btn-cerrar-comprar-pack" type="button">Cancelar</button>
+          <button class="boton boton--principal crece" id="btn-enviar-comprar-pack" type="submit">Enviar solicitud</button>
         </div>
       </form>
     </div>

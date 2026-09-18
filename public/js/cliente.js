@@ -17,6 +17,10 @@ const estado = {
   carteras: { apple: false, google: false },
   /** Si la pista manda recordatorios por correo; si no, no hay nada que elegir. */
   recordatorios: false,
+  /** Configuración pública del servidor (catálogo, datos de pago). */
+  configuracion: null,
+  /** Solicitud de recarga activa en revisión, si existe. */
+  solicitudActiva: null,
 };
 
 let cabecera;
@@ -34,7 +38,7 @@ function pintarSaldo(anterior) {
   numero.textContent = String(disponibles);
   $('#saldo-texto').textContent =
     disponibles === 0
-      ? 'No te quedan entradas — compra un pack en recepción'
+      ? 'No te quedan entradas — compra tu pack arriba'
       : `${disponibles === 1 ? 'entrada disponible' : 'entradas disponibles'}`;
   seccion.classList.toggle('saldo--vacio', disponibles === 0);
 
@@ -59,7 +63,7 @@ function pintarSaldo(anterior) {
     detalle += ` · ${plural(activos, 'pack activo', 'packs activos')}`;
     $('#subtitulo').textContent = detalle;
   } else {
-    $('#subtitulo').textContent = 'Todavía no tienes packs. Acércate a recepción para comprar uno.';
+    $('#subtitulo').textContent = 'Todavía no tienes packs. Compra tus entradas con el botón de arriba.';
   }
 }
 
@@ -376,9 +380,27 @@ async function cargarHistorial() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Carga de datos
-// ---------------------------------------------------------------------------
+async function cargarSolicitudActiva() {
+  const seccion = $('#seccion-solicitud-activa');
+  try {
+    const res = await api.get('/api/packs/requests/mine?limit=1');
+    const ultima = res.items?.[0];
+    if (ultima && ultima.status === 'pending') {
+      estado.solicitudActiva = ultima;
+      seccion.hidden = false;
+      $('#solicitud-activa-titulo').textContent = `Solicitud de pack de ${ultima.size} entradas`;
+      $('#solicitud-activa-estado').textContent = 'En revisión';
+      $('#solicitud-activa-detalle').textContent = `${dinero(ultima.priceCents, ultima.currency)} · ${ultima.paymentMethod} · Ref: ${ultima.paymentReference}${ultima.note ? ` ("${ultima.note}")` : ''}`;
+      $('#solicitud-activa-fecha').textContent = `Enviada el ${fecha(ultima.createdAt)}`;
+      return;
+    }
+    seccion.hidden = true;
+    estado.solicitudActiva = null;
+  } catch {
+    seccion.hidden = true;
+    estado.solicitudActiva = null;
+  }
+}
 
 async function cargarTodo({ conHistorial = true } = {}) {
   const anterior = estado.resumen?.availableTickets;
@@ -395,6 +417,7 @@ async function cargarTodo({ conHistorial = true } = {}) {
   pintarSelectorPacks();
   pintarCarteras();
   await refrescarQr({ inmediato: true });
+  await cargarSolicitudActiva();
   if (conHistorial) await cargarHistorial();
 }
 
@@ -407,6 +430,26 @@ function manejarEvento(tipo, datos) {
     const anterior = estado.resumen?.availableTickets;
     estado.resumen = datos.summary;
     pintarSaldo(anterior);
+    return;
+  }
+
+  if (tipo === 'pack_request.aprobada') {
+    vibrar([50, 50, 80]);
+    brindis('¡Tu solicitud de recarga fue aprobada! Tus entradas ya están listas.', 'ok', 7000);
+    cargarTodo({ conHistorial: true }).catch(() => {});
+    cargarSolicitudActiva().catch(() => {});
+    return;
+  }
+
+  if (tipo === 'pack_request.rechazada') {
+    vibrar([100]);
+    brindis(`Solicitud no aprobada: ${datos.reason || 'Consulta en recepción'}`, 'alerta', 8000);
+    cargarSolicitudActiva().catch(() => {});
+    return;
+  }
+
+  if (tipo === 'pack_request.cancelada') {
+    cargarSolicitudActiva().catch(() => {});
     return;
   }
 
@@ -500,6 +543,136 @@ function montarTransferencia() {
           mostrarErroresCampo(formulario, error.detalles.fields);
         }
         mostrarAviso($('#aviso-transferir'), error.message, 'error');
+      }
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Diálogo de compra de packs
+// ---------------------------------------------------------------------------
+
+function montarComprarPack() {
+  const dialogo = $('#dialogo-comprar-pack');
+  const btnAbrir = $('#btn-comprar-pack');
+  const contenedorOpciones = $('#catalogo-opciones-pack');
+  const inputSize = $('#compra-pack-size');
+  const errorSize = $('#error-compra-pack-size');
+
+  btnAbrir.addEventListener('click', () => {
+    const catalogo = estado.configuracion?.packCatalog || [];
+    const moneda = estado.configuracion?.currency || 'USD';
+    render(
+      contenedorOpciones,
+      catalogo.map((pack) => {
+        const precioTotal = dinero(pack.priceCents, moneda);
+        const unitario = dinero(Math.round(pack.priceCents / pack.size), moneda);
+        const activo = Number(inputSize.value) === pack.size;
+        return el(
+          'button',
+          {
+            type: 'button',
+            class: `opcion-pack ${activo ? 'activo' : ''}`,
+            onClick: (evento) => {
+              inputSize.value = String(pack.size);
+              errorSize.textContent = '';
+              for (const b of contenedorOpciones.querySelectorAll('.opcion-pack')) {
+                b.classList.toggle('activo', b === evento.currentTarget);
+              }
+            },
+            dataset: { size: String(pack.size) },
+          },
+          el(
+            'div',
+            { class: 'opcion-pack__cabecera' },
+            el('span', { class: 'opcion-pack__entradas' }, `${pack.size} entradas`),
+            el('span', { class: 'opcion-pack__precio' }, precioTotal),
+          ),
+          el('div', { class: 'opcion-pack__unitario' }, `${unitario} por entrada`),
+        );
+      }),
+    );
+
+    if (!inputSize.value && catalogo.length > 0) {
+      inputSize.value = String(catalogo[0].size);
+      const primero = contenedorOpciones.querySelector('.opcion-pack');
+      if (primero) primero.classList.add('activo');
+    }
+
+    const pago = estado.configuracion?.payment;
+    if (pago) {
+      $('#pago-banco-nombre').textContent = pago.bankName || 'Transferencia';
+      render(
+        $('#pago-instrucciones-cuerpo'),
+        el('div', { class: 'caja-pago__linea' }, el('span', { class: 'tenue' }, 'Titular:'), el('strong', {}, pago.accountHolder)),
+        el('div', { class: 'caja-pago__linea' }, el('span', { class: 'tenue' }, 'RUC / Cédula:'), el('span', { class: 'mono' }, pago.idNumber)),
+        el('div', { class: 'caja-pago__linea' }, el('span', { class: 'tenue' }, `${pago.accountType}:`), el('strong', { class: 'mono' }, pago.accountNumber)),
+        pago.deunaPhone
+          ? el('div', { class: 'caja-pago__linea' }, el('span', { class: 'tenue' }, 'DeUna / Cel:'), el('strong', { class: 'mono' }, pago.deunaPhone))
+          : null,
+      );
+    }
+
+    mostrarAviso($('#aviso-compra-pack'), '');
+    mostrarErroresCampo($('#form-comprar-pack'), {});
+    dialogo.showModal();
+  });
+
+  $('#btn-cerrar-comprar-pack').addEventListener('click', () => dialogo.close());
+
+  $('#btn-cancelar-solicitud-activa').addEventListener('click', async () => {
+    if (!estado.solicitudActiva) return;
+    const ok = await confirmar({
+      titulo: 'Cancelar solicitud',
+      mensaje: '¿Deseas cancelar esta solicitud de recarga?',
+      textoAceptar: 'Cancelar solicitud',
+      peligro: true,
+    });
+    if (!ok) return;
+    try {
+      await api.post(`/api/packs/requests/${estado.solicitudActiva.id}/cancel`);
+      brindis('Solicitud cancelada.', 'info');
+      await cargarSolicitudActiva();
+    } catch (error) {
+      brindis(error.message, 'error');
+    }
+  });
+
+  $('#form-comprar-pack').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const formulario = evento.currentTarget;
+    mostrarErroresCampo(formulario, {});
+    mostrarAviso($('#aviso-compra-pack'), '');
+
+    if (!inputSize.value) {
+      errorSize.textContent = 'Elige uno de los packs disponibles.';
+      return;
+    }
+
+    const ref = $('#compra-referencia').value.trim();
+    if (!ref) {
+      mostrarErroresCampo(formulario, { paymentReference: 'Ingresa el número de comprobante.' });
+      return;
+    }
+
+    await conCarga(formulario.querySelector('button[type="submit"]'), async () => {
+      try {
+        const datos = {
+          size: Number(inputSize.value),
+          paymentMethod: $('#compra-metodo-pago').value,
+          paymentReference: ref,
+          note: $('#compra-nota').value.trim() || undefined,
+        };
+        await api.post('/api/packs/requests', datos);
+        dialogo.close();
+        formulario.reset();
+        brindis('Solicitud enviada. Estamos verificando tu pago.', 'ok', 6000);
+        await cargarSolicitudActiva();
+      } catch (error) {
+        if (error.detalles?.fields) {
+          mostrarErroresCampo(formulario, error.detalles.fields);
+        }
+        mostrarAviso($('#aviso-compra-pack'), error.message, 'error');
       }
     });
   });
@@ -615,12 +788,14 @@ function montarCuenta() {
   try {
     const configuracion = await fetch('/api/config').then((r) => r.json());
     aplicarMarca(configuracion);
+    estado.configuracion = configuracion;
     estado.carteras = configuracion.wallet ?? estado.carteras;
     estado.recordatorios = Boolean(configuracion.emailReminders);
   } catch {
     /* opcional */
   }
 
+  montarComprarPack();
   montarCuenta();
   montarTransferencia();
   $('#btn-refrescar-qr').addEventListener('click', () => refrescarQr({ inmediato: true }));

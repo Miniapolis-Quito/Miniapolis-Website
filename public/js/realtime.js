@@ -135,13 +135,14 @@ export class ConexionEnVivo {
       this.intentos = 0;
       this._cambiarEstado('conectado');
 
-      const lector = respuesta.body.pipeThrough(new TextDecoderStream()).getReader();
+      const lector = respuesta.body.getReader();
+      const decodificador = new TextDecoder();
       let acumulado = '';
 
       while (true) {
         const { value, done } = await lector.read();
         if (done) break;
-        acumulado += value;
+        acumulado += decodificador.decode(value, { stream: true });
 
         // Los eventos SSE se separan por una línea en blanco.
         let corte;

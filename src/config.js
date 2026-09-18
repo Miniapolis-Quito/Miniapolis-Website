@@ -455,6 +455,17 @@ export const config = Object.freeze({
   /** Catálogo de packs vendibles. */
   packCatalog: Object.freeze(packCatalog().map((entrada) => Object.freeze(entrada))),
 
+  /** Datos bancarios y de cobro para recargas en línea. */
+  payment: Object.freeze({
+    bankName: (process.env.PAYMENT_BANK_NAME || 'Banco Pichincha').trim(),
+    accountType: (process.env.PAYMENT_ACCOUNT_TYPE || 'Ahorros').trim(),
+    accountNumber: (process.env.PAYMENT_ACCOUNT_NUMBER || '2200000000').trim(),
+    accountHolder: (process.env.PAYMENT_ACCOUNT_HOLDER || 'Miniápolis #3 Pista RC').trim(),
+    idNumber: (process.env.PAYMENT_ID_NUMBER || '1790000000001').trim(),
+    deunaPhone: (process.env.PAYMENT_DEUNA_PHONE || '0990000000').trim(),
+    instructions: (process.env.PAYMENT_INSTRUCTIONS || 'Realiza tu transferencia o pago por DeUna e ingresa el número de comprobante.').trim(),
+  }),
+
   logLevel: process.env.LOG_LEVEL || (isTest ? 'silent' : 'info'),
 });
 

@@ -14,6 +14,7 @@ import * as packsService from './packs.js';
 import * as redemptions from './redemptions.js';
 import * as sessions from './sessions.js';
 import * as avisos from './avisos.js';
+import * as packRequests from './packRequests.js';
 
 /** Acciones que ya aparecen como movimiento contable; no se repiten en la línea de tiempo. */
 const ACCIONES_DUPLICADAS = [
@@ -33,9 +34,10 @@ export function auditoria(userId, { limit = 50, offset = 0 } = {}) {
   const db = getDb();
   const filtro = `
     WHERE a.actor_id = @userId
-       OR (a.entity_type = 'user'       AND a.entity_id = @userId)
-       OR (a.entity_type = 'pack'       AND a.entity_id IN (SELECT id FROM packs       WHERE user_id = @userId))
-       OR (a.entity_type = 'redemption' AND a.entity_id IN (SELECT id FROM redemptions WHERE user_id = @userId))`;
+       OR (a.entity_type = 'user'         AND a.entity_id = @userId)
+       OR (a.entity_type = 'pack'         AND a.entity_id IN (SELECT id FROM packs         WHERE user_id = @userId))
+       OR (a.entity_type = 'redemption'   AND a.entity_id IN (SELECT id FROM redemptions   WHERE user_id = @userId))
+       OR (a.entity_type = 'pack_request' AND a.entity_id IN (SELECT id FROM pack_requests WHERE user_id = @userId))`;
 
   const filas = db
     .prepare(
@@ -94,7 +96,9 @@ export function lineaDeTiempo(userId, { limit = 60, offset = 0 } = {}) {
            NULL, a.actor_id, NULL,
            a.metadata, a.ip
       FROM audit_log a
-     WHERE (a.actor_id = @userId OR (a.entity_type = 'user' AND a.entity_id = @userId))
+     WHERE (a.actor_id = @userId
+            OR (a.entity_type = 'user' AND a.entity_id = @userId)
+            OR (a.entity_type = 'pack_request' AND a.entity_id IN (SELECT id FROM pack_requests WHERE user_id = @userId)))
        AND a.action NOT IN (${marcadores})
     UNION ALL
     -- Lo que se le envió o se le escribió. Lo pendiente y lo descartado no es
@@ -244,6 +248,8 @@ export function expediente(userId) {
     timeline: lineaDeTiempo(userId, { limit: 40 }),
     audit: auditoria(userId, { limit: 30 }),
     sessions: sessions.listForUser(userId).map((fila) => sessions.toPublicSession(fila)),
+    // Solicitudes de compra/recarga realizadas por el cliente.
+    packRequests: packRequests.listRequests({ userId, limit: 30 }),
     // Para escribirle por WhatsApp desde la cabecera de la ficha.
     whatsappUrl: avisos.enlaceDeWhatsapp(usuario.phone, avisos.leerAjustes().whatsappCountryCode),
     currency: config.currency,
