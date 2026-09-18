@@ -89,17 +89,22 @@ function pintarFidelidad() {
   const umbral = f.entriesPerReward;
   const premio = f.rewardTickets;
   const faltan = f.remaining;
-  const completa = faltan <= 1;
+  const completa = faltan <= 1 || f.due > 0;
   seccion.classList.toggle('fidelidad--completa', completa);
 
   $('#fidelidad-etiqueta').textContent = f.rewardsCount
     ? `${plural(f.ticketsEarned, 'entrada regalada', 'entradas regaladas')}`
     : `${plural(premio, 'entrada gratis', 'entradas gratis')} cada ${umbral}`;
 
-  $('#fidelidad-texto').textContent = completa
-    ? `¡Te falta una entrada! La siguiente visita te regala ${plural(premio, 'entrada', 'entradas')}.`
-    : `Te ${faltan === 1 ? 'falta' : 'faltan'} ${plural(faltan, 'entrada', 'entradas')} para que ` +
-      `${premio === 1 ? 'la siguiente' : `las siguientes ${premio}`} ${premio === 1 ? 'la ponga' : 'las ponga'} la casa.`;
+  // `due` solo es mayor que cero en un caso raro: el premio está ganado pero
+  // todavía no se pudo acreditar (la cuenta estaba suspendida, por ejemplo).
+  // Decirlo evita que la persona crea que se quedó sin él.
+  $('#fidelidad-texto').textContent = f.due > 0
+    ? `¡Ya ganaste ${plural(premio, 'entrada', 'entradas')} de regalo! Te ${premio === 1 ? 'la acreditamos' : 'las acreditamos'} enseguida.`
+    : completa
+      ? `¡Te falta una entrada! La siguiente visita te regala ${plural(premio, 'entrada', 'entradas')}.`
+      : `Te ${faltan === 1 ? 'falta' : 'faltan'} ${plural(faltan, 'entrada', 'entradas')} para que ` +
+        `${premio === 1 ? 'la siguiente' : `las siguientes ${premio}`} ${premio === 1 ? 'la ponga' : 'las ponga'} la casa.`;
 
   // Tarjeta de sellos: uno por entrada del ciclo, y el último es el premio.
   const sellos = $('#fidelidad-sellos');
