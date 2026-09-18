@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
 import { consume, reset as resetRateLimit } from '../lib/rateLimit.js';
 import { notificarSesionInvalida } from './sessions.js';
+import * as audit from './audit.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
 export function normalizeEmail(email) {

@@ -525,6 +525,7 @@ router.put(
 /** Revisa y envía ahora, sin esperar al siguiente ciclo. */
 router.post(
   '/notifications/run',
+  adminNotificationLimiter,
   asyncHandler(async (req, res) => {
     res.json(await avisos.ciclo());
   }),
@@ -532,6 +533,7 @@ router.post(
 
 router.post(
   '/notifications/test',
+  adminNotificationLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(notificationTestSchema, req.body, badRequest);
     res.json(await avisos.enviarPrueba({ ...data, ...actorContext(req) }));
@@ -581,6 +583,20 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
+// Transferencias
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/transfers',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    const senderId = typeof req.query.senderId === 'string' ? req.query.senderId : null;
+    const recipientId = typeof req.query.recipientId === 'string' ? req.query.recipientId : null;
+    res.json(packsService.listAllTransfers({ limit, offset, senderId, recipientId }));
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // Auditoría, integridad y exportación
 // ---------------------------------------------------------------------------
 
@@ -610,12 +626,14 @@ router.get(
 /** Exportación a CSV para contabilidad. */
 router.get(
   '/export/:entity.csv',
+  adminExportLimiter,
   asyncHandler(async (req, res) => {
     const entity = req.params.entity;
 
     const escape = (value) => {
       if (value === null || value === undefined) return '';
-      let text = String(value);
+      // Limpiar bytes nulos para prevenir fallos o truncado en visores CSV
+      let text = String(value).replace(/\0/g, '');
       // Excel y LibreOffice interpretan como fórmula cualquier celda que empiece
       // por =, +, -, @, | o %. Un nombre de cliente no debería poder ejecutar nada al
       // abrir el reporte, así que se antepone un apóstrofo, que la hoja de
@@ -636,8 +654,8 @@ router.get(
     if (entity === 'packs') {
       const { items } = packsService.listPacks({ limit: 5000 });
       csv = toCsv(
-        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'origen', 'precio', 'moneda', 'vence', 'creado'],
-        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, p.origin, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
+        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'precio', 'moneda', 'vence', 'creado'],
+        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
       );
     } else if (entity === 'consumos') {
       const { items } = redemptions.listRedemptions({ limit: 5000 });
@@ -652,6 +670,24 @@ router.get(
       csv = toCsv(
         ['nombre', 'correo', 'telefono', 'rol', 'estado', 'entradas_disponibles', 'packs_activos', 'creado'],
         items.map((u) => [u.fullName, u.email, u.phone, u.role, u.status, u.availableTickets, u.activePacks, u.createdAt]),
+      );
+    } else if (entity === 'transferencias') {
+      const { items } = packsService.listAllTransfers({ limit: 5000 });
+      csv = toCsv(
+        ['id', 'fecha', 'emisor_nombre', 'emisor_correo', 'receptor_nombre', 'receptor_correo', 'pack_origen', 'pack_destino', 'cantidad', 'nota'],
+        items.map((t) => [t.id, t.createdAt, t.sender.fullName, t.sender.email, t.recipient.fullName, t.recipient.email, t.sourcePackCode, t.destinationPackCode, t.quantity, t.note]),
+      );
+    } else if (entity === 'solicitudes') {
+      const { items } = packRequests.listRequests({ limit: 5000 });
+      csv = toCsv(
+        ['id', 'fecha', 'cliente', 'correo', 'tamano', 'precio', 'moneda', 'metodo_pago', 'referencia', 'estado', 'revisado_por', 'fecha_revision', 'motivo_rechazo', 'pack_emitido'],
+        items.map((s) => [s.id, s.createdAt, s.userName, s.userEmail, s.size, (s.priceCents / 100).toFixed(2), s.currency, s.paymentMethod, s.paymentReference, s.status, s.reviewerName, s.reviewedAt, s.rejectionReason, s.packCode]),
+      );
+    } else if (entity === 'auditoria') {
+      const { items } = audit.list({ limit: 5000 });
+      csv = toCsv(
+        ['id', 'fecha', 'actor_nombre', 'actor_correo', 'accion', 'tipo_entidad', 'id_entidad', 'ip', 'metadatos'],
+        items.map((a) => [a.id, a.createdAt, a.actorName, a.actorEmail, a.action, a.entityType, a.entityId, a.ip, typeof a.metadata === 'object' ? JSON.stringify(a.metadata) : a.metadata]),
       );
     } else {
       throw notFound('Ese reporte no existe.');
