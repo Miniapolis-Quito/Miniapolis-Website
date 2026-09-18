@@ -112,6 +112,23 @@ export function getDb() {
   return db;
 }
 
+/** Reintentos ante contención de escritura entre procesos. */
+const REINTENTOS_POR_CONTENCION = 3;
+
+/**
+ * Espera `ms` sin devolver el control al bucle de eventos.
+ *
+ * Una transacción de better-sqlite3 es síncrona: entre el fallo y el reintento
+ * no hay forma de ceder el turno. Lo que sí se puede es esperar durmiendo de
+ * verdad en vez de girando en un bucle. Girar mantenía un núcleo al cien por
+ * cien sin avanzar nada: el proceso que tiene el bloqueo está en otra parte, y
+ * mientras tanto este no atiende ni el latido del canal en vivo ni la lectura
+ * de la puerta. Justo cuando hay más carga es cuando más daño hacía.
+ */
+function dormir(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 /**
  * Ejecuta `fn` dentro de una transacción exclusiva de escritura.
  * BEGIN IMMEDIATE toma el lock de escritura desde el inicio, lo que evita
@@ -122,18 +139,14 @@ export function transaction(fn) {
   const handle = getDb();
   const wrapped = handle.transaction(fn);
   return (...args) => {
-    let reintentos = 3;
+    let reintentos = REINTENTOS_POR_CONTENCION;
     while (true) {
       try {
         return wrapped.immediate(...args);
       } catch (error) {
         if (reintentos > 0 && (error?.code === 'SQLITE_BUSY' || error?.code === 'SQLITE_LOCKED')) {
           reintentos -= 1;
-          const espera = 20 + Math.floor(Math.random() * 40);
-          const inicio = Date.now();
-          while (Date.now() - inicio < espera) {
-            /* breve pausa síncrona para resolver contención */
-          }
+          dormir(20 + Math.floor(Math.random() * 40));
           continue;
         }
         throw error;

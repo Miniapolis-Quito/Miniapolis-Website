@@ -39,6 +39,10 @@ router.get(
       // Cómo va con el programa de fidelidad. Llega siempre: con el programa
       // apagado viene en `enabled: false` y la app no muestra nada.
       loyalty: fidelidad.progreso(req.user.id),
+      // Dónde transferir para recargar. Viaja aquí, con sesión, y no en la
+      // configuración pública: la cuenta bancaria, el titular y su cédula o
+      // RUC son lo justo para montar un cobro falso a nombre de la pista.
+      payment: config.payment,
       qrConfig: { ttlSeconds: config.qr.ttlSeconds, refreshSeconds: config.qr.refreshSeconds },
       serverTime: new Date().toISOString(),
     });

@@ -489,6 +489,9 @@ async function cargarTodo({ conHistorial = true } = {}) {
   estado.resumen = datos.summary;
   estado.packs = datos.packs;
   estado.fidelidad = datos.loyalty ?? null;
+  // Los datos de la cuenta a la que transferir llegan con el saldo, no con la
+  // configuración pública: llevan el titular y su cédula o RUC.
+  estado.pago = datos.payment ?? estado.pago ?? null;
   estado.qrConfig = datos.qrConfig || estado.qrConfig;
 
   pintarSaldo(anterior);
@@ -701,7 +704,7 @@ function montarComprarPack() {
       if (primero) primero.classList.add('activo');
     }
 
-    const pago = estado.configuracion?.payment;
+    const pago = estado.pago;
     if (pago) {
       $('#pago-banco-nombre').textContent = pago.bankName || 'Transferencia';
       render(

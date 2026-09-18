@@ -118,8 +118,11 @@ export function createApp() {
       // «Mi cuenta» solo ofrece el interruptor de recordatorios si la pista
       // los manda de verdad.
       emailReminders: avisos.recordatoriosDisponibles(),
-      // Datos para que el cliente realice transferencias o pagos móviles.
-      payment: config.payment,
+      // Los datos de pago NO van aquí: esta respuesta la lee cualquiera sin
+      // identificarse, y llevan la cuenta bancaria, el titular y su cédula o
+      // RUC. Son lo justo para montar un cobro falso a nombre de la pista, y
+      // una cédula es además un dato personal. Viajan con el saldo del
+      // cliente, en /api/packs/mine, que exige sesión.
     });
   });
 

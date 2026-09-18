@@ -594,3 +594,25 @@ test('las páginas se sirven aunque la instalación cuelgue de una carpeta ocult
     assert.ok(String(r.datos).startsWith('<!doctype html>'), `${ruta} debe devolver la página`);
   }
 });
+
+test('la configuración pública no publica la cuenta bancaria ni la cédula del negocio', async () => {
+  const anonimo = crearCliente();
+  const publica = await anonimo.get('/api/config');
+  assert.equal(publica.status, 200);
+
+  // Cualquiera en Internet lee esta respuesta sin identificarse. El titular,
+  // su cédula o RUC y el número de cuenta son justo lo necesario para montar
+  // un cobro falso a nombre de la pista, y una cédula es además un dato
+  // personal.
+  assert.equal(publica.datos.payment, undefined);
+  const texto = JSON.stringify(publica.datos);
+  for (const dato of ['2200000000', '1790000000001', '0990000000']) {
+    assert.ok(!texto.includes(dato), `la configuración pública no debe llevar "${dato}"`);
+  }
+
+  // A quien sí ha iniciado sesión se le dan, porque es quien va a transferir.
+  const { cCliente } = await sembrarUsuarios();
+  const propia = await cCliente.get('/api/packs/mine');
+  assert.equal(propia.status, 200);
+  assert.ok(propia.datos.payment?.accountNumber, 'el cliente con sesión sí necesita la cuenta');
+});

@@ -5,7 +5,7 @@
  * pago (transferencia bancaria, DeUna, efectivo), y a la administración aprobar o
  * rechazar la solicitud con un solo clic y emisión atómica del pack.
  */
-import { getDb } from '../db/index.js';
+import { getDb, inTransaction } from '../db/index.js';
 import { newId } from '../lib/ids.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { config } from '../config.js';
@@ -207,27 +207,39 @@ export function approveRequest(requestId, { actor, ip, userAgent }) {
   const usuario = users.findById(row.user_id, db);
   if (!usuario) throw notFound('El cliente de esta solicitud ya no existe.');
 
-  // Actualización atómica del estado para ganar cualquier carrera concurrente
   const ahora = new Date().toISOString();
-  const res = db
-    .prepare(
-      `UPDATE pack_requests
-          SET status = 'approved',
-              reviewed_by = ?,
-              reviewed_at = ?,
-              updated_at = ?
-        WHERE id = ? AND status = 'pending'`,
-    )
-    .run(actor.id, ahora, ahora, requestId);
-
-  if (res.changes === 0) {
-    throw conflict('Esta solicitud ya fue procesada anteriormente.');
-  }
-
-  // Emitir el pack contablemente usando el servicio central de packs.
   const notaEmision = row.note ? `Recarga en línea: ${row.note}` : 'Recarga solicitada en línea';
-  const pack = packsService.issuePack(
-    {
+
+  /**
+   * Aprobar y emitir van juntos, o no va ninguno.
+   *
+   * Por separado, cualquier tropiezo al emitir el pack —la cuenta del cliente
+   * suspendida entre que pidió y que se revisó, por ejemplo— dejaba la
+   * solicitud marcada como aprobada y sin pack: el cliente había pagado, el
+   * panel decía que estaba resuelto y nadie podía reintentarlo, porque ya no
+   * estaba pendiente. Dentro de la transacción, ese tropiezo deshace también
+   * la aprobación y la solicitud vuelve a la cola con su motivo a la vista.
+   */
+  const pack = inTransaction(() => {
+    // La condición `status = 'pending'` es la que gana cualquier carrera entre
+    // dos revisores aprobando a la vez.
+    const res = db
+      .prepare(
+        `UPDATE pack_requests
+            SET status = 'approved',
+                reviewed_by = ?,
+                reviewed_at = ?,
+                updated_at = ?
+          WHERE id = ? AND status = 'pending'`,
+      )
+      .run(actor.id, ahora, ahora, requestId);
+
+    if (res.changes === 0) {
+      throw conflict('Esta solicitud ya fue procesada anteriormente.');
+    }
+
+    // Emitir el pack contablemente usando el servicio central de packs.
+    const emitido = packsService.issuePack({
       userId: row.user_id,
       size: row.size,
       priceCents: row.price_cents,
@@ -237,27 +249,28 @@ export function approveRequest(requestId, { actor, ip, userAgent }) {
       actor,
       ip,
       userAgent,
-    },
-    db,
-  );
+    });
 
-  db.prepare('UPDATE pack_requests SET pack_id = ? WHERE id = ?').run(pack.id, requestId);
+    db.prepare('UPDATE pack_requests SET pack_id = ? WHERE id = ?').run(emitido.id, requestId);
 
-  audit.record({
-    actor,
-    action: 'pack_request.aprobada',
-    entityType: 'pack_request',
-    entityId: requestId,
-    metadata: {
-      userId: row.user_id,
-      size: row.size,
-      priceCents: row.price_cents,
-      packId: pack.id,
-      packCode: pack.code,
-    },
-    ip,
-    userAgent,
-    db,
+    audit.record({
+      actor,
+      action: 'pack_request.aprobada',
+      entityType: 'pack_request',
+      entityId: requestId,
+      metadata: {
+        userId: row.user_id,
+        size: row.size,
+        priceCents: row.price_cents,
+        packId: emitido.id,
+        packCode: emitido.code,
+      },
+      ip,
+      userAgent,
+      db,
+    });
+
+    return emitido;
   });
 
   const request = findById(requestId, db);
