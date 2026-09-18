@@ -124,11 +124,15 @@ test('apagar y volver a encender reinicia el contador, y los premios dados se co
   assert.equal(premios().length, 1);
   assert.equal(fidelidad.progreso(u.cliente.id).progress, 2);
 
-  fidelidad.guardarAjustes({ enabled: false }, { actor: u.master });
+  // Fuerza la frontera difícil: las lecturas de la etapa anterior caen en el
+  // mismo milisegundo en que se vuelve a encender el programa.
+  const reinicio = Date.parse(ultimaVisita());
+  getDb().prepare('UPDATE redemptions SET created_at = ?').run(iso(reinicio));
+  fidelidad.guardarAjustes({ enabled: false }, { actor: u.master, now: reinicio });
   assert.equal(fidelidad.progreso(u.cliente.id).enabled, false);
   assert.equal(fidelidad.progreso(u.cliente.id).rewardsCount, 1, 'el premio ya dado no se borra');
 
-  encender({ entriesPerReward: 5 });
+  encender({ entriesPerReward: 5 }, reinicio);
   const progreso = fidelidad.progreso(u.cliente.id);
   assert.equal(progreso.progress, 0, 'el avance de antes de la pausa no se arrastra');
   assert.equal(progreso.rewardsCount, 1);
