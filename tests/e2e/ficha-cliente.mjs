@@ -15,7 +15,7 @@ const B = process.env.BASE_URL || 'http://localhost:3000';
 const CAPTURAS = process.env.CAPTURAS || null;
 const MASTER = {
   email: process.env.MASTER_EMAIL || 'admin@racinghobbies.ec',
-  password: process.env.MASTER_PASSWORD || 'Pista-Demo-2026',
+  password: process.env.MASTER_PASSWORD || 'Pista-RC-Master-2026',
 };
 /** Cliente de los datos de demostración sobre el que se trabaja. */
 const CLIENTE = process.env.CLIENTE_DEMO || 'andres@ejemplo.com';

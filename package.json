@@ -20,6 +20,7 @@
     "test:e2e:recuperacion": "node tests/e2e/recuperacion.mjs",
     "test:e2e:avisos": "node tests/e2e/avisos.mjs",
     "test:e2e:fidelidad": "node tests/e2e/fidelidad.mjs",
+    "test:e2e:dos-factores": "node tests/e2e/dos-factores.mjs",
     "test:ui": "node tests/e2e/interfaz.mjs",
     "test:camara": "node tests/e2e/camara.mjs",
     "test:e2e:sin-conexion": "node tests/e2e/sin-conexion.mjs"

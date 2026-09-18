@@ -32,7 +32,7 @@ async function enviar(ruta, cuerpo) {
       body: JSON.stringify(cuerpo),
     });
   } catch {
-    throw Object.assign(new Error('Sin conexión con el servidor. Revisa tu Internet e inténtalo de nuevo.'), {
+    throw Object.assign(new Error('No hay conexión con el servidor. Revisa tu Internet e intenta de nuevo.'), {
       codigo: 'sin_conexion',
     });
   }
@@ -49,7 +49,7 @@ async function enviar(ruta, cuerpo) {
 function enlaceNoValido(mensaje) {
   comprobando.hidden = true;
   formulario.hidden = true;
-  mostrarAviso(aviso, mensaje || 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.', 'error');
+  mostrarAviso(aviso, mensaje || 'Este enlace ya no sirve. Pide uno nuevo desde la página de acceso.', 'error');
   accionesFinal.hidden = false;
 }
 
@@ -61,7 +61,7 @@ formulario.addEventListener('submit', async (evento) => {
   // Sin recortar espacios: la contraseña se manda tal cual se escribió.
   const nueva = $('#nueva-password').value;
   if (nueva !== $('#confirmar-password').value) {
-    mostrarErroresCampo(formulario, { confirmPassword: 'Las dos contraseñas no coinciden.' });
+    mostrarErroresCampo(formulario, { confirmPassword: 'Las contraseñas no coinciden.' });
     return;
   }
 

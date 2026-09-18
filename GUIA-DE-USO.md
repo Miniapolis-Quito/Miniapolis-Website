@@ -8,14 +8,14 @@ Para quien atiende la pista. Sin tecnicismos.
 
 ### Cómo obtengo mis entradas
 
-1. Entra a la página del sistema desde el celular.
+1. Abre la página del sistema desde tu celular.
 2. Toca **Crear cuenta** y completa nombre, correo y contraseña.
 3. Acércate a recepción y compra tu pack de 5 o 10 entradas.
 4. El pack aparece en tu pantalla al momento. No hace falta recargar nada.
 
 ### Cómo entro a la pista
 
-Abre la página, muestra el **QR grande** al personal y listo. El número enorme
+Abre la página, muestra el **QR grande** al personal y listo. El número grande
 de arriba son las entradas que te quedan, y baja solo en el momento del
 escaneo.
 
@@ -24,7 +24,7 @@ foto a tu pantalla, esa foto no le sirve para entrar.
 
 ### Me quedé sin señal
 
-Debajo del QR aparece tu código: `RHE-XXXX-XXXX`. Dícelo al personal y lo
+Debajo del QR aparece tu código: `RHE-XXXX-XXXX`. Díselo al personal y lo
 ingresa a mano. Funciona igual.
 
 ### Guardarlo en la cartera del teléfono
@@ -84,6 +84,9 @@ Puedes adquirir tus packs pagando por transferencia bancaria, DeUna o efectivo:
   acaban, están por vencer o hace tiempo que no vienes. ¿No los quieres? Toca el
   enlace del final del correo o desmarca **Recordatorios** en **Mi cuenta**. El
   comprobante de compra te sigue llegando.
+- Puedes pedirle a la app que, además de la contraseña, te pida un código que
+  cambia cada 30 segundos en tu teléfono: es la **verificación en dos pasos**,
+  en **Mi cuenta**. Si alguien averigua tu contraseña, sin tu teléfono no entra.
 - ¿Olvidaste la contraseña? En la página de acceso toca **¿Olvidaste tu
   contraseña?**, escribe tu correo y abre el enlace que te llega. Vale media hora
   y sirve una sola vez. Si no pediste ese correo, ignóralo: tu contraseña sigue
@@ -105,6 +108,13 @@ Si en lugar del escáner te sale *Tu cuenta no puede escanear*, es que todavía
 no te han habilitado. No es un fallo: el permiso se da cuenta por cuenta.
 Pídeselo a administración y vuelve a entrar.
 
+Si te sale que la pista **exige verificación en dos pasos**, entra a tu cuenta y
+toca **Seguridad** arriba: escanea el QR con una aplicación de autenticación
+(Google Authenticator, Aegis, 1Password…), confirma con el primer código y
+**guarda los diez códigos de respaldo** que aparecen. Es la única vez que se
+muestran, y son lo que te deja entrar si un día te quedas sin teléfono. Desde
+ese momento, al entrar te pedirá el código después de la contraseña.
+
 ### Cobrar una entrada
 
 Apunta al QR del cliente. Cuando suena y aparece el recuadro verde, ya está
@@ -115,7 +125,7 @@ descontada. El número grande son las entradas que le quedan.
   cobrar otra entrada.
 - **Recuadro rojo**: algo no cuadra. El mensaje dice qué. Lo más común es un QR
   vencido: pídele al cliente que mire su pantalla, se renueva solo.
-- **Recuadro con borde discontinuo, "Guardada sin conexión"**: no hay
+- **Recuadro con borde discontinuo, "Guardada sin señal"**: no hay
   Internet, pero la entrada quedó guardada en el teléfono. **Déjalo pasar**:
   se cobrará sola cuando vuelva la señal. Suenan dos pitidos cortos en vez de
   uno para que lo notes sin mirar.
@@ -150,9 +160,9 @@ seguro es un `Q`, un `7` o una `V`.
 
 ### Si se cae Internet
 
-Sigue trabajando igual. Arriba aparece un aviso amarillo de **Sin conexión** y
+Sigue trabajando igual. Arriba aparece un aviso amarillo de **Sin señal** y
 cada entrada que cobras se guarda en el teléfono. Abajo, en **Guardadas sin
-conexión**, ves las que esperan.
+señal**, ves las que esperan.
 
 - No hace falta hacer nada al volver la señal: se envían solas y sale un aviso
   con cuántas se cobraron. Si tienes prisa, toca **Enviar ahora**.
@@ -204,7 +214,7 @@ El enlace de la ficha se puede copiar y compartir: lleva directo a esa persona.
 
 Cuando un cliente solicita un pack desde la app tras realizar su pago bancario o DeUna:
 
-1. En **Resumen** aparece de inmediato la tarjeta destacada **Solicitudes de recarga pendientes**.
+1. En **Resumen** aparece de una la tarjeta destacada **Solicitudes de compra pendientes**.
 2. Cada solicitud muestra el nombre del cliente, pack pedido, valor a pagar, método seleccionado, fecha y número de comprobante/referencia.
 3. Si el cliente tiene teléfono registrado, dispones de un botón directo de **WhatsApp** con un mensaje predefinido para pedirle la foto del comprobante o contactarlo al instante.
 4. Al verificar el pago en la cuenta bancaria, toca **Aprobar**: el sistema emite el pack de forma contable oficial y atómica, notificando al cliente en tiempo real y acreditando su saldo.
@@ -212,13 +222,13 @@ Cuando un cliente solicita un pack desde la app tras realizar su pago bancario o
 
 ### Vender un pack
 
-**Packs → Vender pack**. Busca al cliente por nombre o correo (si no existe,
+**Packs → Vender un pack**. Busca al cliente por nombre o correo (si no existe,
 créalo antes en *Clientes y personal*), elige 5 o 10, ajusta el precio si
 hiciste descuento y registra cómo pagó. El cliente lo ve al instante.
 
 ### Dar de alta personal
 
-**Clientes y personal → Nuevo usuario**, con rol **Personal de pista**. El
+**Clientes y personal → Agregar usuario**, con rol **Personal de pista**. El
 sistema genera una contraseña temporal y la copia al portapapeles: pásasela y
 pídele que la cambie al entrar. El personal consulta packs, pero no vende ni ve
 la administración.
@@ -238,7 +248,7 @@ tenía el escáner abierto en un teléfono, deja de funcionar ahí mismo. Es la
 forma más rápida de cerrar una puerta — al terminar un turno, cuando alguien
 deja de trabajar contigo o si se pierde un teléfono.
 
-Todo queda en la bitácora: quién autorizó a quién, cuándo, y cuándo se lo
+Todo queda en el registro: quién autorizó a quién, cuándo, y cuándo se lo
 quitó. Si algún día hay que revisar un cobro raro, la lista de quién podía
 escanear ese día está ahí.
 
@@ -287,11 +297,34 @@ cierran sus sesiones abiertas. Le llega un aviso por correo del cambio, sin la
 contraseña: esa se la das tú en mano.
 
 El personal y el máster cambian su propia contraseña desde el botón
-**Contraseña** de la cabecera.
+**Contraseña** de la cabecera, y configuran la verificación en dos pasos desde
+el botón **Seguridad**, al lado.
 
-### Entradas sin cobrar
+Restablecer la contraseña **no** quita el segundo paso: si además perdió el
+teléfono y los códigos de respaldo, hay que quitárselo aparte desde
+**Seguridad** (más abajo).
 
-Si en **Resumen** aparece la tarjeta roja **Entradas sin cobrar**, alguien entró
+### Verificación en dos pasos del equipo
+
+En **Seguridad** ves quién del equipo tiene puesto el segundo paso, desde
+cuándo y cuántos códigos de respaldo le quedan.
+
+**Para exigirlo a todo el personal**, primero actívalo en tu propia cuenta
+(botón **Seguridad** de la cabecera): si lo exigieras sin tenerlo, te quedarías
+fuera de este panel. Después enciende el interruptor. A partir de ahí, quien no
+lo tenga puede entrar a su cuenta y configurarlo, pero no escanea ni abre la
+administración hasta hacerlo. A los clientes no les afecta.
+
+**Si alguien pierde el teléfono**, primero que pruebe con sus códigos de
+respaldo: entra igual y puede generar una tanda nueva desde **Seguridad**. Si
+también los perdió, toca **Quitar** en su fila: su cuenta vuelve a entrar solo
+con la contraseña, se cierran sus sesiones abiertas, le llega un correo y queda
+constancia en la bitácora con tu nombre. Dile que lo vuelva a configurar en
+cuanto pueda.
+
+### Entradas pendientes de cobro
+
+Si en **Resumen** aparece la tarjeta roja **Entradas pendientes de cobro**, alguien entró
 durante un corte de Internet y su entrada no se pudo descontar después (el pack
 ya no tenía saldo, estaba anulado, la cuenta suspendida…). Cada una dice quién,
 con qué pack, en qué puesto y por qué.

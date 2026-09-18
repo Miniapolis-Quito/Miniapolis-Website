@@ -453,10 +453,10 @@ function canjearQr({ payload, quantity = 1, scanner, deviceLabel, idempotencyKey
   const verification = verifyQrPayload(parsed, pack, { now: lectura.at });
   if (!verification.ok) {
     const messages = {
-      firma: 'El código no es auténtico. Pide al cliente que actualice su pantalla.',
+      firma: 'El código no es auténtico. Pídele al cliente que actualice su pantalla.',
       expirado: lectura.diferida
         ? 'El QR ya había vencido cuando se leyó: el cliente mostraba una pantalla sin actualizar.'
-        : 'El código ya venció. Pide al cliente que muestre el QR actualizado.',
+        : 'El código ya venció. Pídele al cliente que muestre el QR actualizado.',
       futuro: 'El reloj del dispositivo del cliente está desfasado. Que actualice su pantalla.',
       estatico_no_permitido: 'Este pack no admite códigos impresos. Usa el QR de la app.',
     };

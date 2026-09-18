@@ -15,18 +15,18 @@
   <main class="contenedor">
     <div id="cargando-inicial" class="vacio">
       <div class="cargando cargando--grande"></div>
-      <p class="mt">Cargando tus entradas…</p>
+      <p class="mt">Estamos cargando tus entradas…</p>
     </div>
 
     <div id="contenido" hidden>
       <div class="encabezado-pista fila fila--entre mb-2">
         <div>
-          <span class="seccion-marca">Tu pase</span>
+          <span class="seccion-marca">Tu pase de entrada</span>
           <h1 class="sin-margen" id="titulo">Mis entradas</h1>
           <p class="tenue sin-margen" id="subtitulo"></p>
         </div>
         <div class="fila">
-          <button class="boton boton--principal boton--chico" id="btn-comprar-pack" type="button">Comprar entradas</button>
+          <button class="boton boton--principal boton--chico" id="btn-comprar-pack" type="button">Comprar un pack</button>
           <button class="boton boton--fantasma boton--chico" id="btn-cuenta" type="button">Mi cuenta</button>
         </div>
       </div>
@@ -56,7 +56,7 @@
       <!-- Solicitud de recarga en revisión -->
       <section id="seccion-solicitud-activa" class="tarjeta tarjeta--atencion mt-2" hidden>
         <div class="tarjeta__titulo">
-          <h2 id="solicitud-activa-titulo">Solicitud de compra en revisión</h2>
+          <h2 id="solicitud-activa-titulo">Tu solicitud está en revisión</h2>
           <span class="etiqueta etiqueta--alerta" id="solicitud-activa-estado">En revisión</span>
         </div>
         <p class="tenue pequeno sin-margen" id="solicitud-activa-detalle"></p>
@@ -69,13 +69,13 @@
       <!-- Pase activo con QR -->
       <section id="seccion-qr" class="tarjeta mt-2" hidden>
         <div class="tarjeta__titulo">
-          <h2>Tu pase de entrada</h2>
+          <h2>Tu pase para la pista</h2>
           <span class="etiqueta etiqueta--info" id="qr-etiqueta-pack"></span>
         </div>
         <p class="tenue pequeno">
-          Muestra este código al personal de la pista. Se renueva solo por seguridad:
-          una captura de pantalla caduca en un par de minutos y, en cuanto el
-          código se usa una vez, esa copia deja de servir para siempre.
+          Enséñale este código al personal de la pista. Se actualiza solo por seguridad:
+          una captura deja de servir al rato y, una vez usado el código, esa copia
+          ya no funciona.
         </p>
 
         <div class="qr-caja qr-caja--cargando" id="qr-caja">
@@ -84,11 +84,11 @@
 
         <div class="qr-pie mt">
           <div class="mono codigo-grande" id="qr-codigo"></div>
-          <div id="qr-estado">Se renueva en <span class="qr-cuenta" id="qr-cuenta">—</span> s</div>
+          <div id="qr-estado">Se actualiza en <span class="qr-cuenta" id="qr-cuenta">—</span> s</div>
         </div>
 
         <div class="fila mt centro-flex">
-          <button class="boton boton--fantasma boton--chico" id="btn-refrescar-qr" type="button">Renovar ahora</button>
+          <button class="boton boton--fantasma boton--chico" id="btn-refrescar-qr" type="button">Actualizar ahora</button>
           <button class="boton boton--fantasma boton--chico" id="btn-copiar-codigo" type="button">Copiar código</button>
         </div>
 
@@ -132,7 +132,7 @@
           <div class="campo__error"></div>
         </div>
         <div id="aviso-perfil" class="aviso" role="status" hidden></div>
-        <button class="boton boton--principal" type="submit">Guardar datos</button>
+        <button class="boton boton--principal" type="submit">Guardar cambios</button>
       </form>
 
       <!-- Solo aparece si la pista manda recordatorios por correo. -->
@@ -141,7 +141,7 @@
         <h3>Recordatorios</h3>
         <div class="campo campo--linea">
           <input type="checkbox" id="perfil-recordatorios">
-          <label for="perfil-recordatorios">Avisarme por correo cuando me queden pocas entradas, se me acaben o estén por vencer</label>
+          <label for="perfil-recordatorios">Avísame por correo cuando me queden pocas entradas, se me acaben o estén por vencer</label>
         </div>
         <p class="tenue-2 pequeno sin-margen">El comprobante de cada compra te llega siempre.</p>
         <div id="aviso-recordatorios" class="aviso mt" role="status" hidden></div>
@@ -171,6 +171,11 @@
       </form>
 
       <hr class="separador">
+
+      <!-- Verificación en dos pasos. Lo dibuja public/js/dos-factores.js. -->
+      <div id="seccion-dos-factores"></div>
+
+      <hr class="separador">
       <button class="boton boton--peligro boton--bloque" id="btn-cerrar-todo" type="button">
         Cerrar sesión en todos mis dispositivos
       </button>
@@ -184,7 +189,7 @@
   <dialog id="dialogo-transferir">
     <div class="modal__cuerpo">
       <h2>Transferir entradas</h2>
-      <p class="tenue pequeno" id="transferir-subtitulo">Envía entradas de tu pack a otro piloto registrado.</p>
+      <p class="tenue pequeno" id="transferir-subtitulo">Pásale entradas de tu pack a otro piloto registrado.</p>
       <form id="form-transferir" novalidate>
         <div class="campo">
           <label for="transferir-cantidad">Cantidad a transferir</label>
@@ -214,12 +219,12 @@
   <!-- Diálogo para comprar / recargar pack -->
   <dialog id="dialogo-comprar-pack" class="dialogo-ancho">
     <div class="modal__cuerpo">
-      <h2>Comprar pack de entradas</h2>
-      <p class="tenue pequeno">Elige tu pack y realiza el pago mediante transferencia bancaria o DeUna.</p>
+      <h2>Comprar un pack</h2>
+      <p class="tenue pequeno">Escoge tu pack y paga por transferencia bancaria, DeUna o en efectivo en el mostrador.</p>
 
       <form id="form-comprar-pack" novalidate>
         <div class="campo">
-          <label>Selecciona tu pack</label>
+          <label>Escoge tu pack</label>
           <div class="rejilla rejilla--2" id="catalogo-opciones-pack"></div>
           <input type="hidden" id="compra-pack-size" name="size">
           <div class="campo__error" id="error-compra-pack-size"></div>
@@ -247,7 +252,7 @@
         <div class="campo">
           <label for="compra-referencia">Número de comprobante o referencia</label>
           <input id="compra-referencia" name="paymentReference" type="text" maxlength="120" placeholder="Ej: 0849201 o número de recibo" required>
-          <div class="campo__ayuda">Pega el código de transacción emitido por tu banco o DeUna.</div>
+          <div class="campo__ayuda">Copia aquí el número de transacción que te dio el banco o DeUna.</div>
           <div class="campo__error"></div>
         </div>
 

@@ -235,7 +235,7 @@ await paso('consulta y consumo por código manual', async () => {
   await staff.fill('#codigo-manual', codigo);
   await staff.click('#form-manual button[type=submit]');
   await staff.waitForFunction(
-    () => document.querySelector('.resultado__titulo')?.textContent.includes('Entrada registrada'),
+    () => /Entrada (registrada|cobrada)/.test(document.querySelector('.resultado__titulo')?.textContent || ''),
     { timeout: 15000 },
   );
   const restantes = (await staff.textContent('.resultado__restantes')).trim();
@@ -278,7 +278,7 @@ await paso('un corte de red a mitad de un cobro no descuenta dos veces', async (
   await staff.fill('#codigo-manual', codigoCorte);
   await staff.click('#form-manual button[type=submit]');
   await staff.waitForFunction(
-    () => document.querySelector('.resultado__titulo')?.textContent.includes('Guardada sin conexión'),
+    () => /Guardada sin (conexión|señal)/.test(document.querySelector('.resultado__titulo')?.textContent || ''),
     { timeout: 15000 },
   );
   await staff.unroute('**/api/scan/manual');

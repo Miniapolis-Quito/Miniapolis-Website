@@ -86,6 +86,26 @@ pack regalado se presenta como cortesía y no como un pack de precio cero, que
 usarlo no acerca el premio siguiente, y que el panel y la ficha del cliente lo
 cuentan bien.
 
+## `dos-factores.mjs` — la verificación en dos pasos
+
+```bash
+npm run test:e2e:dos-factores
+```
+
+Levanta la aplicación en el propio proceso y recorre el segundo factor como lo
+vive quien lo usa: el operador lo activa desde **Seguridad** (el QR se dibuja
+de verdad, la clave a mano tiene la forma que espera cualquier aplicación de
+autenticación, un código incorrecto lo dice y no activa nada), guarda sus diez
+códigos de respaldo y vuelve a entrar en dos pasos —una vez con el código del
+teléfono y otra con uno de respaldo—. Comprueba además que cancelar el segundo
+paso borra la contraseña de la pantalla, que el panel del máster refleja quién
+lo tiene puesto, que no se puede exigir al equipo sin tenerlo uno mismo, y que
+el rescate de quien perdió el teléfono lo devuelve a entrar solo con la
+contraseña.
+
+Los códigos los calcula la prueba con la misma librería que el servidor: no
+hace falta ningún teléfono.
+
 ## `camara.mjs` — el escáner leyendo un QR de verdad
 
 ```bash

@@ -22,7 +22,7 @@ router.use(
     name: 'recordatorios-ip',
     limit: 60,
     windowSeconds: 15 * 60,
-    message: 'Demasiadas solicitudes desde esta conexión. Espera unos minutos.',
+    message: 'Hay demasiadas solicitudes desde esta conexión. Espera unos minutos.',
   }),
 );
 

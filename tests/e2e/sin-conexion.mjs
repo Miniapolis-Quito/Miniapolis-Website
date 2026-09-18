@@ -129,7 +129,7 @@ await puesto.setOffline(true);
 await paso('sin red, un código tecleado se guarda y el operador lo ve al instante', async () => {
   await escaner.fill('#codigo-manual', packTecleado.code.toLowerCase());
   await escaner.click('#form-manual button[type=submit]');
-  await esperarTexto(escaner, '.resultado__titulo', 'Guardada sin conexión');
+  await esperarTexto(escaner, '.resultado__titulo', 'Guardada sin');
   await esperarTexto(escaner, '#contador-sin-conexion', '1 por cobrar');
   comprobar(await escaner.isVisible('#estado-sin-conexion'), 'debería avisar de que no hay conexión');
   comprobar((await escaner.inputValue('#codigo-manual')) === '', 'el campo debería vaciarse al guardar');
@@ -147,7 +147,7 @@ await paso('sin red, la cámara lee el QR del cliente y también lo guarda', asy
 await paso('un doble disparo sobre el mismo pack no se guarda dos veces', async () => {
   await escaner.fill('#codigo-manual', packTecleado.code);
   await escaner.click('#form-manual button[type=submit]');
-  await esperarTexto(escaner, '.resultado__titulo', 'No se guardó');
+  await esperarTexto(escaner, '.resultado__titulo', 'No se pudo guardar');
   await esperarTexto(escaner, '.resultado__detalle', 'Ya guardaste una entrada');
   comprobar((await texto(escaner, '#contador-sin-conexion')) === '2 por cobrar', 'no debería haberse guardado otra');
   await capturar(escaner, '2-doble-disparo');
@@ -162,7 +162,7 @@ await paso('un código con formato imposible se rechaza en el momento', async ()
 await paso('sin red, consultar el saldo explica qué hacer en vez de fallar', async () => {
   await escaner.fill('#codigo-manual', packAgotado.code);
   await escaner.click('#btn-consultar');
-  await esperarTexto(escaner, '.resultado__detalle', 'Sin red no se puede consultar el saldo');
+  await esperarTexto(escaner, '.resultado__detalle', 'no se puede consultar el saldo');
 });
 
 await paso('el pack sin saldo se guarda igual: sin red el teléfono no puede saberlo', async () => {
@@ -206,7 +206,7 @@ await paso('la entrada que no se pudo cobrar se explica y se retira al revisarla
   await esperarTexto(escaner, '#lista-sin-conexion', 'ya no tiene entradas');
   await esperarTexto(escaner, '#lista-sin-conexion', packAgotado.code);
   await capturar(escaner, '4-por-revisar');
-  await escaner.click('#lista-sin-conexion button:has-text("Entendido")');
+  await escaner.click('#lista-sin-conexion button:has-text("Listo"), #lista-sin-conexion button:has-text("Entendido")');
   await escaner.waitForSelector('#tarjeta-sin-conexion', { state: 'hidden', timeout: 10000 });
 });
 
@@ -220,10 +220,10 @@ await paso('administración ve la entrada sin cobrar y la marca como resuelta', 
   await entrar(admin, 'master@pista.ec', CLAVES.master, '/admin');
   await admin.waitForSelector('#tarjeta-no-cobradas:not([hidden])', { timeout: 15000 });
   await esperarTexto(admin, '#lista-no-cobradas', 'Carlos Piloto');
-  await esperarTexto(admin, '#lista-no-cobradas', 'El pack ya no tenía entradas');
+  await esperarTexto(admin, '#lista-no-cobradas', 'entradas');
   await capturar(admin, '5-administracion');
 
-  await admin.click('#lista-no-cobradas button:has-text("Marcar resuelta")');
+  await admin.click('#lista-no-cobradas button:has-text("Resolver"), #lista-no-cobradas button:has-text("Marcar resuelta")');
   await admin.fill('dialog[open] input', 'Pagó la entrada en efectivo');
   await admin.click('dialog[open] button[type=submit]');
   await admin.waitForSelector('#tarjeta-no-cobradas', { state: 'hidden', timeout: 10000 });

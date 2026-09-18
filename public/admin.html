@@ -31,6 +31,7 @@
       <button class="pestana" role="tab" id="pestana-consumos" aria-controls="panel-consumos" data-panel="consumos" aria-selected="false" type="button">Consumos</button>
       <button class="pestana" role="tab" id="pestana-avisos" aria-controls="panel-avisos" data-panel="avisos" aria-selected="false" type="button">Avisos</button>
       <button class="pestana" role="tab" id="pestana-fidelidad" aria-controls="panel-fidelidad" data-panel="fidelidad" aria-selected="false" type="button">Fidelidad</button>
+      <button class="pestana" role="tab" id="pestana-seguridad" aria-controls="panel-seguridad" data-panel="seguridad" aria-selected="false" type="button">Seguridad</button>
       <button class="pestana" role="tab" id="pestana-auditoria" aria-controls="panel-auditoria" data-panel="auditoria" aria-selected="false" type="button">Auditoría</button>
     </div>
 
@@ -38,14 +39,14 @@
     <section id="panel-resumen" role="tabpanel" aria-labelledby="pestana-resumen">
       <div class="rejilla rejilla--metricas" id="metricas"></div>
 
-      <!-- Solicitudes de recarga / compra en línea pendientes de revisión -->
+      <!-- Solicitudes de compra en línea pendientes de revisión -->
       <div class="tarjeta tarjeta--atencion mt-2" id="tarjeta-solicitudes-recarga" aria-labelledby="titulo-solicitudes-recarga" hidden>
         <div class="tarjeta__titulo">
-          <h2 id="titulo-solicitudes-recarga">Solicitudes de recarga pendientes</h2>
+          <h2 id="titulo-solicitudes-recarga">Solicitudes de compra pendientes</h2>
           <span class="etiqueta etiqueta--alerta" id="contador-solicitudes-recarga"></span>
         </div>
         <p class="tenue pequeno">
-          Clientes que pagaron su pack por transferencia bancaria, DeUna o efectivo. Verifica el comprobante y aprueba con un clic para emitir el pack de inmediato.
+          Personas que pagaron su pack por transferencia, DeUna o efectivo. Revisa el comprobante y aprueba con un clic para emitir el pack de una.
         </p>
         <div id="lista-solicitudes-recarga"></div>
       </div>
@@ -54,12 +55,12 @@
            pudo cobrar al volver la señal. Solo aparece si hay alguna. -->
       <div class="tarjeta tarjeta--atencion mt-2" id="tarjeta-no-cobradas" aria-labelledby="titulo-no-cobradas" hidden>
         <div class="tarjeta__titulo">
-          <h2 id="titulo-no-cobradas">Entradas sin cobrar</h2>
+          <h2 id="titulo-no-cobradas">Entradas pendientes de cobro</h2>
           <span class="etiqueta etiqueta--error" id="contador-no-cobradas"></span>
         </div>
         <p class="tenue pequeno">
-          El escáner dejó pasar a estas personas durante un corte de red y, al volver la señal, su entrada no se pudo
-          descontar. Cóbrala o regístrala como corresponda y márcala como resuelta: la nota queda en su ficha.
+          Durante un corte de red, el escáner dejó pasar a estas personas y luego no pudo cobrarles la entrada.
+          Cóbrala o regístrala como corresponda y márcala como resuelta: la nota queda en su ficha.
         </p>
         <div id="lista-no-cobradas"></div>
       </div>
@@ -87,6 +88,8 @@
             <button class="boton boton--fantasma boton--chico" id="btn-verificar" type="button">Verificar ahora</button>
           </div>
           <div id="integridad"></div>
+          <!-- Cuántas cuentas con permisos entran solo con la contraseña. -->
+          <div id="resumen-seguridad" class="mt"></div>
           <!-- Botones, no enlaces: el reporte va por la API autenticada y un enlace
                normal lo pediría sin la cabecera de sesión (ver admin.js). -->
           <div class="fila mt">
@@ -99,7 +102,7 @@
 
       <div class="tarjeta mt-2">
         <div class="tarjeta__titulo">
-          <h2>Últimos accesos</h2>
+          <h2>Últimas entradas</h2>
           <span class="etiqueta" id="conexiones-vivas"></span>
         </div>
         <div id="ultimos-consumos"></div>
@@ -111,7 +114,7 @@
       <div class="tarjeta">
         <div class="tarjeta__titulo">
           <h2>Clientes y personal</h2>
-          <button class="boton boton--principal boton--chico" id="btn-nuevo-usuario" type="button">Nuevo usuario</button>
+          <button class="boton boton--principal boton--chico" id="btn-nuevo-usuario" type="button">Agregar usuario</button>
         </div>
         <div class="fila mb">
           <input type="search" id="buscar-usuarios" placeholder="Buscar por nombre, correo o teléfono"
@@ -137,7 +140,7 @@
       <div class="tarjeta">
         <div class="tarjeta__titulo">
           <h2>Packs de entradas</h2>
-          <button class="boton boton--principal boton--chico" id="btn-nuevo-pack" type="button">Vender pack</button>
+          <button class="boton boton--principal boton--chico" id="btn-nuevo-pack" type="button">Vender un pack</button>
         </div>
         <div class="fila mb">
           <input type="search" id="buscar-packs" placeholder="Buscar por código o cliente"
@@ -160,7 +163,7 @@
     <section id="panel-consumos" role="tabpanel" aria-labelledby="pestana-consumos" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">
-          <h2>Consumos registrados</h2>
+          <h2>Entradas cobradas</h2>
           <button class="boton boton--fantasma boton--chico" id="btn-recargar-consumos" type="button">Actualizar</button>
         </div>
         <div id="tabla-consumos"></div>
@@ -188,7 +191,7 @@
 
       <div class="tarjeta mt-2">
         <div class="tarjeta__titulo">
-          <h2>Clientes por recuperar</h2>
+          <h2>Clientes para volver a contactar</h2>
           <span class="etiqueta etiqueta--info" id="avisos-en-juego"></span>
         </div>
         <div class="pestanas pestanas--grupos" id="avisos-grupos" role="tablist" aria-label="Grupos de clientes por recuperar"></div>
@@ -249,10 +252,33 @@
     </section>
 
     <!-- Auditoría -->
+    <section id="panel-seguridad" role="tabpanel" aria-labelledby="pestana-seguridad" hidden>
+      <div class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Verificación en dos pasos</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-seguridad-recargar" type="button">Actualizar</button>
+        </div>
+        <p class="tenue pequeno">
+          La contraseña del personal es lo único que separa a cualquiera del escáner y de esta administración.
+          El segundo paso añade un código que cambia cada 30 segundos y que solo sale del teléfono de esa persona.
+        </p>
+        <div id="seguridad-estado"></div>
+      </div>
+
+      <div class="rejilla rejilla--metricas mt-2" id="seguridad-metricas"></div>
+
+      <div class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>El equipo</h2>
+        </div>
+        <div id="seguridad-equipo"></div>
+      </div>
+    </section>
+
     <section id="panel-auditoria" role="tabpanel" aria-labelledby="pestana-auditoria" hidden>
       <div class="tarjeta">
         <div class="tarjeta__titulo">
-          <h2>Bitácora de auditoría</h2>
+          <h2>Registro de auditoría</h2>
           <button class="boton boton--fantasma boton--chico" id="btn-recargar-auditoria" type="button">Actualizar</button>
         </div>
         <p class="tenue pequeno">Registro inalterable de todo lo que ocurre en el sistema.</p>
@@ -261,11 +287,11 @@
     </section>
   </main>
 
-  <!-- Nuevo usuario -->
+  <!-- Agregar usuario -->
   <dialog id="dialogo-usuario">
     <form id="form-usuario" novalidate>
       <div class="modal__cuerpo">
-        <h2>Nuevo usuario</h2>
+        <h2>Agregar usuario</h2>
         <div class="campo">
           <label for="usuario-nombre">Nombre completo</label>
           <input id="usuario-nombre" name="fullName" type="text" required>
@@ -288,7 +314,7 @@
             <option value="staff">Personal de pista</option>
             <option value="master">Máster (control total)</option>
           </select>
-          <div class="campo__ayuda">El personal consulta packs; el máster puede todo. Escanear se autoriza aparte.</div>
+          <div class="campo__ayuda">El personal consulta packs; el máster puede hacer todo. El permiso para escanear se da aparte.</div>
         </div>
         <div class="campo" id="campo-escaner" hidden>
           <label class="campo--linea sin-margen-todo" for="usuario-escaner">
@@ -296,13 +322,13 @@
             <span>Puede escanear entradas en la puerta</span>
           </label>
           <div class="campo__ayuda">
-            Sin esta casilla, la cuenta entra al sistema pero no puede descontar entradas a ningún cliente.
+            Sin esta casilla, la cuenta puede entrar al sistema, pero no puede cobrar entradas a ningún cliente.
             Se puede dar y quitar en cualquier momento.
           </div>
           <div class="campo__error"></div>
         </div>
         <div class="campo">
-          <label for="usuario-password">Contraseña <span class="tenue-2">(en blanco = se genera una)</span></label>
+          <label for="usuario-password">Contraseña <span class="tenue-2">(déjala en blanco y generamos una)</span></label>
           <input id="usuario-password" name="password" type="text" autocomplete="new-password">
           <div class="campo__error"></div>
         </div>
@@ -310,16 +336,16 @@
       </div>
       <div class="modal__pie">
         <button class="boton boton--fantasma" type="button" data-cerrar>Cancelar</button>
-        <button class="boton boton--principal" type="submit">Crear usuario</button>
+        <button class="boton boton--principal" type="submit">Agregar usuario</button>
       </div>
     </form>
   </dialog>
 
-  <!-- Vender pack -->
+  <!-- Vender un pack -->
   <dialog id="dialogo-pack">
     <form id="form-pack" novalidate>
       <div class="modal__cuerpo">
-        <h2>Vender pack de entradas</h2>
+        <h2>Vender un pack</h2>
         <div class="campo">
           <label for="pack-cliente">Cliente</label>
           <input id="pack-cliente" type="search" placeholder="Busca por nombre o correo" autocomplete="off">
@@ -334,7 +360,7 @@
         <div class="campo">
           <label for="pack-precio">Precio cobrado (USD)</label>
           <input id="pack-precio" name="price" type="number" min="0" step="0.01" inputmode="decimal">
-          <div class="campo__ayuda">Se rellena con el precio de lista; ajústalo si aplicaste un descuento.</div>
+          <div class="campo__ayuda">Se llena con el precio de lista; cámbialo si aplicaste un descuento.</div>
         </div>
         <div class="campo">
           <label for="pack-pago">Forma de pago</label>
@@ -353,7 +379,7 @@
         <div class="campo">
           <label for="pack-vence">Vence el <span class="tenue-2">(opcional)</span></label>
           <input id="pack-vence" name="expiresAt" type="date">
-          <div class="campo__ayuda">Déjalo vacío si el pack no caduca.</div>
+          <div class="campo__ayuda">Déjalo vacío si el pack no vence.</div>
         </div>
         <div class="campo">
           <label for="pack-nota">Nota <span class="tenue-2">(opcional)</span></label>
@@ -364,8 +390,8 @@
           <label for="pack-estatico">Permitir QR impreso (pase físico)</label>
         </div>
         <div class="aviso aviso--alerta pequeno">
-          El QR impreso no cambia nunca, así que quien le tome una foto puede usarlo.
-          Actívalo solo para pases físicos entregados en mano.
+          El QR impreso no cambia, así que alguien podría usarlo si le toma una foto.
+          Actívalo solo para pases físicos que entregues en mano.
         </div>
         <div id="aviso-pack" class="aviso" hidden></div>
       </div>
@@ -387,11 +413,11 @@
   <!-- Diálogo para rechazar solicitud de recarga -->
   <dialog id="dialogo-rechazar-solicitud">
     <form id="form-rechazar-solicitud" class="modal__cuerpo" novalidate>
-      <h2>Rechazar solicitud de recarga</h2>
-      <p class="tenue pequeno" id="rechazar-solicitud-subtitulo">Indica el motivo por el cual no se puede aprobar este pago.</p>
+      <h2>Rechazar solicitud de compra</h2>
+      <p class="tenue pequeno" id="rechazar-solicitud-subtitulo">Indica por qué no se puede aprobar este pago.</p>
       <div class="campo">
         <label for="rechazar-solicitud-motivo">Motivo del rechazo</label>
-        <input id="rechazar-solicitud-motivo" name="reason" type="text" maxlength="300" placeholder="Ej: Transferencia no encontrada en el banco" required>
+        <input id="rechazar-solicitud-motivo" name="reason" type="text" maxlength="300" placeholder="Ej.: La transferencia no aparece en el banco" required>
         <div class="campo__error"></div>
       </div>
       <div class="fila mt">
@@ -402,7 +428,7 @@
       <div id="aviso-rechazar-solicitud" class="aviso mt" role="alert" hidden></div>
       <div class="modal__pie mt-2">
         <button class="boton boton--fantasma" id="btn-cerrar-rechazar-solicitud" type="button">Volver</button>
-        <button class="boton boton--peligro" type="submit">Rechazar solicitud</button>
+        <button class="boton boton--peligro" type="submit">Rechazar compra</button>
       </div>
     </form>
   </dialog>

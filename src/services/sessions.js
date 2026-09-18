@@ -35,7 +35,6 @@ export function issueSession(user, { ip, userAgent, familyId = null } = {}) {
 
   return { refreshToken: token, session, accessToken: buildAccessToken(user, session) };
 }
-
 export function buildAccessToken(user, session) {
   return signAccessToken({
     sub: user.id,
@@ -114,6 +113,27 @@ export function revokeAllForUser(userId, reason = 'admin') {
 }
 
 /**
+ * Cierra las sesiones de todos los demás dispositivos y deja viva la actual.
+ *
+ * Lo usa la activación del segundo factor: las sesiones abiertas solo con
+ * contraseña dejan de valer, pero quien acaba de activarla se queda dentro.
+ * No se avisa por el canal en vivo porque ese aviso va al usuario entero y
+ * echaría también a la pantalla que hizo el cambio; las demás se enteran en su
+ * siguiente petición, que es cuando deja de valer su token.
+ */
+export function revokeOtherSessions(userId, sessionId, reason = 'otros_dispositivos') {
+  const db = getDb();
+  const actual = db.prepare('SELECT family_id FROM sessions WHERE id = ?').get(sessionId);
+  const familia = actual?.family_id ?? null;
+  return db
+    .prepare(
+      `UPDATE sessions SET revoked_at = ?, revoke_reason = ?
+        WHERE user_id = ? AND revoked_at IS NULL AND family_id IS NOT ?`,
+    )
+    .run(new Date().toISOString(), reason, userId, familia).changes;
+}
+
+/**
  * Revoca una sesión y todas las renovaciones de su familia: el token de acceso
  * deja de valer en la siguiente petición y la cookie de refresco ya no renueva.
  */
@@ -169,6 +189,25 @@ export function listForUser(userId) {
          FROM sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
     )
     .all(userId);
+}
+
+export function findById(sessionId, db = getDb()) {
+  return db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId) ?? null;
+}
+
+/**
+ * Revoca una sesión específica y todas las renovaciones de su familia.
+ */
+export function revokeSession(sessionId, reason = 'revocada_manualmente') {
+  const db = getDb();
+  const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId);
+  if (!session) return { ok: false, reason: 'no_encontrada' };
+  const nowIso = new Date().toISOString();
+  const changes = db
+    .prepare('UPDATE sessions SET revoked_at = ?, revoke_reason = ? WHERE family_id = ? AND revoked_at IS NULL')
+    .run(nowIso, reason, session.family_id).changes;
+  notificarSesionInvalida(session.user_id, reason);
+  return { ok: true, session, revokedCount: changes };
 }
 
 /** Limpieza periódica de sesiones caducadas. */

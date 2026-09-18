@@ -16,6 +16,7 @@ import {
   notificationContactSchema,
   notificationTestSchema,
   notificationListSchema,
+  securitySettingsSchema,
   paginationSchema,
   passwordSchema,
   rejectPackRequestSchema,
@@ -36,11 +37,20 @@ import * as sinConexion from '../services/sinConexion.js';
 import * as avisos from '../services/avisos.js';
 import * as fidelidad from '../services/fidelidad.js';
 import * as packRequests from '../services/packRequests.js';
+import * as dosFactores from '../services/dosFactores.js';
+import { rateLimit } from '../lib/rateLimit.js';
 
 export const router = express.Router();
 router.use(requireMaster);
 
 const actorContext = (req) => ({ actor: req.user, ip: req.clientIp, userAgent: req.get('user-agent') });
+
+const adminUserLimiter = rateLimit({ name: 'admin-user-op', limit: 60, windowSeconds: 15 * 60 });
+const adminPasswordLimiter = rateLimit({ name: 'admin-password-op', limit: 30, windowSeconds: 15 * 60 });
+const adminPackLimiter = rateLimit({ name: 'admin-pack-op', limit: 120, windowSeconds: 15 * 60 });
+const adminVoidLimiter = rateLimit({ name: 'admin-void-op', limit: 60, windowSeconds: 15 * 60 });
+const adminExportLimiter = rateLimit({ name: 'admin-export-op', limit: 30, windowSeconds: 15 * 60 });
+const adminNotificationLimiter = rateLimit({ name: 'admin-notification-op', limit: 30, windowSeconds: 15 * 60 });
 
 // ---------------------------------------------------------------------------
 // Panel general
@@ -75,6 +85,7 @@ router.get(
 
 router.post(
   '/users',
+  adminUserLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(createUserSchema, req.body, badRequest);
 
@@ -254,6 +265,7 @@ router.patch(
 /** Restablece la contraseña de un usuario y devuelve una temporal. */
 router.post(
   '/users/:id/reset-password',
+  adminPasswordLimiter,
   asyncHandler(async (req, res) => {
     const target = users.findById(req.params.id);
     if (!target) throw notFound('Usuario no encontrado.');
@@ -294,6 +306,58 @@ router.post(
   }),
 );
 
+// ---------------------------------------------------------------------------
+// Seguridad de las cuentas del equipo
+// ---------------------------------------------------------------------------
+
+/** La política de verificación en dos pasos y cómo va el equipo con ella. */
+router.get(
+  '/security',
+  asyncHandler(async (req, res) => {
+    res.json(dosFactores.panelDeSeguridad());
+  }),
+);
+
+router.patch(
+  '/security',
+  asyncHandler(async (req, res) => {
+    const cambios = parseOrThrow(securitySettingsSchema, req.body, badRequest);
+    dosFactores.guardarAjustes(cambios, actorContext(req));
+    res.json(dosFactores.panelDeSeguridad());
+  }),
+);
+
+/**
+ * Quita el segundo factor de una cuenta. Es el rescate para quien pierde el
+ * teléfono y se quedó también sin códigos de respaldo.
+ *
+ * Quien lo hace queda en la bitácora y la persona recibe un correo: retirar el
+ * segundo factor de una cuenta ajena es justo lo que intentaría alguien que se
+ * hiciera con el panel, así que no puede pasar en silencio.
+ */
+router.post(
+  '/users/:id/2fa/disable',
+  asyncHandler(async (req, res) => {
+    const target = users.findById(req.params.id);
+    if (!target) throw notFound('Usuario no encontrado.');
+    if (!target.totp_enabled) {
+      throw conflict('Esa cuenta no tiene la verificación en dos pasos activa.', 'dos_factores_no_activa');
+    }
+
+    dosFactores.desactivar(target, {
+      motivo: 'administracion',
+      actor: req.user,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    // Sus sesiones abiertas se cierran: si el teléfono se perdió, quien lo
+    // tenga no debe seguir dentro mientras se reconfigura la cuenta.
+    const cerradas = sessions.revokeAllForUser(target.id, 'dos_factores_retirada');
+
+    res.json({ ok: true, sesionesCerradas: cerradas, user: users.toPublicUser(users.findById(target.id)) });
+  }),
+);
+
 router.post(
   '/users/:id/revoke-sessions',
   asyncHandler(async (req, res) => {
@@ -308,6 +372,37 @@ router.post(
       metadata: { sesiones: count },
     });
     res.json({ ok: true, sesionesCerradas: count });
+  }),
+);
+
+/** Cierra una sesión específica de un usuario. */
+router.delete(
+  '/users/:userId/sessions/:sessionId',
+  adminUserLimiter,
+  asyncHandler(async (req, res) => {
+    const { userId, sessionId } = req.params;
+    const session = sessions.findById(sessionId);
+    if (!session || session.user_id !== userId) {
+      throw notFound('Sesión no encontrada para este usuario.');
+    }
+    sessions.revokeSession(sessionId, 'revocada_por_master');
+    audit.record({
+      ...actorContext(req),
+      action: 'admin.sesion_revocada',
+      entityType: 'session',
+      entityId: sessionId,
+      metadata: { targetUserId: userId },
+    });
+    res.json({ ok: true, message: 'Sesión revocada correctamente.' });
+  }),
+);
+
+/** Elimina una cuenta que no tenga historial contable ni operativo. */
+router.delete(
+  '/users/:id',
+  adminUserLimiter,
+  asyncHandler(async (req, res) => {
+    res.json(users.deleteUser(req.params.id, actorContext(req)));
   }),
 );
 
@@ -333,6 +428,7 @@ router.get(
 
 router.post(
   '/packs',
+  adminPackLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(issuePackSchema, req.body, badRequest);
     const pack = packsService.issuePack({ ...data, ...actorContext(req) });
@@ -365,6 +461,7 @@ router.patch(
 
 router.post(
   '/packs/:id/adjust',
+  adminPackLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(adjustPackSchema, req.body, badRequest);
     res.json({ pack: packsService.adjustPack(req.params.id, { ...data, ...actorContext(req) }) });
@@ -395,6 +492,7 @@ router.get(
 
 router.post(
   '/redemptions/:id/void',
+  adminVoidLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(voidRedemptionSchema, req.body, badRequest);
     res.json(redemptions.voidRedemption(req.params.id, { ...data, ...actorContext(req) }));
@@ -481,6 +579,7 @@ router.put(
 /** Revisa y envía ahora, sin esperar al siguiente ciclo. */
 router.post(
   '/notifications/run',
+  adminNotificationLimiter,
   asyncHandler(async (req, res) => {
     res.json(await avisos.ciclo());
   }),
@@ -488,6 +587,7 @@ router.post(
 
 router.post(
   '/notifications/test',
+  adminNotificationLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(notificationTestSchema, req.body, badRequest);
     res.json(await avisos.enviarPrueba({ ...data, ...actorContext(req) }));
@@ -537,6 +637,20 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
+// Transferencias
+// ---------------------------------------------------------------------------
+
+router.get(
+  '/transfers',
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parseOrThrow(paginationSchema, req.query, badRequest);
+    const senderId = typeof req.query.senderId === 'string' ? req.query.senderId : null;
+    const recipientId = typeof req.query.recipientId === 'string' ? req.query.recipientId : null;
+    res.json(packsService.listAllTransfers({ limit, offset, senderId, recipientId }));
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // Auditoría, integridad y exportación
 // ---------------------------------------------------------------------------
 
@@ -566,12 +680,14 @@ router.get(
 /** Exportación a CSV para contabilidad. */
 router.get(
   '/export/:entity.csv',
+  adminExportLimiter,
   asyncHandler(async (req, res) => {
     const entity = req.params.entity;
 
     const escape = (value) => {
       if (value === null || value === undefined) return '';
-      let text = String(value);
+      // Limpiar bytes nulos para prevenir fallos o truncado en visores CSV
+      let text = String(value).replace(/\0/g, '');
       // Excel y LibreOffice interpretan como fórmula cualquier celda que empiece
       // por =, +, -, @, | o %. Un nombre de cliente no debería poder ejecutar nada al
       // abrir el reporte, así que se antepone un apóstrofo, que la hoja de
@@ -592,8 +708,8 @@ router.get(
     if (entity === 'packs') {
       const { items } = packsService.listPacks({ limit: 5000 });
       csv = toCsv(
-        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'origen', 'precio', 'moneda', 'vence', 'creado'],
-        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, p.origin, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
+        ['codigo', 'cliente', 'correo', 'tamano', 'restantes', 'usadas', 'estado', 'precio', 'moneda', 'vence', 'creado'],
+        items.map((p) => [p.code, p.ownerName, p.ownerEmail, p.size, p.remaining, p.used, p.status, (p.priceCents / 100).toFixed(2), p.currency, p.expiresAt, p.createdAt]),
       );
     } else if (entity === 'consumos') {
       const { items } = redemptions.listRedemptions({ limit: 5000 });
@@ -608,6 +724,24 @@ router.get(
       csv = toCsv(
         ['nombre', 'correo', 'telefono', 'rol', 'estado', 'entradas_disponibles', 'packs_activos', 'creado'],
         items.map((u) => [u.fullName, u.email, u.phone, u.role, u.status, u.availableTickets, u.activePacks, u.createdAt]),
+      );
+    } else if (entity === 'transferencias') {
+      const { items } = packsService.listAllTransfers({ limit: 5000 });
+      csv = toCsv(
+        ['id', 'fecha', 'emisor_nombre', 'emisor_correo', 'receptor_nombre', 'receptor_correo', 'pack_origen', 'pack_destino', 'cantidad', 'nota'],
+        items.map((t) => [t.id, t.createdAt, t.sender.fullName, t.sender.email, t.recipient.fullName, t.recipient.email, t.sourcePackCode, t.destinationPackCode, t.quantity, t.note]),
+      );
+    } else if (entity === 'solicitudes') {
+      const { items } = packRequests.listRequests({ limit: 5000 });
+      csv = toCsv(
+        ['id', 'fecha', 'cliente', 'correo', 'tamano', 'precio', 'moneda', 'metodo_pago', 'referencia', 'estado', 'revisado_por', 'fecha_revision', 'motivo_rechazo', 'pack_emitido'],
+        items.map((s) => [s.id, s.createdAt, s.userName, s.userEmail, s.size, (s.priceCents / 100).toFixed(2), s.currency, s.paymentMethod, s.paymentReference, s.status, s.reviewerName, s.reviewedAt, s.rejectionReason, s.packCode]),
+      );
+    } else if (entity === 'auditoria') {
+      const { items } = audit.list({ limit: 5000 });
+      csv = toCsv(
+        ['id', 'fecha', 'actor_nombre', 'actor_correo', 'accion', 'tipo_entidad', 'id_entidad', 'ip', 'metadatos'],
+        items.map((a) => [a.id, a.createdAt, a.actorName, a.actorEmail, a.action, a.entityType, a.entityId, a.ip, typeof a.metadata === 'object' ? JSON.stringify(a.metadata) : a.metadata]),
       );
     } else {
       throw notFound('Ese reporte no existe.');

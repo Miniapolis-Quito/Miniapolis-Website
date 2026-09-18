@@ -15,7 +15,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   minutos, así que una captura de pantalla ajena sirve de poco — y de nada en
   cuanto ese código se usa una vez.
 - Puede **transferir entradas a otro piloto** registrado por correo o teléfono,
-  dejando un mensaje opcional. El destinatario recibe un pack nuevo de inmediato,
+  dejando un mensaje opcional. Al destinatario le llega un pack nuevo de una,
   ambos ven sus saldos y movimientos actualizados en vivo por SSE y carteras,
   y se envía un aviso por correo electrónico.
 - Puede **comprar y recargar packs en línea** desde su app (transferencia bancaria,
@@ -59,7 +59,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   entrada al cliente.
 - Imprime pases físicos con QR fijo, para los packs donde lo habilite.
 - Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
-- Aviso de **entradas sin cobrar**: quien entró durante un corte de red y cuya
+- Aviso de **entradas pendientes de cobro**: quien entró durante un corte de red y cuya
   entrada no se pudo descontar después, para resolverlo con una nota.
 - **Ficha de cliente**: todo lo que se sabe de una persona en una pantalla —
   saldo, hábitos, packs, consumos, actividad y dispositivos— con las acciones a
@@ -70,7 +70,7 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   Ver más abajo.
 - **La casa invita**: cada tantas entradas usadas, el cliente recibe un pack de
   cortesía sin que nadie tenga que acordarse. Ver más abajo.
-- Bitácora de auditoría de todo lo que ocurre y exportación a CSV.
+- Registro de auditoría de todo lo que ocurre y exportación a CSV.
 - Verificación de integridad contable con un clic.
 
 ---
@@ -286,6 +286,37 @@ Suspender una cuenta o cerrarle las sesiones **cierra también su canal en vivo
 en el acto**: la pantalla de esa persona vuelve a la página de acceso sola, sin
 esperar a que falle su siguiente petición.
 
+**Verificación en dos pasos.** Cualquier cuenta puede añadir un segundo
+candado, y la pista puede **exigírselo** al personal desde el panel. Es TOTP
+(RFC 6238), así que sirve cualquier aplicación de autenticación. Lo que
+protege y cómo:
+
+- **El secreto se guarda cifrado** (AES-256-GCM con clave derivada del
+  entorno), no en claro: una copia de seguridad de la base que acabe donde no
+  debe no entrega los segundos factores de nadie. Si la clave cambia y el
+  secreto ya no se puede descifrar, **se niega el acceso** y la administración
+  tiene que retirarlo; nunca se degrada a «entra solo con la contraseña».
+- **Acertar la contraseña ya no abre sesión.** Abre un desafío que vive cinco
+  minutos, aguanta cinco códigos y se gasta al usarse. Mientras tanto no se
+  entrega ni token ni cookie, así que quedarse a medias no deja nada
+  aprovechable en el navegador.
+- **Un código vale una sola vez.** Se guarda el último tramo de 30 segundos
+  aceptado, de modo que quien lo lea por encima del hombro llega tarde.
+- **Diez códigos de respaldo**, guardados por su HMAC y gastados uno a uno, son
+  la salida cuando se pierde el teléfono. Quitarla exige contraseña *y* código:
+  con una sesión robada no se puede desarmar.
+- **Activarla cierra las demás sesiones**, que estaban abiertas solo con la
+  contraseña, y deja viva la que acaba de activarla.
+- **Exigirla solo puede hacerlo quien ya la tiene puesta**: si no, el propio
+  máster se cerraría la administración con un clic. Mientras esté exigida, una
+  cuenta de personal sin ella entra a su cuenta para configurarla, pero no
+  escanea, no abre el panel, no recibe el canal en vivo de la pista y no mira
+  los packs ni los pases de otra persona.
+- **Rescate auditado.** El máster puede retirarla de una cuenta que perdió el
+  teléfono y los códigos: queda en la bitácora con su autor y la persona recibe
+  un correo, porque retirar el segundo factor de una cuenta ajena es justo lo
+  que intentaría alguien que se hiciera con el panel.
+
 **Lo demás.** Límites de intentos persistidos en base (sobreviven a un
 reinicio), bloqueo temporal de cuenta tras 8 fallos —contado por la base, así
 que ni una ráfaga de intentos simultáneos lo esquiva, y aplicado también a los
@@ -346,6 +377,51 @@ hora cierran esa sesión, para que quien robe una sesión abierta no pueda
 quedarse probando. Los clientes lo hacen en **Mi cuenta** y el personal y el
 máster desde el botón **Contraseña** de la cabecera.
 
+---
+
+## Verificación en dos pasos
+
+Un candado más para entrar: además de la contraseña, un código de seis dígitos
+que cambia cada 30 segundos en el teléfono. Sirve cualquier aplicación de
+autenticación (Google Authenticator, Aegis, 1Password, Microsoft
+Authenticator…): el sistema usa el estándar TOTP y no depende de ninguna marca.
+
+**Activarla.** Los clientes, en **Mi cuenta**; el personal y el máster, con el
+botón **Seguridad** de la cabecera. Se escanea el código QR con la aplicación
+—o se teclea la clave a mano si la cámara no colabora—, se confirma con el
+primer código y aparecen **diez códigos de respaldo**. Ese es el momento de
+guardarlos: se pueden copiar o descargar, y no vuelven a mostrarse. Activarla
+cierra las sesiones abiertas en otros dispositivos.
+
+**Entrar.** Después de la contraseña, la página pide el código. Si el teléfono
+no está a mano, en ese mismo campo sirve uno de los códigos de respaldo, que se
+gasta al usarlo. Cinco códigos incorrectos anulan ese intento de acceso: hay
+que volver a empezar por la contraseña.
+
+**Exigírsela al equipo.** En **Administración → Seguridad** el máster ve quién
+la tiene puesta, cuántos códigos de respaldo le quedan a cada quien y puede
+encender la obligación para el personal. Solo puede encenderla si él mismo la
+tiene activa —si no, se cerraría el panel a sí mismo— y, mientras esté
+encendida, una cuenta de personal sin segundo factor entra a su cuenta para
+configurarla pero no escanea ni abre la administración. A los clientes no les
+afecta.
+
+**Si alguien pierde el teléfono.** Con los códigos de respaldo entra igual y
+puede generar una tanda nueva desde **Seguridad**. Si también los perdió, el
+máster se la quita desde **Administración → Seguridad**: esa cuenta vuelve a
+entrar solo con la contraseña, se cierran sus sesiones, recibe un correo y
+queda constancia en la bitácora.
+
+El porqué de cada decisión está en
+`docs/superpowers/specs/2026-09-18-verificacion-en-dos-pasos-design.md`.
+
+**Antes de rotar secretos.** Si `TWOFA_SECRET` está vacío, la clave que cifra
+los segundos factores se deriva de `ACCESS_TOKEN_SECRET`: cambiar ese deja
+ilegibles los segundos factores de todo el mundo y cada persona tendría que
+volver a configurarlo (nadie queda dentro por error: el sistema lo detecta y
+niega el acceso). En una instalación que use dos pasos en serio, conviene fijar
+`TWOFA_SECRET` aparte desde el principio.
+
 ### Configurar el correo
 
 ```ini
@@ -370,7 +446,7 @@ encienden desde el panel.
 
 ## Operación diaria
 
-**Vender un pack.** Administración → Packs → *Vender pack*. Se busca al cliente
+**Vender un pack.** Administración → Packs → *Vender un pack*. Se busca al cliente
 (o se le crea antes en *Clientes y personal*), se elige el tamaño, se ajusta el
 precio si hubo descuento y se registra la forma de pago. El cliente ve el pack
 aparecer en su teléfono en el momento, sin recargar.
@@ -425,7 +501,7 @@ pestañas:
 | **Resumen** | Packs con entradas, visitas por semana, qué días suele venir y lo último que pasó |
 | **Packs** | Cada pack con su historial de movimientos, y las acciones: ajustar, suspender, anular, QR impreso, imprimir pase |
 | **Consumos** | Cuándo entró, con qué pack, por qué vía, quién se lo registró y en qué puesto — con la opción de anular |
-| **Actividad** | Un solo hilo cronológico con movimientos de entradas y eventos de la cuenta, más la bitácora técnica sin interpretar |
+| **Actividad** | Un solo hilo cronológico con movimientos de entradas y eventos de la cuenta, más el registro técnico sin interpretar |
 | **Acceso** | Estado de la cuenta, dispositivos con sesión abierta, restablecer contraseña, desbloquear, cerrar sesiones |
 | **Datos** | Editar nombre, correo, teléfono, rol y estado, con la ficha técnica completa |
 
@@ -553,8 +629,8 @@ El diseño completo está en
 
 Si se cae Internet en la pista, el puesto no se detiene. El operador sigue
 leyendo QR y tecleando códigos: cada lectura se guarda en el teléfono y el
-recuadro lo dice con un borde discontinuo y dos pitidos cortos —**Guardada sin
-conexión: puede pasar**—. En cuanto vuelve la señal, el teléfono las envía solo,
+  recuadro lo dice con un borde discontinuo y dos pitidos cortos —**Guardada sin
+  señal: puede pasar**—. En cuanto vuelve la señal, el teléfono las envía solo,
 en orden, y avisa de cuántas se cobraron.
 
 Si alguien recarga la página o el teléfono se reinicia durante el corte, el
@@ -708,13 +784,15 @@ src/
   bootstrap.js         Creación de la cuenta máster inicial
   db/                  Conexión SQLite y migraciones incrementales
   lib/                 QR, contraseñas, tokens, límites, eventos en vivo,
-                       texto, días del calendario y pases de cartera
+                       texto, días del calendario, pases de cartera, códigos
+                       TOTP y cifrado de lo que se guarda en base
   middleware/          Seguridad, autenticación, manejo de errores
   routes/              auth · packs · scan · admin · events · wallet · notifications
   services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
                        expediente del cliente, auditoría, cifras del panel,
                        pases de cartera, lecturas sin conexión, avisos a
-                       clientes y programa de fidelidad)
+                       clientes, programa de fidelidad y verificación en dos
+                       pasos)
 assets/                Iconos del pase de cartera
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas

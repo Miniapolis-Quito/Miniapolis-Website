@@ -26,7 +26,7 @@ async function intentar(accion) {
 export async function ajustarPack(pack, alCambiar) {
   const cantidad = await pedirTexto({
     titulo: `Ajustar entradas de ${pack.code}`,
-    mensaje: 'Un número positivo acredita entradas y uno negativo las descuenta. El ajuste queda registrado con tu nombre.',
+    mensaje: 'Un número positivo suma entradas y uno negativo las quita. El ajuste queda guardado con tu nombre.',
     etiqueta: 'Cantidad (por ejemplo: 2 o -1)',
     textoAceptar: 'Siguiente',
     minimo: 1,
@@ -35,13 +35,13 @@ export async function ajustarPack(pack, alCambiar) {
 
   const delta = Number.parseInt(cantidad, 10);
   if (!Number.isInteger(delta) || delta === 0) {
-    brindis('Escribe un número entero distinto de cero.', 'error');
+    brindis('Escribe un número entero que no sea cero.', 'error');
     return;
   }
 
   const motivo = await pedirTexto({
     titulo: 'Motivo del ajuste',
-    mensaje: `Se ${delta > 0 ? 'acreditarán' : 'descontarán'} ${Math.abs(delta)} entrada(s) en ${pack.code}.`,
+    mensaje: `Se ${delta > 0 ? 'sumarán' : 'quitarán'} ${Math.abs(delta)} entrada(s) de ${pack.code}.`,
     etiqueta: 'Motivo',
     textoAceptar: 'Aplicar ajuste',
   });
@@ -49,7 +49,7 @@ export async function ajustarPack(pack, alCambiar) {
 
   await intentar(async () => {
     await api.post(`/api/admin/packs/${pack.id}/adjust`, { delta, reason: motivo });
-    brindis('Ajuste aplicado.', 'ok');
+    brindis('Listo, ajuste aplicado.', 'ok');
     await alCambiar?.();
   });
 }
@@ -58,7 +58,7 @@ export async function ajustarPack(pack, alCambiar) {
 export async function anularPack(pack, alCambiar) {
   const seguro = await confirmar({
     titulo: `Anular ${pack.code}`,
-    mensaje: `El pack quedará inutilizable de forma permanente y el cliente perderá sus ${pack.remaining} entrada(s) restantes. Esto no se puede deshacer.`,
+    mensaje: `El pack quedará inutilizable para siempre y el cliente perderá las ${pack.remaining} entrada(s) que le quedan. Esto no se puede deshacer.`,
     textoAceptar: 'Anular pack',
     peligro: true,
   });
@@ -81,7 +81,7 @@ export async function anularPack(pack, alCambiar) {
 export async function cambiarVencimiento(pack, alCambiar) {
   const elegida = await pedirTexto({
     titulo: `Vencimiento de ${pack.code}`,
-    mensaje: 'Déjalo vacío para que el pack no caduque.',
+    mensaje: 'Déjalo vacío si quieres que el pack no venza.',
     etiqueta: 'Vence el',
     tipo: 'date',
     valorInicial: pack.expiresAt ? pack.expiresAt.slice(0, 10) : '',
@@ -100,7 +100,7 @@ export async function cambiarVencimiento(pack, alCambiar) {
   await intentar(async () => {
     await api.patch(`/api/admin/packs/${pack.id}`, cambios);
     brindis(
-      expiresAt ? `El pack vence el ${fecha(expiresAt, { conHora: false })}.` : 'El pack ya no caduca.',
+      expiresAt ? `El pack vence el ${fecha(expiresAt, { conHora: false })}.` : 'El pack ya no vence.',
       'ok',
     );
     await alCambiar?.();
@@ -166,7 +166,7 @@ export async function anularConsumo(item, alCambiar) {
   const enQue = item.packCode ? ` en el pack ${item.packCode}` : '';
   const motivo = await pedirTexto({
     titulo: 'Anular consumo',
-    mensaje: `Se devolverá una entrada${aQuien}${enQue}. Queda registrado quién lo hizo y por qué.`,
+    mensaje: `Se devolverá una entrada${aQuien}${enQue}. Quedará guardado quién lo hizo y por qué.`,
     etiqueta: 'Motivo de la anulación',
     textoAceptar: 'Anular y devolver',
   });

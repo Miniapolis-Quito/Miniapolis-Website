@@ -264,6 +264,29 @@ test('la mira del puntero se posiciona sin interpolación ni transición espacia
   assert.doesNotMatch(estilos, /\.entrada__mira\s*\{[^}]*transition:\s*[^;}]*\btransform\b/s, 'la mira no debe interpolar su posición');
 });
 
+test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /--fondo:\s*#000000/);
+  assert.match(css, /--acento:\s*#3dfe40/);
+  assert.match(css, /\.barra[\s\S]*\.tarjeta/);
+});
+
+test('la capa de movimiento tiene una salida global para movimiento reducido', () => {
+  const css = leer('public/css/styles.css');
+  const js = leer('public/js/portada.js');
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(js, /prefers-reduced-motion/);
+  assert.match(js, /portada-revela--visible/);
+});
+
+test('las páginas operativas conservan el shell y la hoja de estilos compartida', () => {
+  for (const html of ['public/app.html', 'public/scan.html', 'public/admin.html']) {
+    const src = leer(html);
+    assert.match(src, /<header[^>]+id="cabecera"|<header[^>]+class="barra"/);
+    assert.match(src, /<link rel="stylesheet" href="\/css\/styles\.css">/);
+  }
+});
+
 test('el escáner tiene guardado sin conexión todo lo que carga, y nada de la API', () => {
   const sw = leer('public/sw-escaner.js');
   const lista = sw.match(/const RECURSOS = \[([\s\S]*?)\];/);

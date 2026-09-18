@@ -418,6 +418,36 @@ function packCatalog() {
   return entradas.sort((a, b) => a.size - b.size);
 }
 
+/**
+ * Secretos del sistema, resueltos en orden para que el aviso de «este secreto
+ * repite el valor de aquel» señale siempre al segundo que aparece.
+ */
+const secretos = (() => {
+  const accessToken = requiredSecret('ACCESS_TOKEN_SECRET');
+  const refreshToken = requiredSecret('REFRESH_TOKEN_SECRET');
+  const qr = requiredSecret('QR_SECRET');
+  return Object.freeze({ accessToken, refreshToken, qr, twoFactor: twoFactorSecret(accessToken) });
+})();
+
+/**
+ * Clave con la que se cifra el secreto de la verificación en dos pasos.
+ *
+ * Si no se define TWOFA_SECRET se deriva del secreto de acceso, para que una
+ * instalación ya en marcha se actualice sin tocar su entorno. El precio de esa
+ * comodidad es que rotar ACCESS_TOKEN_SECRET deja ilegibles los segundos
+ * factores guardados y todo el personal tiene que volver a registrarlos (el
+ * sistema lo detecta y lo dice; no deja entrar sin segundo paso). Una
+ * instalación que use dos pasos en serio debería fijar TWOFA_SECRET aparte:
+ * así los dos secretos se rotan por separado.
+ */
+function twoFactorSecret(accessToken) {
+  const value = process.env.TWOFA_SECRET;
+  if (value) return requiredSecret('TWOFA_SECRET');
+  return Buffer.from(
+    crypto.hkdfSync('sha256', accessToken, Buffer.from('miniapolis-2fa-v1'), Buffer.from('two-factor'), 48),
+  ).toString('base64url');
+}
+
 export const config = Object.freeze({
   env: NODE_ENV,
   isProduction,
@@ -436,14 +466,12 @@ export const config = Object.freeze({
   /** Base de datos SQLite. ':memory:' se admite para pruebas. */
   databaseFile: process.env.DATABASE_FILE || path.join(ROOT_DIR, 'data', 'tickets.db'),
 
-  secrets: {
-    /** Firma de los tokens de acceso (JWT HS256). */
-    accessToken: requiredSecret('ACCESS_TOKEN_SECRET'),
-    /** Derivación del hash de los refresh tokens guardados en base. */
-    refreshToken: requiredSecret('REFRESH_TOKEN_SECRET'),
-    /** Clave maestra para firmar los códigos QR de los packs. */
-    qr: requiredSecret('QR_SECRET'),
-  },
+  /**
+   * Firma de los tokens de acceso (JWT HS256), derivación del hash de los
+   * refresh tokens, clave maestra de los QR de cada pack y clave del segundo
+   * factor (cifrado del secreto TOTP y hash de los códigos de respaldo).
+   */
+  secrets: secretos,
 
   tokens: {
     accessTtlSeconds: num('ACCESS_TOKEN_TTL', 15 * 60, { min: 60, max: 3600 }),
@@ -457,6 +485,24 @@ export const config = Object.freeze({
     /** Cada cuántos segundos el cliente refresca el QR mostrado en pantalla. */
     refreshSeconds: num('QR_REFRESH_SECONDS', 30, { min: 10, max: 300 }),
   },
+
+  /**
+   * Verificación en dos pasos (TOTP). Los valores son los que entienden las
+   * aplicaciones de autenticación; se dejan configurables para poder alargar
+   * la ventana en una pista cuyos teléfonos anden con el reloj desviado.
+   */
+  twoFactor: Object.freeze({
+    digitos: 6,
+    periodoSegundos: 30,
+    /** Tramos de tolerancia a cada lado: 1 = ±30 segundos. */
+    ventana: num('TWOFA_WINDOW', 1, { min: 0, max: 10 }),
+    /** Cuánto vive el desafío entre la contraseña y el código. */
+    desafioTtlSeconds: num('TWOFA_CHALLENGE_TTL', 5 * 60, { min: 60, max: 30 * 60 }),
+    /** Códigos fallidos que admite un mismo desafío antes de anularse. */
+    maximoIntentos: num('TWOFA_MAX_ATTEMPTS', 5, { min: 1, max: 20 }),
+    /** Códigos de respaldo que se entregan al activarla. */
+    codigosDeRespaldo: num('TWOFA_RECOVERY_CODES', 10, { min: 4, max: 20 }),
+  }),
 
   redemption: {
     /**

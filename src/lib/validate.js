@@ -100,10 +100,13 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+/** Formato de token de recuperación: 32 bytes en base64url (43 caracteres). */
+export const FORMATO_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
 /** Un token de recuperación: 32 bytes en base64url. */
 const tokenRecuperacionSchema = z
   .string()
-  .regex(/^[A-Za-z0-9_-]{43}$/, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
+  .regex(FORMATO_TOKEN, 'Este enlace no es válido o ya caducó. Pide uno nuevo desde la página de acceso.');
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });
 
@@ -113,6 +116,40 @@ export const resetPasswordSchema = z.object({
   token: tokenRecuperacionSchema,
   newPassword: passwordSchema,
 });
+
+/**
+ * Un código del segundo paso. Admite los seis dígitos de la aplicación y los
+ * códigos de respaldo (letras y números con un guion), así que la validación
+ * aquí es deliberadamente ancha: quien decide si vale es el servicio, que
+ * compara en tiempo constante.
+ */
+export const twoFactorCodeSchema = z
+  .string()
+  .trim()
+  .min(6, 'Escribe el código de 6 dígitos de tu aplicación.')
+  .max(24, 'Ese código es demasiado largo.');
+
+/** Token del desafío intermedio: los mismos 32 bytes en base64url. */
+const desafioSchema = z
+  .string()
+  .regex(FORMATO_TOKEN, 'Este acceso caducó. Vuelve a escribir tu correo y tu contraseña.');
+
+export const twoFactorLoginSchema = z.object({
+  challengeToken: desafioSchema,
+  code: twoFactorCodeSchema,
+});
+
+export const twoFactorConfirmSchema = z.object({ code: twoFactorCodeSchema });
+
+export const twoFactorDisableSchema = z.object({
+  password: z.string().min(1, 'Escribe tu contraseña.').max(200),
+  code: twoFactorCodeSchema,
+});
+
+export const securitySettingsSchema = z
+  .object({ requireTwoFactorForStaff: z.boolean().optional() })
+  .strict()
+  .refine((v) => Object.values(v).some((x) => x !== undefined), 'No hay cambios que aplicar.');
 
 export const updateProfileSchema = z
   .object({
