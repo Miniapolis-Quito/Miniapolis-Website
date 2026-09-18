@@ -48,7 +48,7 @@ function manejarError(error, formulario) {
     mostrarAviso(aviso, error.message, error.status === 429 ? 'alerta' : 'error');
     return;
   }
-  mostrarAviso(aviso, 'Ocurrió un error inesperado. Inténtalo de nuevo.', 'error');
+  mostrarAviso(aviso, 'Algo salió mal. Intenta de nuevo.', 'error');
   console.error(error);
 }
 

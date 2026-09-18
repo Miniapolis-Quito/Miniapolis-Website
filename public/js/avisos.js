@@ -21,11 +21,11 @@ export const NOMBRES_DE_AVISO = {
 };
 
 const DESCRIPCIONES = {
-  purchase: 'Al vender un pack: código, entradas, importe y vencimiento. Llega aunque la persona se haya dado de baja de los recordatorios.',
-  low_balance: 'Tras usar una entrada, cuando le quedan pocas. Lleva los packs a la venta.',
-  depleted: 'Cuando usa su última entrada, con los packs a la venta.',
+  purchase: 'Al vender un pack: código, entradas, valor y vencimiento. Llega aunque la persona ya no reciba recordatorios.',
+  low_balance: 'Después de usar una entrada, cuando le quedan pocas. Incluye los packs disponibles.',
+  depleted: 'Cuando usa su última entrada, con los packs disponibles.',
   expiring: 'Unos días antes de que venza un pack que todavía tiene entradas.',
-  inactive: 'Cuando tiene entradas y lleva tiempo sin venir.',
+  inactive: 'Cuando tiene entradas, pero lleva tiempo sin venir.',
 };
 
 const CANALES = { email: 'Correo', whatsapp: 'WhatsApp', phone: 'Llamada' };
@@ -55,22 +55,22 @@ const GRUPOS = [
   {
     clave: 'expiring',
     titulo: 'Por vencer',
-    ayuda: (u) => `Tienen entradas pagadas que vencen en los próximos ${plural(u.daysBeforeExpiry, 'día', 'días')}. Es lo más urgente: después ya no se pueden usar.`,
+    ayuda: (u) => `Tienen entradas pagadas que vencen en los próximos ${plural(u.daysBeforeExpiry, 'día', 'días')}. Es lo más urgente: después ya no sirven.`,
   },
   {
     clave: 'depleted',
     titulo: 'Sin entradas',
-    ayuda: (u) => `Se les acabaron o vencieron en los últimos ${u.depletedDays} días y no han vuelto a comprar.`,
+    ayuda: (u) => `Se les acabaron o vencieron en los últimos ${u.depletedDays} días y todavía no han vuelto a comprar.`,
   },
   {
     clave: 'inactive',
     titulo: 'No vienen',
-    ayuda: (u) => `Tienen entradas y llevan ${u.inactiveDays} días o más sin venir.`,
+    ayuda: (u) => `Tienen entradas, pero llevan ${u.inactiveDays} días o más sin venir.`,
   },
   {
     clave: 'lowBalance',
     titulo: 'Quedan pocas',
-    ayuda: (u) => `Les quedan ${plural(u.lowBalanceThreshold, 'entrada', 'entradas')} o menos: su próxima compra está cerca.`,
+    ayuda: (u) => `Les quedan ${plural(u.lowBalanceThreshold, 'entrada', 'entradas')} o menos: ya casi toca volver a comprar.`,
   },
 ];
 
@@ -127,13 +127,13 @@ function pintarEstado() {
       'div',
       { class: 'aviso aviso--alerta' },
       'No hay correo configurado en el servidor, así que los avisos automáticos no pueden salir. ' +
-        'La lista de clientes por recuperar funciona igual: escríbeles por WhatsApp o llámalos desde aquí.',
+        'La lista de clientes para volver a contactar sí funciona: escríbeles por WhatsApp o llámalos desde aquí.',
     );
   } else if (!s.enabled) {
     principal = el(
       'div',
       { class: 'aviso aviso--alerta' },
-      'Apagados: ningún cliente recibe correos automáticos. Revisa qué se envía y enciéndelos en «Configurar».',
+      'Están apagados: ningún cliente recibe correos automáticos. Revisa qué se envía y actívalos en «Configurar».',
     );
   } else {
     principal = el(
@@ -142,10 +142,10 @@ function pintarEstado() {
       el(
         'div',
         {},
-        el('strong', {}, 'Activados'),
+        el('strong', {}, 'Activos'),
         ` desde el ${fecha(s.enabledAt, { conHora: false })}. Los recordatorios salen de ${hora(s.sendFromHour)} a ${hora(s.sendUntilHour)}` +
           `${enCola ? ` y hay ${plural(enCola, 'aviso', 'avisos')} en cola` : ''}.`,
-        el('div', { class: 'pequeno' }, activos.length ? `Se envían: ${activos.join(', ')}.` : 'Ningún tipo de aviso está marcado.'),
+        el('div', { class: 'pequeno' }, activos.length ? `Se envían: ${activos.join(', ')}.` : 'No hay ningún tipo de aviso seleccionado.'),
       ),
     );
   }
@@ -157,7 +157,7 @@ function pintarEstado() {
       ? el(
           'div',
           { class: 'aviso aviso--alerta mt pequeno' },
-          'Falta PUBLIC_URL en el servidor: los correos no llevarán el enlace a la app ni el enlace para darse de baja con un clic.',
+          'Falta PUBLIC_URL en el servidor: los correos no llevarán el enlace a la app ni el enlace para dejar de recibir avisos con un clic.',
         )
       : null,
   );
@@ -169,7 +169,7 @@ function pintarMetricas() {
   render(
     $('#avisos-metricas'),
     metrica(String(m.sent), 'Correos enviados (30 días)', 'metrica--acento'),
-    metrica(String(m.contacts), 'Contactos a mano (30 días)', 'metrica--ok'),
+    metrica(String(m.contacts), 'Contactos manuales (30 días)', 'metrica--ok'),
     metrica(String(m.failed), 'Correos fallidos (30 días)'),
     metrica(String(m.unsubscribed), 'Sin recordatorios'),
   );
@@ -215,7 +215,7 @@ function pintarGrupos() {
     $('#avisos-oportunidades'),
     el('p', { class: 'tenue pequeno' }, elegido.ayuda(thresholds)),
     count === 0
-      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'Nadie en este grupo ahora mismo.'))
+      ? el('div', { class: 'vacio' }, el('p', { class: 'sin-margen' }, 'No hay nadie en este grupo por ahora.'))
       : el('ul', { class: 'lista' }, items.map(filaCliente)),
     count > items.length ? el('p', { class: 'tenue-2 pequeno mt' }, `Se muestran ${items.length} de ${count}.`) : null,
   );
@@ -253,15 +253,15 @@ function textoDeContacto(contacto) {
 function registrarContacto(cliente, channel) {
   api
     .post('/api/admin/notifications/contacts', { userId: cliente.userId, channel, kind: cliente.kind })
-    .then(() => brindis(`Contacto con ${cliente.fullName} registrado.`, 'ok'))
-    .catch((error) => brindis(`No se pudo registrar el contacto: ${error.message}`, 'error'));
+    .then(() => brindis(`Contacto con ${cliente.fullName} guardado.`, 'ok'))
+    .catch((error) => brindis(`No pudimos guardar el contacto: ${error.message}`, 'error'));
 }
 
 function filaCliente(cliente) {
   const secundario = [
     cliente.lastVisitAt ? `Última visita ${relativo(cliente.lastVisitAt)}` : 'Sin visitas',
     cliente.phone ? telefono(cliente.phone) : 'Sin teléfono',
-    cliente.emailReminders ? null : 'no recibe recordatorios',
+    cliente.emailReminders ? null : 'no recibe avisos por correo',
   ].filter(Boolean);
 
   return el(
@@ -314,7 +314,7 @@ function detalleDeEstado(aviso) {
   if (aviso.status === 'discarded') return MOTIVOS_DE_DESCARTE[aviso.reason] || aviso.reason;
   if (aviso.status === 'failed') return `${aviso.reason || 'Error desconocido'} · ${plural(aviso.attempts, 'intento', 'intentos')}`;
   if (aviso.status === 'pending' && aviso.nextAttemptAt && aviso.nextAttemptAt > new Date().toISOString()) {
-    return aviso.attempts ? `Reintento el ${fecha(aviso.nextAttemptAt)}` : `Sale el ${fecha(aviso.nextAttemptAt)}`;
+    return aviso.attempts ? `Se reintenta el ${fecha(aviso.nextAttemptAt)}` : `Sale el ${fecha(aviso.nextAttemptAt)}`;
   }
   return null;
 }
@@ -410,7 +410,7 @@ async function reintentar(aviso, boton) {
   await conCarga(boton, async () => {
     try {
       await api.post(`/api/admin/notifications/${encodeURIComponent(aviso.id)}/retry`, {});
-      brindis('El aviso vuelve a la cola: sale en el próximo ciclo.', 'ok');
+      brindis('El aviso volvió a la cola y saldrá en el próximo ciclo.', 'ok');
       await cargarAvisos();
     } catch (error) {
       brindis(error.message, 'error');
@@ -462,7 +462,7 @@ function abrirAjustes() {
     ),
     s.emailConfigured
       ? null
-      : el('div', { class: 'aviso aviso--alerta pequeno mb' }, 'Para encenderlos hace falta configurar el correo en el servidor. Puedes dejar los ajustes listos.'),
+      : el('div', { class: 'aviso aviso--alerta pequeno mb' }, 'Para activarlos hace falta configurar el correo en el servidor. Puedes dejar los ajustes listos.'),
     el(
       'fieldset',
       { class: 'ajustes-grupo' },
@@ -505,7 +505,7 @@ function abrirAjustes() {
     el(
       'p',
       { class: 'tenue-2 pequeno' },
-      `Las horas son las de la pista (${s.timezone}). El comprobante de compra sale en el momento, a cualquier hora. ` +
+      `Las horas son las de la pista (${s.timezone}). El comprobante de compra sale al instante, a cualquier hora. ` +
         'Nadie recibe más de un recordatorio cada 48 horas.',
     ),
     aviso,
@@ -525,7 +525,7 @@ function abrirAjustes() {
     conCarga(botonPrueba, async () => {
       try {
         const r = await api.post('/api/admin/notifications/test', { kind: selectorPrueba.value });
-        mostrarAviso(aviso, `Prueba enviada a ${r.to}. Revisa también la carpeta de spam.`, 'ok');
+          mostrarAviso(aviso, `Prueba enviada a ${r.to}. Revisa también la carpeta de spam.`, 'ok');
       } catch (error) {
         mostrarAviso(aviso, error.message, 'error');
       }
@@ -593,7 +593,7 @@ function abrirAjustes() {
       try {
         await peticion('/api/admin/notifications/settings', { metodo: 'PUT', cuerpo });
         cerrar();
-        brindis('Ajustes de avisos guardados.', 'ok');
+        brindis('Listo, guardamos los ajustes de avisos.', 'ok');
         await cargarAvisos();
       } catch (error) {
         mostrarErroresCampo(formulario, error.campos || {});
@@ -614,7 +614,7 @@ async function revisarAhora(boton) {
       if (r.enviados) partes.push(plural(r.enviados, 'correo enviado', 'correos enviados'));
       if (r.aplazados) partes.push(`${plural(r.aplazados, 'aviso espera', 'avisos esperan')} al horario de envío`);
       if (r.fallidos) partes.push(plural(r.fallidos, 'fallido', 'fallidos'));
-      brindis(partes.length ? `Revisado: ${partes.join(', ')}.` : 'Revisado: no hay nada que enviar ahora.', 'ok');
+      brindis(partes.length ? `Listo: ${partes.join(', ')}.` : 'Listo: no hay nada que enviar por ahora.', 'ok');
       await cargarAvisos();
     } catch (error) {
       brindis(error.message, 'error');

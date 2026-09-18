@@ -38,16 +38,16 @@ function catalogoEnUnaFrase() {
 }
 
 function pieDeRecordatorio(enlaceBaja) {
-  const motivo = `Recibes este recordatorio porque tienes una cuenta en ${config.brandName}.`;
+  const motivo = `Te llega este recordatorio porque tienes una cuenta en ${config.brandName}.`;
   if (!enlaceBaja) {
-    const como = 'Puedes desactivar los recordatorios en «Mi cuenta».';
+    const como = 'Puedes dejar de recibirlos desde «Mi cuenta».';
     return { texto: [motivo, como], html: `${escaparHtml(motivo)} ${escaparHtml(como)}` };
   }
   return {
-    texto: [motivo, `Si no quieres recibir más recordatorios: ${enlaceBaja}`],
+    texto: [motivo, `Si ya no quieres recibirlos: ${enlaceBaja}`],
     html:
       `${escaparHtml(motivo)} ` +
-      `<a href="${escaparHtml(enlaceBaja)}" style="color:#666">No quiero recibir más recordatorios</a>.`,
+      `<a href="${escaparHtml(enlaceBaja)}" style="color:#666">Dejar de recibir estos recordatorios</a>.`,
   };
 }
 
@@ -93,7 +93,7 @@ const CORREOS = {
       parrafos: [
         cortesia
           ? `Te acreditamos un pack de cortesía con ${entradas(pack.size)}. Ya puedes usarlas.`
-          : `Gracias por tu compra. Tu pack de ${entradas(pack.size)} ya está activo.`,
+          : `Gracias por tu compra. Tu pack de ${entradas(pack.size)} ya está listo.`,
       ],
       datos: [
         ['Código del pack', pack.code],
@@ -106,7 +106,7 @@ const CORREOS = {
       accion: enlaceApp ? { enlace: enlaceApp, texto: 'Ver mi QR de entrada' } : null,
       cierre: [
         saldo > pack.remaining ? `Con este pack tienes ${entradas(saldo)} disponibles en total.` : null,
-        `Para entrar, muestra el QR de la app en la puerta. Si te quedas sin señal, dile tu código al personal: ${pack.code}.`,
+        `Para entrar, enseña el QR de la app en la puerta. Si te quedas sin señal, dile tu código al personal: ${pack.code}.`,
       ],
       pie: {
         texto: ['Guarda este correo: es el comprobante de tu compra.'],
@@ -120,11 +120,11 @@ const CORREOS = {
       asunto: `${saldo === 1 ? 'Te queda' : 'Te quedan'} ${entradas(saldo)} en ${config.brandShort}`,
       parrafos: [
         `${saldo === 1 ? 'Te queda' : 'Te quedan'} ${entradas(saldo)}. Para no quedarte sin pista en tu próxima visita, ` +
-          'puedes renovar tu pack en recepción. Estos son los packs a la venta:',
+          'puedes comprar otro pack en recepción. Estos son los packs disponibles:',
       ],
       datos: catalogoComoDatos(),
       accion: enlaceApp ? { enlace: enlaceApp, texto: 'Ver mis entradas' } : null,
-      cierre: ['El pack nuevo aparece en tu teléfono en el momento en que lo compras.'],
+      cierre: ['El pack nuevo te aparece en el celular apenas lo compras.'],
       pie: pieDeRecordatorio(enlaceBaja),
     };
   },
@@ -134,7 +134,7 @@ const CORREOS = {
       asunto: `Usaste tu última entrada en ${config.brandShort}`,
       parrafos: [
         'Acabas de usar tu última entrada. ¡Gracias por venir a la pista!',
-        'Cuando quieras volver, compra un pack nuevo en recepción:',
+        'Cuando quieras volver, compra otro pack en recepción:',
       ],
       datos: catalogoComoDatos(),
       accion: enlaceApp ? { enlace: enlaceApp, texto: 'Ver mis entradas' } : null,
@@ -151,7 +151,7 @@ const CORREOS = {
       parrafos: [
         `Tu pack ${pack.code} tiene ${entradas(pack.remaining)} sin usar que ${una ? 'vence' : 'vencen'} ` +
           `el ${fecha} (${cuandoVence(pack.expires_at, now)}).`,
-        `Aprovécha${una ? 'la' : 'las'} antes de esa fecha: después ya no se ${una ? 'podrá' : 'podrán'} usar.`,
+        `Ús${una ? 'ala' : 'alas'} antes de esa fecha: después ya no te van a servir.`,
       ],
       accion: enlaceApp ? { enlace: enlaceApp, texto: 'Ver mis entradas' } : null,
       pie: pieDeRecordatorio(enlaceBaja),
@@ -167,7 +167,7 @@ const CORREOS = {
         proximoVencimiento
           ? `Ten en cuenta que tu pack ${proximoVencimiento.code} vence el ${fechaLarga(proximoVencimiento.expires_at)}.`
           : null,
-        'Ven cuando quieras: solo tienes que mostrar tu QR en la entrada.',
+        'Ven cuando quieras: solo tienes que enseñar tu QR en la entrada.',
       ],
       accion: enlaceApp ? { enlace: enlaceApp, texto: 'Ver mis entradas' } : null,
       pie: pieDeRecordatorio(enlaceBaja),
@@ -202,7 +202,7 @@ export function mensajeDeWhatsapp(tipo, { usuario, saldo = 0, porVencer = null, 
       const una = porVencer.tickets === 1;
       const fecha = fechaLarga(porVencer.expiresAt);
       const cuando = porVencer.packs > 1 ? `la primera el ${fecha}` : `el ${fecha}`;
-      return `${hola} Tienes ${entradas(porVencer.tickets)} que ${una ? 'vence' : 'vencen'} pronto (${cuando}). ¡Aprovécha${una ? 'la' : 'las'} antes!`;
+      return `${hola} Tienes ${entradas(porVencer.tickets)} que ${una ? 'vence' : 'vencen'} pronto (${cuando}). ¡Ús${una ? 'ala' : 'alas'} antes!`;
     }
     case 'inactive':
       return `${hola} Hace ${dias} días que no te vemos y todavía tienes ${entradas(saldo)}. ¡Te esperamos en la pista!`;

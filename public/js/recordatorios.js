@@ -41,7 +41,7 @@ async function enviar(ruta) {
       body: JSON.stringify({ token }),
     });
   } catch {
-    throw new Error('Sin conexión con el servidor. Revisa tu Internet e inténtalo de nuevo.');
+    throw new Error('No hay conexión con el servidor. Revisa tu Internet e intenta de nuevo.');
   }
   const datos = await respuesta.json().catch(() => null);
   if (!respuesta.ok) throw new Error(datos?.error?.message || 'No pudimos completar la operación.');
@@ -51,8 +51,8 @@ async function enviar(ruta) {
 function pintar(activos) {
   const saludo = nombre ? `${nombre}, ` : '';
   $('#estado-recordatorios').textContent = activos
-    ? `${saludo}ahora recibes recordatorios por correo.`
-    : `${saludo}ya no recibes recordatorios por correo.`;
+    ? `${saludo}desde ahora recibirás recordatorios por correo.`
+    : `${saludo}ya no te mandaremos recordatorios por correo.`;
   botonBaja.hidden = !activos;
   botonAlta.hidden = activos;
 }
@@ -71,10 +71,10 @@ async function cambiar(boton, ruta, mensaje) {
 }
 
 botonBaja.addEventListener('click', () =>
-  cambiar(botonBaja, '/api/notifications/unsubscribe', 'Listo: no te enviaremos más recordatorios.'),
+  cambiar(botonBaja, '/api/notifications/unsubscribe', 'Listo: ya no te mandaremos recordatorios.'),
 );
 botonAlta.addEventListener('click', () =>
-  cambiar(botonAlta, '/api/notifications/resubscribe', 'Listo: te volveremos a avisar por correo.'),
+  cambiar(botonAlta, '/api/notifications/resubscribe', 'Listo: volveremos a avisarte por correo.'),
 );
 
 (async () => {
@@ -85,7 +85,7 @@ botonAlta.addEventListener('click', () =>
 
   comprobando.hidden = false;
   try {
-    if (!token) throw new Error('Este enlace no es válido. Usa el del último correo que te enviamos, o cambia la preferencia en «Mi cuenta».');
+    if (!token) throw new Error('Este enlace ya no sirve. Usa el del último correo que te enviamos o cambia la preferencia en «Mi cuenta».');
     const datos = await enviar('/api/notifications/preferences');
     nombre = datos.firstName;
     pintar(datos.emailReminders);

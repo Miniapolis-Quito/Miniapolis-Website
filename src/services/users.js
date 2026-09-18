@@ -294,7 +294,7 @@ export async function setPassword(userId, newPassword, { expectedPasswordHash = 
       const actual = findById(userId, db);
       if (!actual || actual.password_hash !== expectedPasswordHash) {
         throw badRequest(
-          'La cuenta cambió mientras se actualizaba. Comprueba la contraseña actual e inténtalo de nuevo.',
+          'La cuenta cambió mientras se actualizaba. Comprueba la contraseña actual e intenta de nuevo.',
           null,
           'password_cambio_concurrente',
         );

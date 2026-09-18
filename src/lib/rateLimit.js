@@ -85,7 +85,7 @@ export function rateLimit({ name, limit, windowSeconds, keyFn, message }) {
       res.set('Retry-After', String(result.retryAfterSeconds));
       return next(
         tooManyRequests(
-          message || `Demasiados intentos. Espera ${result.retryAfterSeconds} segundos e inténtalo de nuevo.`,
+          message || `Hay demasiados intentos. Espera ${result.retryAfterSeconds} segundos e intenta de nuevo.`,
           { retryAfterSeconds: result.retryAfterSeconds },
         ),
       );

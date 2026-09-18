@@ -49,7 +49,7 @@ export function errorHandler(error, req, res, next) {
   return res.status(500).json({
     error: {
       code: 'error_interno',
-      message: 'Ocurrió un error inesperado. Inténtalo de nuevo en un momento.',
+      message: 'Algo salió mal. Intenta de nuevo en un momento.',
     },
   });
 }

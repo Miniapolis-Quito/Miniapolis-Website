@@ -69,7 +69,7 @@ export function createApp() {
       limit: 1500,
       windowSeconds: 15 * 60,
       keyFn: (req) => (req.user ? `u:${req.user.id}` : `ip:${req.rateLimitIp ?? req.clientIp}`),
-      message: 'Demasiadas peticiones. Espera un momento e inténtalo de nuevo.',
+      message: 'Hay demasiadas solicitudes. Espera un momento e intenta de nuevo.',
     }),
   );
 

@@ -35,7 +35,6 @@ export function issueSession(user, { ip, userAgent, familyId = null } = {}) {
 
   return { refreshToken: token, session, accessToken: buildAccessToken(user, session) };
 }
-
 export function buildAccessToken(user, session) {
   return signAccessToken({
     sub: user.id,
@@ -169,6 +168,25 @@ export function listForUser(userId) {
          FROM sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
     )
     .all(userId);
+}
+
+export function findById(sessionId, db = getDb()) {
+  return db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId) ?? null;
+}
+
+/**
+ * Revoca una sesión específica y todas las renovaciones de su familia.
+ */
+export function revokeSession(sessionId, reason = 'revocada_manualmente') {
+  const db = getDb();
+  const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId);
+  if (!session) return { ok: false, reason: 'no_encontrada' };
+  const nowIso = new Date().toISOString();
+  const changes = db
+    .prepare('UPDATE sessions SET revoked_at = ?, revoke_reason = ? WHERE family_id = ? AND revoked_at IS NULL')
+    .run(nowIso, reason, session.family_id).changes;
+  notificarSesionInvalida(session.user_id, reason);
+  return { ok: true, session, revokedCount: changes };
 }
 
 /** Limpieza periódica de sesiones caducadas. */
