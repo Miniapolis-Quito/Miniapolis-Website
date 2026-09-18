@@ -1065,6 +1065,18 @@ async function alRecuperarSesion() {
       }
     },
     onEvento: (tipo, datos) => {
+      // «La casa invita»: el premio se gana en la puerta, así que quien está
+      // escaneando se entera para poder decírselo a la persona que tiene
+      // delante, en vez de que lo descubra sola en el correo.
+      if (tipo === 'fidelidad.recompensa') {
+        const cuantas = datos.reward?.tickets ?? datos.pack?.size ?? 1;
+        brindis(
+          `¡${datos.customer.fullName} completó su tarjeta! La casa le regala ${plural(cuantas, 'entrada', 'entradas')}.`,
+          'ok',
+          9000,
+        );
+        return;
+      }
       if (tipo === 'entrada.consumida' || tipo === 'entrada.anulada') {
         const lista = $('#actividad ul');
         if (lista && tipo === 'entrada.consumida') {

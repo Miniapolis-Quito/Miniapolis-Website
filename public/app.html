@@ -39,6 +39,20 @@
         <div class="saldo__texto" id="saldo-texto">entradas disponibles</div>
       </section>
 
+      <!-- Programa de fidelidad. Solo aparece si la pista lo tiene encendido. -->
+      <section id="seccion-fidelidad" class="tarjeta mt-2 fidelidad" aria-live="polite" hidden>
+        <div class="tarjeta__titulo">
+          <h2>La casa invita</h2>
+          <span class="etiqueta etiqueta--info" id="fidelidad-etiqueta"></span>
+        </div>
+        <p class="sin-margen" id="fidelidad-texto"></p>
+        <div class="fidelidad__sellos" id="fidelidad-sellos" aria-hidden="true"></div>
+        <div class="barra-progreso mt" id="fidelidad-barra" hidden>
+          <div class="barra-progreso__relleno" id="fidelidad-relleno"></div>
+        </div>
+        <p class="tenue-2 pequeno sin-margen mt" id="fidelidad-detalle"></p>
+      </section>
+
       <!-- Solicitud de recarga en revisión -->
       <section id="seccion-solicitud-activa" class="tarjeta tarjeta--atencion mt-2" hidden>
         <div class="tarjeta__titulo">

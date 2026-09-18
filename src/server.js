@@ -10,6 +10,7 @@ import { expireDuePacks } from './services/packs.js';
 import { purgar as purgarRecuperaciones } from './services/recuperacion.js';
 import { cleanupExpired } from './lib/rateLimit.js';
 import * as avisos from './services/avisos.js';
+import * as fidelidad from './services/fidelidad.js';
 
 const app = createApp();
 await ensureMasterAccount();
@@ -36,12 +37,16 @@ const maintenance = setInterval(
       const descartados = avisos.purgar();
       cleanupExpired();
       checkpointDb();
-      if (expired || purged || enlaces || descartados) {
+      // Premios ganados que no se llegaron a entregar: un proceso que se cayó a
+      // mitad, una cuenta que estaba suspendida, un umbral que se bajó.
+      const premios = fidelidad.evaluarPendientes().premios;
+      if (expired || purged || enlaces || descartados || premios) {
         logger.info('Mantenimiento', {
           packsVencidos: expired,
           sesionesPurgadas: purged,
           enlacesPurgados: enlaces,
           avisosDescartadosPurgados: descartados,
+          premiosDeFidelidad: premios,
         });
       }
     } catch (error) {

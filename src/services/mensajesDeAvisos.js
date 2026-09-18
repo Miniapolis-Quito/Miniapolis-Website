@@ -115,6 +115,43 @@ const CORREOS = {
     };
   },
 
+  /**
+   * «La casa invita»: el premio del programa de fidelidad. Es un hecho de su
+   * saldo, no publicidad, así que no lleva pie de baja ni espera al horario.
+   */
+  loyalty_reward({ usuario, pack, saldo, premio, enlaceApp }) {
+    const regaladas = premio?.tickets ?? pack.size;
+    const umbral = premio?.threshold ?? null;
+    const nombre = primerNombre(usuario);
+    return {
+      asunto:
+        regaladas === 1
+          ? `¡Te regalamos una entrada en ${config.brandShort}!`
+          : `¡Te regalamos ${entradas(regaladas)} en ${config.brandShort}!`,
+      parrafos: [
+        umbral
+          ? `${nombre ? `${nombre}, ` : ''}por usar ${entradas(umbral)} en la pista, ` +
+            `${regaladas === 1 ? 'la siguiente' : `las siguientes ${regaladas}`} ${regaladas === 1 ? 'la pone' : 'las pone'} la casa.`
+          : `${nombre ? `${nombre}, ` : ''}te acreditamos ${entradas(regaladas)} de cortesía por venir tanto a la pista.`,
+        'Ya están en tu cuenta: no hay que canjear nada ni decir nada en la puerta.',
+      ],
+      datos: [
+        ['Código del pack', pack.code],
+        ['Entradas de regalo', String(regaladas)],
+        ['Vence', pack.expires_at ? fechaLarga(pack.expires_at) : 'No vence'],
+      ],
+      accion: enlaceApp ? { enlace: enlaceApp, texto: 'Ver mis entradas' } : null,
+      cierre: [
+        saldo > regaladas ? `Con este regalo tienes ${entradas(saldo)} disponibles en total.` : null,
+        '¡Gracias por venir! Te esperamos en la próxima.',
+      ],
+      pie: {
+        texto: ['Este premio es del programa de fidelidad de la pista: cada tantas entradas usadas, una va por nuestra cuenta.'],
+        html: 'Este premio es del programa de fidelidad de la pista: cada tantas entradas usadas, una va por nuestra cuenta.',
+      },
+    };
+  },
+
   low_balance({ saldo, enlaceApp, enlaceBaja }) {
     return {
       asunto: `${saldo === 1 ? 'Te queda' : 'Te quedan'} ${entradas(saldo)} en ${config.brandShort}`,
@@ -177,7 +214,7 @@ const CORREOS = {
 
 /**
  * Correo de un aviso.
- * @param {'purchase'|'low_balance'|'depleted'|'expiring'|'inactive'} tipo
+ * @param {'purchase'|'loyalty_reward'|'low_balance'|'depleted'|'expiring'|'inactive'} tipo
  * @param {object} contexto lo que revalidó el servicio, más los enlaces
  */
 export function correoDeAviso(tipo, contexto) {

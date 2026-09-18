@@ -28,6 +28,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   el personal puede ingresarlo a mano.
 - Puede guardar el pack en la cartera del teléfono (Apple Wallet o Google
   Wallet) y ver ahí el saldo, que baja solo cada vez que usa una entrada.
+- Si la pista tiene encendido el programa de fidelidad, ve su **tarjeta de
+  sellos**: cuántas entradas le faltan para la que invita la casa. Cuando la
+  completa, el pack de cortesía aparece solo en su teléfono.
 
 **Para el personal de pista**
 - Escáner con la cámara del teléfono, con lector nativo del navegador cuando
@@ -65,6 +68,8 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   correo cuando quedan pocas entradas, se acaban, están por vencer o alguien
   deja de venir; y una lista de a quién conviene escribir, con WhatsApp listo.
   Ver más abajo.
+- **La casa invita**: cada tantas entradas usadas, el cliente recibe un pack de
+  cortesía sin que nadie tenga que acordarse. Ver más abajo.
 - Registro de auditoría de todo lo que ocurre y exportación a CSV.
 - Verificación de integridad contable con un clic.
 
@@ -95,7 +100,8 @@ npm run seed
 ```
 
 Crea un máster, un operador y cinco clientes con packs y consumos repartidos en
-las últimas dos semanas. Todos con la contraseña `Pista-Demo-2026`, que hay que
+las últimas dos semanas, con el programa de fidelidad encendido y algún premio
+ya entregado. Todos con la contraseña `Pista-Demo-2026`, que hay que
 cambiar antes de abrir al público.
 
 ### Si nadie puede entrar al panel
@@ -482,6 +488,61 @@ El diseño completo está en
 
 ---
 
+## El programa de fidelidad: «la casa invita»
+
+Una tarjeta de sellos sin cartón: cada tantas entradas usadas, la siguiente la
+pone la pista. Se enciende en **Administración → Fidelidad** y a partir de ahí
+funciona solo — nadie del mostrador tiene que acordarse de nada.
+
+```
+Cada 10 entradas usadas  →  1 entrada de cortesía, con 60 días para usarla
+```
+
+Los tres números se cambian desde el panel (de 2 a 100 entradas por premio, de
+1 a 20 de regalo, y de 0 a 365 días de vigencia; 0 = no vence). El premio tiene
+que ser menor que las entradas que hay que usar para ganarlo.
+
+**Viene apagado.** Una instalación que se actualiza no empieza a regalar
+entradas por sorpresa, y encenderlo **no premia por el pasado**: el contador
+arranca en el momento en que se enciende, para todo el mundo. Apagarlo conserva
+los premios ya dados, pero detiene los contadores; si se vuelve a encender,
+empiezan de cero (el panel lo avisa antes).
+
+Lo que hace que se pueda dejar encendido sin vigilarlo:
+
+- **El premio nunca se da dos veces.** El progreso no se guarda: son las
+  entradas usadas menos las ya acreditadas en premios anteriores. Cada premio
+  lleva un número único por cliente, así que ni dos escáneres a la vez ni un
+  reinicio pueden duplicarlo.
+- **Un premio ganado no se pierde.** Otorgarlo son dos pasos —reservar y
+  emitir—: si el servidor se cae en medio, o la cuenta estaba suspendida, la
+  reserva queda pendiente y el mantenimiento la completa. El panel las muestra.
+- **La casa no se invita a sí misma.** Las entradas de cortesía no cuentan para
+  ganar la siguiente.
+- **Anular un consumo resta.** Devolver una entrada devuelve el avance; el
+  premio ya entregado no se retira, pero el siguiente espera a que se recupere.
+- **No se cuela en la contabilidad.** El pack regalado vale cero, deja su
+  asiento en el libro mayor y no habilita el QR impreso. La verificación de
+  integridad sigue cuadrando.
+
+**Lo que se ve.** El cliente, su tarjeta de sellos llenándose en vivo y el pack
+de cortesía marcado como regalo. El operador de la puerta, un aviso en su
+pantalla al ganarse el premio, para poder decírselo a la persona que tiene
+delante. El máster, lo regalado en entradas y en dinero, los últimos premios y
+**a quién le falta poco** para poder decírselo en recepción; y en la ficha de
+cada cliente, su tarjeta y sus premios.
+
+**Por correo.** Si los avisos están encendidos, el premio se anuncia con su
+propio correo («Premio de fidelidad» en la configuración de Avisos). Sale en el
+acto, no espera al horario de envío y llega aunque la persona se haya dado de
+baja de los recordatorios: es un hecho de su saldo, no publicidad. Con los
+avisos apagados, el premio se entrega igual; solo no se anuncia.
+
+El diseño completo está en
+`docs/superpowers/specs/2026-09-17-programa-de-fidelidad-design.md`.
+
+---
+
 ## El escáner sin conexión
 
 Si se cae Internet en la pista, el puesto no se detiene. El operador sigue
@@ -595,6 +656,7 @@ npm run seed    # datos de demostración
 npm run test:ui # la interfaz en un navegador real (necesita Playwright)
 npm run test:camara # el escáner leyendo un QR con la cámara
 npm run test:e2e:sin-conexion # el escáner durante un corte de red
+npm run test:e2e:fidelidad # el programa «la casa invita», de punta a punta
 npm run test:e2e:avisos # avisos, clientes por recuperar y enlace de baja
 ```
 
@@ -604,7 +666,9 @@ contraseñas, emisión y ajuste de packs, las tres barreras contra el doble
 descuento, concurrencia por HTTP, el canal de tiempo real (abriendo el flujo,
 leyendo lo que llega y reanudándolo tras una caída), la búsqueda sin tildes, el
 camino de actualización del esquema, el expediente del cliente, la cola de
-avisos (duplicados, horario, reintentos, revalidación y baja), el control de
+avisos (duplicados, horario, reintentos, revalidación y baja), el programa de
+fidelidad (idempotencia del premio bajo escaneos simultáneos, anulaciones,
+cuentas suspendidas y reservas a medias), el control de
 acceso —por rol y por el permiso de escaneo, incluido lo que ve cada quien y lo
 que no— y las cabeceras de seguridad. `npm ci && npm test` se ejecuta
 también en cada empujón desde `.github/workflows/`.
@@ -623,8 +687,10 @@ comprueba que el escáner lo lee y descuenta la entrada, con el lector nativo y
 con el respaldo jsQR; `sin-conexion.mjs` corta la red en mitad del turno,
 recarga la página sin señal y comprueba que todo se cobra al volver;
 `avisos.mjs` recorre los clientes por recuperar, el encendido de los avisos y la
-página de baja; y `flujo-completo.mjs` recorre el sistema ya instalado
-contra un servidor de verdad. El README de esa carpeta explica cómo ejecutarlas.
+página de baja; `fidelidad.mjs` enciende el programa desde el panel y sigue una
+tarjeta de sellos hasta el premio, viéndolo llegar a la vez al teléfono del
+cliente y a la pantalla de la puerta; y `flujo-completo.mjs` recorre el sistema
+ya instalado contra un servidor de verdad. El README de esa carpeta explica cómo ejecutarlas.
 
 ### Estructura
 
@@ -641,7 +707,8 @@ src/
   routes/              auth · packs · scan · admin · events · wallet · notifications
   services/            Reglas de negocio (packs, consumos, usuarios, sesiones,
                        expediente del cliente, auditoría, cifras del panel,
-                       pases de cartera, lecturas sin conexión y avisos a clientes)
+                       pases de cartera, lecturas sin conexión, avisos a
+                       clientes y programa de fidelidad)
 assets/                Iconos del pase de cartera
 public/                Interfaz web sin compilación ni dependencias externas
 tests/                 Pruebas automatizadas

@@ -11,7 +11,9 @@
  *  - Justo antes de enviarlo se vuelve a comprobar, y si la situación cambió
  *    (compró otro pack, le devolvieron una entrada) se descarta con su motivo.
  *  - Los recordatorios respetan el horario de envío, la baja y un espaciado
- *    mínimo por persona. El comprobante de compra sale en el acto.
+ *    mínimo por persona. El comprobante de compra y el aviso de un premio de
+ *    fidelidad salen en el acto: no son publicidad, son algo que le pasó a su
+ *    saldo.
  */
 import crypto from 'node:crypto';
 import { getDb, inTransaction } from '../db/index.js';
@@ -25,7 +27,14 @@ import { hub, channels } from '../lib/events.js';
 import * as mensajes from './mensajesDeAvisos.js';
 import * as audit from './audit.js';
 
-export const TIPOS = Object.freeze(['purchase', 'low_balance', 'depleted', 'expiring', 'inactive']);
+export const TIPOS = Object.freeze([
+  'purchase',
+  'loyalty_reward',
+  'low_balance',
+  'depleted',
+  'expiring',
+  'inactive',
+]);
 
 /** Los que son recordatorios: respetan la baja, el horario y el espaciado. */
 const RECORDATORIOS = new Set(['low_balance', 'depleted', 'expiring', 'inactive']);
@@ -259,9 +268,11 @@ export function cambiarPreferencia(userId, activar, { via, actor = null, ip = nu
       userId,
     );
     if (!activar) {
+      // Darse de baja para los recordatorios: el comprobante de compra y el
+      // aviso de un premio ya ganado no son publicidad y salen igual.
       db.prepare(
         `UPDATE notifications SET status = 'discarded', reason = 'baja', next_attempt_at = NULL, updated_at = ?
-          WHERE user_id = ? AND status = 'pending' AND kind <> 'purchase'`,
+          WHERE user_id = ? AND status = 'pending' AND kind NOT IN ('purchase', 'loyalty_reward')`,
       ).run(ahoraIso, userId);
     }
     audit.record({
@@ -361,7 +372,8 @@ export function detectar({ now = Date.now() } = {}) {
       const vendidos = db
         .prepare(
           `SELECT p.id, p.user_id FROM packs p JOIN users u ON u.id = p.user_id
-            WHERE p.created_at >= ? AND p.status <> 'cancelled' AND u.status = 'active'`,
+            WHERE p.created_at >= ? AND p.status <> 'cancelled' AND u.status = 'active'
+              AND p.origin <> 'loyalty'`,
         )
         .all(desdeHechos('purchase'));
       for (const pack of vendidos) crear('purchase', pack.user_id, pack.id, `purchase:${pack.id}`);
@@ -432,6 +444,46 @@ export function detectar({ now = Date.now() } = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Premios de fidelidad
+// ---------------------------------------------------------------------------
+
+/** ¿Se anuncia por correo un premio de fidelidad? */
+export function avisoDeRecompensaActivo(db = getDb()) {
+  const ajustes = leerAjustes(db);
+  return Boolean(correoDisponible() && ajustes.enabled && ajustes.kinds.loyalty_reward);
+}
+
+/**
+ * Encola el correo que anuncia un premio de fidelidad.
+ *
+ * Lo llama el programa de fidelidad justo después de emitir el pack de
+ * cortesía. La clave única es el premio, así que reintentar la entrega del
+ * mismo premio no manda dos correos. Si los avisos están apagados no hace nada:
+ * el premio se entrega igual, solo no se anuncia.
+ * @returns {boolean} si quedó algo en la cola
+ */
+export function encolarRecompensa({ userId, packId, rewardId, tickets, threshold, sequence, now = Date.now() }) {
+  const db = getDb();
+  if (!avisoDeRecompensaActivo(db)) return false;
+  const ahoraIso = iso(now);
+  const cambios = db
+    .prepare(
+      `INSERT INTO notifications (id, user_id, pack_id, kind, channel, dedupe_key, status, next_attempt_at, data, created_at, updated_at)
+       VALUES (@id, @userId, @packId, 'loyalty_reward', 'email', @clave, 'pending', @ahora, @data, @ahora, @ahora)
+       ON CONFLICT(dedupe_key) DO NOTHING`,
+    )
+    .run({
+      id: newId(),
+      userId,
+      packId,
+      clave: `loyalty_reward:${rewardId}`,
+      data: JSON.stringify({ rewardId, tickets, threshold, sequence }),
+      ahora: ahoraIso,
+    }).changes;
+  return cambios > 0;
+}
+
+// ---------------------------------------------------------------------------
 // Despacho
 // ---------------------------------------------------------------------------
 
@@ -470,6 +522,13 @@ function revalidar(db, fila, ajustes, now) {
     case 'purchase':
       if (!pack || pack.status === 'cancelled') return no('pack_anulado');
       return si({ usuario, pack, saldo });
+
+    case 'loyalty_reward':
+      // El premio ya se entregó: lo único que puede haber cambiado es que el
+      // pack se anulara antes de que saliera el correo, y entonces no hay nada
+      // que anunciar.
+      if (!pack || pack.status === 'cancelled') return no('pack_anulado');
+      return si({ usuario, pack, saldo, premio: datos });
 
     case 'low_balance':
       if (cicloDeCompra(db, usuario.id) !== datos.cycle || saldo < 1 || saldo > ajustes.lowBalanceThreshold) {
@@ -552,8 +611,8 @@ export async function despachar({ now = Date.now(), enviar = enviarCorreo, lote 
     .prepare(
       `SELECT * FROM notifications
         WHERE status = 'pending' AND channel = 'email' AND next_attempt_at <= ?
-        ORDER BY CASE kind WHEN 'purchase' THEN 0 WHEN 'depleted' THEN 1 WHEN 'low_balance' THEN 2
-                           WHEN 'expiring' THEN 3 ELSE 4 END,
+        ORDER BY CASE kind WHEN 'purchase' THEN 0 WHEN 'loyalty_reward' THEN 1 WHEN 'depleted' THEN 2
+                           WHEN 'low_balance' THEN 3 WHEN 'expiring' THEN 4 ELSE 5 END,
                  created_at ASC, rowid ASC
         LIMIT ?`,
     )
@@ -822,6 +881,8 @@ export async function enviarPrueba({ kind, actor, ip = null, userAgent = null, n
     usuario,
     pack,
     saldo: 2,
+    // Datos de ejemplo del premio: la prueba solo sirve para ver el texto.
+    premio: { tickets: pack.size, threshold: 10, sequence: 1 },
     dias: ajustes.inactiveDays + 4,
     proximoVencimiento: { code: pack.code, expires_at: pack.expires_at },
     now,

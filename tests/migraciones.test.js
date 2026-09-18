@@ -184,9 +184,9 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
     .all()
     .map((r) => r.name);
   assert.deepEqual(tablas, [
-    'audit_log', 'idempotency_keys', 'notifications', 'pack_movements', 'pack_requests', 'packs', 'password_resets',
-    'rate_limits', 'redemptions', 'sessions', 'settings', 'transfers', 'used_nonces', 'users',
-    'wallet_devices', 'wallet_passes',
+    'audit_log', 'idempotency_keys', 'loyalty_rewards', 'notifications', 'pack_movements', 'pack_requests',
+    'packs', 'password_resets', 'rate_limits', 'redemptions', 'sessions', 'settings', 'transfers',
+    'used_nonces', 'users', 'wallet_devices', 'wallet_passes',
   ]);
 
   assert.equal(db.pragma('user_version', { simple: true }), migrations.length);
@@ -196,7 +196,7 @@ test('aplicar todas las migraciones deja el esquema esperado', () => {
   for (const necesario of [
     'idx_redemptions_idem', 'idx_users_search', 'idx_movements_pack', 'idx_wallet_devices_serial',
     'idx_password_resets_expiry', 'idx_notifications_queue', 'idx_transfers_sender',
-    'idx_users_scan_enabled', 'idx_pack_requests_status',
+    'idx_users_scan_enabled', 'idx_pack_requests_status', 'idx_loyalty_user', 'idx_packs_origin',
   ]) {
     assert.ok(indices.includes(necesario), `falta el índice ${necesario}`);
   }
@@ -346,4 +346,3 @@ test('la migración 012 crea los índices de cobertura y aceleración de consult
 
   db.close();
 });
-

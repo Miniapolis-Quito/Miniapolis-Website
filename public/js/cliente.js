@@ -9,6 +9,7 @@ import { montarCabecera, aplicarMarca, revelarAlEntrar } from './shell.js';
 
 const estado = {
   resumen: null,
+  fidelidad: null,
   packs: [],
   packSeleccionado: null,
   qrConfig: { ttlSeconds: 120, refreshSeconds: 30 },
@@ -68,6 +69,78 @@ function pintarSaldo(anterior) {
 }
 
 // ---------------------------------------------------------------------------
+// Programa de fidelidad
+// ---------------------------------------------------------------------------
+
+/** Con pocos sellos se dibuja la tarjeta; con muchos, una barra. */
+const MAXIMO_DE_SELLOS = 12;
+
+/**
+ * «La casa invita»: cuántas entradas le faltan para la de regalo.
+ *
+ * La tarjeta solo existe si la pista tiene el programa encendido; si lo apagan,
+ * desaparece sin dejar un hueco raro en la pantalla.
+ */
+function pintarFidelidad() {
+  const seccion = $('#seccion-fidelidad');
+  const f = estado.fidelidad;
+  if (!f?.enabled) {
+    seccion.hidden = true;
+    return;
+  }
+  seccion.hidden = false;
+
+  const umbral = f.entriesPerReward;
+  const premio = f.rewardTickets;
+  const faltan = f.remaining;
+  const completa = faltan <= 1 || f.due > 0;
+  seccion.classList.toggle('fidelidad--completa', completa);
+
+  $('#fidelidad-etiqueta').textContent = f.rewardsCount
+    ? `${plural(f.ticketsEarned, 'entrada regalada', 'entradas regaladas')}`
+    : `${plural(premio, 'entrada gratis', 'entradas gratis')} cada ${umbral}`;
+
+  // `due` solo es mayor que cero en un caso raro: el premio está ganado pero
+  // todavía no se pudo acreditar (la cuenta estaba suspendida, por ejemplo).
+  // Decirlo evita que la persona crea que se quedó sin él.
+  $('#fidelidad-texto').textContent = f.due > 0
+    ? `¡Ya ganaste ${plural(premio, 'entrada', 'entradas')} de regalo! Te ${premio === 1 ? 'la acreditamos' : 'las acreditamos'} enseguida.`
+    : completa
+      ? `¡Te falta una entrada! La siguiente visita te regala ${plural(premio, 'entrada', 'entradas')}.`
+      : `Te ${faltan === 1 ? 'falta' : 'faltan'} ${plural(faltan, 'entrada', 'entradas')} para que ` +
+        `${premio === 1 ? 'la siguiente' : `las siguientes ${premio}`} ${premio === 1 ? 'la ponga' : 'las ponga'} la casa.`;
+
+  // Tarjeta de sellos: uno por entrada del ciclo, y el último es el premio.
+  const sellos = $('#fidelidad-sellos');
+  const barra = $('#fidelidad-barra');
+  if (umbral <= MAXIMO_DE_SELLOS) {
+    sellos.hidden = false;
+    barra.hidden = true;
+    render(
+      sellos,
+      Array.from({ length: umbral }, (_, i) =>
+        el('div', {
+          class: `sello${i < f.progress ? ' sello--lleno' : ''}${i === umbral - 1 ? ' sello--premio' : ''}`,
+        }),
+      ),
+    );
+  } else {
+    sellos.hidden = true;
+    render(sellos);
+    barra.hidden = false;
+    $('#fidelidad-relleno').style.setProperty('width', `${Math.round((f.progress / umbral) * 100)}%`);
+  }
+
+  const detalle = [`${f.progress} de ${umbral} entradas de este ciclo`];
+  if (f.rewardsCount) {
+    detalle.push(`${plural(f.rewardsCount, 'premio ganado', 'premios ganados')}`);
+    if (f.lastRewardAt) detalle.push(`el último el ${fecha(f.lastRewardAt, { conHora: false })}`);
+  }
+  detalle.push('las entradas de cortesía no cuentan para el siguiente');
+  $('#fidelidad-detalle').textContent = detalle.join(' · ');
+}
+
+// ---------------------------------------------------------------------------
 // Packs
 // ---------------------------------------------------------------------------
 
@@ -86,7 +159,15 @@ function tarjetaPack(pack) {
         'div',
         {},
         el('div', { class: 'pack__codigo' }, pack.code),
-        el('div', { class: 'tenue pequeno' }, `Pack de ${pack.size} · ${dinero(pack.priceCents, pack.currency)}`),
+        el(
+          'div',
+          { class: 'tenue pequeno' },
+          pack.origin === 'loyalty'
+            ? `Pack de ${pack.size} · cortesía de la casa`
+            : pack.origin === 'transfer'
+              ? `Pack de ${pack.size} · recibido de otro piloto`
+              : `Pack de ${pack.size} · ${dinero(pack.priceCents, pack.currency)}`,
+        ),
       ),
       el('span', { class: `etiqueta etiqueta--${marca.clase}` }, marca.texto),
     ),
@@ -407,9 +488,11 @@ async function cargarTodo({ conHistorial = true } = {}) {
   const datos = await api.get('/api/packs/mine');
   estado.resumen = datos.summary;
   estado.packs = datos.packs;
+  estado.fidelidad = datos.loyalty ?? null;
   estado.qrConfig = datos.qrConfig || estado.qrConfig;
 
   pintarSaldo(anterior);
+  pintarFidelidad();
   // El pack en pantalla se elige antes de pintar las tarjetas para que la que
   // está mostrando el QR aparezca marcada como tal.
   estado.packSeleccionado = elegirPackPorDefecto();
@@ -430,6 +513,19 @@ function manejarEvento(tipo, datos) {
     const anterior = estado.resumen?.availableTickets;
     estado.resumen = datos.summary;
     pintarSaldo(anterior);
+    return;
+  }
+
+  if (tipo === 'fidelidad.recompensa') {
+    // Lo mejor que le puede pasar a alguien en esta pantalla: se celebra.
+    vibrar([70, 50, 70, 50, 120]);
+    const cuantas = datos.reward?.tickets ?? datos.pack?.size ?? 1;
+    brindis(
+      `¡La casa invita! Te regalamos ${plural(cuantas, 'entrada', 'entradas')} en el pack ${datos.pack.code}.`,
+      'ok',
+      8000,
+    );
+    cargarTodo({ conHistorial: false }).catch(() => {});
     return;
   }
 
@@ -479,6 +575,13 @@ function manejarEvento(tipo, datos) {
   }
 
   if (tipo === 'pack.emitido') {
+    brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
+    // El pack de cortesía lo anuncia su propio evento, con su propia
+    // celebración: dos avisos seguidos por lo mismo sobran.
+    if (datos.pack?.origin === 'loyalty') {
+      cargarTodo({ conHistorial: false }).catch(() => {});
+      return;
+    }
     brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
     cargarTodo({ conHistorial: false }).catch(() => {});
     return;

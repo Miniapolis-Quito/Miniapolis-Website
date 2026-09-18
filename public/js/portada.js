@@ -76,30 +76,34 @@ function montarProgreso() {
   window.addEventListener('resize', actualizar, { passive: true });
 }
 
-function montarHaloPuntero() {
+function montarMiraPuntero() {
   if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
 
-  const halo = document.createElement('span');
-  halo.className = 'entrada__halo-puntero';
-  halo.setAttribute('aria-hidden', 'true');
-  document.body.append(halo);
+  document.body.classList.add('mira-activa');
+  const mira = document.createElement('span');
+  mira.className = 'entrada__mira';
+  mira.setAttribute('aria-hidden', 'true');
+  const segmento = document.createElement('span');
+  segmento.className = 'entrada__mira--segmento';
+  const centro = document.createElement('span');
+  centro.className = 'entrada__mira-centro';
+  mira.append(segmento, centro);
+  document.body.append(mira);
 
-  let x = -100;
-  let y = -100;
-  let raf = 0;
-  const pintar = () => {
-    raf = 0;
-    root.style.setProperty('--puntero-x', `${x}px`);
-    root.style.setProperty('--puntero-y', `${y}px`);
-  };
+  const esObjetivo = (nodo) => nodo?.closest?.('a, button, input, select, textarea, .entrada__foto, .entrada__hero-foto');
   window.addEventListener('pointermove', (evento) => {
-    x = evento.clientX;
-    y = evento.clientY;
-    if (!raf) raf = window.requestAnimationFrame(pintar);
+    root.style.setProperty('--puntero-x', `${evento.clientX}px`);
+    root.style.setProperty('--puntero-y', `${evento.clientY}px`);
+  }, { passive: true });
+  window.addEventListener('pointerover', (evento) => {
+    root.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
+  }, { passive: true });
+  window.addEventListener('pointerout', (evento) => {
+    if (!esObjetivo(evento.relatedTarget)) root.classList.remove('mira-sobre-objetivo');
   }, { passive: true });
 }
 
 montarRevelado();
 montarParallax();
 montarProgreso();
-montarHaloPuntero();
+montarMiraPuntero();
