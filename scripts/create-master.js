@@ -35,8 +35,10 @@ const opciones = leerArgumentos(process.argv.slice(2));
 if (opciones.help || !opciones.email) {
   process.stdout.write(
     `\nCrea o repara la cuenta máster del sistema de entradas.\n\n` +
-      `  npm run create-master -- --email <correo> [--nombre "<nombre>"] [--password "<contraseña>"]\n\n` +
-      `Sin --password se genera una contraseña segura y se muestra una sola vez.\n\n`,
+      `  npm run create-master -- --email <correo> [--nombre "<nombre>"]\n\n` +
+      `Sin contraseña se genera una segura y se muestra una sola vez.\n` +
+      `Para elegirla, pásala por el entorno (no en la línea de órdenes):\n\n` +
+      `  MASTER_PASSWORD='...' npm run create-master -- --email <correo>\n\n`,
   );
   process.exit(opciones.email ? 0 : 1);
 }
@@ -46,7 +48,21 @@ getDb();
 const email = String(opciones.email).trim().toLowerCase();
 const nombre = typeof opciones.nombre === 'string' ? opciones.nombre : 'Administrador';
 
-let password = typeof opciones.password === 'string' ? opciones.password : null;
+/**
+ * La contraseña se toma del entorno, no de la línea de órdenes.
+ *
+ * Los argumentos de un proceso los lee cualquier usuario de la máquina con
+ * `ps`, y además quedan en el historial del intérprete. Se sigue aceptando
+ * `--password` para no romper a quien ya lo usaba, pero con un aviso: la
+ * contraseña de la cuenta máster es la llave de todo el sistema.
+ */
+let password = typeof opciones.password === 'string' ? opciones.password : process.env.MASTER_PASSWORD || null;
+if (typeof opciones.password === 'string') {
+  process.stderr.write(
+    '\n  Aviso: --password queda a la vista de cualquiera en la máquina (ps) y en el historial.\n' +
+      "  La próxima vez pásala por el entorno: MASTER_PASSWORD='...' npm run create-master -- --email ...\n",
+  );
+}
 let generada = false;
 if (!password) {
   password = generarPasswordTemporal(12);

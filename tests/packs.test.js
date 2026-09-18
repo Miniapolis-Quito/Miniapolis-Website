@@ -493,21 +493,87 @@ test('un cliente puede transferir buscando al destinatario por teléfono', async
   assert.equal(r.datos.destinationPack.remaining, 3);
 });
 
-test('no se puede transferir a una cuenta suspendida', async () => {
+test('una cuenta suspendida no se distingue de una que no existe', async () => {
   const { cMaster, cCliente, cliente } = await sembrarUsuarios();
   const otro = await cMaster.post('/api/admin/users', {
     email: 'suspendido@pista.ec', fullName: 'Piloto Suspendido', role: 'customer', password: 'Neumatico-Slick-2026',
   });
   await cMaster.patch(`/api/admin/users/${otro.datos.user.id}`, { status: 'suspended' });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 10 });
+
+  const suspendido = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'suspendido@pista.ec',
+  });
+  const inexistente = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'nadie@pista.ec',
+  });
+
+  // La transferencia es el único sitio donde alguien de fuera puede preguntar
+  // por una dirección ajena: tiene que contestar lo mismo en los dos casos, o
+  // sirve para averiguar quién tiene cuenta probando correos.
+  assert.equal(suspendido.status, inexistente.status);
+  assert.deepEqual(suspendido.datos.error, inexistente.datos.error);
+});
+
+test('la transferencia no le dice al remitente el correo del destinatario', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  await cMaster.post('/api/admin/users', {
+    email: 'amigo.privado@pista.ec', fullName: 'Amigo Privado', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
   const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
 
   const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
     quantity: 1,
-    recipient: 'suspendido@pista.ec',
+    recipient: 'amigo.privado@pista.ec',
   });
 
-  assert.equal(r.status, 400);
-  assert.equal(r.datos.error.code, 'destinatario_suspendido');
+  assert.equal(r.status, 200);
+  // El nombre sí: es lo que confirma que la entrada fue a la persona correcta.
+  assert.equal(r.datos.recipient.fullName, 'Amigo Privado');
+  assert.equal(r.datos.recipient.email, undefined);
+  assert.equal(r.datos.recipient.id, undefined);
+  assert.ok(!JSON.stringify(r.datos).includes('amigo.privado@pista.ec'));
+});
+
+test('un cliente no puede transferir a una cuenta de personal ni de máster', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 10 });
+
+  const aMaster = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'master@pista.ec',
+  });
+  const aPersonal = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'staff@pista.ec',
+  });
+  const aNadie = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 1,
+    recipient: 'nadie@pista.ec',
+  });
+
+  // Mismo rechazo que una dirección sin cuenta: si el buscador de
+  // destinatarios contestara distinto, serviría para confirmar cuál es la
+  // dirección del administrador.
+  assert.deepEqual(aMaster.datos.error, aNadie.datos.error);
+  assert.deepEqual(aPersonal.datos.error, aNadie.datos.error);
+  assert.equal(aMaster.status, 404);
+});
+
+test('probar destinatarios que no existen se corta antes que las transferencias de verdad', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const ruta = `/api/packs/${emitido.datos.pack.id}/transfer`;
+
+  let ultima;
+  for (let i = 0; i < 9; i += 1) {
+    ultima = await cCliente.post(ruta, { quantity: 1, recipient: `sondeo${i}@pista.ec` });
+  }
+
+  assert.equal(ultima.status, 429);
+  assert.equal(ultima.datos.error.code, 'demasiados_intentos');
 });
 
 test('transferir todas las entradas restantes marca el pack emisor como agotado (depleted)', async () => {

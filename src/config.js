@@ -159,6 +159,76 @@ function trustedProxyIps() {
 }
 
 /**
+ * Orígenes de confianza para CORS.
+ *
+ * Un origen es esquema, host y puerto: nada más. Se valida al arrancar porque
+ * los dos errores típicos no avisan de nada por su cuenta. Uno escrito con
+ * barra final o con ruta («https://pista.ec/») no coincide nunca con lo que
+ * manda el navegador, y el permiso que alguien creía haber dado no existe; un
+ * «*» copiado de otra guía tampoco funciona aquí —se compara literalmente— y
+ * deja creer que el sistema está abierto cuando no lo está. Mejor no arrancar
+ * que arrancar con una lista que no dice lo que su autor cree.
+ */
+function corsOrigins() {
+  const entradas = list('CORS_ORIGINS', []);
+  for (const entrada of entradas) {
+    let url;
+    try {
+      url = new URL(entrada);
+    } catch {
+      url = null;
+    }
+    if (
+      !url ||
+      !['http:', 'https:'].includes(url.protocol) ||
+      !url.hostname ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      url.pathname !== '/' ||
+      entrada !== url.origin
+    ) {
+      throw new Error(
+        `Configuración inválida: CORS_ORIGINS contiene "${entrada}". ` +
+          'Cada origen se escribe como esquema://host[:puerto], sin barra final ni ruta (por ejemplo, "https://pista.ec").',
+      );
+    }
+  }
+  return entradas;
+}
+
+/**
+ * Servidor de avisos de Apple.
+ *
+ * Este valor se pega dentro de una dirección `https://…` a la que el sistema
+ * manda un token firmado con la clave del negocio. Sin comprobarlo, algo como
+ * `api.push.apple.com/../@otro.sitio` convertiría esa credencial en un regalo
+ * para quien pusiera el nombre. Se admite el servidor y, como mucho, un puerto
+ * —las pruebas levantan uno local—, y nada más.
+ */
+function apnsHost() {
+  const valor = (process.env.APPLE_APNS_HOST || 'api.push.apple.com').trim();
+
+  const conPuerto = valor.match(/^(\[[0-9A-Fa-f:.]+\]|[^:[\]/@?#\s]+)(?::(\d{1,5}))?$/);
+  const puerto = conPuerto?.[2];
+  const maquina = conPuerto?.[1]?.replace(/^\[|\]$/g, '') ?? '';
+  const nombreValido = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i.test(maquina);
+
+  if (
+    !conPuerto ||
+    (!nombreValido && isIP(maquina) === 0) ||
+    (puerto !== undefined && (Number(puerto) < 1 || Number(puerto) > 65535))
+  ) {
+    throw new Error(
+      `Configuración inválida: APPLE_APNS_HOST debe ser un servidor, con puerto opcional (recibido "${valor}"). ` +
+        'Apple usa "api.push.apple.com" y, para pruebas, "api.sandbox.push.apple.com".',
+    );
+  }
+  return valor;
+}
+
+/**
  * Lee un secreto que puede venir en la variable o en un archivo apuntado por
  * ella. Los certificados y las claves privadas se guardan en disco, con sus
  * permisos, y no pegados en el entorno.
@@ -220,7 +290,7 @@ function wallet() {
     wwdrCertificate: secretoOArchivo('APPLE_WWDR_CERTIFICATE'),
     apnsKeyId: process.env.APPLE_APNS_KEY_ID || '',
     apnsKey: secretoOArchivo('APPLE_APNS_KEY'),
-    apnsHost: process.env.APPLE_APNS_HOST || 'api.push.apple.com',
+    apnsHost: apnsHost(),
   };
   apple.enabled = Boolean(
     apple.passTypeId && apple.teamId && apple.certificate && apple.key && apple.wwdrCertificate,
@@ -454,7 +524,7 @@ export const config = Object.freeze({
 
   security: {
     /** Orígenes permitidos para CORS. Vacío = solo mismo origen. */
-    corsOrigins: list('CORS_ORIGINS', []),
+    corsOrigins: Object.freeze(corsOrigins()),
     /** Marca Secure en las cookies. Por defecto activa en producción. */
     cookieSecure: bool('COOKIE_SECURE', isProduction),
     /** Proxies concretos autorizados a aportar X-Forwarded-For. */
