@@ -34,11 +34,19 @@ import * as recuperacion from '../services/recuperacion.js';
 import * as sinConexion from '../services/sinConexion.js';
 import * as avisos from '../services/avisos.js';
 import * as packRequests from '../services/packRequests.js';
+import { rateLimit } from '../lib/rateLimit.js';
 
 export const router = express.Router();
 router.use(requireMaster);
 
 const actorContext = (req) => ({ actor: req.user, ip: req.clientIp, userAgent: req.get('user-agent') });
+
+const adminUserLimiter = rateLimit({ name: 'admin-user-op', limit: 60, windowSeconds: 15 * 60 });
+const adminPasswordLimiter = rateLimit({ name: 'admin-password-op', limit: 30, windowSeconds: 15 * 60 });
+const adminPackLimiter = rateLimit({ name: 'admin-pack-op', limit: 120, windowSeconds: 15 * 60 });
+const adminVoidLimiter = rateLimit({ name: 'admin-void-op', limit: 60, windowSeconds: 15 * 60 });
+const adminExportLimiter = rateLimit({ name: 'admin-export-op', limit: 30, windowSeconds: 15 * 60 });
+const adminNotificationLimiter = rateLimit({ name: 'admin-notification-op', limit: 30, windowSeconds: 15 * 60 });
 
 // ---------------------------------------------------------------------------
 // Panel general
@@ -73,6 +81,7 @@ router.get(
 
 router.post(
   '/users',
+  adminUserLimiter,
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(createUserSchema, req.body, badRequest);
 
@@ -252,6 +261,7 @@ router.patch(
 /** Restablece la contraseña de un usuario y devuelve una temporal. */
 router.post(
   '/users/:id/reset-password',
+  adminPasswordLimiter,
   asyncHandler(async (req, res) => {
     const target = users.findById(req.params.id);
     if (!target) throw notFound('Usuario no encontrado.');
@@ -306,6 +316,37 @@ router.post(
       metadata: { sesiones: count },
     });
     res.json({ ok: true, sesionesCerradas: count });
+  }),
+);
+
+/** Cierra una sesión específica de un usuario. */
+router.delete(
+  '/users/:userId/sessions/:sessionId',
+  adminUserLimiter,
+  asyncHandler(async (req, res) => {
+    const { userId, sessionId } = req.params;
+    const session = sessions.findById(sessionId);
+    if (!session || session.user_id !== userId) {
+      throw notFound('Sesión no encontrada para este usuario.');
+    }
+    sessions.revokeSession(sessionId, 'revocada_por_master');
+    audit.record({
+      ...actorContext(req),
+      action: 'admin.sesion_revocada',
+      entityType: 'session',
+      entityId: sessionId,
+      metadata: { targetUserId: userId },
+    });
+    res.json({ ok: true, message: 'Sesión revocada correctamente.' });
+  }),
+);
+
+/** Elimina una cuenta que no tenga historial contable ni operativo. */
+router.delete(
+  '/users/:id',
+  adminUserLimiter,
+  asyncHandler(async (req, res) => {
+    res.json(users.deleteUser(req.params.id, actorContext(req)));
   }),
 );
 
