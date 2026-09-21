@@ -238,6 +238,7 @@ test('la portada usa la pista real y los recursos fotográficos inmersivos', () 
   assert.match(src, /\/images\/landing\/miniapolis-track-atmosphere\.webp/);
   assert.match(src, /\/images\/landing\/miniapolis-car-detail\.webp/);
   assert.doesNotMatch(src, /miniapolis-track-wide|miniapolis-action|miniapolis-asphalt-detail/);
+  assert.doesNotMatch(src, /miniapolis-action|miniapolis-track-portrait|-[^/\s]+-(?:draft|upscale)\.(?:webp|jpe?g|png)/i);
   assert.match(src, /data-depth="[0-9.]+"/);
   assert.doesNotMatch(src, /césped|cesped|grass/i, 'la pista debe describirse como asfalto');
 });

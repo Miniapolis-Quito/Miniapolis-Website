@@ -58,6 +58,21 @@ Cada bloque visual de la portada usa un encuadre distinto. Las variantes `-640`,
 repeticiones dentro de la página. Las superficies del trazado se presentan como
 asfalto continuo; las líneas y los bordillos conservan sus colores reales.
 
+La actualización premium mantiene esta misma colección como fuente de verdad:
+los masters horizontales y verticales conservan la arquitectura real del hangar,
+los arcos, ventanas, columnas, asfalto y bordillos. La limpieza visual elimina
+personas, camiones, autos de fondo y objetos accidentales sin añadir geometría ni
+decoración nueva. Las variantes responsive deben compartir el encuadre de su
+master y declarar en HTML sus dimensiones reales.
+
+Los archivos de `landing/` se reservan para composiciones editoriales: `miniapolis-car-detail`
+usa el auto RC como sujeto único y `miniapolis-track-atmosphere` muestra solo el
+ambiente real del circuito. `miniapolis-action` y `miniapolis-track-portrait` no
+son fuentes permitidas para la portada.
+
+Los logotipos, iconos PWA, recursos de Wallet y la vista de cámara del escáner no
+se editan con ImageGen ni forman parte de esta colección fotográfica.
+
 Las tres composiciones de marca (`miniapolis-bandera-hero.webp`,
 `miniapolis-logo-dark.webp`, `miniapolis-logo-light.webp`) se conservan como
 material de origen aunque ninguna pantalla las use ahora mismo.
