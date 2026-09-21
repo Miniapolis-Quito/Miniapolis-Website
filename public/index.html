@@ -10,7 +10,7 @@
 
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="./images/landing/miniapolis-car-detail.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="./images/oficial/pista-circuito-panorama.webp" as="image" fetchpriority="high">
 </head>
 <body class="pagina-entrada">
   <header class="entrada__barra">
@@ -24,9 +24,18 @@
   </header>
 
   <main class="contenedor contenedor--portada">
-    <section class="entrada__hero entrada__hero--inmersiva entrada__hero--cinematica" data-scroll-scene="hero" aria-labelledby="titulo-entrada">
-      <div class="entrada__hero-fondo" aria-hidden="true"></div>
+    <section class="entrada__hero entrada__hero--inmersiva entrada__hero--cinematica entrada__hero--carrera" data-scroll-scene="hero" data-scroll-motion="salida" aria-labelledby="titulo-entrada">
+      <div class="entrada__hero-fondo" data-carrera-layer="ambiente" aria-hidden="true">
+        <picture>
+          <img src="./images/oficial/pista-circuito-panorama.webp" width="1674" height="939" alt="">
+        </picture>
+      </div>
+      <div class="entrada__hero-vigneta" data-carrera-layer="vigneta" aria-hidden="true"></div>
+      <div class="entrada__hero-linea" data-carrera-layer="trazada" aria-hidden="true"><span></span></div>
+      <div class="entrada__hero-indicador" data-carrera-layer="velocidad" aria-hidden="true"><span></span></div>
+      <div class="entrada__carrera-panel" data-carrera-layer="telemetria" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="entrada__hero-copy">
+        <p class="entrada__hero-kicker">Pista indoor</p>
         <h1 id="titulo-entrada"><span class="entrada__titulo-linea">Ven a</span><span class="entrada__titulo-linea entrada__titulo-linea--acento">rodar.</span></h1>
         <p class="entrada__descripcion">Asfalto, curvas y control.</p>
         <div class="entrada__hero-acciones">
@@ -37,9 +46,10 @@
       <div class="entrada__hero-aside" data-depth="0.15" data-scroll-layer="hero-car">
         <figure class="entrada__hero-foto entrada__hero-foto--wide">
           <picture>
-            <source srcset="./images/landing/miniapolis-car-detail.webp" type="image/webp">
-            <img src="./images/landing/miniapolis-car-detail.jpeg" width="665" height="700"
+            <source srcset="./images/landing/miniapolis-car-detail-640.webp 640w, ./images/landing/miniapolis-car-detail-900.webp 900w, ./images/landing/miniapolis-car-detail.webp 1221w" type="image/webp">
+            <img src="./images/landing/miniapolis-car-detail.jpeg" width="1221" height="1289"
                  alt="Coche de radiocontrol listo para entrar en pista"
+                 sizes="(max-width: 620px) 55vw, (max-width: 900px) 42vw, 445px"
                  fetchpriority="high" decoding="async">
           </picture>
           <figcaption><span>Miniápolis #3</span><span>Asfalto indoor</span></figcaption>
@@ -48,7 +58,7 @@
       <div class="entrada__hero-cinta" aria-hidden="true"></div>
     </section>
 
-    <section class="entrada__cifras" data-scroll-scene="telemetria" aria-label="La pista en cifras">
+    <section class="entrada__cifras entrada__cifras--pit" data-scroll-scene="telemetria" data-scroll-motion="aceleracion" aria-label="La pista en cifras">
       <div class="cifra">
         <span class="cifra__num">400 m²</span>
         <span class="cifra__texto">Asfalto indoor</span>
@@ -61,23 +71,24 @@
         <span class="cifra__num">7 días</span>
         <span class="cifra__texto">Packs activos</span>
       </div>
+      <div class="entrada__pista-pulso" aria-hidden="true"><span></span></div>
     </section>
 
-    <section id="pista" class="entrada__pista-real" data-scroll-scene="pista" aria-labelledby="titulo-pista">
+    <section id="pista" class="entrada__pista-real entrada__pista--vueltas" data-scroll-scene="pista" data-scroll-motion="curva" aria-labelledby="titulo-pista">
       <div class="entrada__seccion-cabeza">
         <h2 id="titulo-pista">La pista.</h2>
         <p class="entrada__seccion-descripcion">Rectas, curvas y asfalto.</p>
       </div>
 
       <figure class="entrada__foto entrada__foto--apertura entrada__foto--marquesina" data-depth="0.06">
-        <img src="./images/pista/miniapolis-track-corner-wide.webp" width="1674" height="939"
+        <img src="./images/pista/miniapolis-track-corner-wide.webp" width="1675" height="939"
              alt="Vista baja de una curva del circuito de asfalto de Miniápolis #3"
-             srcset="./images/pista/miniapolis-track-corner-wide-960.webp 960w, ./images/pista/miniapolis-track-corner-wide-1440.webp 1440w, ./images/pista/miniapolis-track-corner-wide.webp 1674w"
+             srcset="./images/pista/miniapolis-track-corner-wide-960.webp 960w, ./images/pista/miniapolis-track-corner-wide-1440.webp 1440w, ./images/pista/miniapolis-track-corner-wide.webp 1675w"
              sizes="100vw"
              loading="lazy" decoding="async">
       </figure>
 
-      <article class="entrada__media-destacada" data-scroll-scene="ritmo">
+      <article class="entrada__media-destacada" data-scroll-scene="ritmo" data-scroll-motion="apex">
         <div class="entrada__media-destacada-copy">
           <h3>A tu ritmo.</h3>
           <p>Una pista para sentir cada vuelta.</p>
@@ -107,8 +118,9 @@
         </figure>
         <figure class="entrada__foto">
           <picture>
-            <source srcset="./images/landing/miniapolis-track-atmosphere.webp" type="image/webp">
-            <img src="./images/landing/miniapolis-track-atmosphere.jpeg" width="640" height="359"
+            <source srcset="./images/landing/miniapolis-track-atmosphere-960.webp 960w, ./images/landing/miniapolis-track-atmosphere-1440.webp 1440w, ./images/landing/miniapolis-track-atmosphere.webp 1675w" type="image/webp">
+            <img src="./images/landing/miniapolis-track-atmosphere.jpeg" width="1675" height="939"
+               sizes="(max-width: 620px) 100vw, 80vw"
                alt="Vista amplia del circuito dentro del hangar"
                loading="lazy" decoding="async">
           </picture>
@@ -116,7 +128,7 @@
       </div>
     </section>
 
-    <section id="acceso" class="entrada__acceso" data-scroll-scene="acceso" aria-labelledby="titulo-acceso">
+    <section id="acceso" class="entrada__acceso entrada__acceso--pit" data-scroll-scene="acceso" data-scroll-motion="boxes" aria-labelledby="titulo-acceso">
       <div class="entrada__acceso-intro">
         <h2 id="titulo-acceso">Tu pase.</h2>
         <p class="entrada__acceso-nota">
