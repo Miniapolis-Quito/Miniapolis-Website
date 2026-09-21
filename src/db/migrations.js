@@ -730,6 +730,36 @@ export const migrations = [
       }
     },
   },
+  {
+    name: '016-cartera-al-dia',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Que el pase de la cartera nunca se quede atrás
+        --
+        -- Avisar del cambio es una llamada a Apple y otra a Google, y las
+        -- dos pueden fallar: un corte de red, un permiso caducado, Google
+        -- de mantenimiento. Antes eso se perdía —el aviso salía una vez y
+        -- si fallaba, el saldo del pase se quedaba viejo para siempre—,
+        -- así que ahora el cambio queda anotado hasta que se comunica de
+        -- verdad, y se reintenta con esperas cada vez más largas.
+        --
+        -- \`sync_pending_at\` es la hora del cambio sin comunicar; cuando
+        -- está en NULL, el pase está al día.
+        -- ---------------------------------------------------------------
+        ALTER TABLE wallet_passes ADD COLUMN sync_pending_at TEXT;
+        ALTER TABLE wallet_passes ADD COLUMN sync_attempts INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE wallet_passes ADD COLUMN sync_next_at TEXT;
+        ALTER TABLE wallet_passes ADD COLUMN synced_at TEXT;
+
+        -- El barrido de reintentos pregunta siempre por lo mismo: qué
+        -- pases están pendientes y ya les toca. Índice parcial, porque lo
+        -- normal es que no haya ninguno.
+        CREATE INDEX idx_wallet_passes_pendientes
+          ON wallet_passes(sync_next_at) WHERE sync_pending_at IS NOT NULL;
+      `);
+    },
+  },
 ];
 
 export default migrations;

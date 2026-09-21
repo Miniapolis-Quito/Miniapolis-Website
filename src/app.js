@@ -204,6 +204,14 @@ export function createApp() {
     res.set('Referrer-Policy', 'no-referrer');
     page('recordatorios.html')(req, res, next);
   });
+  // La invitación del mostrador para guardar el pase en la cartera. Su permiso
+  // va en el fragmento, igual que los otros dos, y por la misma razón: ahí no
+  // lo ve el servidor, ni se escapa por el Referer al salir hacia Apple o
+  // Google.
+  app.get('/cartera', (req, res, next) => {
+    res.set('Referrer-Policy', 'no-referrer');
+    page('cartera.html')(req, res, next);
+  });
 
   app.use((req, res, next) => {
     res.status(404).set('Cache-Control', 'no-cache');

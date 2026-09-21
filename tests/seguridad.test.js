@@ -348,7 +348,7 @@ test('cada clase de error de validación tiene su frase en español', async () =
 
 test('la política de seguridad de contenido cubre las rutas de página', async () => {
   const anonimo = crearCliente();
-  for (const ruta of ['/', '/app', '/escanear', '/admin']) {
+  for (const ruta of ['/', '/app', '/escanear', '/admin', '/cartera', '/recordatorios', '/restablecer']) {
     const r = await anonimo.get(ruta);
     assert.equal(r.status, 200, `${ruta} debe servirse`);
     const csp = r.headers.get('content-security-policy');
@@ -588,7 +588,7 @@ test('las páginas se sirven aunque la instalación cuelgue de una carpeta ocult
   // carpeta pública la web entera respondía 500 por el nombre de una carpeta
   // del servidor que el visitante nunca ve.
   const anonimo = crearCliente();
-  for (const ruta of ['/', '/app', '/escanear', '/admin', '/restablecer', '/recordatorios']) {
+  for (const ruta of ['/', '/app', '/escanear', '/admin', '/restablecer', '/recordatorios', '/cartera']) {
     const r = await anonimo.get(ruta);
     assert.equal(r.status, 200, `${ruta} debe servirse desde cualquier ruta de instalación`);
     assert.ok(String(r.datos).startsWith('<!doctype html>'), `${ruta} debe devolver la página`);

@@ -11,6 +11,7 @@ import { purgar as purgarRecuperaciones } from './services/recuperacion.js';
 import { cleanupExpired } from './lib/rateLimit.js';
 import * as avisos from './services/avisos.js';
 import * as fidelidad from './services/fidelidad.js';
+import * as wallet from './services/wallet.js';
 
 const app = createApp();
 await ensureMasterAccount();
@@ -60,6 +61,15 @@ maintenance.unref();
 /** Comprobantes y recordatorios a clientes. No envían nada hasta que el máster los activa. */
 const detenerAvisos = avisos.iniciar();
 
+// Que Google acepte la plantilla de los pases se comprueba al arrancar, no la
+// primera vez que un cliente pulsa el botón. En desarrollo no: ahí no siempre
+// hay credenciales de verdad ni salida a Internet.
+if (config.isProduction) {
+  wallet.comprobarConfiguracion().catch((error) => {
+    logger.warn('No se pudo comprobar la configuración de las carteras', { message: error.message });
+  });
+}
+
 server.listen(config.port, config.host, () => {
   const address = server.address();
   logger.info(`${config.brandName} — sistema de entradas escuchando`, {
@@ -81,6 +91,9 @@ function shutdown(signal, codigo = 0) {
   logger.info(`Señal ${signal} recibida; cerrando ordenadamente.`);
   clearInterval(maintenance);
   detenerAvisos();
+  // El barrido de los pases de cartera también se para: lo que quede
+  // pendiente está anotado en la base y se retoma al volver a arrancar.
+  wallet.dejarDeEscuchar();
 
   server.close(() => {
     closeDb();
