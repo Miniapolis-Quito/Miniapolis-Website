@@ -1,9 +1,8 @@
 /**
  * Capa de movimiento de la interfaz.
  *
- * Aquí vive lo poco que se mueve por cuenta propia: las fotos que se
- * descubren al entrar en pantalla, el subrayado que viaja entre pestañas y la
- * barra del código QR.
+ * Aquí vive lo poco que se mueve por cuenta propia: el subrayado que viaja
+ * entre pestañas y la barra del código QR.
  *
  * Tres reglas que no se rompen:
  *
@@ -18,12 +17,6 @@
  *    trabajó y no lo repite.
  */
 
-/** Cuánto se separan en el tiempo dos piezas de una misma tanda. */
-const ESCALON_MS = 55;
-
-/** Si una animación no llegó a dispararse, esto la da por buena igualmente. */
-const RED_DE_SEGURIDAD_MS = 2600;
-
 export function sinMovimiento() {
   return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 }
@@ -34,42 +27,6 @@ function yaHecho(nodo, marca) {
   nodo.dataset[marca] = '1';
   return false;
 }
-
-// ---------------------------------------------------------------------------
-// Fotografías: revelado al entrar en pantalla
-// ---------------------------------------------------------------------------
-
-/**
- * Las fotos se descubren con un desvanecido corto y una elevación mínima: se
- * nota que llegan, no que se exhiben.
- */
-export function revelarFiguras(selector = '.pagina-entrada figure') {
-  if (sinMovimiento() || typeof IntersectionObserver !== 'function') return;
-  const figuras = [...document.querySelectorAll(selector)].filter((n) => !yaHecho(n, 'figuraRevelada'));
-  if (figuras.length === 0) return;
-
-  for (const figura of figuras) figura.classList.add('figura-revela');
-
-  const observador = new IntersectionObserver(
-    (entradas) => {
-      let retraso = 0;
-      for (const entrada of entradas) {
-        if (!entrada.isIntersecting) continue;
-        entrada.target.style.setProperty('--retraso', `${retraso}ms`);
-        entrada.target.classList.add('figura-revela--visible');
-        observador.unobserve(entrada.target);
-        retraso += ESCALON_MS;
-      }
-    },
-    { rootMargin: '0px 0px -4% 0px', threshold: 0.08 },
-  );
-  for (const figura of figuras) observador.observe(figura);
-
-  setTimeout(() => {
-    for (const figura of figuras) figura.classList.add('figura-revela--visible');
-  }, RED_DE_SEGURIDAD_MS);
-}
-
 
 /**
  * La cabecera se estrecha en cuanto la página se mueve: gana sitio para el
@@ -235,7 +192,4 @@ export function montarMovimiento() {
   montarPestanasDesplazables();
   montarIndicadorPestanas();
   montarTemporizadorQr();
-  if (document.body.classList.contains('pagina-entrada')) {
-    revelarFiguras();
-  }
 }

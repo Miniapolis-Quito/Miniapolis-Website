@@ -1,184 +1,28 @@
+/**
+ * Portada: orquesta las escenas y la mira.
+ *
+ * Sin movimiento (preferencia del sistema o navegador sin soporte) no se añade
+ * `.portada-motor` y la página queda estática y completa. La mira se monta
+ * siempre que haya puntero fino.
+ */
 import { sinMovimiento } from './movimiento.js';
+import {
+  crearMotor, easeOutCubic, digitosDe, entradaPanel, fase, lucesEncendidas,
+} from './portada-motor.js';
 
-const reducir = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) || sinMovimiento();
-const root = document.documentElement;
+const raiz = document.documentElement;
+const reducir = sinMovimiento();
+const $ = (selector, base = document) => base.querySelector(selector);
+const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
 
-root.classList.add('portada-js');
+/** Lo único que la mira reconoce como objetivo: lo que se puede pulsar. */
+const CLICABLES = 'a, button, input, select, textarea, label, summary, [role="tab"]';
 
-function montarRevelado() {
-  const piezas = [...document.querySelectorAll('.entrada__hero-copy, .entrada__telemetria, .entrada__cifras, .entrada__seccion-cabeza, .entrada__media-destacada-copy, .entrada__acceso-intro, .entrada__acceso-panel')];
-  if (piezas.length === 0) return;
+// ---------------------------------------------------------------------------
+// Mira del puntero
+// ---------------------------------------------------------------------------
 
-  if (reducir || typeof IntersectionObserver !== 'function') {
-    piezas.forEach((pieza) => pieza.classList.add('portada-revela--visible'));
-    return;
-  }
-
-  piezas.forEach((pieza, indice) => {
-    pieza.classList.add('portada-revela');
-    pieza.style.setProperty('--portada-retraso', `${Math.min(indice * 55, 330)}ms`);
-  });
-
-  const observador = new IntersectionObserver(
-    (entradas) => {
-      entradas
-        .filter((entrada) => entrada.isIntersecting)
-        .forEach((entrada) => {
-          entrada.target.classList.add('portada-revela--visible');
-          observador.unobserve(entrada.target);
-        });
-    },
-    { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
-  );
-
-  piezas.forEach((pieza) => observador.observe(pieza));
-  window.setTimeout(() => piezas.forEach((pieza) => pieza.classList.add('portada-revela--visible')), 2800);
-}
-
-function montarParallax() {
-  const piezas = [...document.querySelectorAll('[data-depth]')];
-  if (reducir || piezas.length === 0) return;
-
-  let pendiente = false;
-  const actualizar = () => {
-    pendiente = false;
-    const alto = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
-    const avance = window.scrollY / alto;
-    for (const pieza of piezas) {
-      const profundidad = Number(pieza.dataset.depth) || 0;
-      const distancia = (window.scrollY - pieza.offsetTop) * profundidad;
-      pieza.style.setProperty('--parallax-y', `${Math.max(-18, Math.min(18, distancia * -0.08))}px`);
-      pieza.style.setProperty('--avance-pista', avance.toFixed(3));
-    }
-  };
-  const alDesplazar = () => {
-    if (pendiente) return;
-    pendiente = true;
-    window.requestAnimationFrame(actualizar);
-  };
-
-  actualizar();
-  window.addEventListener('scroll', alDesplazar, { passive: true });
-  window.addEventListener('resize', alDesplazar, { passive: true });
-}
-
-function montarEscenasScroll() {
-  const escenas = [...document.querySelectorAll('[data-scroll-scene]')];
-  if (reducir || escenas.length === 0) return;
-
-  let pendiente = false;
-  const limitar = (valor, minimo = 0, maximo = 1) => Math.min(maximo, Math.max(minimo, valor));
-  const actualizar = () => {
-    pendiente = false;
-    const alto = window.innerHeight || 1;
-
-    for (const escena of escenas) {
-      const rectangulo = escena.getBoundingClientRect();
-      const progreso = limitar((alto - rectangulo.top) / (alto + Math.max(rectangulo.height, 1)));
-      const distancia = .5 - progreso;
-      const nombre = escena.dataset.scrollScene;
-      const entrada = limitar((progreso - .08) / .42);
-
-      escena.style.setProperty('--escena-progreso', progreso.toFixed(3));
-      escena.style.setProperty('--escena-foto-y', `${(distancia * 54).toFixed(1)}px`);
-      escena.style.setProperty('--escena-foto-scale', (1 + Math.abs(distancia) * .035).toFixed(3));
-      escena.style.setProperty('--escena-foto-opacity', (.76 + entrada * .24).toFixed(3));
-      escena.style.setProperty('--escena-copy-y', `${(distancia * 38).toFixed(1)}px`);
-      escena.style.setProperty('--escena-copy-opacity', (.72 + entrada * .28).toFixed(3));
-
-      if (nombre === 'hero') {
-        escena.style.setProperty('--escena-copy-y', `${(distancia * 42).toFixed(1)}px`);
-        escena.style.setProperty('--escena-copy-opacity', (1 - Math.max(0, progreso - .72) * 1.2).toFixed(3));
-        escena.style.setProperty('--escena-car-y', `${(distancia * 78).toFixed(1)}px`);
-        escena.style.setProperty('--escena-car-rotate', `${(3 + distancia * 3).toFixed(2)}deg`);
-        escena.style.setProperty('--escena-car-scale', (1 + Math.abs(distancia) * .035).toFixed(3));
-      }
-
-      if (nombre === 'telemetria') {
-        escena.style.setProperty('--escena-bloque-y', `${(distancia * 22).toFixed(1)}px`);
-      }
-
-      if (nombre === 'galeria') {
-        escena.style.setProperty('--escena-galeria-rotate', `${(distancia * 1.6).toFixed(2)}deg`);
-      }
-
-      if (nombre === 'acceso') {
-        escena.style.setProperty('--escena-panel-y', `${(distancia * 26).toFixed(1)}px`);
-        escena.style.setProperty('--escena-panel-scale', (1 + Math.abs(distancia) * .015).toFixed(3));
-      }
-    }
-  };
-
-  const programar = () => {
-    if (pendiente) return;
-    pendiente = true;
-    window.requestAnimationFrame(actualizar);
-  };
-
-  actualizar();
-  window.addEventListener('scroll', programar, { passive: true });
-  window.addEventListener('resize', programar, { passive: true });
-}
-
-function montarCoreografiaCarrera() {
-  const movimientos = [...document.querySelectorAll('[data-scroll-motion]')];
-  if (reducir || movimientos.length === 0) return;
-
-  let pendiente = false;
-  const limitar = (valor, minimo = 0, maximo = 1) => Math.min(maximo, Math.max(minimo, valor));
-  const actualizar = () => {
-    pendiente = false;
-    const alto = window.innerHeight || 1;
-
-    for (const movimiento of movimientos) {
-      const rectangulo = movimiento.getBoundingClientRect();
-      const centro = rectangulo.top + rectangulo.height / 2;
-      const cercania = limitar(1 - Math.abs(centro - alto / 2) / (alto * .92));
-      const progreso = limitar((alto - rectangulo.top) / (alto + Math.max(rectangulo.height, 1)));
-      const energia = Math.sin(cercania * Math.PI);
-      const deriva = (progreso - .5) * 42;
-
-      movimiento.style.setProperty('--carrera-progreso', progreso.toFixed(3));
-      movimiento.style.setProperty('--carrera-energia', energia.toFixed(3));
-      movimiento.style.setProperty('--carrera-deriva', `${deriva.toFixed(1)}px`);
-      movimiento.style.setProperty('--carrera-inclinacion', `${((progreso - .5) * -1.8).toFixed(2)}deg`);
-
-      if (movimiento.dataset.scrollMotion === 'salida') {
-        movimiento.style.setProperty('--carrera-ambiente-x', `${(progreso * -42).toFixed(1)}px`);
-        movimiento.style.setProperty('--carrera-ambiente-y', `${(progreso * 26).toFixed(1)}px`);
-        movimiento.style.setProperty('--carrera-linea-x', `${(progreso * 160).toFixed(1)}px`);
-        movimiento.style.setProperty('--carrera-velocidad', `${(1 + energia * .18).toFixed(3)}`);
-      }
-    }
-  };
-
-  const programar = () => {
-    if (pendiente) return;
-    pendiente = true;
-    window.requestAnimationFrame(actualizar);
-  };
-
-  actualizar();
-  window.addEventListener('scroll', programar, { passive: true });
-  window.addEventListener('resize', programar, { passive: true });
-}
-
-function montarProgreso() {
-  const barra = document.querySelector('#progreso-pista');
-  if (!barra) return;
-
-  const actualizar = () => {
-    const maximo = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
-    barra.style.setProperty('--progreso', `${Math.min(1, window.scrollY / maximo)}`);
-    document.body.classList.toggle('scrolleado', window.scrollY > 16);
-  };
-
-  actualizar();
-  window.addEventListener('scroll', actualizar, { passive: true });
-  window.addEventListener('resize', actualizar, { passive: true });
-}
-
-function montarMiraPuntero() {
+function montarMira() {
   if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
 
   document.body.classList.add('mira-activa');
@@ -192,81 +36,212 @@ function montarMiraPuntero() {
   mira.append(segmento, centro);
   document.body.append(mira);
 
-  const esObjetivo = (nodo) => nodo?.closest?.('a, button, input, select, textarea, .entrada__foto, .entrada__hero-foto');
+  const esObjetivo = (nodo) => nodo?.closest?.(CLICABLES);
   window.addEventListener('pointermove', (evento) => {
-    root.style.setProperty('--puntero-x', `${evento.clientX}px`);
-    root.style.setProperty('--puntero-y', `${evento.clientY}px`);
-    root.style.setProperty('--puntero-hilo-x', `${((evento.clientX - window.innerWidth / 2) * .035).toFixed(1)}px`);
-    root.style.setProperty('--puntero-hilo-y', `${((evento.clientY - window.innerHeight / 2) * .025).toFixed(1)}px`);
+    raiz.style.setProperty('--puntero-x', `${evento.clientX}px`);
+    raiz.style.setProperty('--puntero-y', `${evento.clientY}px`);
   }, { passive: true });
   window.addEventListener('pointerover', (evento) => {
-    root.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
+    raiz.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
   }, { passive: true });
   window.addEventListener('pointerout', (evento) => {
-    if (!esObjetivo(evento.relatedTarget)) root.classList.remove('mira-sobre-objetivo');
+    if (!esObjetivo(evento.relatedTarget)) raiz.classList.remove('mira-sobre-objetivo');
   }, { passive: true });
 }
 
-/**
- * Respuesta al puntero: la foto del coche se inclina hacia la mano con un
- * reflejo que la sigue, el panel de acceso enciende un foco bajo el cursor y
- * los botones de la portada se dejan atraer unos píxeles, como un imán.
- * Solo con ratón o trackpad y sin «menos movimiento»: en táctil no hay
- * puntero que seguir.
- */
-function montarRespuestaPuntero() {
-  if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+// ---------------------------------------------------------------------------
+// Progreso de la cabecera cuando no hay motor
+// ---------------------------------------------------------------------------
 
-  const limitar = (valor, minimo, maximo) => Math.min(maximo, Math.max(minimo, valor));
-  const relativo = (evento, nodo) => {
-    const caja = nodo.getBoundingClientRect();
-    return {
-      x: limitar((evento.clientX - caja.left) / (caja.width || 1), 0, 1),
-      y: limitar((evento.clientY - caja.top) / (caja.height || 1), 0, 1),
-    };
+function montarProgresoSimple() {
+  let pendiente = false;
+  const pintar = () => {
+    pendiente = false;
+    const maximo = Math.max(raiz.scrollHeight - window.innerHeight, 1);
+    raiz.style.setProperty('--scroll', Math.min(1, window.scrollY / maximo).toFixed(4));
   };
-
-  const foto = document.querySelector('.entrada__hero-foto');
-  if (foto) {
-    foto.addEventListener('pointermove', (evento) => {
-      const { x, y } = relativo(evento, foto);
-      foto.style.setProperty('--giro-y', `${((x - 0.5) * 14).toFixed(2)}deg`);
-      foto.style.setProperty('--giro-x', `${((0.5 - y) * 10).toFixed(2)}deg`);
-      foto.style.setProperty('--reflejo-x', `${(x * 100).toFixed(1)}%`);
-      foto.style.setProperty('--reflejo-y', `${(y * 100).toFixed(1)}%`);
-    }, { passive: true });
-    foto.addEventListener('pointerleave', () => {
-      foto.style.setProperty('--giro-x', '0deg');
-      foto.style.setProperty('--giro-y', '0deg');
-    }, { passive: true });
-  }
-
-  const panel = document.querySelector('.entrada__acceso-panel');
-  if (panel) {
-    panel.addEventListener('pointermove', (evento) => {
-      const { x, y } = relativo(evento, panel);
-      panel.style.setProperty('--foco-x', `${(x * 100).toFixed(1)}%`);
-      panel.style.setProperty('--foco-y', `${(y * 100).toFixed(1)}%`);
-    }, { passive: true });
-  }
-
-  for (const boton of document.querySelectorAll('.entrada__hero-acciones .boton, .entrada__hero-acciones .entrada__enlace')) {
-    boton.addEventListener('pointermove', (evento) => {
-      const { x, y } = relativo(evento, boton);
-      boton.style.setProperty('--iman-x', `${((x - 0.5) * 10).toFixed(1)}px`);
-      boton.style.setProperty('--iman-y', `${((y - 0.5) * 8).toFixed(1)}px`);
-    }, { passive: true });
-    boton.addEventListener('pointerleave', () => {
-      boton.style.setProperty('--iman-x', '0px');
-      boton.style.setProperty('--iman-y', '0px');
-    }, { passive: true });
-  }
+  const programar = () => {
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(pintar);
+  };
+  pintar();
+  window.addEventListener('scroll', programar, { passive: true });
+  window.addEventListener('resize', programar, { passive: true });
 }
 
-montarRevelado();
-montarParallax();
-montarEscenasScroll();
-montarCoreografiaCarrera();
-montarProgreso();
-montarMiraPuntero();
-montarRespuestaPuntero();
+// ---------------------------------------------------------------------------
+// Salida: semáforo y titular
+// ---------------------------------------------------------------------------
+
+function arrancarSalida() {
+  let repetida = false;
+  try {
+    repetida = sessionStorage.getItem('portada-salida') === '1';
+    sessionStorage.setItem('portada-salida', '1');
+  } catch { /* sin almacenamiento: la salida se ve completa */ }
+  if (repetida) raiz.classList.add('portada-rapido');
+
+  const listo = () => raiz.classList.add('portada-listos');
+  const imagen = $('.portada__cielo img');
+  const esperas = [document.fonts?.ready, imagen?.decode?.()].filter(Boolean);
+  // Red de seguridad: el titular nunca se queda esperando a un recurso.
+  Promise.race([Promise.allSettled(esperas), new Promise((r) => setTimeout(r, 1800))]).then(listo);
+}
+
+// ---------------------------------------------------------------------------
+// Tablero: luces de cambio y cuentakilómetros
+// ---------------------------------------------------------------------------
+
+function pieza(clase, texto) {
+  const nodo = document.createElement('span');
+  nodo.className = clase;
+  nodo.textContent = texto;
+  nodo.setAttribute('aria-hidden', 'true');
+  return nodo;
+}
+
+function armarCifras() {
+  return $$('.cifra__num[data-cifra]').map((el) => {
+    const lectura = document.createElement('span');
+    lectura.className = 'portada__lectura';
+    lectura.textContent = el.textContent.trim();
+    const ruedas = digitosDe(el.dataset.cifra).map((digito) => {
+      const rueda = document.createElement('span');
+      rueda.className = 'rueda';
+      rueda.setAttribute('aria-hidden', 'true');
+      const tira = document.createElement('span');
+      tira.className = 'rueda__tira';
+      tira.style.setProperty('--d', String(digito));
+      for (let n = 0; n < 10; n++) {
+        const numero = document.createElement('i');
+        numero.textContent = String(n);
+        tira.append(numero);
+      }
+      rueda.append(tira);
+      return rueda;
+    });
+    const partes = [];
+    if (el.dataset.prefijo) partes.push(pieza('cifra__afijo cifra__afijo--pre', el.dataset.prefijo));
+    partes.push(...ruedas);
+    if (el.dataset.sufijo) partes.push(pieza('cifra__afijo cifra__afijo--suf', el.dataset.sufijo));
+    el.replaceChildren(lectura, ...partes);
+    return el;
+  });
+}
+
+function montarTablero(motor) {
+  const seccion = $('[data-escena="tablero"]');
+  if (!seccion) return;
+  const cifras = armarCifras();
+  const luces = $$('.portada__luces span', seccion);
+  let encendidas = -1;
+  motor.registrar(seccion, {
+    modo: 'vista',
+    alActualizar: (p) => {
+      const n = lucesEncendidas(fase(p, 0.22, 0.7), luces.length);
+      if (n !== encendidas) {
+        luces.forEach((luz, i) => luz.classList.toggle('on', i < n));
+        encendidas = n;
+      }
+      cifras.forEach((cifra, i) => {
+        cifra.style.setProperty('--rueda', easeOutCubic(fase(p, 0.18 + i * 0.1, 0.62 + i * 0.1)).toFixed(3));
+      });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Recta: recorrido horizontal fijo (≥ 900 px) o apilado con revelado
+// ---------------------------------------------------------------------------
+
+function montarRecta(motor) {
+  const seccion = $('[data-escena="recta"]');
+  const riel = seccion && $('.portada__riel', seccion);
+  if (!riel) return;
+  const paneles = $$('.portada__panel', riel);
+  const fija = window.matchMedia('(min-width: 900px) and (min-height: 560px)');
+  let recorrido = 0;
+  let izquierdas = [];
+
+  // Las fotos del riel están lejos de la pantalla: se cargan ya para que no
+  // lleguen en blanco.
+  const cargarTodo = () => $$('img', riel).forEach((img) => { img.loading = 'eager'; });
+  if (document.readyState === 'complete') cargarTodo();
+  else window.addEventListener('load', cargarTodo, { once: true });
+
+  const ajustar = () => {
+    raiz.classList.toggle('portada-fija', fija.matches);
+    if (fija.matches) {
+      recorrido = Math.max(0, riel.scrollWidth - window.innerWidth);
+      izquierdas = paneles.map((panel) => panel.offsetLeft);
+      seccion.style.setProperty('--recorrido', String(recorrido));
+      seccion.style.setProperty('--alto-recta', `${Math.round(recorrido + window.innerHeight)}px`);
+    } else {
+      seccion.style.removeProperty('--recorrido');
+      seccion.style.removeProperty('--alto-recta');
+    }
+    motor.medir();
+  };
+
+  motor.registrar(seccion, {
+    modo: 'fija',
+    alActualizar: (p, { ancho }) => {
+      if (!fija.matches) return;
+      const x = p * recorrido;
+      paneles.forEach((panel, i) => {
+        panel.style.setProperty('--q', entradaPanel(izquierdas[i] - x, ancho).toFixed(3));
+      });
+    },
+  });
+  fija.addEventListener('change', ajustar);
+  new ResizeObserver(ajustar).observe(riel);
+  ajustar();
+
+  // Apilado: cada foto se descubre al llegar.
+  const observador = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      entrada.target.classList.add('visto');
+      observador.unobserve(entrada.target);
+    }
+  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+  paneles.forEach((panel) => observador.observe(panel));
+  setTimeout(() => paneles.forEach((panel) => panel.classList.add('visto')), 8000);
+}
+
+// ---------------------------------------------------------------------------
+// Boxes: la bandera cruza y el panel entra frenando
+// ---------------------------------------------------------------------------
+
+function montarBoxes(motor) {
+  const seccion = $('[data-escena="boxes"]');
+  if (!seccion) return;
+  motor.registrar(seccion, {
+    modo: 'vista',
+    alActualizar: (p) => {
+      seccion.style.setProperty('--cruce', fase(p, 0.04, 0.5).toFixed(3));
+      seccion.style.setProperty('--entra', easeOutCubic(fase(p, 0.2, 0.62)).toFixed(3));
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Montaje
+// ---------------------------------------------------------------------------
+
+montarMira();
+
+if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
+  montarProgresoSimple();
+} else {
+  raiz.classList.add('portada-motor');
+  const motor = crearMotor();
+  const salida = $('[data-escena="salida"]');
+  if (salida) motor.registrar(salida, { modo: 'fija' });
+  montarTablero(motor);
+  montarRecta(motor);
+  montarBoxes(motor);
+  motor.iniciar();
+  arrancarSalida();
+}
