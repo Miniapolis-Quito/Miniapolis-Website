@@ -207,9 +207,66 @@ function montarMiraPuntero() {
   }, { passive: true });
 }
 
+/**
+ * Respuesta al puntero: la foto del coche se inclina hacia la mano con un
+ * reflejo que la sigue, el panel de acceso enciende un foco bajo el cursor y
+ * los botones de la portada se dejan atraer unos píxeles, como un imán.
+ * Solo con ratón o trackpad y sin «menos movimiento»: en táctil no hay
+ * puntero que seguir.
+ */
+function montarRespuestaPuntero() {
+  if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+
+  const limitar = (valor, minimo, maximo) => Math.min(maximo, Math.max(minimo, valor));
+  const relativo = (evento, nodo) => {
+    const caja = nodo.getBoundingClientRect();
+    return {
+      x: limitar((evento.clientX - caja.left) / (caja.width || 1), 0, 1),
+      y: limitar((evento.clientY - caja.top) / (caja.height || 1), 0, 1),
+    };
+  };
+
+  const foto = document.querySelector('.entrada__hero-foto');
+  if (foto) {
+    foto.addEventListener('pointermove', (evento) => {
+      const { x, y } = relativo(evento, foto);
+      foto.style.setProperty('--giro-y', `${((x - 0.5) * 14).toFixed(2)}deg`);
+      foto.style.setProperty('--giro-x', `${((0.5 - y) * 10).toFixed(2)}deg`);
+      foto.style.setProperty('--reflejo-x', `${(x * 100).toFixed(1)}%`);
+      foto.style.setProperty('--reflejo-y', `${(y * 100).toFixed(1)}%`);
+    }, { passive: true });
+    foto.addEventListener('pointerleave', () => {
+      foto.style.setProperty('--giro-x', '0deg');
+      foto.style.setProperty('--giro-y', '0deg');
+    }, { passive: true });
+  }
+
+  const panel = document.querySelector('.entrada__acceso-panel');
+  if (panel) {
+    panel.addEventListener('pointermove', (evento) => {
+      const { x, y } = relativo(evento, panel);
+      panel.style.setProperty('--foco-x', `${(x * 100).toFixed(1)}%`);
+      panel.style.setProperty('--foco-y', `${(y * 100).toFixed(1)}%`);
+    }, { passive: true });
+  }
+
+  for (const boton of document.querySelectorAll('.entrada__hero-acciones .boton, .entrada__hero-acciones .entrada__enlace')) {
+    boton.addEventListener('pointermove', (evento) => {
+      const { x, y } = relativo(evento, boton);
+      boton.style.setProperty('--iman-x', `${((x - 0.5) * 10).toFixed(1)}px`);
+      boton.style.setProperty('--iman-y', `${((y - 0.5) * 8).toFixed(1)}px`);
+    }, { passive: true });
+    boton.addEventListener('pointerleave', () => {
+      boton.style.setProperty('--iman-x', '0px');
+      boton.style.setProperty('--iman-y', '0px');
+    }, { passive: true });
+  }
+}
+
 montarRevelado();
 montarParallax();
 montarEscenasScroll();
 montarCoreografiaCarrera();
 montarProgreso();
 montarMiraPuntero();
+montarRespuestaPuntero();
