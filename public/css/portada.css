@@ -32,6 +32,7 @@
 }
 .pagina-entrada::before { display: none; } /* la rejilla decorativa es de la app, no de la portada */
 .pagina-entrada main { padding: 0; overflow-x: clip; } /* el `main` compartido trae relleno propio */
+.pagina-entrada [id] { scroll-margin-top: calc(var(--altura-cabecera) + 18px); }
 /* El revelado genérico de shell.js no se mezcla con las escenas: cada una se mueve con su motor. */
 .pagina-entrada main > .revelar,
 .pagina-entrada main > .revelar--visible { opacity: 1; transform: none; animation: none; transition: none; }

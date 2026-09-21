@@ -309,6 +309,22 @@
 }
 
 @media (max-width: 900px) {
+  /* En tablet la barra tiene espacio para la marca y las acciones, pero no
+     para una segunda fila accidental de botones. La navegación pasa a una
+     banda propia y mantiene todos sus destinos a la vista mediante scroll
+     horizontal. La pantalla del cliente conserva su línea compacta porque
+     solo lleva un destino. */
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav {
+    order: 4;
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav::-webkit-scrollbar { display: none; }
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav .boton--nav { flex: 0 0 auto; }
   .pagina-interior .encabezado-pista { min-height: 0; }
   .pagina-interior .encabezado-pista h1 { max-width: 16ch; }
 }
