@@ -30,7 +30,11 @@
   color: var(--texto);
   color-scheme: dark;
 }
-.pagina-entrada main { overflow-x: clip; }
+.pagina-entrada::before { display: none; } /* la rejilla decorativa es de la app, no de la portada */
+.pagina-entrada main { padding: 0; overflow-x: clip; } /* el `main` compartido trae relleno propio */
+/* El revelado genérico de shell.js no se mezcla con las escenas: cada una se mueve con su motor. */
+.pagina-entrada main > .revelar,
+.pagina-entrada main > .revelar--visible { opacity: 1; transform: none; animation: none; transition: none; }
 .pagina-entrada h1,
 .pagina-entrada h2,
 .pagina-entrada h3 { margin: 0; color: var(--texto); font-weight: 900; word-spacing: .14em; }
@@ -44,7 +48,7 @@
   inset: 0 0 auto;
   z-index: 60;
   border-bottom: 1px solid transparent;
-  background: linear-gradient(180deg, rgba(5, 7, 6, .82), rgba(5, 7, 6, 0));
+  background: linear-gradient(180deg, rgba(5, 7, 6, .82), rgba(5, 7, 6, 0)) no-repeat; /* sin repetir: si no, el degradado vuelve a pintarse en el borde de 1 px */
   transition: background-color 260ms, border-color 260ms;
 }
 .pagina-entrada > .entrada__barra.esta-desplazada { border-bottom-color: var(--borde); background: rgba(5, 7, 6, .92); }
@@ -349,7 +353,7 @@
 .portada-motor .portada__salida-copy {
   transform-origin: 0 100%;
   transform: translate3d(0, calc(var(--p, 0) * -14svh), 0) skewY(calc(var(--vel, 0) * -4deg));
-  opacity: calc(1.25 - var(--p, 0) * 1.6);
+  opacity: calc(1.45 - var(--p, 0) * 1.6);
   will-change: transform, opacity;
 }
 
@@ -378,7 +382,7 @@
 /* El auto sale disparado hacia un lado al hacer scroll. */
 .portada-motor .portada__auto {
   transform: translate3d(calc(var(--p, 0) * 22vw), calc(var(--p, 0) * -14vh), 0) rotate(calc(var(--p, 0) * 5deg));
-  opacity: calc(1.2 - var(--p, 0) * 1.5);
+  opacity: calc(1.4 - var(--p, 0) * 1.5);
   will-change: transform, opacity;
 }
 .portada-motor .portada__auto img { transform: translate3d(105%, 0, 0); }

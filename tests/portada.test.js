@@ -13,6 +13,12 @@ const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
   .map((m) => ({ selector: m[1].trim(), cuerpo: m[2] }));
 
+test('la portada anula lo que el resto de la app le pondría por defecto', () => {
+  assert.match(CSS, /\.pagina-entrada main\s*\{[^}]*padding:\s*0/, 'el `main` compartido trae relleno propio');
+  assert.match(CSS, /\.pagina-entrada::before\s*\{[^}]*display:\s*none/, 'la rejilla de body::before no es de la portada');
+  assert.match(CSS, /\.pagina-entrada main > \.revelar\s*,\s*\.pagina-entrada main > \.revelar--visible\s*\{[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las escenas');
+});
+
 test('la portada carga los estilos compartidos, los propios y sus dos módulos', () => {
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/styles\.css">/);
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/portada\.css">/);

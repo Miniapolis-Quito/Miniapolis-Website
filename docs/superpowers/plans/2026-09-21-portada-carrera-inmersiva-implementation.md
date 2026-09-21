@@ -901,7 +901,11 @@ EOF
   color: var(--texto);
   color-scheme: dark;
 }
-.pagina-entrada main { overflow-x: clip; }
+.pagina-entrada::before { display: none; } /* la rejilla decorativa es de la app, no de la portada */
+.pagina-entrada main { padding: 0; overflow-x: clip; } /* el `main` compartido trae relleno propio */
+/* El revelado genérico de shell.js no se mezcla con las escenas: cada una se mueve con su motor. */
+.pagina-entrada main > .revelar,
+.pagina-entrada main > .revelar--visible { opacity: 1; transform: none; animation: none; transition: none; }
 .pagina-entrada h1,
 .pagina-entrada h2,
 .pagina-entrada h3 { margin: 0; color: var(--texto); font-weight: 900; word-spacing: .14em; }
@@ -915,7 +919,7 @@ EOF
   inset: 0 0 auto;
   z-index: 60;
   border-bottom: 1px solid transparent;
-  background: linear-gradient(180deg, rgba(5, 7, 6, .82), rgba(5, 7, 6, 0));
+  background: linear-gradient(180deg, rgba(5, 7, 6, .82), rgba(5, 7, 6, 0)) no-repeat; /* sin repetir: si no, el degradado vuelve a pintarse en el borde de 1 px */
   transition: background-color 260ms, border-color 260ms;
 }
 .pagina-entrada > .entrada__barra.esta-desplazada { border-bottom-color: var(--borde); background: rgba(5, 7, 6, .92); }
@@ -1713,7 +1717,7 @@ git commit -m "feat: add scroll engine and landing orchestration" -m "Co-Authore
 .portada-motor .portada__salida-copy {
   transform-origin: 0 100%;
   transform: translate3d(0, calc(var(--p, 0) * -14svh), 0) skewY(calc(var(--vel, 0) * -4deg));
-  opacity: calc(1.25 - var(--p, 0) * 1.6);
+  opacity: calc(1.45 - var(--p, 0) * 1.6);
   will-change: transform, opacity;
 }
 
@@ -1742,7 +1746,7 @@ git commit -m "feat: add scroll engine and landing orchestration" -m "Co-Authore
 /* El auto sale disparado hacia un lado al hacer scroll. */
 .portada-motor .portada__auto {
   transform: translate3d(calc(var(--p, 0) * 22vw), calc(var(--p, 0) * -14vh), 0) rotate(calc(var(--p, 0) * 5deg));
-  opacity: calc(1.2 - var(--p, 0) * 1.5);
+  opacity: calc(1.4 - var(--p, 0) * 1.5);
   will-change: transform, opacity;
 }
 .portada-motor .portada__auto img { transform: translate3d(105%, 0, 0); }
@@ -2047,6 +2051,12 @@ const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
   .map((m) => ({ selector: m[1].trim(), cuerpo: m[2] }));
 
+test('la portada anula lo que el resto de la app le pondría por defecto', () => {
+  assert.match(CSS, /\.pagina-entrada main\s*\{[^}]*padding:\s*0/, 'el `main` compartido trae relleno propio');
+  assert.match(CSS, /\.pagina-entrada::before\s*\{[^}]*display:\s*none/, 'la rejilla de body::before no es de la portada');
+  assert.match(CSS, /\.pagina-entrada main > \.revelar\s*,\s*\.pagina-entrada main > \.revelar--visible\s*\{[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las escenas');
+});
+
 test('la portada carga los estilos compartidos, los propios y sus dos módulos', () => {
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/styles\.css">/);
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/portada\.css">/);
@@ -2210,9 +2220,13 @@ const estilo = (sel) => p.evaluate((sel) => { const e = document.querySelector(s
 const resultados = { inertes: [], clicables: [] };
 async function mover(sel) {
   await p.evaluate((sel) => document.querySelector(sel).scrollIntoView({ block: 'center', behavior: 'instant' }), sel);
-  await p.waitForTimeout(900);
+  await p.waitForTimeout(1800); // el motor suaviza el scroll: hay que dejarlo asentarse
   const antes = await estilo(sel);
-  await p.hover(sel, { force: true });
+  // Sin scroll: mover el ratón hasta el elemento, no `hover()`, que desplaza la página y mueve las escenas.
+  const caja = await p.locator(sel).first().boundingBox();
+  const x = Math.min(Math.max(caja.x + caja.width / 2, 5), 1435);
+  const y = Math.min(Math.max(caja.y + caja.height / 2, 2), 890);
+  await p.mouse.move(x, y);
   await p.waitForTimeout(500);
   const despues = await estilo(sel);
   const mira = await p.evaluate(() => document.documentElement.classList.contains('mira-sobre-objetivo'));
