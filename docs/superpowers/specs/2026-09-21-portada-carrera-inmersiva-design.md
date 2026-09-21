@@ -105,3 +105,12 @@ Con Playwright, en 1440×900 y 390×844, capturas en al menos 12 puntos del scro
 ## Entrega
 
 PR desde `codex/immersive-racing-rebuild` a `main`, CI en verde, merge. El merge dispara la publicación de GitHub Pages.
+
+## Actualización tras integrar `origin/main` (#33)
+
+Mientras se construía esta portada, `main` cambió la tipografía de todo el producto. Decisiones al integrarlo:
+
+- **Tipografía:** titulares y cifras en Saira ancha (`--display`, `font-stretch` 116–125 %), texto en Sora; **interletraje 0** en todo (`tests/frontend.test.js` lo exige para `styles.css` y `tests/portada.test.js` para `portada.css`). Se retiró el tracking negativo del primer diseño.
+- **Botones:** la portada usa el sistema compartido (chasis inclinado con estelas) con su primario verde; se retiró el barrido propio. `portada.css` solo añade hover a la acción de la cabecera y al enlace «Ver la pista».
+- **Se descartan de #33** porque contradicen la regla «solo lo clicable tiene hover»: la respuesta al puntero sobre la foto del auto y el panel de acceso (inclinación, foco), los hovers de titulares y de fotos, y el test que los fijaba.
+- `styles.css` se vuelve a extraer con el mismo filtro sobre la versión de `main`; las páginas que no son la portada coinciden píxel a píxel con `main`.

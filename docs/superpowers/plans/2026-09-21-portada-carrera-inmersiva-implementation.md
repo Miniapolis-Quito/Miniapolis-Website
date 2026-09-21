@@ -2399,3 +2399,9 @@ Esperado: el merge aparece en `main`. Comprueba que el flujo «Actualizar GitHub
 
 Informa al usuario de: el enlace del PR, el resultado del CI, los criterios verificados y cualquier limitación real (por ejemplo, que las mediciones de rendimiento se hicieron sin GPU). Si el usuario lo pide, borra la rama remota.
 
+
+---
+
+## Nota posterior a la ejecución
+
+Al llegar a la Tarea 12 `origin/main` había avanzado (#33: tipografía Saira/Sora, botones «chasis inclinado», interletraje 0). Se integró con `git merge origin/main`, re-extrayendo `styles.css` con el mismo filtro de la Tarea 3. El CSS y los tests descritos arriba reflejan el primer diseño; el estado final está en el repositorio y las diferencias (tipografía, botones, hover) están documentadas en la sección «Actualización tras integrar `origin/main`» del spec.
