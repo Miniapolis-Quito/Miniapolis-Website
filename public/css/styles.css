@@ -3745,6 +3745,539 @@ input, select, textarea {
   }
 }
 
+/* ==========================================================================
+   Portada: reconstrucción de carrera
+
+   La portada deja de ser una colección de bloques sobre negro. Esta capa
+   convierte las fotografías limpias en una vuelta: salida, trazada, curva y
+   boxes. El movimiento acompaña al scroll y nunca sustituye a la lectura.
+   ========================================================================== */
+
+.pagina-entrada {
+  --carrera-verde: #5dff62;
+  --carrera-rojo: #d94e3e;
+  --carrera-progreso: 0;
+  --carrera-energia: 0;
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 78% 16%, rgba(61, 254, 64, .1), transparent 28rem),
+    linear-gradient(180deg, #020404 0%, #070a0b 48%, #020303 100%);
+}
+
+.pagina-entrada main {
+  position: relative;
+  z-index: 1;
+  padding-bottom: clamp(48px, 6vw, 80px);
+}
+
+.pagina-entrada .entrada__hero--carrera {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: 100vw;
+  min-height: max(700px, calc(100svh - 82px));
+  margin-left: calc(50% - 50vw);
+  padding: clamp(94px, 11vw, 156px) max(24px, calc((100vw - 1180px) / 2)) clamp(72px, 9vw, 124px);
+  grid-template-columns: minmax(0, .82fr) minmax(360px, 1.18fr);
+  align-items: end;
+  gap: clamp(32px, 6vw, 100px);
+  overflow: hidden;
+  background: #030505;
+}
+
+.pagina-entrada .entrada__hero--carrera[data-scroll-scene] {
+  display: grid;
+  align-items: end;
+}
+
+.pagina-entrada .entrada__hero--carrera::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  background:
+    linear-gradient(90deg, rgba(2, 4, 4, .98) 0%, rgba(2, 4, 4, .76) 34%, rgba(2, 4, 4, .2) 74%, rgba(2, 4, 4, .58) 100%),
+    linear-gradient(180deg, rgba(2, 4, 4, .18) 0%, transparent 38%, rgba(2, 4, 4, .92) 100%);
+}
+
+.pagina-entrada .entrada__hero--carrera::after {
+  display: none;
+}
+
+.pagina-entrada .entrada__hero-fondo {
+  position: absolute;
+  inset: -5% -4%;
+  z-index: -3;
+  display: block;
+  overflow: hidden;
+  opacity: .94;
+  transform: translate3d(var(--carrera-ambiente-x, 0px), var(--carrera-ambiente-y, 0px), 0) scale(1.08);
+  will-change: transform;
+}
+
+.pagina-entrada .entrada__hero-fondo picture,
+.pagina-entrada .entrada__hero-fondo picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pagina-entrada .entrada__hero-fondo picture img {
+  object-fit: cover;
+  object-position: center 58%;
+  filter: saturate(.56) contrast(1.18) brightness(.52);
+}
+
+.pagina-entrada .entrada__hero-vigneta {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 68% 48%, transparent 0 20%, rgba(3, 5, 5, .18) 58%, rgba(3, 5, 5, .8) 100%),
+    repeating-linear-gradient(104deg, transparent 0 170px, rgba(244, 247, 244, .04) 171px 172px, transparent 173px 300px);
+  mix-blend-mode: normal;
+}
+
+.pagina-entrada .entrada__hero-copy,
+.pagina-entrada .entrada__hero-aside,
+.pagina-entrada .entrada__carrera-panel { position: relative; z-index: 2; }
+
+.pagina-entrada .entrada__hero-copy {
+  max-width: 540px;
+  padding-bottom: clamp(12px, 5vw, 76px);
+  transform: translate3d(0, calc(var(--escena-copy-y, 0px) + var(--carrera-deriva, 0px)), 0);
+  opacity: var(--escena-copy-opacity, 1);
+}
+
+.pagina-entrada .entrada__hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 0 22px;
+  color: var(--carrera-verde);
+  font-family: var(--mono);
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.pagina-entrada .entrada__hero-kicker::before {
+  width: 32px;
+  height: 2px;
+  content: '';
+  background: var(--carrera-verde);
+  box-shadow: 0 0 16px rgba(93, 255, 98, .9);
+}
+
+.pagina-entrada .entrada__hero h1 {
+  max-width: 7.6ch;
+  font-size: clamp(5rem, 10.5vw, 10.6rem);
+  font-weight: 690;
+  letter-spacing: -.105em;
+  line-height: .78;
+  text-wrap: balance;
+  text-shadow: 0 16px 42px rgba(0, 0, 0, .36);
+}
+
+.pagina-entrada .entrada__titulo-linea--acento {
+  color: var(--carrera-verde);
+  text-shadow: 0 0 34px rgba(93, 255, 98, .18);
+}
+
+.pagina-entrada .entrada__descripcion {
+  max-width: 26ch;
+  margin-top: 28px;
+  color: rgba(244, 247, 244, .86);
+  font-size: clamp(1rem, 1.5vw, 1.24rem);
+  line-height: 1.35;
+}
+
+.pagina-entrada .entrada__hero-acciones { margin-top: 34px; }
+
+.pagina-entrada .entrada__hero-aside {
+  width: min(33vw, 458px);
+  height: min(64vh, 620px);
+  justify-self: end;
+  transform: translate3d(calc(var(--parallax-y, 0px) * .2), calc(var(--escena-car-y, 0px) + var(--carrera-deriva, 0px)), 0) rotate(calc(var(--escena-car-rotate, 3deg) + var(--carrera-inclinacion, 0deg))) scale(var(--escena-car-scale, 1));
+  will-change: transform;
+}
+
+.pagina-entrada .entrada__hero-foto {
+  position: relative;
+  height: 100%;
+  border: 1px solid rgba(244, 247, 244, .52);
+  border-radius: 3px;
+  background: #050707;
+  box-shadow: 30px 44px 120px -42px rgba(0, 0, 0, .98), 0 0 0 1px rgba(93, 255, 98, .18), 0 0 44px -26px rgba(93, 255, 98, .75);
+}
+
+.pagina-entrada .entrada__hero-foto::before {
+  inset: 12px;
+  border-color: rgba(244, 247, 244, .28);
+}
+
+.pagina-entrada .entrada__hero-foto::after {
+  background: linear-gradient(180deg, transparent 42%, rgba(3, 5, 5, .88) 100%);
+}
+
+.pagina-entrada .entrada__hero-foto picture,
+.pagina-entrada .entrada__hero-foto picture img { height: 100%; }
+
+.pagina-entrada .entrada__hero-foto picture img {
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.82) contrast(1.18) brightness(.9);
+}
+
+.pagina-entrada .entrada__hero-foto figcaption {
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  font-size: .57rem;
+}
+
+.pagina-entrada .entrada__hero-linea {
+  position: absolute;
+  top: 65%;
+  left: -8vw;
+  z-index: 1;
+  width: 120vw;
+  height: 92px;
+  pointer-events: none;
+  border-top: 1px solid rgba(93, 255, 98, .4);
+  border-bottom: 1px solid rgba(244, 247, 244, .14);
+  transform: translate3d(var(--carrera-linea-x, 0px), 0, 0) rotate(-7deg) skewX(-16deg);
+  opacity: calc(.42 + var(--carrera-energia, 0) * .58);
+  will-change: transform, opacity;
+}
+
+.pagina-entrada .entrada__hero-linea::before,
+.pagina-entrada .entrada__hero-linea::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  content: '';
+  background: repeating-linear-gradient(90deg, transparent 0 12px, rgba(244, 247, 244, .55) 13px 21px, transparent 22px 76px);
+}
+
+.pagina-entrada .entrada__hero-linea::before { top: 22px; opacity: .3; }
+.pagina-entrada .entrada__hero-linea::after { bottom: 18px; opacity: .2; }
+
+.pagina-entrada .entrada__hero-linea span {
+  position: absolute;
+  top: 50%;
+  left: 13%;
+  width: 96px;
+  height: 3px;
+  background: var(--carrera-verde);
+  box-shadow: 0 0 22px rgba(93, 255, 98, .9);
+  transform: translateY(-50%);
+  animation: carrera-linea 3.8s linear infinite;
+}
+
+.pagina-entrada .entrada__hero-indicador {
+  position: absolute;
+  top: 18%;
+  right: max(24px, calc((100vw - 1180px) / 2));
+  z-index: 2;
+  width: 2px;
+  height: 27%;
+  background: linear-gradient(180deg, transparent, var(--carrera-verde), transparent);
+  box-shadow: 0 0 18px rgba(93, 255, 98, .45);
+  opacity: calc(.46 + var(--carrera-energia, 0) * .54);
+}
+
+.pagina-entrada .entrada__hero-indicador span {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--carrera-verde);
+  border-radius: 50%;
+  box-shadow: 0 0 18px rgba(93, 255, 98, .9);
+  animation: carrera-senal 2.2s ease-in-out infinite;
+}
+
+.pagina-entrada .entrada__carrera-panel {
+  position: absolute;
+  right: max(24px, calc((100vw - 1180px) / 2));
+  bottom: 14%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  width: 92px;
+  height: 48px;
+  padding: 8px;
+  border: 1px solid rgba(244, 247, 244, .28);
+  background: rgba(3, 5, 5, .32);
+  transform: translate3d(var(--puntero-hilo-x, 0px), var(--puntero-hilo-y, 0px), 0) skewY(var(--carrera-inclinacion, 0deg));
+  opacity: calc(.58 + var(--carrera-energia, 0) * .42);
+}
+
+.pagina-entrada .entrada__carrera-panel span {
+  display: block;
+  align-self: end;
+  height: 20%;
+  background: var(--carrera-verde);
+  box-shadow: 0 0 9px rgba(93, 255, 98, .52);
+  animation: carrera-barras 1.5s ease-in-out infinite alternate;
+}
+
+.pagina-entrada .entrada__carrera-panel span:nth-child(2) { height: 62%; animation-delay: -.5s; }
+.pagina-entrada .entrada__carrera-panel span:nth-child(3) { height: 38%; animation-delay: -.9s; }
+
+.pagina-entrada .entrada__hero-cinta {
+  bottom: 3.6%;
+  height: 8px;
+  background: repeating-linear-gradient(135deg, #f4f7f4 0 24px, var(--carrera-rojo) 24px 48px, #111719 48px 72px);
+  opacity: .84;
+  transform: translateX(var(--carrera-linea-x, 0px)) skewX(-18deg);
+}
+
+.pagina-entrada .entrada__cifras--pit {
+  position: relative;
+  z-index: 4;
+  width: min(1020px, 100%);
+  margin: -18px auto 0;
+  padding: 22px 28px 30px;
+  border: 1px solid rgba(244, 247, 244, .24);
+  border-radius: 2px;
+  background: linear-gradient(110deg, rgba(8, 13, 13, .96), rgba(8, 12, 13, .74));
+  box-shadow: 0 34px 86px -54px rgba(93, 255, 98, .72), inset 0 1px 0 rgba(255, 255, 255, .07);
+  transform: translate3d(0, var(--escena-bloque-y, 0px), 0) skewY(var(--carrera-inclinacion, 0deg));
+}
+
+.pagina-entrada .entrada__cifras--pit::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: '';
+  background: linear-gradient(90deg, transparent, var(--carrera-verde), transparent);
+  box-shadow: 0 0 22px rgba(93, 255, 98, .68);
+}
+
+.pagina-entrada .entrada__cifras--pit .cifra { padding: 8px 24px; }
+.pagina-entrada .entrada__cifras--pit .cifra__num { font-size: clamp(1.8rem, 3.6vw, 3rem); text-shadow: 0 0 22px rgba(93, 255, 98, .15); }
+.pagina-entrada .entrada__cifras--pit .cifra__texto { color: rgba(244, 247, 244, .64); font-family: var(--mono); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; }
+
+.pagina-entrada .entrada__pista-pulso {
+  position: absolute;
+  right: 7%;
+  bottom: -6px;
+  left: 7%;
+  height: 1px;
+  overflow: hidden;
+  background: rgba(244, 247, 244, .18);
+}
+
+.pagina-entrada .entrada__pista-pulso span {
+  display: block;
+  width: 18%;
+  height: 100%;
+  background: var(--carrera-verde);
+  box-shadow: 0 0 16px rgba(93, 255, 98, .92);
+  animation: carrera-pulso 2.8s linear infinite;
+}
+
+.pagina-entrada .entrada__pista--vueltas {
+  position: relative;
+  margin-top: clamp(58px, 7vw, 96px);
+}
+
+.pagina-entrada .entrada__pista--vueltas::before {
+  position: absolute;
+  top: 12%;
+  right: -10vw;
+  width: 38vw;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgba(93, 255, 98, .52));
+  transform: rotate(-8deg);
+  box-shadow: 0 0 18px rgba(93, 255, 98, .42);
+}
+
+.pagina-entrada .entrada__pista--vueltas .entrada__seccion-cabeza { margin-bottom: clamp(22px, 3vw, 38px); }
+.pagina-entrada .entrada__pista--vueltas .entrada__seccion-cabeza h2 { font-size: clamp(3.8rem, 8vw, 8.8rem); }
+
+.pagina-entrada .entrada__pista--vueltas .entrada__foto--marquesina {
+  position: relative;
+  height: clamp(420px, 62vw, 720px);
+  overflow: hidden;
+}
+
+.pagina-entrada .entrada__pista--vueltas .entrada__foto--marquesina::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(90deg, rgba(2, 4, 4, .58), transparent 38%, rgba(2, 4, 4, .08)), linear-gradient(180deg, transparent 58%, rgba(2, 4, 4, .74));
+}
+
+.pagina-entrada .entrada__pista--vueltas .entrada__foto--marquesina img {
+  height: 100%;
+  aspect-ratio: auto;
+  object-position: center 46%;
+  transform: translate3d(var(--carrera-deriva, 0px), 0, 0) scale(var(--carrera-scale, 1.04));
+  filter: saturate(.76) contrast(1.14) brightness(.84);
+  will-change: transform;
+}
+
+.pagina-entrada .entrada__media-destacada {
+  height: clamp(560px, 52vw, 720px);
+  min-height: 0;
+  margin-top: clamp(34px, 5vw, 72px);
+  padding: clamp(26px, 5vw, 72px);
+  gap: clamp(38px, 8vw, 132px);
+  align-items: center;
+  border-color: rgba(244, 247, 244, .22);
+  border-radius: 2px;
+  background: linear-gradient(125deg, rgba(6, 10, 10, .98), rgba(12, 19, 19, .82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 38px 100px -66px rgba(93, 255, 98, .5);
+  transform: translate3d(0, var(--carrera-deriva, 0px), 0) skewY(var(--carrera-inclinacion, 0deg));
+}
+
+.pagina-entrada .entrada__media-destacada::before {
+  background:
+    linear-gradient(110deg, rgba(93, 255, 98, .12), transparent 32%),
+    linear-gradient(90deg, transparent 0 50%, rgba(93, 255, 98, .11) 50.1%, transparent 50.2%),
+    repeating-linear-gradient(0deg, transparent 0 74px, rgba(244, 247, 244, .035) 75px 76px);
+}
+
+.pagina-entrada .entrada__media-destacada-copy { transform: translate3d(0, var(--escena-copy-y, 0px), 0); }
+.pagina-entrada .entrada__media-destacada-copy h3 { font-size: clamp(2.7rem, 5vw, 5.8rem); line-height: .86; }
+.pagina-entrada .entrada__media-destacada-copy p { max-width: 16ch; color: rgba(244, 247, 244, .78); font-size: 1.12rem; }
+.pagina-entrada .entrada__media-foto { height: 100%; min-height: 0; }
+.pagina-entrada .entrada__media-foto img { height: 100%; min-height: 0; aspect-ratio: auto; filter: saturate(.72) contrast(1.12) brightness(.87); }
+
+.pagina-entrada .entrada__galeria-ritmo {
+  position: relative;
+  grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+  align-items: end;
+  gap: clamp(20px, 4vw, 52px);
+  margin-top: clamp(34px, 5vw, 72px);
+}
+
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:first-child { transform: translate3d(0, calc(var(--escena-foto-y, 0px) * -1), 0) rotate(var(--escena-galeria-rotate, 0deg)); }
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:last-child { padding-bottom: 12%; transform: translate3d(0, var(--escena-foto-y, 0px), 0) scale(var(--escena-foto-scale, 1)); }
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:first-child img { aspect-ratio: 4 / 5; }
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:last-child img { aspect-ratio: 16 / 9; }
+
+.pagina-entrada .entrada__acceso--pit {
+  position: relative;
+  grid-template-columns: minmax(0, .9fr) minmax(360px, .82fr);
+  align-items: center;
+  column-gap: clamp(48px, 9vw, 150px);
+  margin-top: clamp(72px, 9vw, 128px);
+  padding-top: clamp(34px, 5vw, 64px);
+  border-top-color: rgba(93, 255, 98, .48);
+}
+
+.pagina-entrada .entrada__acceso--pit::before {
+  top: -1px;
+  right: 0;
+  width: min(52%, 520px);
+  background: linear-gradient(90deg, transparent, var(--carrera-verde));
+}
+
+.pagina-entrada .entrada__acceso--pit .entrada__acceso-intro h2 { font-size: clamp(4rem, 9vw, 9.5rem); line-height: .78; }
+.pagina-entrada .entrada__acceso--pit .entrada__acceso-nota { max-width: 20ch; color: rgba(244, 247, 244, .7); font-size: 1.1rem; }
+.pagina-entrada .entrada__acceso--pit .entrada__acceso-panel { border-radius: 2px; }
+.pagina-entrada .entrada__pie { margin-top: 0; }
+
+@keyframes carrera-linea {
+  from { transform: translate(-130px, -50%); opacity: .1; }
+  18% { opacity: 1; }
+  to { transform: translate(680px, -50%); opacity: .06; }
+}
+
+@keyframes carrera-pulso {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(660%); }
+}
+
+@keyframes carrera-senal {
+  0%, 100% { transform: translateY(0); opacity: .35; }
+  50% { transform: translateY(240px); opacity: 1; }
+}
+
+@keyframes carrera-barras {
+  from { opacity: .38; transform: scaleY(.68); transform-origin: bottom; }
+  to { opacity: 1; transform: scaleY(1); transform-origin: bottom; }
+}
+
+@keyframes carrera-orbita {
+  from { opacity: .38; transform: translate3d(var(--puntero-hilo-x, 0px), var(--puntero-hilo-y, 0px), 0) skewX(-24deg) rotate(-8deg) translateY(-8px); }
+  to { opacity: .9; transform: translate3d(var(--puntero-hilo-x, 0px), var(--puntero-hilo-y, 0px), 0) skewX(-24deg) rotate(-6deg) translateY(8px); }
+}
+
+@media (max-width: 900px) {
+  .pagina-entrada .entrada__hero--carrera {
+    min-height: 760px;
+    display: block;
+    padding-top: 104px;
+    padding-bottom: 84px;
+  }
+  .pagina-entrada .entrada__hero-fondo picture img { object-position: 58% center; }
+  .pagina-entrada .entrada__hero-aside { position: absolute; top: 132px; right: 9vw; width: min(48vw, 360px); height: 300px; }
+  .pagina-entrada .entrada__hero-copy { position: absolute; right: 24px; bottom: 72px; left: max(24px, calc((100vw - 1180px) / 2)); max-width: 420px; padding-bottom: 0; }
+  .pagina-entrada .entrada__hero h1 { font-size: clamp(4.7rem, 15vw, 8.4rem); }
+  .pagina-entrada .entrada__carrera-panel { right: 24px; bottom: 9%; }
+  .pagina-entrada .entrada__hero-indicador { right: 24px; }
+  .pagina-entrada .entrada__media-destacada { min-height: 0; }
+  .pagina-entrada .entrada__media-foto { min-height: 520px; }
+  .pagina-entrada .entrada__acceso--pit { grid-template-columns: 1fr; gap: 42px; }
+}
+
+@media (max-width: 620px) {
+  .pagina-entrada .entrada__hero--carrera {
+    min-height: 720px;
+    padding-top: 96px;
+    padding-bottom: 72px;
+  }
+  .pagina-entrada .entrada__hero-aside { top: 118px; right: 18px; width: 46vw; height: 240px; }
+  .pagina-entrada .entrada__hero-copy { right: 18px; bottom: 58px; left: 18px; }
+  .pagina-entrada .entrada__hero h1 { font-size: clamp(4.5rem, 21vw, 6.9rem); }
+  .pagina-entrada .entrada__hero-linea { top: 55%; left: -38vw; width: 170vw; }
+  .pagina-entrada .entrada__hero-indicador { display: none; }
+  .pagina-entrada .entrada__carrera-panel { right: 18px; bottom: 11%; transform: scale(.82); transform-origin: right bottom; }
+  .pagina-entrada .entrada__cifras--pit { margin-top: -10px; padding-inline: 10px; }
+  .pagina-entrada .entrada__cifras--pit .cifra { padding-inline: 12px; }
+  .pagina-entrada .entrada__cifras--pit .cifra + .cifra { border-top: 1px solid rgba(244, 247, 244, .12); border-left: 0; }
+  .pagina-entrada .entrada__pista--vueltas .entrada__foto--marquesina { height: 420px; }
+  .pagina-entrada .entrada__media-destacada { padding: 24px 18px; }
+  .pagina-entrada .entrada__media-destacada-copy h3 { font-size: 3.3rem; }
+  .pagina-entrada .entrada__media-foto { min-height: 440px; }
+  .pagina-entrada .entrada__galeria-ritmo { grid-template-columns: 1fr; }
+  .pagina-entrada .entrada__galeria-ritmo .entrada__foto:last-child { padding-bottom: 0; }
+  .pagina-entrada .entrada__acceso--pit .entrada__acceso-intro h2 { font-size: clamp(4rem, 20vw, 6.9rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina-entrada .entrada__hero--carrera::after,
+  .pagina-entrada .entrada__hero-linea span,
+  .pagina-entrada .entrada__hero-indicador span,
+  .pagina-entrada .entrada__carrera-panel span,
+  .pagina-entrada .entrada__pista-pulso span { animation: none !important; }
+  .pagina-entrada .entrada__hero-fondo,
+  .pagina-entrada .entrada__hero-copy,
+  .pagina-entrada .entrada__hero-aside,
+  .pagina-entrada .entrada__carrera-panel,
+  .pagina-entrada .entrada__hero-linea,
+  .pagina-entrada .entrada__hero-cinta,
+  .pagina-entrada .entrada__cifras--pit,
+  .pagina-entrada .entrada__media-destacada,
+  .pagina-entrada .entrada__media-destacada-copy,
+  .pagina-entrada .entrada__galeria-ritmo .entrada__foto,
+  .pagina-entrada .entrada__pista--vueltas .entrada__foto--marquesina img { transform: none !important; opacity: 1 !important; }
+}
+
 @media print {
   /* En papel no hay lienzo negro: los tipos vuelven a la tinta y las
      superficies al blanco, o la hoja saldría en negativo. */
