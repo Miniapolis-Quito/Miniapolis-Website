@@ -1,7 +1,7 @@
 /**
  * Panel del usuario máster: resumen, clientes, packs, consumos y auditoría.
  */
-import { $, $$, el, render, icono, esqueleto, brindis, fecha, finDelDiaIso, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
+import { $, $$, el, render, icono, esqueleto, brindis, fecha, horaCorta, relativo, dinero, plural, metrica, estadoPack, METODOS,
          mostrarAviso, mostrarErroresCampo, datosFormulario, conCarga, confirmar, pedirTexto, copiar } from './ui.js';
 import { api, iniciarPagina, getUsuario, redirigirAlPerderSesion } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
@@ -1276,12 +1276,6 @@ function montarDialogoPack() {
       note: $('#pack-nota').value.trim() || undefined,
       allowStaticQr: $('#pack-estatico').checked,
     };
-    const vence = $('#pack-vence').value;
-    if (vence) {
-      // La fecha elegida vale hasta el final de ese día.
-      // Vale hasta el final de ese día en la pista.
-      cuerpo.expiresAt = finDelDiaIso(vence);
-    }
     for (const clave of Object.keys(cuerpo)) if (cuerpo[clave] === undefined) delete cuerpo[clave];
 
     await conCarga(formulario.querySelector('button[type="submit"]'), async () => {

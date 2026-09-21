@@ -18,6 +18,9 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   dejando un mensaje opcional. Al destinatario le llega un pack nuevo de una,
   ambos ven sus saldos y movimientos actualizados en vivo por SSE y carteras,
   y se envía un aviso por correo electrónico.
+- **Sus entradas no caducan**: lo pagado vale hasta que se usa. La única fecha
+  de vencimiento del sistema es la del pack de cortesía del programa de
+  fidelidad (y la de lo que se transfiera desde uno).
 - Puede **comprar y recargar packs en línea** desde su app (transferencia bancaria,
   DeUna o efectivo): elige el pack del catálogo, revisa los datos bancarios oficiales,
   registra el comprobante/referencia y sigue el estado de aprobación en vivo con
@@ -56,7 +59,8 @@ entrada y el saldo se actualiza en el teléfono del cliente al instante.
   pagos y emisión contable atómica automática del pack.
 - Decide quién puede escanear, de uno en uno, y se lo quita cuando quiera.
 - Ajusta saldos, suspende o anula packs, y anula un consumo devolviendo la
-  entrada al cliente.
+  entrada al cliente. No puede poner fecha de vencimiento a un pack pagado:
+  solo los de cortesía vencen, y ahí sí puede mover o quitar la fecha.
 - Imprime pases físicos con QR fijo, para los packs donde lo habilite.
 - Panel con entradas pendientes, actividad del día, ingresos y gráfico de uso.
 - Aviso de **entradas pendientes de cobro**: quien entró durante un corte de red y cuya
@@ -533,10 +537,10 @@ correo antes de nada.
 
 | Aviso | Cuándo sale |
 |---|---|
-| Comprobante de compra | Al vender un pack: código, entradas, importe, forma de pago y vencimiento |
+| Comprobante de compra | Al vender un pack: código, entradas, importe y forma de pago |
 | Quedan pocas entradas | Tras usar una, cuando le quedan 2 o menos (ajustable), con los packs a la venta |
 | Sin entradas | Cuando usa la última |
-| Entradas por vencer | 7 días antes (ajustable) de que venza un pack con saldo |
+| Entradas por vencer | 7 días antes (ajustable) de que venza un pack de cortesía con saldo |
 | Hace tiempo que no viene | Con entradas y 30 días (ajustable) sin venir |
 
 Lo que hace que se puedan dejar encendidos sin vigilarlos:

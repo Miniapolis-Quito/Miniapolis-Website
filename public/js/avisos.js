@@ -22,11 +22,11 @@ export const NOMBRES_DE_AVISO = {
 };
 
 const DESCRIPCIONES = {
-  purchase: 'Al vender un pack: código, entradas, valor y vencimiento. Llega aunque la persona ya no reciba recordatorios.',
+  purchase: 'Al vender un pack: código, entradas y valor. Llega aunque la persona ya no reciba recordatorios.',
   loyalty_reward: 'Cuando el programa «la casa invita» le regala entradas. Es una buena noticia de su saldo, así que llega aunque ya no reciba recordatorios.',
   low_balance: 'Después de usar una entrada, cuando le quedan pocas. Incluye los packs disponibles.',
   depleted: 'Cuando usa su última entrada, con los packs disponibles.',
-  expiring: 'Unos días antes de que venza un pack que todavía tiene entradas.',
+  expiring: 'Unos días antes de que venza un pack de cortesía que todavía tiene entradas. Lo comprado no caduca.',
   inactive: 'Cuando tiene entradas, pero lleva tiempo sin venir.',
 };
 
@@ -58,7 +58,7 @@ const GRUPOS = [
   {
     clave: 'expiring',
     titulo: 'Por vencer',
-    ayuda: (u) => `Tienen entradas pagadas que vencen en los próximos ${plural(u.daysBeforeExpiry, 'día', 'días')}. Es lo más urgente: después ya no sirven.`,
+    ayuda: (u) => `Tienen entradas de cortesía que vencen en los próximos ${plural(u.daysBeforeExpiry, 'día', 'días')}. Es lo más urgente: después ya no sirven.`,
   },
   {
     clave: 'depleted',

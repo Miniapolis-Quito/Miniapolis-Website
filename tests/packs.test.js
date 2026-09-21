@@ -8,6 +8,14 @@ before(levantarServidor);
 after(bajarServidor);
 beforeEach(limpiarBase);
 
+/**
+ * Emite un pack de cortesía, que es el único que puede vencer. No hay ruta de
+ * API que los cree —los da el programa de fidelidad—, así que se pide al
+ * servicio directamente.
+ */
+const regalar = (userId, expiresAt, size = 5) =>
+  packs.issuePack({ userId, size, priceCents: 0, paymentMethod: 'cortesia', origin: 'loyalty', expiresAt });
+
 test('el máster emite un pack de 5 y de 10 con el precio de catálogo', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
 
@@ -66,13 +74,12 @@ test('un cliente no puede ver los packs de otro', async () => {
 });
 
 test('un pack vencido deja de ser usable automáticamente', async () => {
-  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
-  const futuro = new Date(Date.now() + 60_000).toISOString();
-  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5, expiresAt: futuro });
+  const { cCliente, cliente } = await sembrarUsuarios();
+  const emitido = regalar(cliente.id, new Date(Date.now() + 60_000).toISOString());
 
   // Se mueve la fecha de vencimiento al pasado, como si hubiera transcurrido el tiempo.
   getDb().prepare('UPDATE packs SET expires_at = ? WHERE id = ?')
-    .run(new Date(Date.now() - 1000).toISOString(), emitido.datos.pack.id);
+    .run(new Date(Date.now() - 1000).toISOString(), emitido.id);
 
   const r = await cCliente.get('/api/packs/mine');
   assert.equal(r.datos.summary.availableTickets, 0);
@@ -80,22 +87,80 @@ test('un pack vencido deja de ser usable automáticamente', async () => {
   assert.equal(r.datos.packs[0].usable, false);
 });
 
-test('no se admite una fecha de vencimiento en el pasado', async () => {
+test('una venta no admite fecha de vencimiento: lo pagado no caduca', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
   const r = await cMaster.post('/api/admin/packs', {
-    userId: cliente.id, size: 5, expiresAt: new Date(Date.now() - 86400000).toISOString(),
+    userId: cliente.id, size: 5, expiresAt: new Date(Date.now() + 86400000).toISOString(),
   });
   assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'vencimiento_no_admitido');
+});
+
+test('a un pack pagado tampoco se le puede poner fecha después', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+  const r = await cMaster.patch(`/api/admin/packs/${emitido.datos.pack.id}`, {
+    expiresAt: new Date(Date.now() + 86400000).toISOString(),
+  });
+  assert.equal(r.status, 400);
+  assert.equal(r.datos.error.code, 'vencimiento_no_admitido');
+});
+
+test('no se admite una fecha de vencimiento en el pasado', async () => {
+  const { cliente } = await sembrarUsuarios();
+  assert.throws(() => regalar(cliente.id, new Date(Date.now() - 86400000).toISOString()), /futura/);
 });
 
 test('tampoco se puede actualizar un vencimiento a una fecha pasada', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
-  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
-  const r = await cMaster.patch(`/api/admin/packs/${emitido.datos.pack.id}`, {
+  const emitido = regalar(cliente.id, new Date(Date.now() + 86400000).toISOString());
+  const r = await cMaster.patch(`/api/admin/packs/${emitido.id}`, {
     expiresAt: new Date(Date.now() - 1000).toISOString(),
   });
   assert.equal(r.status, 400);
   assert.equal(r.datos.error.code, 'solicitud_invalida');
+});
+
+test('la transferencia se lleva la fecha del pack de cortesía', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const otro = await cMaster.post('/api/admin/users', {
+    email: 'heredero@pista.ec', fullName: 'Piloto Heredero', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const vence = new Date(Date.now() + 86400000).toISOString();
+  const cortesia = regalar(cliente.id, vence);
+
+  const r = await cCliente.post(`/api/packs/${cortesia.id}/transfer`, { quantity: 2, recipient: 'heredero@pista.ec' });
+  assert.equal(r.status, 200);
+
+  // Si la fecha se perdiera al cambiar de manos, regalar el premio sería la
+  // forma de volverlo eterno.
+  assert.equal(r.datos.destinationPack.expiresAt, vence);
+
+  // Y el que la heredó puede seguir moviéndola, aunque su origen sea 'transfer'.
+  const movida = await cMaster.patch(`/api/admin/packs/${r.datos.destinationPack.id}`, {
+    expiresAt: new Date(Date.now() + 2 * 86400000).toISOString(),
+  });
+  assert.equal(movida.status, 200);
+  assert.equal(otro.status, 201);
+});
+
+test('lo transferido desde un pack pagado nace sin fecha y no admite que se la pongan', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  await cMaster.post('/api/admin/users', {
+    email: 'amigo.pago@pista.ec', fullName: 'Amigo Pagado', role: 'customer', password: 'Neumatico-Slick-2026',
+  });
+  const emitido = await cMaster.post('/api/admin/packs', { userId: cliente.id, size: 5 });
+
+  const r = await cCliente.post(`/api/packs/${emitido.datos.pack.id}/transfer`, {
+    quantity: 2, recipient: 'amigo.pago@pista.ec',
+  });
+  assert.equal(r.datos.destinationPack.expiresAt, null);
+
+  const intento = await cMaster.patch(`/api/admin/packs/${r.datos.destinationPack.id}`, {
+    expiresAt: new Date(Date.now() + 86400000).toISOString(),
+  });
+  assert.equal(intento.status, 400);
+  assert.equal(intento.datos.error.code, 'vencimiento_no_admitido');
 });
 
 test('el ajuste manual acredita y descuenta entradas dejando asiento contable', async () => {
@@ -128,12 +193,8 @@ test('un ajuste no puede dejar el saldo en negativo', async () => {
 
 test('reactivar un pack vencido pide antes cambiar la fecha', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
-  const emitido = await cMaster.post('/api/admin/packs', {
-    userId: cliente.id,
-    size: 5,
-    expiresAt: new Date(Date.now() + 1500).toISOString(),
-  });
-  const packId = emitido.datos.pack.id;
+  const emitido = regalar(cliente.id, new Date(Date.now() + 1500).toISOString());
+  const packId = emitido.id;
   await new Promise((listo) => setTimeout(listo, 1700));
 
   // El barrido lo marca como vencido en la siguiente lectura.

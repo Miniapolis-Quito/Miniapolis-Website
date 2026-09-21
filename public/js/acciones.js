@@ -72,7 +72,18 @@ export async function anularPack(pack, alCambiar) {
 }
 
 /**
- * Cambia (o quita) la fecha de vencimiento.
+ * Misma regla que aplica el servidor: vence la cortesía y su descendencia.
+ * Tener ya una fecha es la señal de esa descendencia, porque nadie más puede
+ * haberla puesto.
+ */
+const puedeVencer = (pack) => pack.origin === 'loyalty' || Boolean(pack.expiresAt);
+
+/**
+ * Cambia (o quita) la fecha de vencimiento de un pack de cortesía.
+ *
+ * Solo se ofrece donde el vencimiento existe —el premio de fidelidad y lo
+ * transferido desde uno—: las entradas pagadas no caducan y el servidor
+ * rechaza ponerles fecha.
  *
  * Darle fecha nueva a un pack vencido es, en el mostrador, devolverlo al
  * servicio: se hace en un solo movimiento, porque reactivarlo sin tocar la
@@ -144,7 +155,7 @@ export function botonesDePack(pack, { alCambiar, alImprimir, extra = [] } = {}) 
           pack.status === 'suspended' ? 'boton--ok' : 'boton--fantasma',
         )
       : null,
-    pack.status !== 'cancelled'
+    pack.status !== 'cancelled' && puedeVencer(pack)
       ? boton(pack.expiresAt ? 'Cambiar vencimiento' : 'Poner vencimiento', () => cambiarVencimiento(pack, alCambiar))
       : null,
     boton(pack.allowStaticQr ? 'Desactivar QR impreso' : 'Activar QR impreso', () => alternarQrImpreso(pack, alCambiar)),
