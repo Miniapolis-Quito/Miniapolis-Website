@@ -441,3 +441,13 @@
 
 /* Los titulares de sección se inclinan con la velocidad. */
 .portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+
+
+/* ==========================================================================
+   Movimiento: tablero
+   ========================================================================== */
+.portada-motor .portada__luces span { transition: background-color 120ms, box-shadow 120ms; }
+.portada-motor .portada__luces span:not(.on) { background: rgba(217, 230, 222, .1); box-shadow: none; }
+/* Sin dato todavía, la rueda enseña el valor final: nunca una cifra falsa. */
+.portada-motor .rueda__tira { transform: translate3d(0, calc(var(--rueda, 1) * var(--d, 0) * -10%), 0); will-change: transform; }
+.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
