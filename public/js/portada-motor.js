@@ -42,6 +42,11 @@ export function fase(p, desde, hasta) {
 
 export const easeOutCubic = (t) => 1 - (1 - limitar(t)) ** 3;
 
+/** Progreso de cada cuentakilómetros: termina antes de que el tablero se vaya. */
+export function progresoCifra(p, indice) {
+  return easeOutCubic(fase(p, 0.18 + indice * 0.1, 0.54 + indice * 0.1));
+}
+
 /** Cuántas luces de cambio hay encendidas: enteras, y todas al llegar a 1. */
 export function lucesEncendidas(p, total) {
   const q = limitar(p);

@@ -7,7 +7,7 @@
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, easeOutCubic, digitosDe, entradaPanel, fase, lucesEncendidas,
+  crearMotor, digitosDe, entradaPanel, fase, lucesEncendidas, progresoCifra,
 } from './portada-motor.js';
 
 const raiz = document.documentElement;
@@ -147,7 +147,7 @@ function montarTablero(motor) {
         encendidas = n;
       }
       cifras.forEach((cifra, i) => {
-        cifra.style.setProperty('--rueda', easeOutCubic(fase(p, 0.18 + i * 0.1, 0.62 + i * 0.1)).toFixed(3));
+        cifra.style.setProperty('--rueda', progresoCifra(p, i).toFixed(3));
       });
     },
   });
