@@ -50,7 +50,7 @@
   z-index: 60;
   border-bottom: 1px solid transparent;
   background: linear-gradient(180deg, rgba(5, 7, 6, .82), rgba(5, 7, 6, 0)) no-repeat; /* sin repetir: si no, el degradado vuelve a pintarse en el borde de 1 px */
-  transition: background-color 260ms, border-color 260ms;
+  transition: background-color var(--t-hover) var(--curva-hover), border-color var(--t-hover) var(--curva-hover);
 }
 .pagina-entrada > .entrada__barra.esta-desplazada { border-bottom-color: var(--borde); background: rgba(5, 7, 6, .92); }
 .entrada__barra-interior { display: flex; align-items: center; justify-content: space-between; min-height: var(--altura-cabecera); }
@@ -94,9 +94,9 @@
   z-index: -1;
   background: var(--acento);
   transform: translate3d(-110%, 0, 0) skewX(-18deg);
-  transition: transform 340ms var(--salida);
+  transition: transform var(--t-hover) var(--curva-hover);
 }
-.entrada__accion::after { content: '→'; transition: transform 340ms var(--salida); }
+.entrada__accion::after { content: '→'; transition: transform var(--t-hover) var(--curva-hover); }
 
 /* Botón primario: el sistema compartido lo deja en gris salvo que la página lo pinte de verde. */
 .pagina-entrada .boton.boton--principal {
@@ -125,13 +125,13 @@
   line-height: 1.2;
   text-transform: uppercase;
   background: rgba(14, 19, 17, .5);
-  transition: border-color 380ms var(--salida), background-color 380ms var(--salida), color 200ms, transform 340ms var(--salida);
+  transition: border-color var(--t-hover) var(--curva-hover), background-color var(--t-hover) var(--curva-hover), color var(--t-hover) var(--curva-hover), transform var(--t-hover) var(--curva-hover);
 }
 .portada__enlace::after {
   content: '→';
   margin-left: 12px;
   color: var(--acento);
-  transition: transform 340ms var(--salida);
+  transition: transform var(--t-hover) var(--curva-hover);
 }
 
 @media (hover: hover) {
@@ -153,7 +153,7 @@
 .pagina-entrada.mira-activa input,
 .pagina-entrada.mira-activa select,
 .pagina-entrada.mira-activa textarea { cursor: none; }
-.entrada__mira { position: fixed; top: 0; left: 0; z-index: 80; width: 26px; height: 26px; pointer-events: none; opacity: .9; transform: translate3d(calc(var(--puntero-x, -100px) - 13px), calc(var(--puntero-y, -100px) - 13px), 0) scale(var(--mira-escala, 1)); transition: opacity 220ms var(--curva); will-change: transform; mix-blend-mode: screen; }
+.entrada__mira { position: fixed; top: 0; left: 0; z-index: 80; width: 26px; height: 26px; pointer-events: none; opacity: .9; transform: translate3d(calc(var(--puntero-x, -100px) - 13px), calc(var(--puntero-y, -100px) - 13px), 0) scale(var(--mira-escala, 1)); transition: opacity var(--t-hover) var(--curva-hover); will-change: transform; mix-blend-mode: screen; }
 .entrada__mira::before,
 .entrada__mira::after { position: absolute; content: ''; background: var(--mira-color, rgba(244,247,244,.92)); box-shadow: 0 0 8px var(--mira-color, rgba(61,254,64,.45)); }
 .entrada__mira::before { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); }
@@ -339,7 +339,7 @@
   font-size: .95rem;
   font-weight: 650;
   line-height: 1.15;
-  transition: background-color 160ms, color 160ms;
+  transition: background-color var(--t-hover) var(--curva-hover), color var(--t-hover) var(--curva-hover);
 }
 .entrada__acceso-panel .pestana:hover { background: rgba(226, 240, 231, .08); color: var(--texto); }
 .entrada__acceso-panel .pestana[aria-selected="true"] { background: var(--acento); color: #04120a; box-shadow: none; }
