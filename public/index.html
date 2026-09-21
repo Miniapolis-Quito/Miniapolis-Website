@@ -24,12 +24,13 @@
   </header>
 
   <main class="contenedor contenedor--portada">
-    <section class="entrada__hero entrada__hero--inmersiva" aria-labelledby="titulo-entrada">
+    <section class="entrada__hero entrada__hero--inmersiva entrada__hero--cinematica" aria-labelledby="titulo-entrada">
+      <div class="entrada__hero-fondo" aria-hidden="true">
+        <img src="./images/pista/miniapolis-track-wide.webp" width="1675" height="939" alt="">
+      </div>
       <div class="entrada__hero-copy">
-        <h1 id="titulo-entrada"><span class="entrada__titulo-linea">La pista</span><span class="entrada__titulo-linea entrada__titulo-linea--acento">te espera.</span></h1>
-        <p class="entrada__descripcion">
-          Compra tu pack y entra a rodar.
-        </p>
+        <h1 id="titulo-entrada"><span class="entrada__titulo-linea">Ven a</span><span class="entrada__titulo-linea entrada__titulo-linea--acento">rodar.</span></h1>
+        <p class="entrada__descripcion">Asfalto, curvas y control.</p>
         <div class="entrada__hero-acciones">
           <a class="boton boton--principal boton--grande" href="#acceso">Entrar</a>
           <a class="entrada__enlace" href="#pista">Ver la pista</a>
@@ -37,13 +38,16 @@
       </div>
       <div class="entrada__hero-aside" data-depth="0.15">
         <figure class="entrada__hero-foto entrada__hero-foto--wide">
-          <img src="./images/pista/miniapolis-track-wide.webp" width="1675" height="939"
-               alt="Panorámica real del circuito de asfalto de Miniápolis #3 dentro del hangar"
-               srcset="./images/pista/miniapolis-track-wide-960.webp 960w, ./images/pista/miniapolis-track-wide-1440.webp 1440w, ./images/pista/miniapolis-track-wide.webp 1675w"
-               sizes="(max-width: 900px) 100vw, 58vw"
-               fetchpriority="high" decoding="async">
+          <picture>
+            <source srcset="./images/landing/miniapolis-car-portrait.webp" type="image/webp">
+            <img src="./images/landing/miniapolis-car-portrait.jpeg" width="665" height="1182"
+                 alt="Coche de radiocontrol listo para entrar en pista"
+                 fetchpriority="high" decoding="async">
+          </picture>
+          <figcaption><span>Miniápolis #3</span><span>Asfalto indoor</span></figcaption>
         </figure>
       </div>
+      <div class="entrada__hero-cinta" aria-hidden="true"></div>
     </section>
 
     <section class="entrada__cifras" aria-label="La pista en cifras">
@@ -63,10 +67,8 @@
 
     <section id="pista" class="entrada__pista-real" aria-labelledby="titulo-pista">
       <div class="entrada__seccion-cabeza">
-        <h2 id="titulo-pista">Así es la pista.</h2>
-        <p class="entrada__seccion-descripcion">
-          Asfalto bajo techo, con rectas y chicanes.
-        </p>
+        <h2 id="titulo-pista">La pista.</h2>
+        <p class="entrada__seccion-descripcion">Rectas, curvas y asfalto.</p>
       </div>
 
       <figure class="entrada__foto entrada__foto--apertura entrada__foto--marquesina" data-depth="0.06">
@@ -79,38 +81,39 @@
 
       <article class="entrada__media-destacada">
         <div class="entrada__media-destacada-copy">
-          <h3>Hecha para rodar.</h3>
-          <p>
-            Rectas, chicanes y bordillos.
-          </p>
+          <h3>A tu ritmo.</h3>
+          <p>Una pista para sentir cada vuelta.</p>
           <ul class="entrada__media-lista">
-            <li><span>Superficie</span><span>Asfalto de competición</span></li>
-            <li><span>Curvas</span><span>Bordillos de competición</span></li>
+            <li><span>Superficie</span><span>Asfalto real</span></li>
+            <li><span>Recorrido</span><span>Rectas y curvas</span></li>
           </ul>
         </div>
         <figure class="entrada__media-foto" data-depth="0.09">
-          <img src="./images/pista/miniapolis-hangar-vertical.webp" width="941" height="1671"
-               alt="Vista vertical de los arcos y las ventanas del hangar sobre el circuito de asfalto"
-               srcset="./images/pista/miniapolis-hangar-vertical-640.webp 640w, ./images/pista/miniapolis-hangar-vertical.webp 941w"
-               sizes="(max-width: 900px) 100vw, 50vw"
-               loading="lazy" decoding="async">
+          <picture>
+            <source srcset="./images/landing/miniapolis-track-portrait.webp" type="image/webp">
+            <img src="./images/landing/miniapolis-track-portrait.jpeg" width="665" height="1182"
+                 alt="Vista vertical del circuito y el hangar de Miniápolis"
+                 loading="lazy" decoding="async">
+          </picture>
         </figure>
       </article>
 
-      <div class="entrada__diptico">
+      <div class="entrada__diptico entrada__galeria-ritmo">
         <figure class="entrada__foto">
-          <img src="./images/pista/miniapolis-curb-detail-vertical.webp" width="941" height="1672"
-               alt="Detalle de un bordillo rojo y blanco sobre el asfalto del circuito"
-               srcset="./images/pista/miniapolis-curb-detail-vertical-640.webp 640w, ./images/pista/miniapolis-curb-detail-vertical.webp 941w"
-               sizes="(max-width: 620px) 100vw, 50vw"
+          <picture>
+            <source srcset="./images/landing/miniapolis-action.webp" type="image/webp">
+            <img src="./images/landing/miniapolis-action.jpeg" width="665" height="1182"
+               alt="Piloto junto al circuito de Miniápolis"
                loading="lazy" decoding="async">
+          </picture>
         </figure>
         <figure class="entrada__foto">
-          <img src="./images/pista/miniapolis-asphalt-detail.webp" width="941" height="1672"
-               alt="Textura del asfalto y la línea blanca de una curva del circuito"
-               srcset="./images/pista/miniapolis-asphalt-detail-640.webp 640w, ./images/pista/miniapolis-asphalt-detail.webp 941w"
-               sizes="(max-width: 620px) 100vw, 50vw"
+          <picture>
+            <source srcset="./images/landing/miniapolis-track-atmosphere.webp" type="image/webp">
+            <img src="./images/landing/miniapolis-track-atmosphere.jpeg" width="640" height="359"
+               alt="Vista amplia del circuito dentro del hangar"
                loading="lazy" decoding="async">
+          </picture>
         </figure>
       </div>
     </section>
@@ -119,7 +122,7 @@
       <div class="entrada__acceso-intro">
         <h2 id="titulo-acceso">Tu pase.</h2>
         <p class="entrada__acceso-nota">
-          Inicia sesión y muestra tu QR.
+          Entra y guarda tu pase.
         </p>
       </div>
 
