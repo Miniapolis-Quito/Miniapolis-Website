@@ -114,6 +114,17 @@ Crea la cuenta si no existe o le restablece la contraseña y le devuelve el rol
 máster si ya existía. Es la salida de emergencia, y solo funciona desde el
 servidor.
 
+Sin más, genera una contraseña segura y la muestra una sola vez. Para elegirla,
+pásala por una tubería en vez de escribirla en la orden:
+
+```bash
+echo "la-contraseña" | npm run create-master -- --email admin@racinghobbies.ec --password-stdin
+```
+
+Lo que se escribe en la propia orden queda en el historial del intérprete y,
+mientras el proceso vive, a la vista de cualquier otra cuenta de la máquina con
+un `ps`. Una tubería no deja rastro en ninguno de los dos sitios.
+
 ---
 
 ## Rutas de la interfaz

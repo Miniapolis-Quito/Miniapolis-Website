@@ -3,11 +3,18 @@
  * Crea (o repara) una cuenta máster desde la terminal.
  *
  *   npm run create-master -- --email admin@racinghobbies.ec --nombre "Danilo"
- *   npm run create-master -- --email admin@racinghobbies.ec --password "..."
+ *   echo "la-contraseña" | npm run create-master -- --email admin@… --password-stdin
  *
  * Si la cuenta ya existe, se le restablece la contraseña y se le asegura el rol
  * máster: es la salida de emergencia cuando nadie puede entrar al panel.
+ *
+ * Sobre por dónde entra la contraseña: `--password` la deja escrita en el
+ * historial del intérprete y, mientras el proceso vive, a la vista de
+ * cualquier otra cuenta de la máquina que haga `ps`. Sigue aceptándose para no
+ * romper lo que ya esté automatizado, pero avisa; `--password-stdin` la recibe
+ * por una tubería, que no queda en ningún sitio.
  */
+import { readFileSync } from 'node:fs';
 import { getDb, closeDb } from '../src/db/index.js';
 import { validatePasswordStrength, generarPasswordTemporal } from '../src/lib/passwords.js';
 import * as users from '../src/services/users.js';
@@ -35,8 +42,12 @@ const opciones = leerArgumentos(process.argv.slice(2));
 if (opciones.help || !opciones.email) {
   process.stdout.write(
     `\nCrea o repara la cuenta máster del sistema de entradas.\n\n` +
-      `  npm run create-master -- --email <correo> [--nombre "<nombre>"] [--password "<contraseña>"]\n\n` +
-      `Sin --password se genera una contraseña segura y se muestra una sola vez.\n\n`,
+      `  npm run create-master -- --email <correo> [--nombre "<nombre>"] [--password-stdin]\n\n` +
+      `Sin contraseña se genera una segura y se muestra una sola vez.\n` +
+      `Para elegirla, pásala por una tubería:\n\n` +
+      `  echo "la-contraseña" | npm run create-master -- --email <correo> --password-stdin\n\n` +
+      `También se acepta --password "<contraseña>", pero queda en el historial\n` +
+      `del intérprete y visible con ps: úsalo solo si no hay alternativa.\n\n`,
   );
   process.exit(opciones.email ? 0 : 1);
 }
@@ -46,9 +57,49 @@ getDb();
 const email = String(opciones.email).trim().toLowerCase();
 const nombre = typeof opciones.nombre === 'string' ? opciones.nombre : 'Administrador';
 
-let password = typeof opciones.password === 'string' ? opciones.password : null;
+/**
+ * Lee la contraseña de la entrada estándar. Se queda con el primer renglón: la
+ * tubería casi siempre trae el salto final de `echo`, y un salto no forma
+ * parte de lo que alguien quiso escribir.
+ */
+function passwordDeLaEntrada() {
+  if (process.stdin.isTTY) {
+    process.stderr.write(
+      `\n--password-stdin espera la contraseña por una tubería. Por ejemplo:\n` +
+        `  echo "la-contraseña" | npm run create-master -- --email ${opciones.email} --password-stdin\n\n`,
+    );
+    closeDb();
+    process.exit(1);
+  }
+  let crudo = '';
+  try {
+    crudo = readFileSync(0, 'utf8');
+  } catch {
+    crudo = '';
+  }
+  return crudo.split('\n', 1)[0].replace(/\r$/, '');
+}
+
+let password = null;
 let generada = false;
-if (!password) {
+
+if (opciones['password-stdin']) {
+  password = passwordDeLaEntrada();
+  if (!password) {
+    process.stderr.write('\nNo llegó ninguna contraseña por la entrada estándar.\n\n');
+    closeDb();
+    process.exit(1);
+  }
+} else if (typeof opciones.password === 'string') {
+  password = opciones.password;
+  // Ya está escrita en el historial: lo único que queda es que quien la usó
+  // se entere y sepa por dónde pasarla la próxima vez.
+  process.stderr.write(
+    `\n  Aviso: --password queda en el historial del intérprete y es visible\n` +
+      `  con ps mientras el proceso vive. Usa --password-stdin en su lugar:\n` +
+      `    echo "la-contraseña" | npm run create-master -- --email ${email} --password-stdin\n\n`,
+  );
+} else {
   password = generarPasswordTemporal(12);
   generada = true;
 }
