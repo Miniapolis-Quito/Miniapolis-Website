@@ -279,6 +279,19 @@ test('la capa de movimiento tiene una salida global para movimiento reducido', (
   assert.match(js, /portada-revela--visible/);
 });
 
+test('el sistema de interacción cubre hovers, pulsación y superficies con una salida accesible', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /--t-hover:/, 'la interacción debe tener un ritmo propio');
+  assert.match(css, /@media\s*\(hover:\s*hover\)/, 'los efectos intensos deben reservarse a dispositivos con hover real');
+  assert.match(css, /\.boton:hover:not\(:disabled\)[\s\S]*transform:\s*translateY\(-2px\)/);
+  assert.match(css, /\.boton:active:not\(:disabled\)[\s\S]*transform:\s*translateY\(1px\)/);
+  assert.match(css, /\.pack:hover[\s\S]*transform:\s*translateY\(-4px\)/);
+  assert.match(css, /\.opcion-pack:hover[\s\S]*box-shadow:/);
+  assert.match(css, /\.pestana:hover[\s\S]*color:/);
+  assert.match(css, /input:hover:not\(:disabled\)[\s\S]*box-shadow:/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*transition-duration:\s*\.01ms/);
+});
+
 test('las páginas operativas conservan el shell y la hoja de estilos compartida', () => {
   for (const html of ['public/app.html', 'public/scan.html', 'public/admin.html']) {
     const src = leer(html);
