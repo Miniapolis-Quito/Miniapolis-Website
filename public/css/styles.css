@@ -2869,6 +2869,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
    ========================================================================== */
 
 .pagina-entrada {
+  --altura-cabecera: 73px;
   background:
     linear-gradient(180deg, #060809 0%, #0a0d0e 38%, #060809 100%);
 }
@@ -2880,16 +2881,27 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   width: min(1320px, 100%);
 }
 
+.pagina-entrada main {
+  padding-top: var(--altura-cabecera);
+}
+
+.pagina-entrada #acceso,
+.pagina-entrada #pista {
+  scroll-margin-top: calc(var(--altura-cabecera) + 16px);
+}
+
 .pagina-entrada .entrada__barra {
   background: rgba(6, 8, 9, .78);
   border-bottom-color: rgba(244, 247, 244, .14);
 }
 
 /* La portada aplica `position: relative` a sus hijos para ordenar las capas;
-   esta regla específica devuelve al encabezado su comportamiento sticky. El
-   resto es una línea de pit lane: precisa, sobria y sin adornos luminosos. */
+   la cabecera se saca del flujo para que nunca dependa del límite del body. */
 .pagina-entrada > .entrada__barra {
-  position: sticky;
+  position: fixed;
+  inset: 0 0 auto;
+  width: 100%;
+  height: var(--altura-cabecera);
   top: 0;
   z-index: 50;
   isolation: isolate;
@@ -2901,31 +2913,17 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 }
 
 .pagina-entrada .entrada__barra::before {
-  position: absolute;
-  right: 0;
-  top: 0;
-  left: 0;
-  height: 1px;
-  pointer-events: none;
-  content: '';
-  background: rgba(244, 247, 244, .08);
+  display: none;
 }
 
 .pagina-entrada .entrada__barra::after {
-  position: absolute;
-  bottom: -1px;
-  left: clamp(18px, 4vw, 40px);
-  width: 48px;
-  height: 2px;
-  pointer-events: none;
-  content: '';
-  background: conic-gradient(rgba(244, 247, 244, .72) 0 25%, transparent 0 50%) 0 0 / 8px 8px;
-  opacity: .72;
+  display: none;
 }
 
 .pagina-entrada .entrada__barra-interior {
-  min-height: 72px;
-  padding-block: 10px;
+  min-height: 0;
+  height: 100%;
+  padding-block: 0;
 }
 
 .pagina-entrada .entrada__marca-sello {
