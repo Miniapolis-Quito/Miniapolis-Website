@@ -20,6 +20,11 @@ test('la portada anula lo que el resto de la app le pondría por defecto', () =>
   assert.match(CSS, /\.pagina-entrada main > \.revelar\s*,\s*\.pagina-entrada main > \.revelar--visible\s*\{[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las escenas');
 });
 
+test('el enlace «Ver la pista» comparte el chasis inclinado de los botones', () => {
+  assert.match(CSS, /\.portada__enlace::before\s*\{[^}]*transform:\s*skewX\(var\(--inclinacion\)\)/s);
+  assert.match(CSS, /\.portada__enlace:hover::before\s*\{[^}]*box-shadow:[^}]*var\(--acento\)/s);
+});
+
 test('la portada carga los estilos compartidos, los propios y sus dos módulos', () => {
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/styles\.css">/);
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/portada\.css">/);
