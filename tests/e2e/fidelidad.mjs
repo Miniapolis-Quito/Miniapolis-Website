@@ -136,7 +136,8 @@ await paso('el cliente ve su tarjeta de sellos vacía y cuántas entradas le fal
   await entrar(app, 'cliente@pista.ec', CLAVES.cliente, '/app');
   await app.waitForSelector('#seccion-fidelidad:not([hidden])', { timeout: 15000 });
   const texto = await app.locator('#seccion-fidelidad').innerText();
-  comprobar(texto.includes('La casa invita'), `falta el título: ${texto}`);
+  // El título va en versales por estilo: `innerText` lo devuelve en mayúsculas.
+  comprobar(texto.toLowerCase().includes('la casa invita'), `falta el título: ${texto}`);
   comprobar(texto.includes('Te faltan 3 entradas'), `debería faltarle tres: ${texto}`);
   comprobar((await app.locator('#fidelidad-sellos .sello').count()) === 3, 'la tarjeta tiene un sello por entrada del ciclo');
   comprobar((await app.locator('#fidelidad-sellos .sello--lleno').count()) === 0, 'todavía no hay ninguno lleno');

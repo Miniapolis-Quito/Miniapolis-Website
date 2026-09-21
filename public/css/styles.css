@@ -15,10 +15,23 @@
         atención.
    ========================================================================== */
 
+/* Dos familias variables, servidas desde el propio dominio.
+   Saira pone la voz de carrera: se abre a lo ancho (eje wdth hasta 125) como
+   el rotulado de un monoplaza, y se usa para titulares, cifras y rótulos.
+   Sora lleva el texto corrido: geométrica, abierta y cómoda a cualquier
+   tamaño, con el aire justo entre letras para que nada se empaste. */
 @font-face {
-  font-family: 'Archivo';
-  src: url('/fonts/archivo-var.woff2') format('woff2');
-  font-weight: 100 900;
+  font-family: 'Saira';
+  src: url('/fonts/saira-var.woff2') format('woff2');
+  font-weight: 300 900;
+  font-stretch: 100% 125%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sora';
+  src: url('/fonts/sora-var.woff2') format('woff2');
+  font-weight: 100 800;
   font-display: swap;
 }
 
@@ -100,11 +113,13 @@
   --e5: 40px;
   --e6: 72px;
 
-  --fuente: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --fuente: 'Sora', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  /* La voz de pista: titulares, cifras, botones y rótulos. */
+  --display: 'Saira', 'Sora', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   /* Rótulo micro: el tamaño más pequeño del sistema —lo que nombra un dato sin
-     competir con él—. Va en Archivo y no en la mono, porque la mono la pone
+     competir con él—. Va en Saira ancha y no en la mono, porque la mono la pone
      cada dispositivo y ningún rótulo debería cambiar de forma según el
      teléfono. Abierto de interletraje: en versalitas a 11px, las letras
      pegadas se leen como una mancha. */
@@ -155,14 +170,14 @@ h1, h2, h3 {
   margin: 0 0 .5em;
   font-weight: 600;
   line-height: 1.1;
-  letter-spacing: -0.022em;
+  letter-spacing: 0;
   color: var(--texto);
 }
 /* Cuanto mayor es el cuerpo, más sobra el espacio entre letras: el titular se
    cierra hasta -0,033em y el h3, que casi es texto, se queda casi en cero. */
-h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: -0.033em; line-height: 1.04; }
-h2 { font-size: clamp(1.2rem, 2.2vw, 1.45rem); letter-spacing: -0.024em; }
-h3 { font-size: 1.02rem; letter-spacing: -0.012em; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: 0; line-height: 1.04; }
+h2 { font-size: clamp(1.2rem, 2.2vw, 1.45rem); letter-spacing: 0; }
+h3 { font-size: 1.02rem; letter-spacing: 0; }
 
 /* Rótulo micro. Nombra sin pesar: versalitas abiertas, un punto por encima del
    gris de apoyo para que el interletraje no lo desangre. */
@@ -222,7 +237,7 @@ a:hover { color: var(--acento-2); }
   margin-right: auto;
   flex: 0 0 auto;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 .barra__marca span { font-size: .98rem; }
@@ -309,7 +324,7 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
 .metrica__valor {
   font-size: clamp(1.7rem, 3vw, 2.1rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
@@ -336,7 +351,7 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
   font-size: clamp(4.4rem, 17vw, 7rem);
   font-weight: 600;
   line-height: .95;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   color: var(--acento);
 }
@@ -368,7 +383,7 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
   font-family: inherit;
   font-size: .92rem;
   font-weight: 550;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   line-height: 1.2;
   cursor: pointer;
   text-decoration: none;
@@ -427,7 +442,7 @@ main { padding-block: clamp(16px, 3vw, 28px) clamp(72px, 10vh, 120px); }
 .boton--ok { --bg: transparent; --fg: var(--ok); --bd: var(--acento-borde); box-shadow: none; }
 .boton--ok:hover:not(:disabled) { --bg: var(--ok-suave); --bd: var(--ok); }
 .boton--bloque { width: 100%; }
-.boton--grande { min-height: 52px; padding-inline: 26px; font-size: 1rem; letter-spacing: -0.012em; }
+.boton--grande { min-height: 52px; padding-inline: 26px; font-size: 1rem; letter-spacing: 0; }
 /* El botón chico casi nunca lleva una frase: lleva un verbo. En versalitas
    ocupa lo mismo y se distingue del texto que tiene al lado. */
 .boton--chico {
@@ -709,7 +724,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .pack--inactivo { opacity: .6; }
 .pack__cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .pack__codigo { font-family: var(--mono); font-size: .92rem; font-weight: 600; letter-spacing: .04em; color: var(--texto-2); }
-.pack__restantes { font-size: 1.9rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.035em; }
+.pack__restantes { font-size: 1.9rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 
 .barra-progreso {
   height: 6px;
@@ -847,13 +862,13 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .resultado--error .resultado__icono    { color: var(--error); }
 .resultado--alerta .resultado__icono   { color: var(--alerta); }
 .resultado--guardada .resultado__icono { color: var(--texto-2); }
-.resultado__titulo { font-size: clamp(1.15rem, 3.2vw, 1.4rem); font-weight: 600; letter-spacing: -0.02em; }
+.resultado__titulo { font-size: clamp(1.15rem, 3.2vw, 1.4rem); font-weight: 600; letter-spacing: 0; }
 .resultado__detalle { color: var(--texto-2); }
 .resultado__restantes {
   font-size: clamp(3rem, 11vw, 4.2rem);
   font-weight: 600; line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 }
 
 /* Selector de cantidad para escaneo en grupo. */
@@ -1160,7 +1175,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   width: 58px; height: 58px; flex: none;
   display: grid; place-items: center;
   border-radius: 50%;
-  font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em;
+  font-size: 1.25rem; font-weight: 600; letter-spacing: 0;
   color: var(--acento-2);
   background: var(--acento-suave);
 }
@@ -1168,7 +1183,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .avatar--master { background: var(--acento); color: var(--sobre-acento); }
 
 .ficha__identidad { display: grid; gap: 4px; min-width: 220px; flex: 1 1 260px; }
-.ficha__nombre { font-size: clamp(1.3rem, 3vw, 1.6rem); font-weight: 600; letter-spacing: -0.025em; line-height: 1.15; }
+.ficha__nombre { font-size: clamp(1.3rem, 3vw, 1.6rem); font-weight: 600; letter-spacing: 0; line-height: 1.15; }
 .ficha__contacto { color: var(--texto-2); font-size: .92rem; display: flex; gap: 6px 16px; flex-wrap: wrap; }
 .ficha__contacto a { color: inherit; text-decoration: none; }
 .ficha__contacto a:hover { color: var(--acento); text-decoration: underline; }
@@ -1234,7 +1249,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .mini-pack--inactivo { opacity: .6; }
 .mini-pack__fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .mini-pack__codigo { font-family: var(--mono); font-weight: 600; letter-spacing: .04em; color: var(--texto-2); }
-.mini-pack__saldo { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.03em; }
+.mini-pack__saldo { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0; }
 
 .dispositivo {
   display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
@@ -1411,7 +1426,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   font-size: clamp(2.4rem, 4.6vw, 3.7rem);
   font-weight: 600;
   line-height: 1.02;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 .entrada__descripcion {
   max-width: 44ch;
@@ -1462,7 +1477,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .cifra__num {
   font-size: clamp(1.7rem, 3.2vw, 2.3rem);
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -1483,7 +1498,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   margin: 0;
   font-size: clamp(1.7rem, 3.4vw, 2.5rem);
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   line-height: 1.08;
 }
 .entrada__seccion-descripcion {
@@ -1531,7 +1546,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   margin: 0 0 12px;
   font-size: clamp(1.3rem, 2.2vw, 1.7rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 .entrada__media-destacada-copy p { margin: 0 0 18px; color: var(--texto-2); }
 .entrada__media-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
@@ -1573,7 +1588,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   margin: 0;
   font-size: clamp(1.7rem, 3.4vw, 2.5rem);
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   line-height: 1.08;
 }
 .entrada__acceso-nota {
@@ -1585,7 +1600,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   margin: 0 0 8px;
   font-size: 1.15rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .entrada__pasos { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 0; max-width: 46ch; counter-reset: paso; }
 .entrada__pasos li {
@@ -1628,7 +1643,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   flex-wrap: wrap;
   padding-block: 28px;
 }
-.entrada__pie-marca { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+.entrada__pie-marca { margin: 0; font-weight: 600; letter-spacing: 0; }
 .entrada__pie-marca span { margin-left: 10px; color: var(--texto-3); font-weight: 400; font-size: .88rem; }
 .entrada__pie-nota { margin: 0; color: var(--texto-3); font-size: .88rem; }
 
@@ -1766,7 +1781,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   margin-bottom: 0;
   font-size: clamp(3.5rem, 7.3vw, 7.7rem);
   font-weight: 620;
-  letter-spacing: -.075em;
+  letter-spacing: 0;
   line-height: .87;
 }
 .entrada__titulo-linea { display: block; }
@@ -1789,7 +1804,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .entrada__telemetria > div { display: grid; grid-template-columns: auto auto; gap: 0 5px; padding: 14px 12px 0 0; border-right: 1px solid var(--borde); }
 .entrada__telemetria > div + div { padding-left: 12px; }
 .entrada__telemetria > div:last-child { border-right: 0; }
-.entrada__telemetria-valor { grid-row: span 2; align-self: baseline; color: var(--texto); font-family: var(--mono); font-size: clamp(1.15rem, 2.2vw, 1.55rem); letter-spacing: -.08em; line-height: 1; }
+.entrada__telemetria-valor { grid-row: span 2; align-self: baseline; color: var(--texto); font-family: var(--mono); font-size: clamp(1.15rem, 2.2vw, 1.55rem); letter-spacing: 0; line-height: 1; }
 .entrada__telemetria-unidad { align-self: baseline; color: var(--acento); font-family: var(--mono); font-size: .63rem; letter-spacing: .1em; text-transform: uppercase; }
 .entrada__telemetria-label { grid-column: 2; color: var(--texto-3); font-family: var(--mono); font-size: .58rem; letter-spacing: .09em; line-height: 1.25; text-transform: uppercase; }
 
@@ -1814,13 +1829,13 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .entrada__hero-coordenada--bottom { bottom: 28px; left: -26px; }
 
 .pagina-entrada .entrada__cifras { border-top-color: var(--borde-fuerte); border-bottom-color: var(--borde); }
-.pagina-entrada .cifra__num { color: var(--texto); font-family: var(--mono); font-size: clamp(1.45rem, 2.8vw, 2.1rem); letter-spacing: -.08em; }
+.pagina-entrada .cifra__num { color: var(--texto); font-family: var(--mono); font-size: clamp(1.45rem, 2.8vw, 2.1rem); letter-spacing: 0; }
 .pagina-entrada .cifra__texto { color: var(--texto-3); font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
 
 .pagina-entrada .entrada__pista-real { margin-top: clamp(92px, 14vw, 180px); content-visibility: auto; contain-intrinsic-size: 1000px; }
 .pagina-entrada .entrada__seccion-cabeza { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: clamp(18px, 3vw, 48px); }
 .entrada__seccion-indice { align-self: start; margin: 0; color: var(--acento); font-family: var(--mono); font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; }
-.pagina-entrada .entrada__seccion-cabeza h2 { grid-column: 1; font-size: clamp(2.3rem, 5vw, 5.4rem); letter-spacing: -.065em; }
+.pagina-entrada .entrada__seccion-cabeza h2 { grid-column: 1; font-size: clamp(2.3rem, 5vw, 5.4rem); letter-spacing: 0; }
 .pagina-entrada .entrada__seccion-descripcion { grid-column: 2; color: var(--texto-2); font-size: 1rem; line-height: 1.55; }
 .pagina-entrada .entrada__foto img,
 .pagina-entrada .entrada__media-foto img { border: 1px solid var(--borde); border-radius: 2px; filter: saturate(.88) contrast(1.06); }
@@ -1830,7 +1845,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .pagina-entrada .entrada__foto-nombre { color: var(--texto-2); }
 .pagina-entrada .entrada__media-destacada { margin-top: clamp(42px, 6vw, 82px); }
 .pagina-entrada .entrada__media-destacada-copy { max-width: 48ch; }
-.pagina-entrada .entrada__media-destacada-copy h3 { font-size: clamp(1.55rem, 2.6vw, 2.2rem); letter-spacing: -.045em; }
+.pagina-entrada .entrada__media-destacada-copy h3 { font-size: clamp(1.55rem, 2.6vw, 2.2rem); letter-spacing: 0; }
 .pagina-entrada .entrada__media-destacada-copy p { color: var(--texto-2); }
 .pagina-entrada .entrada__media-lista li { border-top-color: var(--borde); color: var(--texto-2); }
 .pagina-entrada .entrada__media-lista li span:first-child { color: var(--acento); font-family: var(--mono); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; }
@@ -1842,7 +1857,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 
 .pagina-entrada .entrada__acceso { margin-top: clamp(92px, 14vw, 180px); padding-top: clamp(36px, 5vw, 64px); border-top-color: var(--borde-fuerte); content-visibility: auto; contain-intrinsic-size: 800px; }
 
-.pagina-entrada .entrada__acceso-intro h2 { margin-top: 0; font-size: clamp(2.3rem, 5vw, 5rem); letter-spacing: -.065em; }
+.pagina-entrada .entrada__acceso-intro h2 { margin-top: 0; font-size: clamp(2.3rem, 5vw, 5rem); letter-spacing: 0; }
 .pagina-entrada .entrada__acceso-nota { color: var(--texto-2); }
 .pagina-entrada .entrada__pasos li { border-top-color: var(--borde); color: var(--texto-2); }
 .pagina-entrada .entrada__pasos li::before { color: var(--acento); font-family: var(--mono); }
@@ -2212,7 +2227,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
 .barra__marca {
   gap: 11px;
   color: var(--texto);
-  letter-spacing: -.02em;
+  letter-spacing: 0;
 }
 .barra__marca::after {
   width: 5px;
@@ -2276,7 +2291,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
 .encabezado-pista h1 {
   max-width: 15ch;
   font-size: clamp(2.3rem, 5vw, 4.6rem);
-  letter-spacing: -.065em;
+  letter-spacing: 0;
   line-height: .96;
 }
 .encabezado-pista p { max-width: 58ch; margin-top: 10px; color: var(--texto-2); }
@@ -2323,7 +2338,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
 .tarjeta:hover { border-color: rgba(226, 240, 231, .2); }
 .tarjeta__titulo { margin-bottom: clamp(16px, 2.4vw, 24px); }
 .tarjeta__titulo h2,
-.tarjeta__titulo h3 { font-size: clamp(1.12rem, 1.8vw, 1.42rem); letter-spacing: -.035em; }
+.tarjeta__titulo h3 { font-size: clamp(1.12rem, 1.8vw, 1.42rem); letter-spacing: 0; }
 .metrica {
   position: relative;
   min-height: 118px;
@@ -2342,7 +2357,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
   content: '';
   background: var(--borde-fuerte);
 }
-.metrica__valor { font-size: clamp(1.8rem, 3.4vw, 2.6rem); letter-spacing: -.07em; }
+.metrica__valor { font-size: clamp(1.8rem, 3.4vw, 2.6rem); letter-spacing: 0; }
 .metrica__etiqueta { color: var(--texto-3); }
 
 .saldo {
@@ -2390,7 +2405,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
   z-index: 1;
   font-size: clamp(5.2rem, 15vw, 10rem);
   font-weight: 620;
-  letter-spacing: -.1em;
+  letter-spacing: 0;
   text-shadow: 0 0 30px rgba(61, 254, 64, .23);
 }
 .saldo__texto { position: relative; z-index: 1; color: var(--texto-2); font-size: 1rem; }
@@ -2518,7 +2533,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .74); backdrop-filter: blur(8px); }
     var(--superficie);
 }
 .resultado__icono { font-size: 2.6rem; filter: drop-shadow(0 0 14px currentColor); }
-.resultado__titulo { font-size: clamp(1.45rem, 3vw, 2rem); letter-spacing: -.05em; }
+.resultado__titulo { font-size: clamp(1.45rem, 3vw, 2rem); letter-spacing: 0; }
 .resultado__restantes { font-size: clamp(4rem, 13vw, 6rem); color: var(--acento); text-shadow: 0 0 26px rgba(61, 254, 64, .35); }
 .selector-cantidad { padding: 10px 0; }
 .btn-cantidad { min-width: 46px; height: 46px; border-radius: 999px; }
@@ -2611,7 +2626,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 .pagina-entrada .entrada__hero h1 {
   max-width: 8ch;
   font-size: clamp(3.8rem, 6.4vw, 6.8rem);
-  letter-spacing: -.095em;
+  letter-spacing: 0;
   line-height: .84;
   text-wrap: balance;
 }
@@ -2674,7 +2689,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   box-shadow: 0 0 16px rgba(61, 254, 64, .55);
 }
 .pagina-entrada .entrada__seccion-cabeza h2,
-.pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(2.8rem, 6.2vw, 6.8rem); letter-spacing: -.085em; line-height: .88; }
+.pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(2.8rem, 6.2vw, 6.8rem); letter-spacing: 0; line-height: .88; }
 .pagina-entrada .entrada__foto img,
 .pagina-entrada .entrada__media-foto img { border-color: rgba(226, 240, 231, .2); border-radius: var(--radio-s); }
 .pagina-entrada .entrada__media-destacada {
@@ -3045,7 +3060,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   max-width: 6ch;
   font-size: clamp(4.8rem, 10.5vw, 10.8rem);
   font-weight: 600;
-  letter-spacing: -.105em;
+  letter-spacing: 0;
   line-height: .79;
   text-wrap: balance;
 }
@@ -3187,7 +3202,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 .pagina-entrada .entrada__acceso-intro h2 {
   max-width: 7ch;
   font-size: clamp(4rem, 9vw, 9.5rem);
-  letter-spacing: -.105em;
+  letter-spacing: 0;
   line-height: .79;
 }
 
@@ -3258,7 +3273,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 .pagina-entrada .entrada__media-destacada-copy h3 {
   margin: 0;
   font-size: clamp(2.4rem, 4.8vw, 5.2rem);
-  letter-spacing: -.08em;
+  letter-spacing: 0;
   line-height: .86;
 }
 .pagina-entrada .entrada__media-destacada-copy p { margin-top: 24px; color: var(--texto-2); }
@@ -3366,6 +3381,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   .pagina-entrada .entrada__media-foto { transform: none !important; transition: none !important; }
 }
 
+/* ==========================================================================
    Sistema de interacción
 
    La interfaz responde como una pieza de pit lane: el hover prepara, el clic
@@ -3743,6 +3759,824 @@ input, select, textarea {
     width: min(100%, 620px);
     margin-left: 0;
   }
+}
+
+/* ==========================================================================
+   Tipografía de pista y hovers de alto voltaje
+
+   La última palabra sobre cómo se lee y cómo responde la interfaz.
+
+   Tipos. Saira ancha (wdth 125) es la voz de carrera: titulares en versales,
+   cifras y rótulos, siempre con aire positivo entre letras —ninguna letra
+   toca a su vecina—. Sora lleva todo el texto corrido. La mono queda solo
+   para lo que se teclea o se compara carácter a carácter: códigos y claves.
+
+   Hovers. Cada control reacciona como un coche en parrilla: se inclina hacia
+   delante, suelta estelas y se enciende. Lo intenso vive dentro de
+   `(hover: hover)`; en táctil queda la respuesta al toque, y quien pide menos
+   movimiento recibe los estados finales sin viaje.
+   ========================================================================== */
+
+:root {
+  --track-display: .018em;
+  --track-titular: .012em;
+  --track-rotulo: .2em;
+  --track-boton: .11em;
+  --curva-turbo: cubic-bezier(.19, 1, .22, 1);
+  --curva-resorte: cubic-bezier(.34, 1.56, .64, 1);
+  --t-turbo: 420ms;
+  --inclinacion: -13deg;
+  --estela: rgba(61, 254, 64, .9);
+}
+
+/* --- Texto corrido ------------------------------------------------------ */
+
+body {
+  font-family: var(--fuente);
+  font-weight: 400;
+  letter-spacing: .004em;
+  line-height: 1.62;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+}
+
+p, li, td, dd { text-wrap: pretty; }
+
+/* Los controles del navegador no heredan la letra por defecto: sin esto, un
+   <button> que no es `.boton` —la opción de un pack, por ejemplo— sale en
+   la fuente del sistema. */
+button, input, select, textarea { font-family: inherit; }
+
+.opcion-pack__entradas {
+  font-family: var(--display);
+  font-stretch: 118%;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.opcion-pack__precio {
+  font-family: var(--display);
+  font-stretch: 112%;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+
+/* --- Titulares: la voz de carrera ----------------------------------------- */
+
+h1, h2, h3,
+.encabezado-pista h1,
+.tarjeta__titulo h2,
+.tarjeta__titulo h3,
+.ficha__nombre,
+.resultado__titulo,
+.entrada__acceso-subtitulo,
+.entrada__pie-marca,
+.barra__marca {
+  font-family: var(--display);
+  font-stretch: 118%;
+  font-weight: 700;
+  letter-spacing: var(--track-titular);
+  line-height: 1.04;
+  font-kerning: normal;
+  /* Saira se escribe en versales: en caja baja su «y» parece una «u» con
+     cola, y en mayúsculas todas sus letras son limpias y de pista. */
+  text-transform: uppercase;
+}
+
+h2, h3,
+.tarjeta__titulo h2,
+.tarjeta__titulo h3,
+.resultado__titulo,
+.entrada__acceso-subtitulo { letter-spacing: .04em; }
+
+.tarjeta__titulo h2,
+.tarjeta__titulo h3 { font-size: clamp(1rem, 1.45vw, 1.18rem); }
+
+.encabezado-pista h1 {
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: .96;
+  letter-spacing: var(--track-display);
+  text-transform: uppercase;
+}
+
+/* --- Cifras: dígitos anchos, iguales y alineados -------------------------- */
+
+.saldo__numero,
+.metrica__valor,
+.pack__restantes,
+.mini-pack__saldo,
+.cifra__num,
+.resultado__restantes,
+.entrada__telemetria-valor {
+  font-family: var(--display);
+  font-stretch: 125%;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: .01em;
+}
+
+.saldo__numero { font-weight: 800; line-height: .9; }
+
+/* En la rejilla de métricas un importe como «$1.250,00» tiene que caber en
+   una tarjeta estrecha: se estrecha el ancho de la letra antes que el tamaño. */
+.metrica__valor {
+  font-stretch: 106%;
+  font-size: clamp(1.4rem, 2.1vw, 1.95rem);
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* --- Rótulos: versales anchas con mucho aire ------------------------------ */
+
+.campo > label,
+.campo__etiqueta,
+.seccion-marca,
+.etiqueta,
+.saldo::before,
+.cifra__texto,
+.pagina-entrada .cifra__texto,
+.pagina-entrada .entrada__accion,
+.pagina-entrada .entrada__hero-foto figcaption,
+.pagina-entrada .entrada__media-lista li span:first-child,
+.pagina-entrada .entrada__foto figcaption,
+.pagina-entrada .entrada__seccion-indice,
+.pagina-entrada .entrada__meta,
+th {
+  font-family: var(--display);
+  font-stretch: 122%;
+  font-weight: 600;
+  letter-spacing: var(--track-rotulo);
+  text-transform: uppercase;
+}
+
+.campo > label,
+.campo__etiqueta { font-size: .68rem; letter-spacing: .16em; }
+
+/* --- Botones: chasis inclinado ------------------------------------------- */
+
+/* El botón deja de ser una pastilla y pasa a ser un chasis: el fondo se
+   dibuja en `::before`, inclinado hacia delante como el número de un coche
+   de carreras, y el texto queda recto encima. Así el halo no se recorta y la
+   inclinación no deforma las letras. */
+.boton:not(.boton--enlace):not(.boton--nav) {
+  --chasis: var(--superficie-2);
+  --chasis-borde: var(--borde-fuerte);
+  --chasis-halo: 0 0 0 0 transparent;
+  --texto-boton: var(--texto);
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--texto-boton);
+  box-shadow: none;
+  font-family: var(--display);
+  font-stretch: 116%;
+  font-weight: 650;
+  font-size: .8rem;
+  letter-spacing: var(--track-boton);
+  text-transform: uppercase;
+  padding-inline: 26px;
+  transition:
+    color var(--t-hover) var(--curva-hover),
+    letter-spacing var(--t-turbo) var(--curva-turbo),
+    transform var(--t-turbo) var(--curva-turbo),
+    opacity var(--t-hover) var(--curva-hover);
+}
+
+.boton:not(.boton--enlace):not(.boton--nav)::before {
+  position: absolute;
+  /* La inclinación saca las esquinas unos 6 px por cada lado: se recogen
+     aquí para que el chasis respete el margen de la página. */
+  inset: 0 6px;
+  z-index: -1;
+  border-radius: 4px;
+  content: '';
+  pointer-events: none;
+  background:
+    linear-gradient(104deg, transparent 30%, rgba(255, 255, 255, .5) 47%, rgba(255, 255, 255, 0) 60%) -160% 0 / 60% 100% no-repeat,
+    var(--chasis);
+  box-shadow: inset 0 0 0 1px var(--chasis-borde), var(--chasis-halo);
+  transform: skewX(var(--inclinacion));
+  transition:
+    background-color var(--t-hover) var(--curva-hover),
+    box-shadow var(--t-turbo) var(--curva-turbo),
+    transform var(--t-turbo) var(--curva-turbo);
+}
+
+/* Las estelas: tres trazos que salen por detrás cuando el botón acelera. */
+.boton:not(.boton--enlace):not(.boton--nav)::after {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 4px);
+  left: auto;
+  bottom: auto;
+  width: 30px;
+  height: 2px;
+  border-radius: 2px;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--estela));
+  box-shadow: -10px -8px 0 -.5px var(--estela-2, rgba(61, 254, 64, .45)), -16px 8px 0 -.5px var(--estela-2, rgba(61, 254, 64, .45));
+  opacity: 0;
+  transform: translate3d(22px, -50%, 0) scaleX(.2);
+  transform-origin: right center;
+  animation: none;
+  transition: opacity 200ms var(--curva-hover), transform var(--t-turbo) var(--curva-turbo);
+}
+
+.boton.boton--principal,
+.pagina-entrada .boton.boton--principal {
+  --chasis: var(--acento);
+  --chasis-borde: rgba(255, 255, 255, .22);
+  --chasis-halo: 0 12px 30px -16px rgba(61, 254, 64, .85);
+  --texto-boton: var(--sobre-acento);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--sobre-acento);
+  font-weight: 750;
+}
+
+.boton.boton--fantasma { --chasis: rgba(226, 240, 231, .03); --chasis-borde: var(--borde-fuerte); --texto-boton: var(--texto-2); }
+.boton.boton--peligro { --chasis: rgba(255, 116, 109, .05); --chasis-borde: rgba(255, 116, 109, .45); --texto-boton: var(--error); --estela: var(--error); --estela-2: rgba(255, 116, 109, .45); }
+.boton.boton--ok { --chasis: rgba(61, 254, 64, .05); --chasis-borde: var(--acento-borde); --texto-boton: var(--ok); }
+.boton.boton--chico { min-height: 36px; padding-inline: 16px; font-size: .68rem; letter-spacing: .12em; }
+.boton.boton--grande { min-height: 54px; padding-inline: 34px; font-size: .86rem; }
+.boton.boton--bloque { width: 100%; }
+
+.boton:not(.boton--enlace):not(.boton--nav):disabled::before { background: var(--superficie-2); box-shadow: inset 0 0 0 1px var(--borde); }
+.boton:not(.boton--enlace):not(.boton--nav):disabled { color: var(--texto-3); }
+
+.boton:not(.boton--enlace):not(.boton--nav):focus-visible { outline: none; }
+.boton:not(.boton--enlace):not(.boton--nav):focus-visible::before {
+  box-shadow: inset 0 0 0 1px var(--chasis-borde), 0 0 0 2px var(--fondo), 0 0 0 4px var(--acento);
+}
+
+.boton:not(.boton--enlace):not(.boton--nav):active:not(:disabled) {
+  transform: translateY(1px) scale(.97);
+  transition-duration: 90ms;
+}
+
+.boton--enlace,
+.boton--nav {
+  font-family: var(--fuente);
+  letter-spacing: .01em;
+}
+
+/* Imán: la portada desplaza sus dos acciones hacia el puntero con la
+   propiedad `translate`, que se suma a `transform` sin pisar el hover. */
+.pagina-entrada .entrada__hero-acciones .boton:not(.boton--enlace),
+.pagina-entrada .entrada__hero-acciones .entrada__enlace {
+  translate: var(--iman-x, 0px) var(--iman-y, 0px);
+  transition:
+    color var(--t-hover) var(--curva-hover),
+    letter-spacing var(--t-turbo) var(--curva-turbo),
+    transform var(--t-turbo) var(--curva-turbo),
+    translate 260ms var(--curva-hover),
+    opacity var(--t-hover) var(--curva-hover);
+}
+
+/* --- Pestañas del acceso -------------------------------------------------- */
+
+.pestana,
+.pagina-entrada .entrada__acceso-panel .pestana {
+  font-family: var(--display);
+  font-stretch: 118%;
+  font-weight: 650;
+  font-size: .76rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* --- Portada: titulares monumentales ------------------------------------- */
+
+.pagina-entrada .entrada__hero-copy { max-width: min(48vw, 720px); }
+
+.pagina-entrada .entrada__hero h1 {
+  max-width: none;
+  font-size: clamp(3.3rem, 8.4vw, 8.6rem);
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: .9;
+  letter-spacing: var(--track-display);
+  text-transform: uppercase;
+  text-wrap: nowrap;
+}
+
+.pagina-entrada .entrada__titulo-linea {
+  display: block;
+  width: fit-content;
+  transform-origin: left 80%;
+  transition:
+    transform 520ms var(--curva-turbo),
+    text-shadow 520ms var(--curva-turbo),
+    letter-spacing 520ms var(--curva-turbo),
+    color 260ms var(--curva-hover);
+}
+
+/* La línea de acento se dibuja en contorno encendido: el verde deja de ser
+   una mancha y pasa a ser trazo de neón. Al pasar por encima se rellena. */
+.pagina-entrada .entrada__titulo-linea--acento {
+  color: var(--acento);
+  text-shadow: 0 0 42px rgba(61, 254, 64, .28);
+}
+
+.pagina-entrada .entrada__seccion-cabeza h2,
+.pagina-entrada .entrada__acceso-intro h2 {
+  max-width: none;
+  font-size: clamp(2.7rem, 7vw, 7.2rem);
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: .92;
+  letter-spacing: var(--track-display);
+  text-transform: uppercase;
+  width: fit-content;
+  transform-origin: left 80%;
+  transition: transform 520ms var(--curva-turbo), text-shadow 520ms var(--curva-turbo), color 260ms var(--curva-hover);
+}
+
+.pagina-entrada .entrada__media-destacada-copy h3 {
+  font-size: clamp(2rem, 4vw, 4.1rem);
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: .95;
+  letter-spacing: var(--track-display);
+  text-transform: uppercase;
+}
+
+.pagina-entrada .entrada__descripcion,
+.pagina-entrada .entrada__seccion-descripcion,
+.pagina-entrada .entrada__acceso-nota,
+.pagina-entrada .entrada__media-destacada-copy p {
+  font-family: var(--fuente);
+  font-weight: 300;
+  letter-spacing: .01em;
+  line-height: 1.5;
+}
+
+.pagina-entrada .entrada__descripcion { max-width: 30ch; }
+
+/* `content-visibility: auto` trae contención de pintado: recorta todo lo que
+   sale de la sección, y el titular empieza justo en su borde. Sin esto, la
+   estela y el halo del hover quedan cortados a cuchillo. Las fotos de dentro
+   ya cargan en diferido, así que la contención apenas ahorraba nada. */
+.pagina-entrada .entrada__pista-real,
+.pagina-entrada .entrada__acceso { content-visibility: visible; }
+
+.pagina-entrada .cifra__num {
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 3.2vw, 2.7rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pagina-entrada .cifra__texto,
+.pagina-entrada .entrada__media-lista li span:first-child { font-size: .64rem; }
+
+.pagina-entrada .entrada__accion {
+  font-size: .7rem;
+  letter-spacing: .22em;
+  transition:
+    color var(--t-hover) var(--curva-hover),
+    letter-spacing var(--t-turbo) var(--curva-turbo),
+    border-color var(--t-hover) var(--curva-hover),
+    box-shadow var(--t-turbo) var(--curva-turbo);
+}
+.pagina-entrada .entrada__accion::after { display: inline-block; font-family: var(--fuente); }
+
+.pagina-entrada .entrada__enlace {
+  position: relative;
+  padding-bottom: 6px;
+  border-bottom: 0;
+  font-family: var(--display);
+  font-stretch: 118%;
+  font-size: .78rem;
+  font-weight: 650;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  transition:
+    color var(--t-hover) var(--curva-hover),
+    letter-spacing var(--t-turbo) var(--curva-turbo),
+    transform var(--t-turbo) var(--curva-turbo);
+}
+
+/* El subrayado es una recta de pista: gris en reposo, y al pasar el puntero
+   un cometa verde la recorre de punta a punta. */
+.pagina-entrada .entrada__enlace::before,
+.pagina-entrada .entrada__enlace::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  content: '';
+  pointer-events: none;
+}
+.pagina-entrada .entrada__enlace::before { background: var(--borde-fuerte); }
+.pagina-entrada .entrada__enlace::after {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(61, 254, 64, .35) 40%, var(--acento) 92%, #fff);
+  box-shadow: 0 0 12px rgba(61, 254, 64, .7);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 560ms var(--curva-turbo);
+}
+
+/* --- Figuras: visor de cámara -------------------------------------------- */
+
+/* Cuatro esquinas de visor que se cierran sobre la foto y una línea de
+   barrido que la cruza, como el retorno de una cámara de a bordo. */
+.pagina-entrada .entrada__foto,
+.pagina-entrada .entrada__media-foto {
+  position: relative;
+  overflow: hidden;
+}
+
+.pagina-entrada .entrada__foto::before,
+.pagina-entrada .entrada__media-foto::before {
+  position: absolute;
+  inset: 14px;
+  z-index: 2;
+  content: '';
+  pointer-events: none;
+  --esq: 22px;
+  background:
+    linear-gradient(var(--acento), var(--acento)) top left / var(--esq) 2px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) top left / 2px var(--esq) no-repeat,
+    linear-gradient(var(--acento), var(--acento)) top right / var(--esq) 2px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) top right / 2px var(--esq) no-repeat,
+    linear-gradient(var(--acento), var(--acento)) bottom left / var(--esq) 2px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) bottom left / 2px var(--esq) no-repeat,
+    linear-gradient(var(--acento), var(--acento)) bottom right / var(--esq) 2px no-repeat,
+    linear-gradient(var(--acento), var(--acento)) bottom right / 2px var(--esq) no-repeat;
+  filter: drop-shadow(0 0 6px rgba(61, 254, 64, .8));
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 260ms var(--curva-hover), transform 620ms var(--curva-turbo), inset 620ms var(--curva-turbo);
+}
+
+.pagina-entrada .entrada__foto::after,
+.pagina-entrada .entrada__media-foto::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  height: 38%;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(61, 254, 64, .1) 80%, rgba(61, 254, 64, .6) 99%, #fff);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: translate3d(0, -110%, 0);
+}
+
+.pagina-entrada .entrada__foto img,
+.pagina-entrada .entrada__media-foto img,
+.pagina-entrada .entrada__hero-foto picture img {
+  transition: transform 1100ms var(--curva-turbo), filter 600ms var(--curva-hover);
+  will-change: transform;
+}
+
+/* Foto del coche: se inclina hacia el puntero y un reflejo sigue la mano. */
+.pagina-entrada .entrada__hero-foto {
+  transform: perspective(1100px) rotateX(var(--giro-x, 0deg)) rotateY(var(--giro-y, 0deg));
+  transform-style: preserve-3d;
+  transition:
+    transform 700ms var(--curva-turbo),
+    border-color var(--t-hover) var(--curva-hover),
+    box-shadow 520ms var(--curva-turbo);
+}
+
+.pagina-entrada .entrada__hero-foto picture {
+  position: relative;
+  overflow: hidden;
+}
+
+.pagina-entrada .entrada__hero-foto picture::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background: radial-gradient(circle at var(--reflejo-x, 50%) var(--reflejo-y, 30%), rgba(255, 255, 255, .26), rgba(61, 254, 64, .07) 22%, transparent 48%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 420ms var(--curva-hover);
+}
+
+/* --- Cifras de la portada ------------------------------------------------- */
+
+.pagina-entrada .cifra { overflow: hidden; }
+.pagina-entrada .cifra__num {
+  display: inline-block;
+  transition: transform 520ms var(--curva-resorte), color 240ms var(--curva-hover), text-shadow 420ms var(--curva-turbo);
+}
+.pagina-entrada .cifra__texto { transition: color 240ms var(--curva-hover), letter-spacing 520ms var(--curva-turbo); }
+.pagina-entrada .cifra::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--acento), rgba(61, 254, 64, 0));
+  box-shadow: 0 0 14px rgba(61, 254, 64, .6);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 640ms var(--curva-turbo);
+}
+
+/* --- Lista técnica: resaltado de vuelta rápida ---------------------------- */
+
+.pagina-entrada .entrada__media-lista li {
+  position: relative;
+  isolation: isolate;
+  transition: padding-left 420ms var(--curva-turbo), border-color 240ms var(--curva-hover);
+}
+.pagina-entrada .entrada__media-lista li::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(61, 254, 64, .16), rgba(61, 254, 64, .02) 70%, transparent);
+  box-shadow: inset 3px 0 0 var(--acento);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 520ms var(--curva-turbo);
+}
+.pagina-entrada .entrada__media-lista li span { transition: color 240ms var(--curva-hover), letter-spacing 520ms var(--curva-turbo), transform 520ms var(--curva-turbo); }
+
+/* --- Campos: el rótulo se enciende con el foco ---------------------------- */
+
+.campo > label { transition: color 240ms var(--curva-hover), letter-spacing 520ms var(--curva-turbo); }
+.campo:focus-within > label { color: var(--acento); letter-spacing: .22em; }
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  animation: campoEncendido 1.8s ease-in-out infinite;
+}
+@keyframes campoEncendido {
+  0%, 100% { box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px rgba(61, 254, 64, .12), 0 0 22px -6px rgba(61, 254, 64, .6); }
+  50% { box-shadow: 0 0 0 1px var(--acento), 0 0 0 6px rgba(61, 254, 64, .06), 0 0 30px -4px rgba(61, 254, 64, .75); }
+}
+
+/* --- Panel de acceso: foco de luz que sigue al puntero -------------------- */
+
+.pagina-entrada .entrada__acceso-panel { isolation: isolate; }
+.pagina-entrada .entrada__acceso-panel > * { position: relative; z-index: 1; }
+.pagina-entrada .entrada__acceso-panel::before {
+  z-index: 0;
+  opacity: 0;
+  background-image: radial-gradient(520px circle at var(--foco-x, 50%) var(--foco-y, 0%), rgba(61, 254, 64, .12), transparent 60%);
+  background-size: auto;
+  transition: opacity 520ms var(--curva-hover);
+}
+
+/* ==========================================================================
+   Estados de hover (solo con puntero real)
+   ========================================================================== */
+
+@media (hover: hover) {
+  /* Botones: acelera, se inclina, brilla y suelta estelas. */
+  .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled) {
+    transform: translateY(-2px);
+    letter-spacing: .17em;
+    color: var(--texto-boton-hover, var(--texto-boton));
+  }
+  .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::before {
+    transform: skewX(-18deg) scaleX(1.035);
+    background-position: 260% 0, 0 0;
+    transition:
+      background-position 720ms var(--curva-turbo),
+      box-shadow var(--t-turbo) var(--curva-turbo),
+      transform var(--t-turbo) var(--curva-turbo);
+  }
+  .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::after {
+    opacity: 1;
+    transform: translate3d(0, -50%, 0) scaleX(1);
+    animation: estelas 520ms linear 420ms infinite;
+  }
+
+  .boton.boton--principal:hover:not(:disabled) {
+    --chasis: #62ff65;
+    --chasis-halo: 0 0 0 1px rgba(61, 254, 64, .5), 0 18px 44px -12px rgba(61, 254, 64, .95), 0 0 70px -14px rgba(61, 254, 64, .8);
+    color: var(--sobre-acento);
+    background: transparent;
+    box-shadow: none;
+  }
+  .boton.boton--fantasma:hover:not(:disabled) {
+    --chasis: rgba(61, 254, 64, .1);
+    --chasis-borde: var(--acento);
+    --chasis-halo: 0 0 34px -10px rgba(61, 254, 64, .7);
+    --texto-boton-hover: var(--texto);
+    background: transparent;
+  }
+  .boton.boton--peligro:hover:not(:disabled) {
+    --chasis: rgba(255, 116, 109, .14);
+    --chasis-borde: var(--error);
+    --chasis-halo: 0 0 34px -10px rgba(255, 116, 109, .75);
+    background: transparent;
+  }
+  .boton.boton--ok:hover:not(:disabled) {
+    --chasis: rgba(61, 254, 64, .14);
+    --chasis-borde: var(--acento);
+    --chasis-halo: 0 0 34px -10px rgba(61, 254, 64, .7);
+    background: transparent;
+  }
+  .boton:not(.boton--enlace):not(.boton--nav):not(.boton--principal):not(.boton--fantasma):not(.boton--peligro):not(.boton--ok):hover:not(:disabled) {
+    --chasis-borde: var(--acento);
+    --chasis-halo: 0 0 30px -12px rgba(61, 254, 64, .7);
+  }
+
+  .boton--enlace:hover:not(:disabled) { letter-spacing: .03em; }
+  .boton--nav:hover:not(:disabled) { color: var(--acento); text-shadow: 0 0 16px rgba(61, 254, 64, .55); }
+
+  /* Pestañas */
+  .pestana:hover { letter-spacing: .17em; text-shadow: 0 0 14px rgba(61, 254, 64, .45); }
+  .pestana[aria-selected="true"]:hover { text-shadow: none; }
+
+  /* Titulares de la portada: al pasar el puntero salen disparados con
+     estelas de velocidad detrás. */
+  .pagina-entrada .entrada__titulo-linea:hover,
+  .pagina-entrada .entrada__seccion-cabeza h2:hover,
+  .pagina-entrada .entrada__acceso-intro h2:hover {
+    transform: translateX(.08em) skewX(-9deg);
+    text-shadow:
+      -.06em 0 .03em rgba(61, 254, 64, .5),
+      -.16em 0 .08em rgba(61, 254, 64, .26),
+      -.3em 0 .14em rgba(61, 254, 64, .12),
+      0 0 38px rgba(61, 254, 64, .3);
+  }
+  .pagina-entrada .entrada__titulo-linea--acento:hover {
+    color: #fff;
+    text-shadow:
+      -.06em 0 .03em rgba(61, 254, 64, .95),
+      -.16em 0 .08em rgba(61, 254, 64, .55),
+      -.3em 0 .14em rgba(61, 254, 64, .25),
+      0 0 50px rgba(61, 254, 64, .9);
+  }
+
+  /* Acción de la cabecera: la flecha arranca y vuelve a entrar. */
+  .pagina-entrada .entrada__accion:hover {
+    color: var(--acento);
+    letter-spacing: .3em;
+    border-left-color: var(--acento);
+    box-shadow: -1px 0 14px -4px rgba(61, 254, 64, .9);
+    transform: none;
+  }
+  .pagina-entrada .entrada__accion:hover::after {
+    color: var(--acento);
+    animation: arranque 720ms var(--curva-turbo) infinite;
+  }
+
+  .pagina-entrada .entrada__marca:hover .entrada__marca-sello img {
+    filter: drop-shadow(0 0 12px rgba(61, 254, 64, .65));
+    transform: translateX(3px) skewX(-6deg);
+  }
+
+  /* Enlace «Ver la pista» */
+  .pagina-entrada .entrada__enlace:hover {
+    color: var(--texto);
+    letter-spacing: .2em;
+    transform: translateX(6px);
+  }
+  .pagina-entrada .entrada__enlace:hover::after { transform: scaleX(1); }
+
+  /* Fotos */
+  .pagina-entrada .entrada__foto:hover::before,
+  .pagina-entrada .entrada__media-foto:hover::before {
+    opacity: 1;
+    transform: none;
+    inset: 22px;
+  }
+  .pagina-entrada .entrada__foto:hover::after,
+  .pagina-entrada .entrada__media-foto:hover::after {
+    animation: barridoCamara 1.6s var(--curva-entrada) infinite;
+  }
+  .pagina-entrada .entrada__foto:hover img,
+  .pagina-entrada .entrada__media-foto:hover img {
+    transform: scale(1.07);
+    filter: saturate(1.15) contrast(1.12) brightness(1.05);
+  }
+
+  .pagina-entrada .entrada__hero-foto:hover {
+    transform: perspective(1100px) rotateX(var(--giro-x, 0deg)) rotateY(var(--giro-y, 0deg)) translateY(-6px) scale(1.015);
+    border-color: var(--acento);
+    box-shadow: 0 50px 110px -40px rgba(0, 0, 0, .98), 0 0 90px -24px rgba(61, 254, 64, .75);
+  }
+  .pagina-entrada .entrada__hero-foto:hover::before { border-color: rgba(61, 254, 64, .7); inset: 9px; transition: inset 520ms var(--curva-turbo), border-color 260ms; }
+  .pagina-entrada .entrada__hero-foto:hover picture::after { opacity: 1; }
+  .pagina-entrada .entrada__hero-foto:hover picture img { transform: scale(1.06); filter: saturate(1.1) contrast(1.14) brightness(.98); }
+  .pagina-entrada .entrada__hero-foto:hover figcaption span { letter-spacing: .24em; }
+  .pagina-entrada .entrada__hero-foto figcaption span { transition: letter-spacing 520ms var(--curva-turbo); }
+
+  /* Cifras */
+  .pagina-entrada .cifra:hover .cifra__num {
+    color: var(--acento);
+    transform: translateY(-4px) skewX(-8deg);
+    text-shadow: -.08em 0 .06em rgba(61, 254, 64, .45), 0 0 26px rgba(61, 254, 64, .55);
+  }
+  .pagina-entrada .cifra:hover .cifra__texto { color: var(--texto); letter-spacing: .28em; }
+  .pagina-entrada .cifra:hover::after { transform: scaleX(1); }
+
+  /* Lista técnica */
+  .pagina-entrada .entrada__media-lista li:hover { padding-left: 16px; border-top-color: var(--acento-borde); }
+  .pagina-entrada .entrada__media-lista li:hover::before { transform: scaleX(1); }
+  .pagina-entrada .entrada__media-lista li:hover span:first-child { letter-spacing: .28em; }
+  .pagina-entrada .entrada__media-lista li:hover span:last-child { color: var(--texto); transform: translateX(6px); }
+
+  /* Panel de acceso */
+  .pagina-entrada .entrada__acceso-panel:hover::before { opacity: 1; }
+
+  /* Tarjetas y packs de la app: filo de luz que recorre el canto. */
+  .tarjeta:hover::before {
+    background: linear-gradient(90deg, transparent, var(--acento), transparent);
+    animation: filoTarjeta 1.4s var(--curva-entrada) infinite;
+  }
+}
+
+@keyframes estelas {
+  0% { transform: translate3d(0, -50%, 0) scaleX(1); opacity: 1; }
+  50% { transform: translate3d(-6px, -50%, 0) scaleX(1.3); opacity: .7; }
+  100% { transform: translate3d(0, -50%, 0) scaleX(1); opacity: 1; }
+}
+
+@keyframes arranque {
+  0% { transform: translateX(0); opacity: 1; filter: none; }
+  45% { transform: translateX(14px); opacity: 0; filter: blur(2px); }
+  46% { transform: translateX(-12px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; filter: none; }
+}
+
+@keyframes barridoCamara {
+  0% { transform: translate3d(0, -110%, 0); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translate3d(0, 290%, 0); opacity: 0; }
+}
+
+@keyframes filoTarjeta {
+  0% { transform: translateX(-60%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+
+/* --- Móvil: los titulares caben enteros ---------------------------------- */
+
+@media (max-width: 900px) {
+  .pagina-entrada .entrada__hero-copy { max-width: 100%; }
+}
+
+@media (max-width: 620px) {
+  /* Una palabra larga como «Administración» no se puede partir: en el
+     teléfono la letra se recoge a lo ancho y baja de tamaño antes que
+     desbordar la pantalla. */
+  .encabezado-pista h1 {
+    font-size: clamp(1.6rem, 7.4vw, 2.6rem);
+    font-stretch: 108%;
+    overflow-wrap: break-word;
+  }
+  h1, h2, h3 { overflow-wrap: break-word; }
+  .pagina-entrada .entrada__hero-copy { max-width: 100%; }
+  .pagina-entrada .entrada__hero h1 { font-size: clamp(2.6rem, 14.2vw, 4.6rem); }
+  .pagina-entrada .entrada__seccion-cabeza h2,
+  .pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(2.3rem, 12.5vw, 4rem); }
+  .pagina-entrada .entrada__media-destacada-copy h3 { font-size: clamp(1.9rem, 10vw, 3rem); }
+  .boton.boton--grande { padding-inline: 28px; }
+  .pagina-entrada .entrada__hero-foto figcaption { right: 16px; bottom: 14px; left: 16px; font-size: .5rem; letter-spacing: .12em; white-space: nowrap; }
+}
+
+/* --- Menos movimiento: estados finales, sin viaje ------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled),
+  .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::before,
+  .pagina-entrada .entrada__titulo-linea:hover,
+  .pagina-entrada .entrada__seccion-cabeza h2:hover,
+  .pagina-entrada .entrada__acceso-intro h2:hover,
+  .pagina-entrada .entrada__enlace:hover,
+  .pagina-entrada .cifra:hover .cifra__num,
+  .pagina-entrada .entrada__media-lista li:hover span:last-child,
+  .pagina-entrada .entrada__foto:hover img,
+  .pagina-entrada .entrada__media-foto:hover img,
+  .pagina-entrada .entrada__hero-foto:hover picture img,
+  .pagina-entrada .entrada__marca:hover .entrada__marca-sello img { transform: none !important; }
+  .boton:not(.boton--enlace):not(.boton--nav)::before { transform: skewX(var(--inclinacion)) !important; }
+  .boton:not(.boton--enlace):not(.boton--nav)::after,
+  .pagina-entrada .entrada__foto::after,
+  .pagina-entrada .entrada__media-foto::after { display: none; }
+  .pagina-entrada .entrada__hero-foto { transform: none !important; }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  .tarjeta:hover::before { animation: none; }
 }
 
 @media print {
