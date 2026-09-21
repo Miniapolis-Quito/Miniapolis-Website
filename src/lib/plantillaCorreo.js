@@ -53,7 +53,7 @@ export function plural(cantidad, singular, pluralForma) {
 /** Un botón que se ve igual en Gmail, Outlook y Apple Mail. */
 export function boton(enlace, texto) {
   return (
-    `<a href="${escaparHtml(enlace)}" style="display:inline-block;background:#000;color:#3cfe3f;padding:12px 20px;` +
+    `<a href="${escaparHtml(enlace)}" style="display:inline-block;background:#000;color:#7ed500;padding:12px 20px;` +
     `border-radius:6px;text-decoration:none;font-weight:bold">${escaparHtml(texto)}</a>`
   );
 }

@@ -171,7 +171,7 @@ test('el cliente descarga un pase firmado con su saldo dentro', async () => {
   assert.equal(pase.passTypeIdentifier, 'pass.ec.prueba.entradas');
   assert.equal(pase.webServiceURL, 'https://entradas.example/api/wallet/apple');
   assert.equal(pase.backgroundColor, 'rgb(0, 0, 0)');
-  assert.equal(pase.labelColor, 'rgb(60, 254, 63)');
+  assert.equal(pase.labelColor, 'rgb(126, 213, 0)');
   assert.equal(pase.suppressStripShine, true, 'el arte del pase no debe recibir un brillo ajeno a la marca');
   assert.ok(pase.authenticationToken, 'sin contraseña el teléfono no podría pedir el pase');
 

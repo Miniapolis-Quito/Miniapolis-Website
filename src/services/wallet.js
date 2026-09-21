@@ -211,7 +211,7 @@ export function contenidoApple(pack, dueno, pase) {
     logoText: config.brandShort,
     backgroundColor: 'rgb(0, 0, 0)',
     foregroundColor: 'rgb(246, 246, 242)',
-    labelColor: 'rgb(60, 254, 63)',
+    labelColor: 'rgb(126, 213, 0)',
     // El arte de la franja ya contiene el acabado Racing; Wallet no debe
     // superponerle el brillo genérico de una tarjeta de tienda.
     suppressStripShine: true,
