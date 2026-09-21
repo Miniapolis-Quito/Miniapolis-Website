@@ -195,6 +195,9 @@ function tarjetaPack(pack) {
           : activo
             ? el('span', { class: 'etiqueta etiqueta--info' }, 'QR en pantalla')
             : null,
+        // Cada pack lleva el suyo: con varios packs a la vez, un botón único
+        // obligaría a adivinar cuál se está guardando.
+        botonDeCartera(pack),
       ),
     ),
     el('div', { class: 'barra-progreso' }, el('div', { class: 'barra-progreso__relleno', style: `width:${porcentaje}%` })),
@@ -261,60 +264,169 @@ function pintarSelectorPacks() {
 // Cartera del teléfono
 // ---------------------------------------------------------------------------
 
+const CARTERAS = ['apple', 'google'];
+const NOMBRE_DE_CARTERA = { apple: 'Apple Wallet', google: 'Google Wallet' };
+/** Cada cartera pide su enlace por su ruta; lo demás es idéntico. */
+const RUTA_DE_CARTERA = { apple: '/api/wallet/apple/ticket', google: '/api/wallet/google/pass' };
+
 /**
- * Botones para guardar el pack en Apple Wallet o Google Wallet.
+ * Qué cartera le corresponde a este teléfono.
+ *
+ * Sirve para poner delante la que la persona va a usar, no para esconder la
+ * otra: reconocer un teléfono por su navegador nunca es exacto, y quedarse sin
+ * botón por un modelo raro es mucho peor que ver uno de más. Por eso lo que
+ * devuelve solo decide el orden y cuál se resalta.
+ *
+ * Un iPad moderno se presenta como un Mac, así que se distingue por el táctil.
+ * Un Mac con Safari también guarda el pase: se queda en la cuenta de iCloud y
+ * aparece solo en el iPhone de esa misma persona.
+ */
+function carteraDelTelefono(agente = navigator.userAgent || '', tactil = navigator.maxTouchPoints ?? 0) {
+  if (/iPhone|iPad|iPod/i.test(agente)) return 'apple';
+  if (/Macintosh/i.test(agente) && tactil > 1) return 'apple';
+  // Android cubre lo que se usa en Ecuador con servicios de Google dentro:
+  // Samsung, Xiaomi, Motorola, Honor, Tecno, Infinix y compañía.
+  if (/Android/i.test(agente)) return 'google';
+  if (/Macintosh/i.test(agente) && /Safari/i.test(agente) && !/Chrome|Chromium|Edg/i.test(agente)) return 'apple';
+  return null;
+}
+
+/** Las carteras que este sistema tiene configuradas de verdad. */
+function carterasOfrecidas() {
+  return CARTERAS.filter((cual) => estado.carteras[cual]);
+}
+
+/**
+ * Pide el enlace y va a él.
  *
  * Los dos casos acaban en una navegación a un enlace, no en una descarga: es
  * lo único que hace que el teléfono ofrezca añadir el pase a su cartera. Por
  * eso el servidor entrega primero una dirección y aquí solo se va a ella.
  */
+async function guardarEnCartera(pack, cual, boton) {
+  await conCarga(boton, async () => {
+    try {
+      const { url } = await api.get(`${RUTA_DE_CARTERA[cual]}/${pack.id}`);
+      window.location.href = url;
+    } catch (error) {
+      brindis(error.message || 'No pudimos preparar el pase. Intenta de nuevo en un momento.', 'error');
+    }
+  });
+}
+
+/**
+ * Pregunta en qué cartera guardarlo.
+ *
+ * Solo aparece cuando hay dos y no se sabe cuál es la de este aparato —un
+ * ordenador, casi siempre—. En un teléfono nunca se ve: ahí el botón va
+ * directo, que es lo que se quiere con una mano y en la fila de la pista.
+ */
+function elegirCartera(pack, opciones) {
+  return new Promise((resolver) => {
+    const cerrar = (elegida) => {
+      dialogo.close();
+      dialogo.remove();
+      resolver(elegida);
+    };
+    const dialogo = el(
+      'dialog',
+      {},
+      el(
+        'div',
+        { class: 'modal__cuerpo' },
+        el('h2', {}, `Guardar ${pack.code}`),
+        el('p', { class: 'tenue sin-margen' }, '¿En qué cartera quieres guardarlo?'),
+        el(
+          'div',
+          { class: 'fila-acciones mt' },
+          opciones.map((cual) =>
+            el(
+              'button',
+              { class: 'boton boton--principal', type: 'button', onClick: () => cerrar(cual) },
+              NOMBRE_DE_CARTERA[cual],
+            ),
+          ),
+        ),
+      ),
+      el(
+        'div',
+        { class: 'modal__pie' },
+        el('button', { class: 'boton boton--fantasma', type: 'button', onClick: () => cerrar(null) }, 'Cancelar'),
+      ),
+    );
+    dialogo.addEventListener('cancel', (evento) => {
+      evento.preventDefault();
+      cerrar(null);
+    });
+    document.body.append(dialogo);
+    dialogo.showModal();
+  });
+}
+
+/** El botón que va en la tarjeta de cada pack: uno, corto y directo. */
+function botonDeCartera(pack) {
+  const opciones = carterasOfrecidas();
+  if (opciones.length === 0 || !pack.usable) return null;
+
+  const preferida = carteraDelTelefono();
+  // Con una sola cartera configurada no hay nada que elegir, y con la del
+  // aparato reconocida tampoco: en los dos casos el botón hace el trabajo.
+  const directa = opciones.length === 1 ? opciones[0] : opciones.includes(preferida) ? preferida : null;
+
+  return el(
+    'button',
+    {
+      class: 'boton boton--chico boton--fantasma',
+      type: 'button',
+      title: directa
+        ? `Guardar el pack ${pack.code} en ${NOMBRE_DE_CARTERA[directa]}`
+        : `Guardar el pack ${pack.code} en la cartera del teléfono`,
+      onClick: async (evento) => {
+        const boton = evento.currentTarget;
+        const cual = directa ?? (await elegirCartera(pack, opciones));
+        if (cual) await guardarEnCartera(pack, cual, boton);
+      },
+    },
+    'Añadir a la cartera',
+  );
+}
+
+/**
+ * La sección propia: qué es el pase de cartera, para qué sirve y los botones
+ * de las carteras configuradas, con la del teléfono de quien mira por delante.
+ */
 function pintarCarteras() {
+  const bloque = $('#cartera');
   const zona = $('#carteras');
   const pack = estado.packSeleccionado;
-  const alguna = estado.carteras.apple || estado.carteras.google;
-  if (!pack || !alguna) {
-    zona.hidden = true;
+  const opciones = carterasOfrecidas();
+  if (!pack || opciones.length === 0) {
+    bloque.hidden = true;
     render(zona);
     return;
   }
 
-  const abrir = async (boton, ruta, textoError) => {
-    await conCarga(boton, async () => {
-      try {
-        const { url } = await api.get(`${ruta}/${pack.id}`);
-        window.location.href = url;
-      } catch (error) {
-        brindis(error.message || textoError, 'error');
-      }
-    });
-  };
+  const preferida = opciones.includes(carteraDelTelefono()) ? carteraDelTelefono() : null;
+  const ordenadas = preferida ? [preferida, ...opciones.filter((c) => c !== preferida)] : opciones;
 
-  zona.hidden = false;
+  bloque.hidden = false;
+  $('#cartera-ayuda').textContent = preferida
+    ? `Guarda el pack ${pack.code} en ${NOMBRE_DE_CARTERA[preferida]} y ve cuántas entradas te quedan sin abrir nada. El número baja solo cada vez que usas una.`
+    : `Guarda el pack ${pack.code} en la cartera de tu teléfono y ve cuántas entradas te quedan sin abrir nada. El número baja solo cada vez que usas una.`;
+
   render(
     zona,
-    el('span', { class: 'tenue pequeno' }, 'Guardar en:'),
-    estado.carteras.apple
-      ? el(
-          'button',
-          {
-            class: 'boton boton--chico boton--fantasma',
-            type: 'button',
-            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/apple/ticket', 'No pudimos preparar el pase.'),
-          },
-          'Apple Wallet',
-        )
-      : null,
-    estado.carteras.google
-      ? el(
-          'button',
-          {
-            class: 'boton boton--chico boton--fantasma',
-            type: 'button',
-            onClick: (evento) => abrir(evento.currentTarget, '/api/wallet/google/pass', 'No pudimos preparar el pase.'),
-          },
-          'Google Wallet',
-        )
-      : null,
+    ordenadas.map((cual) =>
+      el(
+        'button',
+        {
+          class: `boton boton--chico ${cual === preferida ? 'boton--principal' : 'boton--fantasma'}`,
+          type: 'button',
+          onClick: (evento) => guardarEnCartera(pack, cual, evento.currentTarget),
+        },
+        NOMBRE_DE_CARTERA[cual],
+      ),
+    ),
   );
 }
 
@@ -579,14 +691,11 @@ function manejarEvento(tipo, datos) {
   }
 
   if (tipo === 'pack.emitido') {
-    brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
     // El pack de cortesía lo anuncia su propio evento, con su propia
     // celebración: dos avisos seguidos por lo mismo sobran.
-    if (datos.pack?.origin === 'loyalty') {
-      cargarTodo({ conHistorial: false }).catch(() => {});
-      return;
+    if (datos.pack?.origin !== 'loyalty') {
+      brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
     }
-    brindis(`¡Ya tienes un nuevo pack! ${datos.pack.code} trae ${datos.pack.size} entradas.`, 'ok', 6000);
     cargarTodo({ conHistorial: false }).catch(() => {});
     return;
   }

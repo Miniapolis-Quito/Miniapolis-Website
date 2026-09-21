@@ -20,6 +20,7 @@ const PAGINAS = {
   'public/admin.html': ['admin.js', 'ficha.js', 'avisos.js', 'fidelidad.js'],
   'public/recordatorios.html': ['recordatorios.js'],
   'public/restablecer.html': ['restablecer.js'],
+  'public/cartera.html': ['cartera.js'],
 };
 /** Módulos que carga toda página autenticada. */
 const COMUNES = ['shell.js', 'ui.js', 'api.js', 'realtime.js'];

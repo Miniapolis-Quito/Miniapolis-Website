@@ -785,6 +785,39 @@ fieldset { border: 0; margin: 0; padding: 0; }
 }
 
 /* --------------------------------------------------------------------------
+   Guardar el pase en la cartera del teléfono
+
+   Va dentro de la tarjeta del pase, así que se separa con un recuadro propio
+   en vez de con otra tarjeta: anidar tarjetas hace que ninguna de las dos se
+   lea como el borde de nada.
+   -------------------------------------------------------------------------- */
+
+.cartera {
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-s);
+  background: var(--fondo-2);
+  text-align: center;
+}
+.cartera__titulo {
+  margin: 0 0 4px;
+  font-size: .95rem;
+  letter-spacing: .02em;
+}
+.cartera .fila { flex-wrap: wrap; }
+
+/* En el mostrador: el QR que el cliente escanea para guardar su pase. Fondo
+   blanco siempre: un QR sobre el lienzo negro no lo lee ninguna cámara. */
+.cartera-qr {
+  width: min(232px, 60vw);
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: var(--radio-s);
+  background: #fff;
+}
+.cartera-qr svg { display: block; width: 100%; height: auto; }
+
+/* --------------------------------------------------------------------------
    Escáner
    -------------------------------------------------------------------------- */
 

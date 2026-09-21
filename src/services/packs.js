@@ -328,12 +328,28 @@ export function expireDuePacks(db = getDb()) {
     .get(now);
   if (!hayVencidos) return 0;
 
-  return db
+  const vencidos = db
     .prepare(
       `UPDATE packs SET status = 'expired', updated_at = ?
-        WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?`,
+        WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?
+        RETURNING id`,
     )
-    .run(now, now).changes;
+    .all(now, now);
+
+  // Vencer es un cambio como cualquier otro y tiene que contarse igual: sin
+  // este aviso, la pantalla del cliente seguía mostrando el pack como bueno
+  // hasta recargar, y —lo importante— el pase de la cartera se quedaba
+  // diciendo "Activo" para un pack que en la puerta ya no abre.
+  for (const { id } of vencidos) {
+    const pack = findById(id, db);
+    if (!pack) continue;
+    hub.publish([channels.user(pack.user_id), channels.admin], 'pack.actualizado', {
+      pack: toPublicPack(pack),
+      reason: 'vencido',
+    });
+  }
+
+  return vencidos.length;
 }
 
 /** Cambia estado, nota, vencimiento o modo de QR estático de un pack. */

@@ -31,12 +31,19 @@ import * as packsService from '../src/services/packs.js';
 
 const avisosRecibidos = [];
 let apnsFalso;
+/** Con qué contesta el APNs de mentira y cuántas conexiones ha recibido. */
+let respuestaApns = 200;
+let motivoApns = '';
+let conexionesApns = 0;
 
 before(async () => {
   await levantarServidor();
   apnsFalso = http2.createSecureServer({
     cert: readFileSync(CERTIFICADO_APNS.cert),
     key: readFileSync(CERTIFICADO_APNS.key),
+  });
+  apnsFalso.on('session', () => {
+    conexionesApns += 1;
   });
   apnsFalso.on('stream', (flujo, cabeceras) => {
     avisosRecibidos.push({
@@ -45,8 +52,16 @@ before(async () => {
       autorizacion: cabeceras.authorization,
       tipo: cabeceras['apns-push-type'],
     });
-    flujo.respond({ ':status': 200 });
-    flujo.end();
+    if (respuestaApns === 200) {
+      flujo.respond({ ':status': 200 });
+      flujo.end();
+      return;
+    }
+    // Un Apple que responde mal, para comprobar qué hace el sistema con un
+    // aviso que no sale: unas respuestas dan de baja el teléfono y otras
+    // tienen que reintentarse.
+    flujo.respond({ ':status': respuestaApns, 'content-type': 'application/json' });
+    flujo.end(JSON.stringify({ reason: motivoApns }));
   });
   // Si el puerto está ocupado (otra suite corriendo a la vez), `listen` no llama
   // a su callback sino que emite `error`: sin escucharlo, la prueba se quedaba
@@ -65,6 +80,9 @@ after(async () => {
 beforeEach(() => {
   limpiarBase();
   avisosRecibidos.length = 0;
+  conexionesApns = 0;
+  respuestaApns = 200;
+  motivoApns = '';
   apns.olvidarToken();
 });
 
@@ -271,7 +289,7 @@ test('al descontar una entrada, el pase cambia y el teléfono recibe el aviso', 
   assert.equal(nuevo.status, 200);
   const contenido = JSON.parse(leerPkpass(nuevo.datos)['pass.json']);
   assert.equal(contenido.storeCard.headerFields[0].value, 4, 'el pase tiene que traer las cuatro que quedan');
-  assert.equal(contenido.storeCard.headerFields[0].changeMessage, 'Te quedan %@ entradas.');
+  assert.equal(contenido.storeCard.headerFields[0].changeMessage, 'Entradas disponibles: %@');
 });
 
 test('el teléfono pregunta qué cambió y no se le repite lo ya visto', async () => {
@@ -486,4 +504,306 @@ test('la clave del certificado puede ir cifrada y su contraseña no viaja en los
     process.env.PATH = pathOriginal;
     rmSync(carpeta, { recursive: true, force: true });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Lo que se le manda a Google tiene que existir en su esquema
+// ---------------------------------------------------------------------------
+
+/**
+ * La API de Google rechaza con 400 cualquier campo que no conozca: uno de más
+ * no se ignora, tumba la llamada entera. Y si lo que se cae es la plantilla, no
+ * se puede generar ningún enlace de "Guardar en Google Wallet", así que el
+ * botón deja de funcionar para todo el mundo a la vez. Estas dos listas son las
+ * del esquema oficial de `genericClass` y `genericObject`.
+ */
+const CAMPOS_DE_CLASE = new Set([
+  'appLinkData', 'callbackOptions', 'classTemplateInfo', 'enableSmartTap', 'id', 'imageModulesData',
+  'linksModuleData', 'merchantLocations', 'messages', 'multipleDevicesAndHoldersAllowedStatus',
+  'redemptionIssuers', 'securityAnimation', 'textModulesData', 'valueAddedModuleData', 'viewUnlockRequirement',
+]);
+
+const CAMPOS_DE_OBJETO = new Set([
+  'appLinkData', 'barcode', 'cardTitle', 'classId', 'genericType', 'groupingInfo', 'hasUsers', 'header',
+  'heroImage', 'hexBackgroundColor', 'id', 'imageModulesData', 'linkedObjectIds', 'linksModuleData', 'logo',
+  'merchantLocations', 'messages', 'notifications', 'passConstraints', 'rotatingBarcode', 'saveRestrictions',
+  'smartTapRedemptionValue', 'state', 'subheader', 'textModulesData', 'validTimeInterval', 'valueAddedModuleData',
+  'wideLogo',
+]);
+
+test('la plantilla de Google no lleva ningún campo que su API no conozca', () => {
+  const clase = wallet.claseGoogle();
+  const ajenos = Object.keys(clase).filter((campo) => !CAMPOS_DE_CLASE.has(campo));
+  assert.deepEqual(ajenos, [], 'un campo de más devuelve 400 y deja sin plantilla a todos los pases');
+  // El color de fondo es del objeto, no de la clase; mandarlo aquí era
+  // justamente lo que rompía la creación de la plantilla.
+  assert.equal(clase.hexBackgroundColor, undefined);
+  assert.equal(clase.id, '3388000000000000000.entradas');
+});
+
+test('el objeto de Google no lleva ningún campo que su API no conozca', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id, { allowStaticQr: true, expiresAt: '2030-01-31T23:59:59.000Z' });
+  const pase = wallet.asegurarPase(pack.id);
+
+  const objeto = wallet.objetoGoogle(pack, null, pase);
+  const ajenos = Object.keys(objeto).filter((campo) => !CAMPOS_DE_OBJETO.has(campo));
+  assert.deepEqual(ajenos, []);
+  assert.equal(objeto.genericType, 'GENERIC_ENTRY_TICKET');
+});
+
+// ---------------------------------------------------------------------------
+// El pase se apaga solo cuando el pack deja de servir
+// ---------------------------------------------------------------------------
+
+test('el pase lleva la fecha de vencimiento para apagarse solo, aun sin conexión', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id, { expiresAt: '2030-01-31T23:59:59.000Z' });
+  const pase = wallet.asegurarPase(pack.id);
+
+  // Apple rechaza el pase entero si la fecha trae milisegundos.
+  const apple = wallet.contenidoApple(pack, null, pase);
+  assert.equal(apple.expirationDate, '2030-01-31T23:59:59Z');
+  assert.equal(apple.voided, undefined, 'un pack vigente no va tachado');
+
+  const google = wallet.objetoGoogle(pack, null, pase);
+  assert.deepEqual(google.validTimeInterval, { end: { date: '2030-01-31T23:59:59Z' } });
+});
+
+test('un pack anulado va tachado en el pase, no solo con otro texto', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  const pase = wallet.asegurarPase(pack.id);
+  await cMaster.patch(`/api/admin/packs/${pack.id}`, { status: 'cancelled' });
+
+  const apple = wallet.contenidoApple(packsService.findById(pack.id), null, pase);
+  assert.equal(apple.voided, true, 'sin esto el teléfono lo sigue enseñando como bueno');
+});
+
+test('un pase que lleva código no se puede regalar desde el teléfono', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const conCodigo = await packDePrueba(cMaster, cliente.id, { allowStaticQr: true });
+  const sinCodigo = await packDePrueba(cMaster, cliente.id);
+
+  // Con código, el pase es una entrada: compartirlo sería regalar entradas.
+  assert.equal(wallet.contenidoApple(conCodigo, null, wallet.asegurarPase(conCodigo.id)).sharingProhibited, true);
+  assert.equal(wallet.contenidoApple(sinCodigo, null, wallet.asegurarPase(sinCodigo.id)).sharingProhibited, undefined);
+});
+
+test('una cuenta suspendida se ve suspendida también en el pase', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  const pase = wallet.asegurarPase(pack.id);
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'suspended' });
+
+  const dueno = getDb().prepare('SELECT * FROM users WHERE id = ?').get(cliente.id);
+  const fresco = packsService.findById(pack.id);
+  const apple = wallet.contenidoApple(fresco, dueno, pase);
+  assert.equal(apple.storeCard.secondaryFields.find((c) => c.key === 'estado').value, 'Cuenta suspendida');
+  assert.equal(wallet.objetoGoogle(fresco, dueno, pase).state, 'INACTIVE');
+});
+
+test('al vencer un pack, la cartera se entera sin que nadie toque nada', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id, { expiresAt: '2030-01-31T23:59:59.000Z' });
+  const { pase } = await registrarTelefono(pack);
+
+  // El pack vence de puro pasar el tiempo: nadie lo anula ni lo escanea.
+  getDb().prepare('UPDATE packs SET expires_at = ? WHERE id = ?').run('2020-01-01T00:00:00.000Z', pack.id);
+  assert.equal(packsService.expireDuePacks(), 1);
+
+  await new Promise((listo) => setTimeout(listo, 2500));
+  assert.equal(avisosRecibidos.length, 1, 'al teléfono hay que avisarle también cuando el pack caduca');
+
+  const vencido = packsService.findById(pack.id);
+  const apple = wallet.contenidoApple(vencido, null, pase);
+  assert.equal(apple.storeCard.secondaryFields.find((c) => c.key === 'estado').value, 'Vencido');
+  assert.equal(wallet.objetoGoogle(vencido, null, pase).state, 'EXPIRED');
+});
+
+// ---------------------------------------------------------------------------
+// Un aviso que falla no se pierde
+// ---------------------------------------------------------------------------
+
+test('si el aviso no sale, el pase queda pendiente y el barrido lo reintenta', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  await registrarTelefono(pack);
+
+  // Apple se cae justo cuando se cobra la entrada.
+  respuestaApns = 503;
+  motivoApns = 'ServiceUnavailable';
+  await cStaff.post('/api/scan/manual', { code: pack.code });
+  await new Promise((listo) => setTimeout(listo, 2500));
+
+  const pendiente = getDb().prepare('SELECT * FROM wallet_passes WHERE pack_id = ?').get(pack.id);
+  assert.ok(pendiente.sync_pending_at, 'el cambio tiene que quedar anotado hasta que se comunique');
+  assert.equal(pendiente.sync_attempts, 1);
+  assert.ok(pendiente.sync_next_at, 'el reintento espera antes de volver a intentarlo');
+
+  // Y cuando Apple vuelve, el barrido lo recoge sin que nadie vuelva a escanear.
+  respuestaApns = 200;
+  avisosRecibidos.length = 0;
+  await wallet.reconciliar({ ahora: Date.now() + 10 * 60 * 1000 });
+
+  assert.equal(avisosRecibidos.length, 1, 'el aviso perdido tiene que salir en el siguiente barrido');
+  const alDia = getDb().prepare('SELECT * FROM wallet_passes WHERE pack_id = ?').get(pack.id);
+  assert.equal(alDia.sync_pending_at, null);
+  assert.equal(alDia.sync_attempts, 0);
+  assert.ok(alDia.synced_at);
+});
+
+test('un teléfono que Apple ya no conoce se da de baja en vez de reintentarse', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  await registrarTelefono(pack);
+
+  respuestaApns = 410;
+  motivoApns = 'Unregistered';
+  await cStaff.post('/api/scan/manual', { code: pack.code });
+  await new Promise((listo) => setTimeout(listo, 2500));
+
+  assert.equal(getDb().prepare('SELECT COUNT(*) AS n FROM wallet_devices').get().n, 0);
+  // Darlo de baja resuelve el problema: no hay nada que reintentar.
+  const fila = getDb().prepare('SELECT * FROM wallet_passes WHERE pack_id = ?').get(pack.id);
+  assert.equal(fila.sync_pending_at, null);
+});
+
+test('los teléfonos de un mismo pase se avisan por una sola conexión', async () => {
+  const { cMaster, cStaff, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  for (let i = 0; i < 3; i += 1) {
+    await registrarTelefono(pack, { deviceId: `telefono-${i}`, pushToken: i.toString(16).padStart(64, '0') });
+  }
+
+  conexionesApns = 0;
+  await cStaff.post('/api/scan/manual', { code: pack.code });
+  await new Promise((listo) => setTimeout(listo, 2500));
+
+  assert.equal(avisosRecibidos.length, 3, 'los tres teléfonos tienen que enterarse');
+  assert.equal(conexionesApns, 1, 'una conexión por aparato es justo lo que Apple pide no hacer');
+});
+
+// ---------------------------------------------------------------------------
+// Entregar el pase en el mostrador
+// ---------------------------------------------------------------------------
+
+test('el mostrador ve si el cliente ya guardó su pase y dónde', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+
+  const sinGuardar = await cMaster.get(`/api/admin/packs/${pack.id}/wallet`);
+  assert.equal(sinGuardar.status, 200);
+  assert.deepEqual(sinGuardar.datos.carteras, { apple: true, google: true });
+  assert.equal(sinGuardar.datos.guardado, false);
+  assert.equal(sinGuardar.datos.telefonos, 0);
+
+  await registrarTelefono(pack);
+  const guardado = await cMaster.get(`/api/admin/packs/${pack.id}/wallet`);
+  assert.equal(guardado.datos.guardado, true);
+  assert.equal(guardado.datos.telefonos, 1);
+  assert.equal(guardado.datos.alDia, true);
+});
+
+test('la invitación del mostrador deja al cliente guardar su pase sin iniciar sesión', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+
+  const invitacion = await cMaster.post(`/api/admin/packs/${pack.id}/wallet/invitacion`);
+  assert.equal(invitacion.status, 200, JSON.stringify(invitacion.datos));
+  assert.ok(invitacion.datos.qr.startsWith('<svg'), 'el mostrador enseña un QR, no un enlace para dictar');
+
+  // El permiso viaja en el fragmento: esa parte nunca llega al servidor.
+  const fragmento = new URLSearchParams(new URL(invitacion.datos.url).hash.slice(1));
+  assert.equal(fragmento.get('p'), pack.id);
+  const token = fragmento.get('t');
+  assert.ok(token);
+
+  const telefono = crearCliente();
+  const datos = await telefono.post('/api/wallet/invitacion', { packId: pack.id, token });
+  assert.equal(datos.status, 200);
+  assert.equal(datos.datos.pack.code, pack.code);
+  assert.equal(datos.datos.pack.remaining, 5);
+  assert.equal(datos.datos.titular, 'Carlos Piloto');
+  // Ni el correo ni el teléfono del cliente: esta página la abre quien tenga
+  // el enlace durante unos minutos.
+  assert.equal(datos.datos.pack.userId, undefined);
+  assert.equal(JSON.stringify(datos.datos).includes('@'), false);
+
+  // Y desde ahí llega al pase de Apple sin haber iniciado sesión nunca.
+  const apple = await telefono.post('/api/wallet/invitacion/apple', { packId: pack.id, token });
+  assert.equal(apple.status, 200);
+  const descarga = await crearCliente().get(new URL(apple.datos.url).pathname + new URL(apple.datos.url).search, {
+    binario: true,
+  });
+  assert.equal(descarga.status, 200);
+  assert.equal(JSON.parse(leerPkpass(descarga.datos)['pass.json']).storeCard.primaryFields[0].value, pack.code);
+});
+
+test('la invitación no sirve para otro pack, ni caducada, ni la crea un cliente', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  const otro = await packDePrueba(cMaster, cliente.id);
+
+  const invitacion = await cMaster.post(`/api/admin/packs/${pack.id}/wallet/invitacion`);
+  const token = new URLSearchParams(new URL(invitacion.datos.url).hash.slice(1)).get('t');
+  const telefono = crearCliente();
+
+  assert.equal((await telefono.post('/api/wallet/invitacion', { packId: otro.id, token })).status, 401);
+  assert.equal((await telefono.post('/api/wallet/invitacion', { packId: pack.id, token: 'inventado' })).status, 401);
+  assert.equal((await telefono.post('/api/wallet/invitacion', { packId: 'no-es-un-uuid', token })).status, 401);
+
+  // Una firmada en el pasado ya no abre nada.
+  const caducada = wallet.firmarInvitacion(pack.id, { ahora: Date.now() - 60 * 60 * 1000 });
+  assert.equal(wallet.invitacionValida(pack.id, caducada), false);
+
+  // Y el permiso de descarga y el de invitación no se pueden confundir: cada
+  // uno se firma con su propósito y dura lo suyo.
+  assert.equal(wallet.ticketValido(pack.id, token), false);
+  assert.equal(wallet.invitacionValida(pack.id, wallet.firmarTicket(pack.id)), false);
+
+  // Un cliente no puede fabricarse una invitación para nadie, ni para sí mismo.
+  assert.equal((await cCliente.post(`/api/admin/packs/${pack.id}/wallet/invitacion`)).status, 403);
+});
+
+test('suspender una cuenta también llega al pase que el cliente lleva encima', async () => {
+  const { cMaster, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  await registrarTelefono(pack);
+  const antes = getDb().prepare('SELECT updated_at FROM wallet_passes WHERE pack_id = ?').get(pack.id).updated_at;
+
+  // Suspender no toca ningún pack, pero deja sus entradas sin valer en la
+  // puerta: el pase tiene que decir lo mismo que el escáner.
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'suspended' });
+  await new Promise((listo) => setTimeout(listo, 2500));
+
+  assert.equal(avisosRecibidos.length, 1, 'al teléfono hay que avisarle de que su cuenta quedó suspendida');
+  const despues = getDb().prepare('SELECT updated_at FROM wallet_passes WHERE pack_id = ?').get(pack.id).updated_at;
+  assert.ok(despues > antes, 'el pase debería constar como cambiado');
+
+  // Y al reactivarla, vuelve a verse como activo.
+  avisosRecibidos.length = 0;
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'active' });
+  await new Promise((listo) => setTimeout(listo, 2500));
+  assert.equal(avisosRecibidos.length, 1);
+
+  const dueno = getDb().prepare('SELECT * FROM users WHERE id = ?').get(cliente.id);
+  const pase = wallet.asegurarPase(pack.id);
+  const apple = wallet.contenidoApple(packsService.findById(pack.id), dueno, pase);
+  assert.equal(apple.storeCard.secondaryFields.find((c) => c.key === 'estado').value, 'Activo');
+});
+
+test('si el cliente se cambia el nombre, el pase deja de llevar el viejo', async () => {
+  const { cMaster, cCliente, cliente } = await sembrarUsuarios();
+  const pack = await packDePrueba(cMaster, cliente.id);
+  await registrarTelefono(pack);
+
+  const cambio = await cCliente.patch('/api/auth/me', { fullName: 'Carlos Piloto Serrano' });
+  assert.equal(cambio.status, 200, JSON.stringify(cambio.datos));
+  await new Promise((listo) => setTimeout(listo, 2500));
+
+  assert.equal(avisosRecibidos.length, 1, 'el pase enseña el nombre; si cambia, hay que refrescarlo');
+  const dueno = getDb().prepare('SELECT * FROM users WHERE id = ?').get(cliente.id);
+  const apple = wallet.contenidoApple(packsService.findById(pack.id), dueno, wallet.asegurarPase(pack.id));
+  assert.equal(apple.storeCard.secondaryFields.find((c) => c.key === 'titular').value, 'Carlos Piloto Serrano');
 });

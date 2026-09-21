@@ -29,9 +29,15 @@ ingresa a mano. Funciona igual.
 
 ### Guardarlo en la cartera del teléfono
 
-Si el botón aparece bajo el QR, puedes guardar tu pack en **Apple Wallet** o en
-**Google Wallet**. Ahí ves cuántas entradas te quedan sin abrir nada, y el
-número baja solo cada vez que usas una: no hace falta que hagas nada.
+Cada pack tiene su botón **Añadir a la cartera**, y bajo el QR hay una sección
+para lo mismo. Si tienes iPhone se guarda en **Apple Wallet**; si tienes
+Android —Samsung, Xiaomi, Motorola, Honor y el resto—, en **Google Wallet**.
+Ahí ves cuántas entradas te quedan sin abrir nada, y el número baja solo cada
+vez que usas una: no hace falta que hagas nada.
+
+Si estás en la pista, también puedes pedirlo en el mostrador: te enseñan un
+código en la pantalla, lo escaneas con la cámara y listo, sin tener que entrar
+a tu cuenta ahí mismo.
 
 Para entrar a la pista sigue siendo mejor el QR de la app, que cambia cada
 pocos segundos. El pase de la cartera es para llevar la cuenta.
@@ -455,10 +461,22 @@ esperando. En **Fidelidad** verás el aviso de premios sin entregar y el botón
 **Otorgar ahora** los entrega en el acto.
 
 **Un cliente pregunta si puede llevar sus entradas en la cartera del teléfono.**
-Sí, si el sistema tiene configuradas las carteras: bajo su QR le aparece el
-botón para guardarlas. El saldo del pase se actualiza solo cada vez que le
-descuentas una entrada. Para entrar sigue mostrando el QR de la app; el pase de
-la cartera solo lleva código si le habilitaste el QR impreso a ese pack.
+Sí, si el sistema tiene configuradas las carteras. Puede hacerlo él desde su
+cuenta —cada pack tiene su botón **Añadir a la cartera**— o se lo entregas tú
+ahí mismo: en su ficha, en el pack, pulsa **Pase de cartera** y **Entregar el
+pase**. Sale un código en pantalla que el cliente escanea con su cámara; no
+tiene que iniciar sesión delante de la cola. El código sirve diez minutos.
+
+El saldo del pase se actualiza solo cada vez que le descuentas una entrada.
+Para entrar sigue mostrando el QR de la app; el pase de la cartera solo lleva
+código si le habilitaste el QR impreso a ese pack.
+
+**Un cliente dice que su pase no se actualiza.**
+Míralo antes de tocar nada: en su ficha, en el pack, **Pase de cartera** te
+dice si lo tiene guardado, en cuántos teléfonos y si queda algo por comunicar.
+Si dice que hay un cambio pendiente, el sistema lo sigue intentando solo. Si
+dice que no lo tiene guardado, es que lo borró del teléfono: vuelve a
+entregárselo.
 
 **¿Las entradas caducan?**
 Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan. La

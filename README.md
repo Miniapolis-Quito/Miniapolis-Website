@@ -702,12 +702,47 @@ que no rota se puede copiar, y por eso lo habilita el máster pack por pack—.
 Sin esa opción el pase sigue haciendo lo que la mayoría quiere: enseñar el
 saldo al día. Para entrar, el cliente muestra el QR de la app.
 
+**Qué teléfonos cubre.** Entre las dos carteras entran prácticamente todos los
+teléfonos que se usan en Ecuador: Apple Wallet en los iPhone, y Google Wallet
+en Android, que es la cartera de Samsung, Xiaomi, Motorola, Honor, Tecno,
+Infinix y del resto de marcas con servicios de Google. Samsung Wallet y Huawei
+Wallet no se integran, y no por descuido: las dos exigen darse de alta como
+socio comercial con cada fabricante, Samsung Wallet no está disponible en
+Ecuador y los Huawei sin servicios de Google son hoy una minoría. En esos
+teléfonos el cliente sigue teniendo su saldo y su QR en la app de siempre.
+
+**Cómo llega el pase al cliente.** Por dos caminos:
+
+- **Él mismo**, desde su cuenta: cada pack tiene su botón «Añadir a la cartera»
+  y hay una sección propia bajo el pase. La app reconoce el teléfono y pone
+  delante la cartera que le toca, pero nunca esconde la otra: adivinar un
+  teléfono por su navegador no es exacto, y quedarse sin botón sería peor que
+  ver uno de más.
+- **En el mostrador**, desde la ficha del cliente: el botón «Pase de cartera»
+  dice si ya lo tiene guardado y en cuántos teléfonos, y enseña un **QR en
+  pantalla** que el cliente escanea con su cámara para guardarlo ahí mismo, sin
+  iniciar sesión delante de la cola. Ese permiso dura diez minutos, vale solo
+  para ese pack y viaja en el fragmento de la dirección, que no llega al
+  servidor ni queda en sus registros.
+
 Detrás de la actualización automática hay dos caminos distintos, uno por
 plataforma: a Apple se le manda un aviso silencioso y es el teléfono quien
 vuelve a pedir el pase (`/api/wallet/apple/v1/...`, el servicio web que define
 Apple); a Google se le envía el saldo directamente a su API. En los dos casos
 el disparador es el mismo canal en vivo que ya mueve la pantalla del cliente,
 así que el camino del cobro no se toca.
+
+**Un aviso que falla no se pierde.** Avisar depende de Apple, de Google y de la
+red, y las tres cosas fallan. Por eso el cambio se anota primero en la base y
+solo se da por comunicado cuando sale de verdad; lo que quede pendiente lo
+reintenta un barrido con esperas cada vez más largas, y sigue anotado aunque el
+servidor se reinicie por medio. El mostrador ve ese estado en la ficha, así que
+«mi pase no se actualiza» se responde mirando, no adivinando.
+
+El pase también se apaga solo: lleva dentro la fecha de vencimiento del pack
+—así caduca en el teléfono aunque esté sin conexión— y un pack anulado llega
+tachado. Vencer por calendario, que antes pasaba en silencio, ahora avisa igual
+que un consumo.
 
 ---
 
