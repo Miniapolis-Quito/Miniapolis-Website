@@ -24,6 +24,14 @@ jobs:
       - name: Preparar y publicar en rama gh-pages
         run: |
           node scripts/preparar-pages.js
+          test -f _site/index.html
+          test -f _site/css/styles.css
+          test -f _site/css/portada.css
+          test -f _site/js/portada.js
+          test -f _site/images/oficial/pista-circuito-panorama.webp
+          test -f _site/manifest.webmanifest
+          ! grep -REn '(href|src)="/(css|js|images|fonts|vendor)/' _site --include='*.html'
+          ! grep -REn '"(src|start_url|scope)": "/' _site/manifest.webmanifest
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B gh-pages

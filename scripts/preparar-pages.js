@@ -67,6 +67,14 @@ if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     manifest.start_url = './';
     manifest.scope = './';
+    if (Array.isArray(manifest.icons)) {
+      manifest.icons = manifest.icons.map((icon) => ({
+        ...icon,
+        src: typeof icon.src === 'string' && icon.src.startsWith('/')
+          ? `.${icon.src}`
+          : icon.src,
+      }));
+    }
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
     console.log('✓ Procesado manifest.webmanifest');
   } catch (err) {
