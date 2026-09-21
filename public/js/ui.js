@@ -39,6 +39,35 @@ function aplicarEstilo(nodo, estilo) {
   }
 }
 
+/** Atributos cuyo valor el navegador trata como una dirección a la que ir. */
+const ATRIBUTOS_DE_DIRECCION = new Set(['href', 'src', 'action', 'formaction', 'xlink:href', 'ping']);
+
+/**
+ * Descarta las direcciones que ejecutan código en vez de llevar a algún sitio.
+ *
+ * Hoy ninguna dirección de esta interfaz se construye con datos de fuera, pero
+ * `el()` es la única puerta por la que pasan todas y basta un descuido futuro
+ * —un enlace armado con un campo que escribió alguien— para convertir un
+ * `javascript:` en código ejecutándose dentro de la sesión de quien mire la
+ * pantalla. La política de seguridad del servidor ya lo impide; esto lo impide
+ * también donde no la haya (la copia estática publicada en GitHub Pages) y sin
+ * depender de que el navegador la respete.
+ */
+function direccionSegura(valor) {
+  // El navegador ignora los espacios y los caracteres de control al leer el
+  // esquema, así que "java\tscript:" es lo mismo que "javascript:". Se quitan
+  // antes de mirar, y solo hasta los dos puntos: el resto de la dirección no
+  // cambia de qué esquema es.
+  let esquema = '';
+  for (const caracter of String(valor)) {
+    const punto = caracter.codePointAt(0);
+    if (punto <= 0x20 || punto === 0x7f || /\s/.test(caracter)) continue;
+    esquema += caracter;
+    if (caracter === ':' || esquema.length > 16) break;
+  }
+  return !/^(?:javascript|data|vbscript):/i.test(esquema);
+}
+
 /** Crea un elemento con atributos e hijos. Los textos se insertan como texto,
  *  nunca como HTML, así que ningún dato del servidor puede inyectar marcado. */
 export function el(etiqueta, atributos = {}, ...hijos) {
@@ -52,7 +81,11 @@ export function el(etiqueta, atributos = {}, ...hijos) {
       nodo.addEventListener(clave.slice(2).toLowerCase(), valor);
     } else if (clave === 'html') nodo.innerHTML = valor; // solo para marcado propio (SVG del QR)
     else if (valor === true) nodo.setAttribute(clave, '');
-    else nodo.setAttribute(clave, String(valor));
+    else if (ATRIBUTOS_DE_DIRECCION.has(clave) && !direccionSegura(valor)) {
+      // Se deja el elemento sin enlace en vez de romper la pantalla entera: lo
+      // que no se puede es dejar que el navegador lo siga.
+      console.error(`Dirección descartada por insegura en <${etiqueta} ${clave}>`);
+    } else nodo.setAttribute(clave, String(valor));
   }
   for (const hijo of hijos.flat(Infinity)) {
     if (hijo === null || hijo === undefined || hijo === false) continue;

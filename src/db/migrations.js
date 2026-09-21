@@ -613,6 +613,70 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '014-verificacion-en-dos-pasos',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Verificación en dos pasos (TOTP)
+        --
+        -- El secreto se guarda cifrado con la clave del entorno, no en
+        -- claro: una copia de la base que acabe donde no debe no entrega
+        -- los segundos factores. \`totp_last_step\` es el último tramo de
+        -- treinta segundos que se aceptó para esa cuenta, y es lo que
+        -- impide reutilizar un código que alguien haya visto de reojo.
+        -- ---------------------------------------------------------------
+        ALTER TABLE users ADD COLUMN totp_secret TEXT;
+        ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0
+          CHECK (totp_enabled IN (0,1));
+        ALTER TABLE users ADD COLUMN totp_confirmed_at TEXT;
+        ALTER TABLE users ADD COLUMN totp_last_step INTEGER;
+
+        -- Índice parcial: las consultas del panel preguntan siempre por
+        -- quién la tiene puesta, que es la minoría.
+        CREATE INDEX idx_users_totp ON users(totp_enabled) WHERE totp_enabled = 1;
+
+        -- ---------------------------------------------------------------
+        -- Códigos de respaldo: la salida cuando el teléfono se pierde.
+        --
+        -- Se guardan por su HMAC, como los refresh tokens: el que los
+        -- genera los ve una vez y nadie más, ni con la base delante.
+        -- ---------------------------------------------------------------
+        CREATE TABLE two_factor_recovery_codes (
+          id         TEXT PRIMARY KEY,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          code_hash  TEXT NOT NULL UNIQUE,
+          used_at    TEXT,
+          used_ip    TEXT,
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX idx_2fa_codigos_usuario ON two_factor_recovery_codes(user_id, used_at);
+
+        -- ---------------------------------------------------------------
+        -- Desafíos: el paso intermedio del acceso.
+        --
+        -- Acertar la contraseña ya no abre sesión; abre un desafío que vive
+        -- unos minutos y del que solo se guarda el HMAC de su token. Sin
+        -- esta tabla, el segundo paso tendría que confiar en algo que el
+        -- navegador guarda, y los intentos fallidos no se podrían contar
+        -- contra el desafío concreto.
+        -- ---------------------------------------------------------------
+        CREATE TABLE two_factor_challenges (
+          id          TEXT PRIMARY KEY,
+          user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token_hash  TEXT NOT NULL UNIQUE,
+          attempts    INTEGER NOT NULL DEFAULT 0,
+          created_at  TEXT NOT NULL,
+          expires_at  TEXT NOT NULL,
+          consumed_at TEXT,
+          ip          TEXT,
+          user_agent  TEXT
+        );
+        CREATE INDEX idx_2fa_desafios_expira  ON two_factor_challenges(expires_at);
+        CREATE INDEX idx_2fa_desafios_usuario ON two_factor_challenges(user_id, created_at DESC);
+      `);
+    },
+  },
 ];
 
 export default migrations;

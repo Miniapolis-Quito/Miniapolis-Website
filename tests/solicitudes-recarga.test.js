@@ -268,3 +268,34 @@ test('el expediente del cliente incluye sus solicitudes de recarga y trazabilida
   assert.equal(log.length, 1);
   assert.equal(log[0].entity_type, 'pack_request');
 });
+
+test('una aprobación que no puede emitir el pack no deja la solicitud dada por resuelta', async () => {
+  const { cCliente, cMaster, cliente } = await sembrarUsuarios();
+
+  const creada = await cCliente.post('/api/packs/requests', {
+    size: 5,
+    paymentMethod: 'transferencia',
+    paymentReference: 'TRF-SUSPENDIDO-1',
+  });
+  assert.equal(creada.status, 201, JSON.stringify(creada.datos));
+  const solicitudId = creada.datos.request.id;
+
+  // Entre que pidió y que se revisa, la cuenta se suspende. Emitir el pack ya
+  // no es posible: lo que no puede pasar es que la solicitud quede marcada
+  // como aprobada y sin pack, porque el cliente pagó y nadie podría
+  // reintentarlo —ya no estaría pendiente—.
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'suspended' });
+
+  const aprobacion = await cMaster.post(`/api/admin/pack-requests/${solicitudId}/approve`);
+  assert.ok(aprobacion.status >= 400, 'aprobar sin poder emitir debe fallar');
+
+  const enBase = getDb().prepare('SELECT status, pack_id FROM pack_requests WHERE id = ?').get(solicitudId);
+  assert.equal(enBase.status, 'pending', 'la solicitud tiene que seguir en la cola');
+  assert.equal(enBase.pack_id, null);
+
+  // Y al levantar la suspensión, la misma solicitud se aprueba con normalidad.
+  await cMaster.patch(`/api/admin/users/${cliente.id}`, { status: 'active' });
+  const segunda = await cMaster.post(`/api/admin/pack-requests/${solicitudId}/approve`);
+  assert.equal(segunda.status, 200, JSON.stringify(segunda.datos));
+  assert.ok(segunda.datos.pack?.code);
+});

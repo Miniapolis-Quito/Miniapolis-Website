@@ -10,6 +10,7 @@ import { abrirFicha, cerrarFicha } from './ficha.js';
 import { botonesDePack, anularConsumo } from './acciones.js';
 import { cargarAvisos, montarAvisos } from './avisos.js';
 import { cargarFidelidad, montarFidelidad } from './fidelidad.js';
+import { cargarSeguridad, montarSeguridadPanel } from './seguridad.js';
 
 const estado = {
   configuracion: null,
@@ -53,6 +54,7 @@ const CARGADORES = {
   consumos: cargarConsumos,
   avisos: cargarAvisos,
   fidelidad: cargarFidelidad,
+  seguridad: cargarSeguridad,
   auditoria: cargarAuditoria,
 };
 
@@ -232,6 +234,7 @@ async function cargarResumen() {
   );
 
   pintarIntegridad(datos.integrity);
+  pintarSeguridad(datos.security);
   pintarNoCobradas(datos.offlineRejections);
   pintarSolicitudesRecarga(datos.pendingPackRequests);
 }
@@ -495,6 +498,58 @@ function montarDialogoRechazo() {
       mostrarAviso($('#aviso-rechazar-solicitud'), err.message, 'error');
     }
   });
+}
+
+/**
+ * Cuántas cuentas con permisos siguen entrando solo con la contraseña.
+ *
+ * Va en el resumen, junto a la contabilidad, porque es del mismo tipo de dato:
+ * algo que está bien o está mal ahora mismo y que conviene ver sin buscarlo.
+ * El enlace lleva a la pestaña donde se arregla.
+ */
+function pintarSeguridad(seguridad) {
+  const zona = $('#resumen-seguridad');
+  if (!zona || !seguridad) return;
+
+  const irASeguridad = () => {
+    const pestana = $('.pestana[data-panel=seguridad]');
+    if (pestana) pestana.click();
+  };
+
+  render(
+    zona,
+    seguridad.withoutTwoFactor === 0
+      ? el(
+          'div',
+          { class: 'aviso aviso--ok' },
+          icono('candado'),
+          `Las ${seguridad.team} cuenta(s) con permisos usan verificación en dos pasos.`,
+        )
+      : el(
+          'div',
+          { class: 'aviso aviso--alerta' },
+          icono('candado'),
+          el(
+            'div',
+            {},
+            el(
+              'strong',
+              {},
+              `${seguridad.withoutTwoFactor} de ${seguridad.team} cuenta(s) con permisos entran solo con la contraseña.`,
+            ),
+            el(
+              'div',
+              { class: 'pequeno' },
+              'Son las cuentas que pueden escanear entradas y abrir esta administración.',
+            ),
+            el(
+              'button',
+              { class: 'boton boton--fantasma boton--chico mt', type: 'button', onClick: irASeguridad },
+              'Ver Seguridad',
+            ),
+          ),
+        ),
+  );
 }
 
 function pintarIntegridad(integridad) {
@@ -1271,6 +1326,7 @@ function montarDialogoPack() {
   montarDialogoPack();
   montarAvisos();
   montarFidelidad();
+  montarSeguridadPanel();
   montarDialogoRechazo();
 
   const buscarUsuarios = temporizador(() => cargarUsuarios().catch(() => {}), 280);
