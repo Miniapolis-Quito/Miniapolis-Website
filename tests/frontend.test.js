@@ -232,12 +232,12 @@ test('la portada se marca como página de entrada', () => {
 
 test('la portada usa la pista real y los recursos fotográficos inmersivos', () => {
   const src = leer(PORTADA);
-  assert.match(src, /\/images\/pista\/miniapolis-track-wide\.webp/);
   assert.match(src, /\/images\/pista\/miniapolis-track-corner-wide\.webp/);
-  assert.match(src, /\/images\/landing\/miniapolis-track-portrait\.webp/);
-  assert.match(src, /\/images\/landing\/miniapolis-action\.webp/);
+  assert.match(src, /\/images\/pista\/miniapolis-hangar-vertical\.webp/);
+  assert.match(src, /\/images\/pista\/miniapolis-curb-detail-vertical\.webp/);
   assert.match(src, /\/images\/landing\/miniapolis-track-atmosphere\.webp/);
-  assert.match(src, /\/images\/landing\/miniapolis-car-portrait\.webp/);
+  assert.match(src, /\/images\/landing\/miniapolis-car-detail\.webp/);
+  assert.doesNotMatch(src, /miniapolis-track-wide|miniapolis-action|miniapolis-asphalt-detail/);
   assert.match(src, /data-depth="[0-9.]+"/);
   assert.doesNotMatch(src, /césped|cesped|grass/i, 'la pista debe describirse como asfalto');
 });
@@ -277,10 +277,34 @@ test('la portada prepara una dirección de arte cinematográfica y no una retíc
   const css = leer('public/css/styles.css');
   assert.match(src, /entrada__hero--cinematica/);
   assert.match(src, /entrada__galeria-ritmo/);
-  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica\s*\{[^}]*isolation:\s*isolate/s);
+  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica(?:\[data-scroll-scene\])?\s*\{[^}]*isolation:\s*isolate/s);
   assert.match(css, /\.pagina-entrada \.entrada__galeria-ritmo\s*\{[^}]*display:\s*grid/s);
-  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica::before\s*\{[^}]*background-image:[^}]*url\(/s);
+  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica::before\s*\{/);
+  assert.doesNotMatch(css, /\.pagina-entrada \.entrada__hero--cinematica::before\s*\{[^}]*url\(/s);
   assert.doesNotMatch(css, /\.pagina-entrada::before\s*\{[^}]*background-size:\s*64px 64px/s);
+});
+
+test('la portada usa una sola imagen protagonista limpia y descarta encuadres con personas', () => {
+  const src = leer(PORTADA);
+  const css = leer('public/css/styles.css');
+  assert.match(src, /\/images\/landing\/miniapolis-car-detail\.webp/);
+  assert.doesNotMatch(src, /miniapolis-action|miniapolis-asphalt-detail/);
+  assert.match(src, /<div class="entrada__hero-fondo"[^>]*><\/div>/);
+  assert.doesNotMatch(css, /\.pagina-entrada \.entrada__hero--cinematica::before\s*\{[^}]*url\(/s);
+});
+
+test('la portada conecta sus bloques con escenas de scroll y movimiento progresivo', () => {
+  const html = leer(PORTADA);
+  const js = leer('public/js/portada.js');
+  const css = leer('public/css/styles.css');
+  assert.match(html, /data-scroll-scene="hero"/);
+  assert.match(html, /data-scroll-scene="pista"/);
+  assert.match(html, /data-scroll-scene="acceso"/);
+  assert.match(js, /data-scroll-scene/);
+  assert.match(js, /--escena-progreso/);
+  assert.match(js, /requestAnimationFrame/);
+  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica\[data-scroll-scene\]/);
+  assert.match(css, /\.pagina-entrada \[data-scroll-scene\] \.entrada__foto/);
 });
 
 test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
@@ -387,7 +411,7 @@ test('la identidad para abrir el escáner sin red se olvida con la misma clave c
   assert.ok(api.includes(`'${prefijo}operador'`), `api.js debe olvidar ${prefijo}operador`);
 });
 
-test('la cabecera de la portada permanece visible durante el scroll', () => {
+test('la cabecera de la portada permanece fija durante el scroll', () => {
   const html = leer(PORTADA);
   const css = leer('public/css/styles.css');
 
@@ -396,7 +420,36 @@ test('la cabecera de la portada permanece visible durante el scroll', () => {
   assert.match(html, /class="entrada__accion"[^>]*href="#acceso"/);
   assert.match(
     css,
-    /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;/s,
-    'la regla específica de la portada debe mantener el encabezado sticky',
+    /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s,
+    'la regla específica de la portada debe fijar el encabezado al viewport',
+  );
+});
+
+test('la cabecera fija reserva su espacio y no dibuja adornos laterales', () => {
+  const css = leer('public/css/styles.css');
+
+  assert.match(css, /\.pagina-entrada\s*\{[^}]*--altura-cabecera:\s*[^;]+;/s);
+  assert.match(css, /\.pagina-entrada main\s*\{[^}]*padding-top:\s*var\(--altura-cabecera\)/s);
+  assert.match(css, /\.pagina-entrada \.entrada__barra::after\s*\{[^}]*display:\s*none;/s);
+});
+
+test('la cabecera de la portada usa un lenguaje de pit lane sobrio y estático', () => {
+  const css = leer('public/css/styles.css');
+
+  assert.match(
+    css,
+    /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*box-shadow:\s*none;[^}]*backdrop-filter:\s*none;/s,
+    'la cabecera no debe parecer un panel flotante con blur ni sombra',
+  );
+  assert.match(css, /\.pagina-entrada \.entrada__progreso\s*\{[^}]*display:\s*none;/s, 'la barra de carga verde debe desaparecer');
+  assert.match(
+    css,
+    /\.pagina-entrada \.entrada__accion::after\s*\{[^}]*content:\s*['"]→['"];?/s,
+    'la acción de entrada debe usar una señal tipográfica discreta',
+  );
+  assert.doesNotMatch(
+    css,
+    /\.pagina-entrada \.entrada__accion::after\s*\{[^}]*background:\s*var\(--acento\)/s,
+    'la acción de entrada no debe llevar un punto verde encendido',
   );
 });

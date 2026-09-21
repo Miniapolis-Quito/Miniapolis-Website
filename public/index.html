@@ -10,7 +10,7 @@
 
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="./images/pista/miniapolis-track-wide.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="./images/landing/miniapolis-car-detail.webp" as="image" fetchpriority="high">
 </head>
 <body class="pagina-entrada">
   <header class="entrada__barra">
@@ -24,10 +24,8 @@
   </header>
 
   <main class="contenedor contenedor--portada">
-    <section class="entrada__hero entrada__hero--inmersiva entrada__hero--cinematica" aria-labelledby="titulo-entrada">
-      <div class="entrada__hero-fondo" aria-hidden="true">
-        <img src="./images/pista/miniapolis-track-wide.webp" width="1675" height="939" alt="">
-      </div>
+    <section class="entrada__hero entrada__hero--inmersiva entrada__hero--cinematica" data-scroll-scene="hero" aria-labelledby="titulo-entrada">
+      <div class="entrada__hero-fondo" aria-hidden="true"></div>
       <div class="entrada__hero-copy">
         <h1 id="titulo-entrada"><span class="entrada__titulo-linea">Ven a</span><span class="entrada__titulo-linea entrada__titulo-linea--acento">rodar.</span></h1>
         <p class="entrada__descripcion">Asfalto, curvas y control.</p>
@@ -36,11 +34,11 @@
           <a class="entrada__enlace" href="#pista">Ver la pista</a>
         </div>
       </div>
-      <div class="entrada__hero-aside" data-depth="0.15">
+      <div class="entrada__hero-aside" data-depth="0.15" data-scroll-layer="hero-car">
         <figure class="entrada__hero-foto entrada__hero-foto--wide">
           <picture>
-            <source srcset="./images/landing/miniapolis-car-portrait.webp" type="image/webp">
-            <img src="./images/landing/miniapolis-car-portrait.jpeg" width="665" height="1182"
+            <source srcset="./images/landing/miniapolis-car-detail.webp" type="image/webp">
+            <img src="./images/landing/miniapolis-car-detail.jpeg" width="665" height="700"
                  alt="Coche de radiocontrol listo para entrar en pista"
                  fetchpriority="high" decoding="async">
           </picture>
@@ -50,7 +48,7 @@
       <div class="entrada__hero-cinta" aria-hidden="true"></div>
     </section>
 
-    <section class="entrada__cifras" aria-label="La pista en cifras">
+    <section class="entrada__cifras" data-scroll-scene="telemetria" aria-label="La pista en cifras">
       <div class="cifra">
         <span class="cifra__num">400 m²</span>
         <span class="cifra__texto">Asfalto indoor</span>
@@ -65,7 +63,7 @@
       </div>
     </section>
 
-    <section id="pista" class="entrada__pista-real" aria-labelledby="titulo-pista">
+    <section id="pista" class="entrada__pista-real" data-scroll-scene="pista" aria-labelledby="titulo-pista">
       <div class="entrada__seccion-cabeza">
         <h2 id="titulo-pista">La pista.</h2>
         <p class="entrada__seccion-descripcion">Rectas, curvas y asfalto.</p>
@@ -79,7 +77,7 @@
              loading="lazy" decoding="async">
       </figure>
 
-      <article class="entrada__media-destacada">
+      <article class="entrada__media-destacada" data-scroll-scene="ritmo">
         <div class="entrada__media-destacada-copy">
           <h3>A tu ritmo.</h3>
           <p>Una pista para sentir cada vuelta.</p>
@@ -90,20 +88,20 @@
         </div>
         <figure class="entrada__media-foto" data-depth="0.09">
           <picture>
-            <source srcset="./images/landing/miniapolis-track-portrait.webp" type="image/webp">
-            <img src="./images/landing/miniapolis-track-portrait.jpeg" width="665" height="1182"
+            <source srcset="./images/pista/miniapolis-hangar-vertical.webp" type="image/webp">
+            <img src="./images/pista/miniapolis-hangar-vertical.webp" width="941" height="1671"
                  alt="Vista vertical del circuito y el hangar de Miniápolis"
                  loading="lazy" decoding="async">
           </picture>
         </figure>
       </article>
 
-      <div class="entrada__diptico entrada__galeria-ritmo">
+      <div class="entrada__diptico entrada__galeria-ritmo" data-scroll-scene="galeria">
         <figure class="entrada__foto">
           <picture>
-            <source srcset="./images/landing/miniapolis-action.webp" type="image/webp">
-            <img src="./images/landing/miniapolis-action.jpeg" width="665" height="1182"
-               alt="Piloto junto al circuito de Miniápolis"
+            <source srcset="./images/pista/miniapolis-curb-detail-vertical.webp" type="image/webp">
+            <img src="./images/pista/miniapolis-curb-detail-vertical.webp" width="941" height="1672"
+               alt="Detalle de un bordillo rojo y blanco sobre el asfalto"
                loading="lazy" decoding="async">
           </picture>
         </figure>
@@ -118,7 +116,7 @@
       </div>
     </section>
 
-    <section id="acceso" class="entrada__acceso" aria-labelledby="titulo-acceso">
+    <section id="acceso" class="entrada__acceso" data-scroll-scene="acceso" aria-labelledby="titulo-acceso">
       <div class="entrada__acceso-intro">
         <h2 id="titulo-acceso">Tu pase.</h2>
         <p class="entrada__acceso-nota">

@@ -62,6 +62,64 @@ function montarParallax() {
   window.addEventListener('resize', alDesplazar, { passive: true });
 }
 
+function montarEscenasScroll() {
+  const escenas = [...document.querySelectorAll('[data-scroll-scene]')];
+  if (reducir || escenas.length === 0) return;
+
+  let pendiente = false;
+  const limitar = (valor, minimo = 0, maximo = 1) => Math.min(maximo, Math.max(minimo, valor));
+  const actualizar = () => {
+    pendiente = false;
+    const alto = window.innerHeight || 1;
+
+    for (const escena of escenas) {
+      const rectangulo = escena.getBoundingClientRect();
+      const progreso = limitar((alto - rectangulo.top) / (alto + Math.max(rectangulo.height, 1)));
+      const distancia = .5 - progreso;
+      const nombre = escena.dataset.scrollScene;
+      const entrada = limitar((progreso - .08) / .42);
+
+      escena.style.setProperty('--escena-progreso', progreso.toFixed(3));
+      escena.style.setProperty('--escena-foto-y', `${(distancia * 54).toFixed(1)}px`);
+      escena.style.setProperty('--escena-foto-scale', (1 + Math.abs(distancia) * .035).toFixed(3));
+      escena.style.setProperty('--escena-foto-opacity', (.76 + entrada * .24).toFixed(3));
+      escena.style.setProperty('--escena-copy-y', `${(distancia * 38).toFixed(1)}px`);
+      escena.style.setProperty('--escena-copy-opacity', (.72 + entrada * .28).toFixed(3));
+
+      if (nombre === 'hero') {
+        escena.style.setProperty('--escena-copy-y', `${(distancia * 42).toFixed(1)}px`);
+        escena.style.setProperty('--escena-copy-opacity', (1 - Math.max(0, progreso - .72) * 1.2).toFixed(3));
+        escena.style.setProperty('--escena-car-y', `${(distancia * 78).toFixed(1)}px`);
+        escena.style.setProperty('--escena-car-rotate', `${(3 + distancia * 3).toFixed(2)}deg`);
+        escena.style.setProperty('--escena-car-scale', (1 + Math.abs(distancia) * .035).toFixed(3));
+      }
+
+      if (nombre === 'telemetria') {
+        escena.style.setProperty('--escena-bloque-y', `${(distancia * 22).toFixed(1)}px`);
+      }
+
+      if (nombre === 'galeria') {
+        escena.style.setProperty('--escena-galeria-rotate', `${(distancia * 1.6).toFixed(2)}deg`);
+      }
+
+      if (nombre === 'acceso') {
+        escena.style.setProperty('--escena-panel-y', `${(distancia * 26).toFixed(1)}px`);
+        escena.style.setProperty('--escena-panel-scale', (1 + Math.abs(distancia) * .015).toFixed(3));
+      }
+    }
+  };
+
+  const programar = () => {
+    if (pendiente) return;
+    pendiente = true;
+    window.requestAnimationFrame(actualizar);
+  };
+
+  actualizar();
+  window.addEventListener('scroll', programar, { passive: true });
+  window.addEventListener('resize', programar, { passive: true });
+}
+
 function montarProgreso() {
   const barra = document.querySelector('#progreso-pista');
   if (!barra) return;
@@ -69,6 +127,7 @@ function montarProgreso() {
   const actualizar = () => {
     const maximo = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
     barra.style.setProperty('--progreso', `${Math.min(1, window.scrollY / maximo)}`);
+    document.body.classList.toggle('scrolleado', window.scrollY > 16);
   };
 
   actualizar();
@@ -105,5 +164,6 @@ function montarMiraPuntero() {
 
 montarRevelado();
 montarParallax();
+montarEscenasScroll();
 montarProgreso();
 montarMiraPuntero();
