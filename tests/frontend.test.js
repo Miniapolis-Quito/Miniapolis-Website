@@ -259,7 +259,7 @@ test('las referencias visuales de la portada apuntan a archivos existentes', () 
 test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--fondo:\s*#000000/);
-  assert.match(css, /--acento:\s*#3dfe40/);
+  assert.match(css, /--acento:\s*#7ed500/);
   assert.match(css, /\.barra[\s\S]*\.tarjeta/);
 });
 
@@ -363,4 +363,3 @@ test('la identidad para abrir el escáner sin red se olvida con la misma clave c
   assert.ok(escaner.includes("almacen.recordar('operador'"), 'el escáner guarda la identidad como «operador»');
   assert.ok(api.includes(`'${prefijo}operador'`), `api.js debe olvidar ${prefijo}operador`);
 });
-
