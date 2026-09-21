@@ -113,12 +113,20 @@ npm run create-master -- --email admin@racinghobbies.ec --nombre "Tu nombre"
 Crea la cuenta si no existe o le restablece la contraseña y le devuelve el rol
 máster si ya existía. Es la salida de emergencia, y solo funciona desde el
 servidor. Sin indicar nada, genera una contraseña segura y la muestra una sola
-vez. Para elegirla tú, pásala por el entorno y no en la propia orden —los
-argumentos de un proceso los lee cualquier usuario de la máquina con `ps`:
+vez. Para elegirla, introdúcela sin eco y pásala por la entrada estándar, sin
+escribirla en la orden:
 
 ```bash
-MASTER_PASSWORD='...' npm run create-master -- --email admin@racinghobbies.ec
+read -rs MASTER_PASSWORD; printf '\n'
+printf '%s\n' "$MASTER_PASSWORD" | npm run create-master -- --email admin@racinghobbies.ec --password-stdin
+unset MASTER_PASSWORD
 ```
+
+Lo que se escribe en la propia orden queda en el historial del intérprete y,
+mientras el proceso vive, a la vista de cualquier otra cuenta de la máquina con
+un `ps`. Esta vía evita que la contraseña viaje como un argumento.
+`MASTER_PASSWORD` y `--password` siguen funcionando por compatibilidad, pero
+pueden exponer más el secreto; el segundo avisa al usarlo.
 
 ---
 

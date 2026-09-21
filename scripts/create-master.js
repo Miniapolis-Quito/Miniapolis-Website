@@ -3,11 +3,18 @@
  * Crea (o repara) una cuenta máster desde la terminal.
  *
  *   npm run create-master -- --email admin@racinghobbies.ec --nombre "Danilo"
- *   npm run create-master -- --email admin@racinghobbies.ec --password "..."
+ *   read -rs MASTER_PASSWORD; printf '\n'
+ *   printf '%s\n' "$MASTER_PASSWORD" | npm run create-master -- --email admin@racinghobbies.ec --password-stdin
  *
  * Si la cuenta ya existe, se le restablece la contraseña y se le asegura el rol
  * máster: es la salida de emergencia cuando nadie puede entrar al panel.
+ *
+ * Sobre por dónde entra la contraseña: `--password` la deja escrita en el
+ * historial del intérprete y, mientras el proceso vive, a la vista de
+ * cualquier otra cuenta de la máquina que haga `ps`. `--password-stdin` evita
+ * que viaje como argumento; las vías antiguas se mantienen por compatibilidad.
  */
+import { readFileSync } from 'node:fs';
 import { getDb, closeDb } from '../src/db/index.js';
 import { validatePasswordStrength, generarPasswordTemporal } from '../src/lib/passwords.js';
 import * as users from '../src/services/users.js';
@@ -35,10 +42,14 @@ const opciones = leerArgumentos(process.argv.slice(2));
 if (opciones.help || !opciones.email) {
   process.stdout.write(
     `\nCrea o repara la cuenta máster del sistema de entradas.\n\n` +
-      `  npm run create-master -- --email <correo> [--nombre "<nombre>"]\n\n` +
+      `  npm run create-master -- --email <correo> [--nombre "<nombre>"] [--password-stdin]\n\n` +
       `Sin contraseña se genera una segura y se muestra una sola vez.\n` +
-      `Para elegirla, pásala por el entorno (no en la línea de órdenes):\n\n` +
-      `  MASTER_PASSWORD='...' npm run create-master -- --email <correo>\n\n`,
+      `Para elegirla, introdúcela sin eco y pásala por la entrada estándar:\n\n` +
+      `  read -rs MASTER_PASSWORD; printf '\\n'\n` +
+      `  printf '%s\\n' "$MASTER_PASSWORD" | npm run create-master -- --email <correo> --password-stdin\n` +
+      `  unset MASTER_PASSWORD\n\n` +
+      `También se aceptan MASTER_PASSWORD y --password "<contraseña>" por compatibilidad;\n` +
+      `ambos exponen más el secreto que --password-stdin.\n\n`,
   );
   process.exit(opciones.email ? 0 : 1);
 }
@@ -49,22 +60,54 @@ const email = String(opciones.email).trim().toLowerCase();
 const nombre = typeof opciones.nombre === 'string' ? opciones.nombre : 'Administrador';
 
 /**
- * La contraseña se toma del entorno, no de la línea de órdenes.
- *
- * Los argumentos de un proceso los lee cualquier usuario de la máquina con
- * `ps`, y además quedan en el historial del intérprete. Se sigue aceptando
- * `--password` para no romper a quien ya lo usaba, pero con un aviso: la
- * contraseña de la cuenta máster es la llave de todo el sistema.
+ * Lee la contraseña de la entrada estándar. Se queda con el primer renglón,
+ * descartando el salto final que suele añadir quien envía la tubería.
  */
-let password = typeof opciones.password === 'string' ? opciones.password : process.env.MASTER_PASSWORD || null;
-if (typeof opciones.password === 'string') {
-  process.stderr.write(
-    '\n  Aviso: --password queda a la vista de cualquiera en la máquina (ps) y en el historial.\n' +
-      "  La próxima vez pásala por el entorno: MASTER_PASSWORD='...' npm run create-master -- --email ...\n",
-  );
+function passwordDeLaEntrada() {
+  if (process.stdin.isTTY) {
+    process.stderr.write(
+      `\n--password-stdin espera la contraseña por la entrada estándar.\n` +
+        `Escríbela sin eco y pásala por una tubería; consulta --help para el ejemplo.\n\n`,
+    );
+    closeDb();
+    process.exit(1);
+  }
+  let crudo = '';
+  try {
+    crudo = readFileSync(0, 'utf8');
+  } catch {
+    crudo = '';
+  }
+  return crudo.split('\n', 1)[0].replace(/\r$/, '');
 }
+
+let password = null;
 let generada = false;
-if (!password) {
+
+if (opciones['password-stdin'] && typeof opciones.password === 'string') {
+  process.stderr.write('\nElige solo una fuente de contraseña: --password-stdin o --password.\n\n');
+  closeDb();
+  process.exit(1);
+} else if (opciones['password-stdin']) {
+  password = passwordDeLaEntrada();
+  if (!password) {
+    process.stderr.write('\nNo llegó ninguna contraseña por la entrada estándar.\n\n');
+    closeDb();
+    process.exit(1);
+  }
+} else if (typeof opciones.password === 'string') {
+  password = opciones.password;
+  process.stderr.write(
+    `\n  Aviso: --password queda en el historial del intérprete y es visible\n` +
+      `  con ps mientras el proceso vive. Usa --password-stdin en su lugar.\n\n`,
+  );
+} else if (process.env.MASTER_PASSWORD) {
+  password = process.env.MASTER_PASSWORD;
+  process.stderr.write(
+    '\n  Aviso: MASTER_PASSWORD se conserva por compatibilidad, pero puede quedar expuesta\n' +
+      '  a otros procesos. Usa --password-stdin en su lugar.\n\n',
+  );
+} else {
   password = generarPasswordTemporal(12);
   generada = true;
 }
