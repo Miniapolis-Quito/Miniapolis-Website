@@ -2562,9 +2562,13 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   background:
     radial-gradient(circle at 76% 20%, rgba(61, 254, 64, .1), transparent 25rem),
     radial-gradient(circle at 0 54%, rgba(61, 254, 64, .045), transparent 27rem),
-    #070a0b;
+    linear-gradient(180deg, #080b0c 0%, #050708 52%, #080b0c 100%);
 }
-.pagina-entrada::before { opacity: .26; background-size: 64px 64px; }
+.pagina-entrada::before {
+  opacity: .34;
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+}
 .pagina-entrada::after {
   position: fixed;
   inset: 0;
@@ -2581,9 +2585,41 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 .pagina-entrada .entrada__barra-interior { min-height: 82px; }
 .pagina-entrada .entrada__hero {
   min-height: min(820px, calc(100dvh - 82px));
+  grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
   gap: clamp(34px, 7vw, 104px);
   padding-block: clamp(72px, 10vw, 128px) clamp(60px, 8vw, 108px);
+  overflow: clip;
 }
+.pagina-entrada .entrada__hero::before {
+  position: absolute;
+  inset: 8% -10% 2% 17%;
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  border-top: 1px solid rgba(226, 240, 231, .15);
+  border-bottom: 1px solid rgba(226, 240, 231, .08);
+  background:
+    radial-gradient(ellipse at 58% 42%, rgba(61, 254, 64, .12), transparent 56%),
+    linear-gradient(116deg, transparent 47%, rgba(61, 254, 64, .11) 47.15%, transparent 47.5%);
+  transform: skewY(-2deg) rotate(-1deg);
+  opacity: .78;
+}
+.pagina-entrada .entrada__hero::after {
+  position: absolute;
+  top: 7%;
+  right: -15%;
+  z-index: 0;
+  width: min(56vw, 680px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  content: '';
+  border: 1px solid rgba(61, 254, 64, .18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 24px rgba(61, 254, 64, .025), 0 0 0 48px rgba(61, 254, 64, .018);
+  animation: aura-pulso 12s ease-in-out infinite alternate;
+}
+.pagina-entrada .entrada__hero-copy,
+.pagina-entrada .entrada__hero-aside { position: relative; z-index: 1; }
 .pagina-entrada .entrada__hero-copy { max-width: 45ch; }
 .pagina-entrada .entrada__hero h1 {
   max-width: 8ch;
@@ -2614,23 +2650,87 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 .pagina-entrada .entrada__punto-vivo { animation: brillo-senal 2.4s ease-in-out infinite; }
 .pagina-entrada .entrada__telemetria { max-width: 570px; margin-top: clamp(50px, 7vw, 82px); border-top-color: rgba(61, 254, 64, .34); }
 .pagina-entrada .entrada__telemetria-valor { text-shadow: 0 0 18px rgba(61, 254, 64, .18); }
-.pagina-entrada .entrada__cifras { border-top-color: rgba(226, 240, 231, .3); }
-.pagina-entrada .cifra { padding-block: 22px; }
+.pagina-entrada .entrada__cifras {
+  position: relative;
+  margin-inline: clamp(0px, 2vw, 24px);
+  padding: 18px clamp(14px, 2.6vw, 34px);
+  border: 1px solid rgba(226, 240, 231, .2);
+  border-radius: var(--radio);
+  background: linear-gradient(115deg, rgba(13, 18, 20, .88), rgba(8, 12, 13, .62));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 26px 80px -60px rgba(61, 254, 64, .55);
+}
+.pagina-entrada .cifra { position: relative; padding: 10px clamp(10px, 2vw, 26px); }
+.pagina-entrada .cifra + .cifra { border-left: 1px solid rgba(226, 240, 231, .14); }
+.pagina-entrada .cifra::before {
+  position: absolute;
+  top: 10px;
+  left: clamp(10px, 2vw, 26px);
+  width: 22px;
+  height: 2px;
+  content: '';
+  background: var(--acento);
+  box-shadow: 0 0 14px rgba(61, 254, 64, .7);
+}
+.pagina-entrada .cifra__num { padding-top: 12px; }
 .pagina-entrada .cifra__num { font-size: clamp(1.8rem, 3.5vw, 2.8rem); }
 .pagina-entrada .entrada__pista-real,
 .pagina-entrada .entrada__acceso { margin-top: clamp(120px, 16vw, 220px); }
-.pagina-entrada .entrada__seccion-cabeza { padding-bottom: 12px; border-bottom: 1px solid var(--borde); }
+.pagina-entrada .entrada__seccion-cabeza { position: relative; padding-bottom: 22px; border-bottom: 1px solid var(--borde); }
+.pagina-entrada .entrada__seccion-cabeza::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: clamp(84px, 12vw, 160px);
+  height: 1px;
+  content: '';
+  background: var(--acento);
+  box-shadow: 0 0 16px rgba(61, 254, 64, .55);
+}
 .pagina-entrada .entrada__seccion-cabeza h2,
 .pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(2.8rem, 6.2vw, 6.8rem); letter-spacing: -.085em; line-height: .88; }
 .pagina-entrada .entrada__foto img,
 .pagina-entrada .entrada__media-foto img { border-color: rgba(226, 240, 231, .2); border-radius: var(--radio-s); }
-.pagina-entrada .entrada__media-destacada { gap: clamp(32px, 7vw, 100px); }
+.pagina-entrada .entrada__media-destacada {
+  position: relative;
+  isolation: isolate;
+  gap: clamp(32px, 7vw, 100px);
+  padding: clamp(24px, 4vw, 58px);
+  overflow: hidden;
+  border: 1px solid rgba(226, 240, 231, .14);
+  border-radius: var(--radio);
+  background: linear-gradient(135deg, rgba(16, 23, 25, .82), rgba(7, 11, 12, .42));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 34px 80px -64px rgba(61, 254, 64, .4);
+}
+.pagina-entrada .entrada__media-destacada::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  background:
+    radial-gradient(circle at 8% 18%, rgba(61, 254, 64, .11), transparent 22rem),
+    linear-gradient(90deg, transparent 0 49.9%, rgba(61, 254, 64, .08) 50%, transparent 50.1%);
+}
+.pagina-entrada .entrada__media-destacada-copy,
+.pagina-entrada .entrada__media-foto { position: relative; z-index: 1; }
 .pagina-entrada .entrada__media-lista li { padding-block: 14px; }
-.pagina-entrada .entrada__acceso { padding-top: clamp(42px, 6vw, 80px); border-top-color: rgba(61, 254, 64, .34); }
+.pagina-entrada .entrada__acceso { position: relative; padding-top: clamp(42px, 6vw, 80px); border-top-color: rgba(61, 254, 64, .34); }
+.pagina-entrada .entrada__acceso::before {
+  position: absolute;
+  top: -1px;
+  right: 0;
+  width: min(42%, 360px);
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, var(--acento));
+  box-shadow: 0 0 16px rgba(61, 254, 64, .45);
+}
 .pagina-entrada .entrada__acceso-panel {
   border-color: rgba(61, 254, 64, .34);
   border-radius: var(--radio);
   background: rgba(13, 18, 20, .82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 34px 100px -44px rgba(61, 254, 64, .28), var(--sombra);
 }
 .pagina-entrada .entrada__acceso-panel::after {
@@ -2645,10 +2745,16 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 }
 .pagina-entrada .entrada__pie { margin-top: 80px; }
 
+@keyframes aura-pulso {
+  from { opacity: .5; transform: scale(.96) translate3d(0, 0, 0); }
+  to { opacity: .9; transform: scale(1.04) translate3d(-1%, 1%, 0); }
+}
+
 @media (max-width: 900px) {
   .encabezado-pista h1 { font-size: clamp(2.2rem, 8vw, 3.8rem); }
   .estado-conexion { display: none; }
   .pagina-entrada .entrada__hero { min-height: auto; padding-top: 82px; }
+  .pagina-entrada .entrada__hero { grid-template-columns: 1fr; }
   .pagina-entrada .entrada__hero h1 { font-size: clamp(4.3rem, 16vw, 7.3rem); }
   .pagina-entrada .entrada__hero-foto { min-height: 410px; }
   .pagina-entrada .entrada__hero-foto img { min-height: 410px; }
@@ -2683,8 +2789,15 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   .pagina-entrada .entrada__hero-acciones .boton { width: 100%; }
   .pagina-entrada .entrada__hero-foto,
   .pagina-entrada .entrada__hero-foto img { min-height: 350px; }
+  .pagina-entrada .entrada__hero::before { inset: 2% -64% 28% -18%; }
+  .pagina-entrada .entrada__hero::after { top: 22%; right: -58%; width: 130vw; }
   .pagina-entrada .entrada__hero-foto figcaption { right: 16px; bottom: 16px; left: 16px; }
   .pagina-entrada .entrada__telemetria { margin-top: 48px; }
+  .pagina-entrada .entrada__cifras { margin-inline: 0; padding-inline: 12px; }
+  .pagina-entrada .cifra + .cifra { border-top: 1px solid rgba(226, 240, 231, .12); border-left: 0; }
+  .pagina-entrada .cifra::before { top: 12px; left: 0; }
+  .pagina-entrada .cifra { padding-inline: 0; }
+  .pagina-entrada .entrada__media-destacada { padding: 22px 18px; }
   .pagina-entrada .entrada__seccion-cabeza h2,
   .pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(3.2rem, 18vw, 5.8rem); }
   .pagina-entrada .entrada__pie { margin-top: 50px; }
@@ -2758,6 +2871,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   .pagina-entrada .entrada__hero-foto:hover img,
   .pagina-entrada .entrada__foto:hover img,
   .pagina-entrada .entrada__media-foto:hover img { transform: none; }
+  .pagina-entrada .entrada__hero::after { animation: none; }
 }
 
 @media print {
