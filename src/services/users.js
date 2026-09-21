@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { textoBusquedaUsuario, patronLike } from '../lib/texto.js';
 import { consume, reset as resetRateLimit } from '../lib/rateLimit.js';
 import { notificarSesionInvalida } from './sessions.js';
+import { hub, channels } from '../lib/events.js';
 import * as audit from './audit.js';
 
 /** Normaliza un correo para la comparación de unicidad. */
@@ -411,7 +412,25 @@ export function updateUser(userId, changes, db = getDb()) {
 
     return findById(userId, db);
   });
-  return guardar.immediate();
+  const actualizado = guardar.immediate();
+
+  // Suspender una cuenta deja sus packs sin valer en la puerta, y cambiar de
+  // nombre cambia lo que dice el pase, pero ninguna de las dos cosas es un
+  // cambio en un pack: sin este aviso, el pase que el cliente lleva en el
+  // teléfono seguía diciendo "Activo" para entradas que el escáner ya
+  // rechazaba, o enseñando un nombre que ya no es el suyo. Va fuera de la
+  // transacción, con el cambio ya confirmado.
+  const cambioDeEstado = changes.status !== undefined && changes.status !== user.status;
+  const cambioDeNombre = changes.fullName !== undefined && changes.fullName !== user.full_name;
+  if (cambioDeEstado || cambioDeNombre) {
+    hub.publish([channels.admin, channels.user(userId)], 'cliente.actualizado', {
+      userId,
+      status: actualizado.status,
+      fullName: actualizado.full_name,
+    });
+  }
+
+  return actualizado;
 }
 
 export function unlockUser(userId, db = getDb()) {

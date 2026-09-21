@@ -1,5 +1,6 @@
 /** Panel del usuario máster: clientes, packs, consumos, reportes y auditoría. */
 import express from 'express';
+import QRCode from 'qrcode';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireMaster } from '../middleware/auth.js';
 import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
@@ -38,6 +39,7 @@ import * as avisos from '../services/avisos.js';
 import * as fidelidad from '../services/fidelidad.js';
 import * as packRequests from '../services/packRequests.js';
 import * as dosFactores from '../services/dosFactores.js';
+import * as wallet from '../services/wallet.js';
 import { rateLimit } from '../lib/rateLimit.js';
 
 export const router = express.Router();
@@ -465,6 +467,71 @@ router.post(
   asyncHandler(async (req, res) => {
     const data = parseOrThrow(adjustPackSchema, req.body, badRequest);
     res.json({ pack: packsService.adjustPack(req.params.id, { ...data, ...actorContext(req) }) });
+  }),
+);
+
+/**
+ * Cómo está el pase de este pack en la cartera del cliente.
+ *
+ * Es lo primero que necesita quien atiende cuando alguien dice «mi pase no se
+ * actualiza»: si lo tiene guardado, en cuántos teléfonos, y si queda algún
+ * cambio por comunicar.
+ */
+router.get(
+  '/packs/:id/wallet',
+  asyncHandler(async (req, res) => {
+    const pack = packsService.findById(req.params.id);
+    if (!pack) throw notFound('Pack no encontrado.');
+    res.json(wallet.estadoDelPase(pack.id));
+  }),
+);
+
+/**
+ * Invitación para que el cliente guarde su pase ahí mismo, en el mostrador.
+ *
+ * Se entrega como un QR en pantalla: el cliente lo escanea con la cámara, abre
+ * la página y guarda el pase, sin tener que iniciar sesión delante de la cola.
+ * El permiso dura unos minutos y solo vale para este pack, así que lo que se
+ * enseña en pantalla deja de servir enseguida.
+ */
+router.post(
+  '/packs/:id/wallet/invitacion',
+  adminPackLimiter,
+  asyncHandler(async (req, res) => {
+    const pack = packsService.findById(req.params.id);
+    if (!pack) throw notFound('Pack no encontrado.');
+    if (!wallet.algunaDisponible()) {
+      throw notFound('Este sistema no tiene ninguna cartera configurada.', 'cartera_no_configurada');
+    }
+    if (!config.publicUrl) {
+      throw badRequest(
+        'Para entregar el pase hace falta configurar PUBLIC_URL, que es la dirección por la que el cliente llega al sistema.',
+        null,
+        'sin_direccion_publica',
+      );
+    }
+
+    // El permiso viaja en el fragmento de la dirección: esa parte no se manda
+    // al servidor, así que no queda escrita en sus registros ni se filtra por
+    // el Referer si la página abre algo fuera.
+    const url = `${config.publicUrl}/cartera#p=${pack.id}&t=${encodeURIComponent(wallet.firmarInvitacion(pack.id))}`;
+    const qr = await QRCode.toString(url, {
+      type: 'svg',
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      color: { dark: '#0b0f14', light: '#ffffff' },
+    });
+
+    audit.record({
+      ...actorContext(req),
+      action: 'pack.cartera_invitacion',
+      entityType: 'pack',
+      entityId: pack.id,
+      metadata: { code: pack.code },
+    });
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ url, qr, validoMinutos: wallet.MINUTOS_DE_INVITACION, estado: wallet.estadoDelPase(pack.id) });
   }),
 );
 

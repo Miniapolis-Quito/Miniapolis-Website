@@ -1,10 +1,14 @@
 /**
  * Pases para la cartera del teléfono.
  *
- * Dos grupos de rutas muy distintos:
+ * Tres grupos de rutas muy distintos:
  *
  *  - Las del cliente, con su sesión: descargar el pase de Apple y pedir el
  *    enlace de Google.
+ *  - Las de la invitación del mostrador, sin sesión: el personal le enseña al
+ *    cliente un QR y este guarda su pase ahí mismo, sin tener que entrar a su
+ *    cuenta delante de la cola. Lo que las abre es un permiso firmado que dura
+ *    unos minutos y solo sirve para ese pack.
  *  - El servicio web de Apple (`/v1/...`), al que llama el teléfono por su
  *    cuenta, sin sesión: se identifica con la contraseña que lleva el propio
  *    pase dentro. Es el que hace que el saldo se actualice solo.
@@ -14,10 +18,11 @@ import express from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireAuth, actuaComoMaster } from '../middleware/auth.js';
 import { rateLimit } from '../lib/rateLimit.js';
-import { badRequest, forbidden, notFound, unauthorized } from '../lib/errors.js';
+import { badRequest, forbidden, notFound, unauthorized, servicioNoDisponible } from '../lib/errors.js';
 import { config } from '../config.js';
 import { logger } from '../lib/logger.js';
 import * as packsService from '../services/packs.js';
+import * as users from '../services/users.js';
 import * as wallet from '../services/wallet.js';
 import { PUSH_TOKEN_VALIDO } from '../lib/apns.js';
 
@@ -31,6 +36,8 @@ export const router = express.Router();
 const SERIAL_VALIDO = /^[A-Za-z0-9_-]{16,64}$/;
 const DISPOSITIVO_VALIDO = /^[A-Za-z0-9._-]{1,128}$/;
 const MARCA_DE_TIEMPO_VALIDA = /^[0-9TZ:.+-]{1,40}$/;
+/** Los identificadores de pack son UUID; lo que no lo sea no llega a la base. */
+const PACK_VALIDO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Cuota por conexión para el servicio web del teléfono. Es generosa porque
@@ -48,6 +55,18 @@ const limiteServicioApple = rateLimit({
 const limiteLogApple = rateLimit({
   name: 'wallet-apple-log-ip',
   limit: 30,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => `ip:${req.rateLimitIp ?? req.clientIp}`,
+});
+
+/**
+ * Cuota de la invitación del mostrador. Una invitación se usa dos o tres veces
+ * (abrir la página y pulsar un botón); esto deja margen de sobra para una
+ * jornada entera desde la misma conexión y ninguno para probar firmas al azar.
+ */
+const limiteInvitacion = rateLimit({
+  name: 'wallet-invitacion-ip',
+  limit: 120,
   windowSeconds: 15 * 60,
   keyFn: (req) => `ip:${req.rateLimitIp ?? req.clientIp}`,
 });
@@ -97,6 +116,26 @@ function packDelCliente(req, { admitirTicket = false } = {}) {
   return pack;
 }
 
+/**
+ * Pide el enlace de Google traduciendo sus fallos a algo que el cliente pueda
+ * entender. Que Google no conteste no es culpa de quien pulsó el botón, y un
+ * 500 seco le diría "algo salió mal" sin decirle qué hacer.
+ */
+async function enlaceDeGoogleOExplicacion(packId) {
+  try {
+    const url = await wallet.enlaceGoogle(packId);
+    if (!url) throw notFound('Pack no encontrado.');
+    return url;
+  } catch (error) {
+    if (error?.status) throw error;
+    logger.warn('No se pudo preparar el pase de Google Wallet', { message: error.message });
+    throw servicioNoDisponible(
+      'Google Wallet no responde en este momento. Vuelve a intentarlo en un minuto; tus entradas no se ven afectadas.',
+      'google_wallet_no_responde',
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Rutas del cliente
 // ---------------------------------------------------------------------------
@@ -144,7 +183,82 @@ router.get(
   rateLimit({ name: 'pase-google', limit: 60, windowSeconds: 15 * 60, keyFn: (req) => req.user?.id }),
   asyncHandler(async (req, res) => {
     const pack = packDelCliente(req);
-    const url = await wallet.enlaceGoogle(pack.id);
+    const url = await enlaceDeGoogleOExplicacion(pack.id);
+    res.set('Cache-Control', 'no-store');
+    res.json({ url });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Invitación del mostrador
+// ---------------------------------------------------------------------------
+
+/**
+ * El permiso llega en el cuerpo, no en la dirección: la página lo guarda en el
+ * fragmento (que no viaja al servidor) y lo manda aquí, así no queda escrito en
+ * los registros del servidor ni en el historial de un teléfono prestado.
+ */
+function packDeLaInvitacion(req) {
+  const packId = typeof req.body?.packId === 'string' ? req.body.packId : '';
+  const token = typeof req.body?.token === 'string' ? req.body.token : '';
+  if (!PACK_VALIDO.test(packId) || !wallet.invitacionValida(packId, token)) {
+    throw unauthorized(
+      'Este enlace ya caducó. Pídele al personal que te lo muestre de nuevo.',
+      'invitacion_invalida',
+    );
+  }
+  const pack = packsService.findById(packId);
+  if (!pack) throw notFound('Pack no encontrado.');
+  return pack;
+}
+
+/** Qué pack es y qué carteras se le pueden ofrecer. Sin datos de más. */
+router.post(
+  '/invitacion',
+  limiteInvitacion,
+  asyncHandler(async (req, res) => {
+    const pack = packDeLaInvitacion(req);
+    const dueno = users.findById(pack.user_id);
+    const usable = packsService.isUsable(pack, { owner: dueno ?? null });
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      // Lo justo para que el cliente reconozca que es su pack: ni su correo, ni
+      // su teléfono, ni el resto de su ficha. Esta página la abre quien tenga
+      // el enlace durante unos minutos.
+      pack: {
+        code: pack.code,
+        size: pack.size,
+        remaining: pack.remaining,
+        expiresAt: pack.expires_at,
+        usable: usable.ok,
+      },
+      titular: dueno?.full_name ?? '',
+      carteras: wallet.disponible(),
+    });
+  }),
+);
+
+router.post(
+  '/invitacion/apple',
+  limiteInvitacion,
+  exigirCartera('apple'),
+  asyncHandler(async (req, res) => {
+    const pack = packDeLaInvitacion(req);
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      url: `${config.publicUrl}/api/wallet/apple/pass/${pack.id}?t=${encodeURIComponent(wallet.firmarTicket(pack.id))}`,
+      validoSegundos: config.tokens.streamTicketTtlSeconds,
+    });
+  }),
+);
+
+router.post(
+  '/invitacion/google',
+  limiteInvitacion,
+  exigirCartera('google'),
+  asyncHandler(async (req, res) => {
+    const pack = packDeLaInvitacion(req);
+    const url = await enlaceDeGoogleOExplicacion(pack.id);
     res.set('Cache-Control', 'no-store');
     res.json({ url });
   }),
