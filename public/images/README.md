@@ -46,17 +46,36 @@ reales del recinto:
 
 | Archivo | Escena |
 | --- | --- |
-| `pista/miniapolis-track-wide.webp` | Hero del circuito indoor de asfalto |
-| `pista/miniapolis-track-corner-wide.webp` | Vista baja y única de una curva del trazado |
-| `pista/miniapolis-hangar-vertical.webp` | Arcos y ventanas del hangar sobre el circuito |
-| `pista/miniapolis-curb-detail-vertical.webp` | Detalle vertical del bordillo rojo y blanco |
-| `pista/miniapolis-asphalt-detail.webp` | Textura vertical del asfalto y línea de carrera |
-| `pista/miniapolis-track-vertical.webp` | Reserva optimizada del trazado vertical real |
+| `pista/miniapolis-track-wide.webp` | Hero limpio del circuito indoor de asfalto, 1675 × 939 |
+| `pista/miniapolis-track-corner-wide.webp` | Vista baja limpia de una curva, 1675 × 939 |
+| `pista/miniapolis-hangar-vertical.webp` | Arcos y ventanas del hangar sobre el circuito, 941 × 1671 |
+| `pista/miniapolis-curb-detail-vertical.webp` | Detalle vertical limpio del bordillo rojo y blanco, 941 × 1672 |
+| `pista/miniapolis-asphalt-detail.webp` | Textura vertical limpia del asfalto y línea de carrera, 941 × 1672 |
+| `pista/miniapolis-track-vertical.webp` | Reserva optimizada del trazado vertical real, 941 × 1670 |
 
 Cada bloque visual de la portada usa un encuadre distinto. Las variantes `-640`,
 `-960` y `-1440` son únicamente alternativas responsive del mismo encuadre, no
 repeticiones dentro de la página. Las superficies del trazado se presentan como
 asfalto continuo; las líneas y los bordillos conservan sus colores reales.
+
+La actualización premium mantiene esta misma colección como fuente de verdad:
+los masters horizontales y verticales conservan la arquitectura real del hangar,
+los arcos, ventanas, columnas, asfalto y bordillos. La limpieza visual elimina
+personas, camiones, autos de fondo y objetos accidentales sin añadir geometría ni
+decoración nueva. Las variantes responsive deben compartir el encuadre de su
+master y declarar en HTML sus dimensiones reales.
+
+Los archivos de `landing/` se reservan para composiciones editoriales: `miniapolis-car-detail`
+usa el auto RC como sujeto único y `miniapolis-track-atmosphere` muestra solo el
+ambiente real del circuito. `miniapolis-action` y `miniapolis-track-portrait` no
+son fuentes permitidas para la portada.
+
+`miniapolis-track-atmosphere` se sirve en 1675 × 939 con variantes 1440/960;
+`miniapolis-car-detail` se sirve en 1221 × 1289 con variantes 900/640. La
+panorámica oficial que consume la salida de carrera se sirve en 3840 × 2160.
+
+Los logotipos, iconos PWA, recursos de Wallet y la vista de cámara del escáner no
+se editan con ImageGen ni forman parte de esta colección fotográfica.
 
 Las tres composiciones de marca (`miniapolis-bandera-hero.webp`,
 `miniapolis-logo-dark.webp`, `miniapolis-logo-light.webp`) se conservan como
