@@ -400,3 +400,24 @@ test('la cabecera de la portada permanece visible durante el scroll', () => {
     'la regla específica de la portada debe mantener el encabezado sticky',
   );
 });
+
+test('la cabecera de la portada usa un lenguaje de pit lane sobrio y estático', () => {
+  const css = leer('public/css/styles.css');
+
+  assert.match(
+    css,
+    /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*box-shadow:\s*none;[^}]*backdrop-filter:\s*none;/s,
+    'la cabecera no debe parecer un panel flotante con blur ni sombra',
+  );
+  assert.match(css, /\.pagina-entrada \.entrada__progreso\s*\{[^}]*display:\s*none;/s, 'la barra de carga verde debe desaparecer');
+  assert.match(
+    css,
+    /\.pagina-entrada \.entrada__accion::after\s*\{[^}]*content:\s*['"]→['"];?/s,
+    'la acción de entrada debe usar una señal tipográfica discreta',
+  );
+  assert.doesNotMatch(
+    css,
+    /\.pagina-entrada \.entrada__accion::after\s*\{[^}]*background:\s*var\(--acento\)/s,
+    'la acción de entrada no debe llevar un punto verde encendido',
+  );
+});

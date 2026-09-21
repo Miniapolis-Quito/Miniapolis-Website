@@ -2886,27 +2886,41 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 }
 
 /* La portada aplica `position: relative` a sus hijos para ordenar las capas;
-   esta regla específica devuelve al encabezado su comportamiento sticky. */
+   esta regla específica devuelve al encabezado su comportamiento sticky. El
+   resto es una línea de pit lane: precisa, sobria y sin adornos luminosos. */
 .pagina-entrada > .entrada__barra {
   position: sticky;
   top: 0;
   z-index: 50;
   isolation: isolate;
-  background: rgba(6, 8, 9, .78);
+  background: #050708;
   border-bottom-color: rgba(244, 247, 244, .16);
-  box-shadow: 0 16px 34px -28px rgba(0, 0, 0, .96);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .pagina-entrada .entrada__barra::before {
   position: absolute;
   right: 0;
-  bottom: -1px;
+  top: 0;
   left: 0;
   height: 1px;
   pointer-events: none;
   content: '';
-  background: linear-gradient(90deg, transparent 0%, rgba(61, 254, 64, .32) 24%, rgba(244, 247, 244, .16) 50%, rgba(61, 254, 64, .32) 76%, transparent 100%);
-  opacity: .7;
+  background: rgba(244, 247, 244, .08);
+}
+
+.pagina-entrada .entrada__barra::after {
+  position: absolute;
+  bottom: -1px;
+  left: clamp(18px, 4vw, 40px);
+  width: 48px;
+  height: 2px;
+  pointer-events: none;
+  content: '';
+  background: conic-gradient(rgba(244, 247, 244, .72) 0 25%, transparent 0 50%) 0 0 / 8px 8px;
+  opacity: .72;
 }
 
 .pagina-entrada .entrada__barra-interior {
@@ -2915,54 +2929,46 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 }
 
 .pagina-entrada .entrada__marca-sello {
-  padding: 4px 0;
+  padding: 0;
 }
 
 .pagina-entrada .entrada__marca-sello img {
-  height: clamp(31px, 3.1vw, 38px);
-  filter: drop-shadow(0 5px 14px rgba(0, 0, 0, .34));
+  height: clamp(30px, 3vw, 36px);
+  filter: none;
 }
 
 .pagina-entrada .entrada__accion {
-  min-height: 42px;
-  padding: 9px 18px;
-  border-color: rgba(244, 247, 244, .24);
-  border-radius: 999px;
-  background: rgba(244, 247, 244, .045);
-  color: var(--texto);
-  font-family: var(--fuente);
-  font-size: .84rem;
+  min-height: 38px;
+  padding: 8px 0 8px 16px;
+  border: 0;
+  border-left: 1px solid rgba(244, 247, 244, .28);
+  border-radius: 0;
+  background: transparent;
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-size: .67rem;
   font-weight: 650;
-  letter-spacing: -.01em;
-  text-transform: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 10px 24px -18px rgba(61, 254, 64, .8);
-  transition: border-color var(--transicion), background-color var(--transicion), color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  box-shadow: none;
+  transition: border-color var(--transicion), color var(--transicion);
 }
 
 .pagina-entrada .entrada__accion::after {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--acento);
-  box-shadow: 0 0 0 4px rgba(61, 254, 64, .12), 0 0 12px rgba(61, 254, 64, .58);
-  content: '';
+  content: '→';
+  color: var(--texto-3);
+  font-family: var(--fuente);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .pagina-entrada .entrada__accion:hover {
-  border-color: rgba(61, 254, 64, .74);
-  background: rgba(61, 254, 64, .1);
-  color: var(--acento-2);
-  transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 12px 28px -18px rgba(61, 254, 64, .94);
+  border-left-color: var(--texto-2);
+  color: var(--texto);
 }
 
 .pagina-entrada .entrada__progreso {
-  height: 2px;
-  background: rgba(244, 247, 244, .08);
-}
-
-.pagina-entrada .entrada__progreso span {
-  box-shadow: 0 0 12px rgba(61, 254, 64, .72);
+  display: none;
 }
 
 .pagina-entrada .entrada__hero--cinematica {
