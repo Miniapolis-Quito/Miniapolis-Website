@@ -246,11 +246,16 @@ test('la portada no repite el mismo encuadre fotográfico en dos bloques', () =>
   assert.deepEqual(repetidas, [], 'cada bloque visual debe tener una imagen principal distinta');
 });
 
-test('la portada mantiene un copy editorial breve y sin repeticiones', () => {
+test('la portada mantiene un copy editorial breve, natural y sin ruido visual', () => {
   const src = leer(PORTADA);
-  assert.match(src, /Compra tu pack, guárdalo y entra a rodar\./);
-  assert.match(src, /Un circuito de asfalto bajo techo, con rectas y chicanes\./);
-  assert.match(src, /Tu pase, siempre contigo\./);
+  assert.match(src, /Compra tu pack y entra a rodar\./);
+  assert.match(src, /Asfalto bajo techo, con rectas y chicanes\./);
+  assert.match(src, /Tu pase\./);
+  assert.match(src, /Inicia sesión y muestra tu QR\./);
+  assert.doesNotMatch(src, /·/, 'la portada no debe usar puntos medios como separadores');
+  assert.doesNotMatch(src, /Track\s+\d+/i, 'la portada no debe mostrar identificadores artificiales de pista');
+  assert.doesNotMatch(src, /0°\d+|\d+°\d+['’]/, 'la portada no debe mostrar coordenadas decorativas');
+  assert.doesNotMatch(src, /entrada__seccion-indice|entrada__pasos|entrada__telemetria/, 'la portada no debe cargar microbloques redundantes');
   assert.doesNotMatch(src, /para disfrutar de verdad|dar tus primeras vueltas|buscar tu mejor tiempo|desde cualquier celular/);
   const descripcion = src.match(/<p class="entrada__seccion-descripcion">([\s\S]*?)<\/p>/)?.[1] ?? '';
   assert.ok(descripcion.replace(/\s+/g, ' ').trim().length < 100, 'la descripción del trazado debe ser breve');
