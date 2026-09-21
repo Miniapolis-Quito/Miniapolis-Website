@@ -1682,6 +1682,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
     linear-gradient(135deg, rgba(255, 255, 255, .028), transparent 38%),
     var(--superficie);
   box-shadow: var(--sombra-baja);
+  transition: border-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover);
 }
 .tarjeta::before {
   position: absolute;
@@ -2353,7 +2354,7 @@ th {
   transform: translate3d(22px, -50%, 0) scaleX(.2);
   transform-origin: right center;
   animation: none;
-  transition: opacity 200ms var(--curva-hover), transform var(--t-turbo) var(--curva-turbo);
+  transition: opacity var(--t-hover) var(--curva-hover), transform var(--t-hover) var(--curva-hover);
 }
 
 .boton.boton--principal {
@@ -2434,9 +2435,9 @@ textarea:focus-visible {
     transform: skewX(-18deg) scaleX(1.035);
     background-position: 260% 0, 0 0;
     transition:
-      background-position 720ms var(--curva-turbo),
-      box-shadow var(--t-turbo) var(--curva-turbo),
-      transform var(--t-turbo) var(--curva-turbo);
+      background-position var(--t-hover) var(--curva-hover),
+      box-shadow var(--t-hover) var(--curva-hover),
+      transform var(--t-hover) var(--curva-hover);
   }
   .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::after {
     opacity: 1;
