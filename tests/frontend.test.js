@@ -262,6 +262,36 @@ test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
   assert.match(css, /\.barra[\s\S]*\.tarjeta/);
 });
 
+test('la tipografía es Saira ancha para la voz de pista y Sora para el texto, servidas desde el dominio', () => {
+  const css = leer('public/css/styles.css');
+  for (const [familia, archivo] of [['Saira', 'saira-var.woff2'], ['Sora', 'sora-var.woff2']]) {
+    assert.match(css, new RegExp(`@font-face\\s*\\{[^}]*font-family:\\s*'${familia}'[^}]*url\\('/fonts/${archivo}'\\)`, 's'));
+    assert.ok(fs.existsSync(`public/fonts/${archivo}`), `${archivo} debe existir`);
+    assert.ok(fs.existsSync(`public/fonts/OFL-${familia}.txt`), `la licencia de ${familia} viaja con la fuente`);
+  }
+  assert.match(css, /@font-face\s*\{[^}]*'Saira'[^}]*font-stretch:\s*100%\s+125%/s, 'Saira declara su eje de anchura');
+  assert.match(css, /--fuente:\s*'Sora'/);
+  assert.match(css, /--display:\s*'Saira'/);
+  assert.doesNotMatch(css, /Archivo'/, 'la fuente anterior no debe quedar referenciada');
+});
+
+test('ningún texto lleva interletraje negativo: las letras nunca se tocan', () => {
+  for (const hoja of ['public/css/styles.css', 'public/css/portada.css']) {
+    const negativos = [...leer(hoja).matchAll(/letter-spacing:\s*-[\d.]+/g)].map((m) => `${hoja}: ${m[0]}`);
+    assert.deepEqual(negativos, []);
+  }
+});
+
+test('los botones tienen hover de pista (chasis inclinado con estelas) y los comentarios de la hoja cierran', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /\.boton:not\(\.boton--enlace\):not\(\.boton--nav\)::before\s*\{[^}]*transform:\s*skewX\(var\(--inclinacion\)\)/s);
+  assert.match(css, /@keyframes estelas/);
+  // Cada comentario de bloque abre y cierra: un `*/` huérfano se come la regla siguiente.
+  const aperturas = (css.match(/\/\*/g) || []).length;
+  const cierres = (css.match(/\*\//g) || []).length;
+  assert.equal(aperturas, cierres, 'hay un comentario sin abrir o sin cerrar en la hoja');
+});
+
 test('el sistema de interacción cubre hovers, pulsación y superficies con una salida accesible', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--t-hover:/, 'la interacción debe tener un ritmo propio');

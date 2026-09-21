@@ -16,6 +16,7 @@ const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g
 test('la portada anula lo que el resto de la app le pondría por defecto', () => {
   assert.match(CSS, /\.pagina-entrada main\s*\{[^}]*padding:\s*0/, 'el `main` compartido trae relleno propio');
   assert.match(CSS, /\.pagina-entrada::before\s*\{[^}]*display:\s*none/, 'la rejilla de body::before no es de la portada');
+  assert.match(CSS, /\.pagina-entrada \.boton\.boton--principal\s*\{[^}]*--chasis:\s*var\(--acento\)/, 'el botón primario de la portada debe ser verde');
   assert.match(CSS, /\.pagina-entrada main > \.revelar\s*,\s*\.pagina-entrada main > \.revelar--visible\s*\{[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las escenas');
 });
 
