@@ -86,7 +86,9 @@
   --t-media: 260ms;
   --t-lenta: 460ms;
   --transicion: var(--t-rapida) var(--curva);
-  --t-hover: 220ms;
+  /* Un único ritmo para las respuestas al puntero: un poco más pausado para
+     que el hover se sienta intencional y no nervioso. */
+  --t-hover: 300ms;
   --curva-hover: cubic-bezier(0.16, 1, 0.3, 1);
   --sombra-hover: 0 18px 42px -24px rgba(61, 254, 64, .52);
 
@@ -183,14 +185,14 @@ thead th,
 }
 p  { margin: 0 0 1em; }
 
-a { color: var(--acento); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a { color: var(--acento); text-underline-offset: 3px; text-decoration-thickness: 1px; transition: color var(--t-hover) var(--curva-hover); }
 a:hover { color: var(--acento-2); }
 
 ::selection { background: var(--acento); color: var(--sobre-acento); }
 
 * { scrollbar-width: thin; scrollbar-color: var(--borde-fuerte) transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
-*::-webkit-scrollbar-thumb { background: var(--borde-fuerte); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; transition: background-color var(--transicion); }
+*::-webkit-scrollbar-thumb { background: var(--borde-fuerte); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; transition: background-color var(--t-hover) var(--curva-hover); }
 *::-webkit-scrollbar-thumb:hover { background: var(--acento-borde); background-clip: content-box; }
 
 /* --------------------------------------------------------------------------
@@ -910,7 +912,7 @@ tbody td { padding: 13px 12px; border-bottom: 1px solid var(--borde); vertical-a
 thead th:first-child, tbody td:first-child { padding-left: 2px; }
 thead th:last-child, tbody td:last-child { padding-right: 2px; }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr { transition: background-color var(--t-rapida) var(--curva); }
+tbody tr { transition: background-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover); }
 tbody tr:hover { background: var(--superficie-2); }
 td.mono, .mono { font-family: var(--mono); font-size: .88em; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -2158,7 +2160,8 @@ textarea:hover:not(:disabled),
   --track-boton: .11em;
   --curva-turbo: cubic-bezier(.19, 1, .22, 1);
   --curva-resorte: cubic-bezier(.34, 1.56, .64, 1);
-  --t-turbo: 420ms;
+  /* Los movimientos de hover comparten el mismo tiempo de llegada. */
+  --t-turbo: var(--t-hover);
   --inclinacion: -13deg;
   --estela: rgba(61, 254, 64, .9);
 }
