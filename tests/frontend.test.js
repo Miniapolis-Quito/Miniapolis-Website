@@ -165,11 +165,12 @@ test('no hay identificadores repetidos en una misma página', () => {
 });
 
 test('toda clase usada en el HTML está definida en la hoja de estilos', () => {
-  const css = leer('public/css/styles.css');
-  const definidas = new Set([...css.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
   const fallos = [];
   for (const html of [...Object.keys(PAGINAS), 'public/404.html']) {
-    for (const m of leer(html).matchAll(/class="([^"]+)"/g)) {
+    const src = leer(html);
+    const hojas = [...src.matchAll(/<link rel="stylesheet" href="\/css\/([\w.-]+\.css)">/g)].map((m) => leer(`public/css/${m[1]}`));
+    const definidas = new Set(hojas.flatMap((css) => [...css.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1])));
+    for (const m of src.matchAll(/class="([^"]+)"/g)) {
       for (const clase of m[1].split(/\s+/)) {
         if (clase && !definidas.has(clase)) fallos.push(`${html}: la clase .${clase} no está definida`);
       }
@@ -231,62 +232,28 @@ test('la portada se marca como página de entrada', () => {
   );
 });
 
-test('la portada usa la pista real y los recursos fotográficos inmersivos', () => {
-  const src = leer(PORTADA);
-  assert.match(src, /\/images\/pista\/miniapolis-track-wide\.webp/);
-  assert.match(src, /\/images\/pista\/miniapolis-track-corner-wide\.webp/);
-  assert.match(src, /\/images\/pista\/miniapolis-hangar-vertical\.webp/);
-  assert.match(src, /\/images\/pista\/miniapolis-curb-detail-vertical\.webp/);
-  assert.match(src, /data-depth="[0-9.]+"/);
-  assert.doesNotMatch(src, /césped|cesped|grass/i, 'la pista debe describirse como asfalto');
-});
-
 test('la portada no repite el mismo encuadre fotográfico en dos bloques', () => {
   const imagenes = [...leer(PORTADA).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
   const repetidas = imagenes.filter((src, indice) => imagenes.indexOf(src) !== indice);
   assert.deepEqual(repetidas, [], 'cada bloque visual debe tener una imagen principal distinta');
 });
 
-test('la portada mantiene un copy editorial breve, natural y sin ruido visual', () => {
+test('las referencias visuales de la portada apuntan a archivos existentes', () => {
   const src = leer(PORTADA);
-  assert.match(src, /Compra tu pack y entra a rodar\./);
-  assert.match(src, /Asfalto bajo techo, con rectas y chicanes\./);
-  assert.match(src, /Tu pase\./);
-  assert.match(src, /Inicia sesión y muestra tu QR\./);
-  assert.doesNotMatch(src, /·/, 'la portada no debe usar puntos medios como separadores');
-  assert.doesNotMatch(src, /Track\s+\d+/i, 'la portada no debe mostrar identificadores artificiales de pista');
-  assert.doesNotMatch(src, /0°\d+|\d+°\d+['’]/, 'la portada no debe mostrar coordenadas decorativas');
-  assert.doesNotMatch(src, /entrada__seccion-indice|entrada__pasos|entrada__telemetria/, 'la portada no debe cargar microbloques redundantes');
-  assert.doesNotMatch(src, /para disfrutar de verdad|dar tus primeras vueltas|buscar tu mejor tiempo|desde cualquier celular/);
-  const descripcion = src.match(/<p class="entrada__seccion-descripcion">([\s\S]*?)<\/p>/)?.[1] ?? '';
-  assert.ok(descripcion.replace(/\s+/g, ' ').trim().length < 100, 'la descripción del trazado debe ser breve');
-});
-
-test('la portada gana presencia con capas visuales, no con más copy', () => {
-  const css = leer('public/css/styles.css');
-  assert.match(css, /\.pagina-entrada \.entrada__hero::before\s*\{/);
-  assert.match(css, /\.pagina-entrada \.entrada__hero::after\s*\{/);
-  assert.match(css, /\.pagina-entrada \.entrada__cifras\s*\{[^}]*background:/s);
-  assert.match(css, /\.pagina-entrada \.entrada__media-destacada\s*\{[^}]*position:\s*relative/s);
-  assert.match(css, /\.pagina-entrada \.entrada__acceso-panel\s*\{[^}]*backdrop-filter:/s);
-});
-
-test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
-  const src = leer(PORTADA);
-  assert.match(src, /\/js\/portada\.js/);
-  const movimiento = leer('public/js/portada.js');
-  assert.match(movimiento, /prefers-reduced-motion/);
-  assert.match(movimiento, /IntersectionObserver/);
-  assert.match(movimiento, /entrada__mira/);
-  assert.match(leer('public/css/styles.css'), /entrada__mira--segmento/);
-});
-
-test('la mira del puntero se posiciona sin interpolación ni transición espacial', () => {
-  const movimiento = leer('public/js/portada.js');
-  const estilos = leer('public/css/styles.css');
-  assert.doesNotMatch(movimiento, /requestAnimationFrame\(pintar\)/, 'la posición no debe esperar a otro frame');
-  assert.match(movimiento, /root\.style\.setProperty\('--puntero-x'/, 'el puntero debe actualizar las coordenadas directamente');
-  assert.doesNotMatch(estilos, /\.entrada__mira\s*\{[^}]*transition:\s*[^;}]*\btransform\b/s, 'la mira no debe interpolar su posición');
+  const rutas = new Set();
+  for (const match of src.matchAll(/\b(?:src|href)="([./][^\"]+)"/g)) {
+    if (match[1].includes('/images/')) rutas.add(match[1]);
+  }
+  for (const match of src.matchAll(/\bsrcset="([^"]+)"/g)) {
+    for (const candidato of match[1].split(',')) {
+      const ruta = candidato.trim().split(/\s+/)[0];
+      if (ruta.includes('/images/')) rutas.add(ruta);
+    }
+  }
+  const faltantes = [...rutas]
+    .map((ruta) => ruta.replace(/^\.\//, '').replace(/^\//, ''))
+    .filter((ruta) => !fs.existsSync(path.join('public', ruta)));
+  assert.deepEqual(faltantes, []);
 });
 
 test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
@@ -296,12 +263,34 @@ test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
   assert.match(css, /\.barra[\s\S]*\.tarjeta/);
 });
 
-test('la capa de movimiento tiene una salida global para movimiento reducido', () => {
+test('la tipografía es Saira ancha para la voz de pista y Sora para el texto, servidas desde el dominio', () => {
   const css = leer('public/css/styles.css');
-  const js = leer('public/js/portada.js');
-  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.match(js, /prefers-reduced-motion/);
-  assert.match(js, /portada-revela--visible/);
+  for (const [familia, archivo] of [['Saira', 'saira-var.woff2'], ['Sora', 'sora-var.woff2']]) {
+    assert.match(css, new RegExp(`@font-face\\s*\\{[^}]*font-family:\\s*'${familia}'[^}]*url\\('/fonts/${archivo}'\\)`, 's'));
+    assert.ok(fs.existsSync(`public/fonts/${archivo}`), `${archivo} debe existir`);
+    assert.ok(fs.existsSync(`public/fonts/OFL-${familia}.txt`), `la licencia de ${familia} viaja con la fuente`);
+  }
+  assert.match(css, /@font-face\s*\{[^}]*'Saira'[^}]*font-stretch:\s*100%\s+125%/s, 'Saira declara su eje de anchura');
+  assert.match(css, /--fuente:\s*'Sora'/);
+  assert.match(css, /--display:\s*'Saira'/);
+  assert.doesNotMatch(css, /Archivo'/, 'la fuente anterior no debe quedar referenciada');
+});
+
+test('ningún texto lleva interletraje negativo: las letras nunca se tocan', () => {
+  for (const hoja of ['public/css/styles.css', 'public/css/portada.css']) {
+    const negativos = [...leer(hoja).matchAll(/letter-spacing:\s*-[\d.]+/g)].map((m) => `${hoja}: ${m[0]}`);
+    assert.deepEqual(negativos, []);
+  }
+});
+
+test('los botones tienen hover de pista (chasis inclinado con estelas) y los comentarios de la hoja cierran', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /\.boton:not\(\.boton--enlace\):not\(\.boton--nav\)::before\s*\{[^}]*transform:\s*skewX\(var\(--inclinacion\)\)/s);
+  assert.match(css, /@keyframes estelas/);
+  // Cada comentario de bloque abre y cierra: un `*/` huérfano se come la regla siguiente.
+  const aperturas = (css.match(/\/\*/g) || []).length;
+  const cierres = (css.match(/\*\//g) || []).length;
+  assert.equal(aperturas, cierres, 'hay un comentario sin abrir o sin cerrar en la hoja');
 });
 
 test('el sistema de interacción cubre hovers, pulsación y superficies con una salida accesible', () => {
@@ -374,3 +363,4 @@ test('la identidad para abrir el escáner sin red se olvida con la misma clave c
   assert.ok(escaner.includes("almacen.recordar('operador'"), 'el escáner guarda la identidad como «operador»');
   assert.ok(api.includes(`'${prefijo}operador'`), `api.js debe olvidar ${prefijo}operador`);
 });
+

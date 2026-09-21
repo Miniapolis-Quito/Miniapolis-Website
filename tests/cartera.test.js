@@ -111,6 +111,25 @@ async function packDePrueba(cMaster, clienteId, extras = {}) {
   return packsService.findById(r.datos.pack.id);
 }
 
+/**
+ * Un pack que sí puede vencer.
+ *
+ * Las entradas pagadas no caducan: el vencimiento es cosa del premio de
+ * fidelidad y de lo que se transfiera desde uno. Así que lo que prueba la
+ * fecha en el pase tiene que ser un pack de cortesía, que es el único que la
+ * lleva de verdad.
+ */
+function packDeCortesia(clienteId, { expiresAt, ...extras } = {}) {
+  const emitido = packsService.issuePack({
+    userId: clienteId,
+    size: 5,
+    origin: 'loyalty',
+    expiresAt,
+    ...extras,
+  });
+  return packsService.findById(emitido.id);
+}
+
 // ---------------------------------------------------------------------------
 // El pase
 // ---------------------------------------------------------------------------
@@ -543,7 +562,7 @@ test('la plantilla de Google no lleva ningún campo que su API no conozca', () =
 
 test('el objeto de Google no lleva ningún campo que su API no conozca', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
-  const pack = await packDePrueba(cMaster, cliente.id, { allowStaticQr: true, expiresAt: '2030-01-31T23:59:59.000Z' });
+  const pack = packDeCortesia(cliente.id, { allowStaticQr: true, expiresAt: '2030-01-31T23:59:59.000Z' });
   const pase = wallet.asegurarPase(pack.id);
 
   const objeto = wallet.objetoGoogle(pack, null, pase);
@@ -558,7 +577,7 @@ test('el objeto de Google no lleva ningún campo que su API no conozca', async (
 
 test('el pase lleva la fecha de vencimiento para apagarse solo, aun sin conexión', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
-  const pack = await packDePrueba(cMaster, cliente.id, { expiresAt: '2030-01-31T23:59:59.000Z' });
+  const pack = packDeCortesia(cliente.id, { expiresAt: '2030-01-31T23:59:59.000Z' });
   const pase = wallet.asegurarPase(pack.id);
 
   // Apple rechaza el pase entero si la fecha trae milisegundos.
@@ -605,7 +624,7 @@ test('una cuenta suspendida se ve suspendida también en el pase', async () => {
 
 test('al vencer un pack, la cartera se entera sin que nadie toque nada', async () => {
   const { cMaster, cliente } = await sembrarUsuarios();
-  const pack = await packDePrueba(cMaster, cliente.id, { expiresAt: '2030-01-31T23:59:59.000Z' });
+  const pack = packDeCortesia(cliente.id, { expiresAt: '2030-01-31T23:59:59.000Z' });
   const { pase } = await registrarTelefono(pack);
 
   // El pack vence de puro pasar el tiempo: nadie lo anula ni lo escanea.

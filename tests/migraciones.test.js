@@ -348,3 +348,52 @@ test('la migración 012 crea los índices de cobertura y aceleración de consult
 
   db.close();
 });
+
+test('la migración 015 quita el vencimiento de lo pagado y conserva el de la cortesía', () => {
+  const indice = migrations.findIndex((m) => m.name === '015-solo-la-cortesia-vence');
+  const db = baseEn(indice);
+  const ahora = new Date().toISOString();
+  const ayer = new Date(Date.now() - 86400000).toISOString();
+  const manana = new Date(Date.now() + 86400000).toISOString();
+
+  db.prepare(
+    `INSERT INTO users (id, email, email_normalized, full_name, role, password_hash,
+                        password_changed_at, created_at, updated_at)
+     VALUES ('u1', 'ana@pista.ec', 'ana@pista.ec', 'Ana Piloto', 'customer', 'x', ?, ?, ?)`,
+  ).run(ahora, ahora, ahora);
+
+  const insertar = db.prepare(
+    `INSERT INTO packs (id, code, user_id, size, remaining, price_cents, currency, secret, status,
+                        expires_at, payment_reference, origin, created_at, updated_at)
+     VALUES (@id, @code, 'u1', 5, @remaining, @price, 'USD', 's', @status,
+             @expires_at, @ref, @origin, ?, ?)`,
+  );
+  const pack = (fila) =>
+    insertar.run({ remaining: 5, price: 2500, status: 'active', expires_at: null, ref: null, origin: 'sale', ...fila }, ahora, ahora);
+
+  pack({ id: 'p1', code: 'RHE-0000-0001', expires_at: manana });
+  pack({ id: 'p2', code: 'RHE-0000-0002', expires_at: ayer, status: 'expired', remaining: 3 });
+  pack({ id: 'p3', code: 'RHE-0000-0003', expires_at: ayer, status: 'expired', remaining: 0 });
+  // Un vencido sin fecha: lo dejó una mano, no el reloj, y no se toca.
+  pack({ id: 'p4', code: 'RHE-0000-0004', status: 'expired' });
+  pack({ id: 'p5', code: 'RHE-0000-0005', expires_at: manana, price: 0, origin: 'loyalty' });
+  // Descendencia del premio: hija y nieta, las dos se salvan.
+  pack({ id: 'p6', code: 'RHE-0000-0006', expires_at: manana, price: 0, origin: 'transfer', ref: 'from:RHE-0000-0005' });
+  pack({ id: 'p7', code: 'RHE-0000-0007', expires_at: manana, price: 0, origin: 'transfer', ref: 'from:RHE-0000-0006' });
+  // Transferida desde una venta: hereda una fecha que ya no debería existir.
+  pack({ id: 'p8', code: 'RHE-0000-0008', expires_at: manana, price: 0, origin: 'transfer', ref: 'from:RHE-0000-0001' });
+
+  migrations[indice].up(db);
+
+  const leer = (id) => db.prepare('SELECT expires_at, status FROM packs WHERE id = ?').get(id);
+  assert.deepEqual(leer('p1'), { expires_at: null, status: 'active' }, 'la venta deja de caducar');
+  assert.deepEqual(leer('p2'), { expires_at: null, status: 'active' }, 'la que el reloj mató vuelve al servicio');
+  assert.deepEqual(leer('p3'), { expires_at: null, status: 'depleted' }, 'sin saldo, lo que le pasa es que está agotada');
+  assert.deepEqual(leer('p4'), { expires_at: null, status: 'expired' }, 'al vencido sin fecha no se le toca el estado');
+  assert.equal(leer('p5').expires_at, manana, 'la cortesía conserva su fecha');
+  assert.equal(leer('p6').expires_at, manana, 'y su descendencia directa');
+  assert.equal(leer('p7').expires_at, manana, 'por muchas manos que pase');
+  assert.equal(leer('p8').expires_at, null, 'lo transferido desde una venta tampoco caduca');
+
+  db.close();
+});

@@ -51,7 +51,8 @@ completa te llega el pack de regalo al momento, sin canjear nada ni decir nada
 en la puerta.
 
 Las entradas de regalo no cuentan para ganar la siguiente, y el pack de
-cortesía puede tener fecha de vencimiento: mírala en tu lista de packs.
+cortesía es el único que puede tener fecha de vencimiento: mírala en tu lista
+de packs. Las entradas que compras no caducan nunca.
 
 ### Transferir entradas a otro piloto
 
@@ -82,8 +83,8 @@ Puedes adquirir tus packs pagando por transferencia bancaria, DeUna o efectivo:
 ### Consejos
 
 - Guarda la página en la pantalla de inicio del celular para abrirla más rápido.
-- Si compras un segundo pack, se usa primero el que vence antes. Puedes elegir
-  otro con los botones bajo el QR.
+- Tus entradas compradas no caducan. Si tienes un pack de cortesía con fecha,
+  se usa primero ese. Puedes elegir otro con los botones bajo el QR.
 - En **Mi cuenta** cambias tu contraseña y cierras sesión en otros dispositivos.
 - Si la pista tiene los avisos encendidos, te llega un correo con el
   comprobante de cada compra, y otro cuando te quedan pocas entradas, se te
@@ -281,10 +282,16 @@ normalidad.
 Abre el pack y usa **Ajustar entradas**. Número positivo acredita, negativo
 descuenta. Siempre pide un motivo y todo queda en el historial del pack.
 
-### Cambiar o quitar el vencimiento de un pack
+### Cambiar o quitar el vencimiento de un pack de cortesía
 
-Abre el pack y toca **Cambiar vencimiento**. Si dejas la fecha vacía, el pack
-deja de caducar.
+**Las entradas pagadas no vencen.** No hay fecha al venderlas y no se les puede
+poner después: quien pagó ya puso el dinero, y la pista no se lo queda por no
+venir a tiempo. El botón de vencimiento solo aparece en los packs de cortesía
+del programa de fidelidad y en lo que alguien haya transferido desde uno.
+
+En esos, abre el pack y toca **Cambiar vencimiento**. Si dejas la fecha vacía,
+el pack deja de caducar. Los días que trae de nacimiento se fijan en los
+ajustes del programa de fidelidad.
 
 Si el pack ya venció, ponerle una fecha nueva (o quitarla) lo devuelve al
 servicio en el mismo paso. Reactivarlo sin tocar la fecha no se puede: volvería
@@ -479,5 +486,8 @@ dice que no lo tiene guardado, es que lo borró del teléfono: vuelve a
 entregárselo.
 
 **¿Las entradas caducan?**
-Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan. La
-fecha se puede cambiar o quitar después, desde el detalle del pack.
+Las que se compran, no: duran hasta que se usan. Solo caducan los packs de
+cortesía del programa de fidelidad, con los días que fijes en sus ajustes, y lo
+que se transfiera desde uno (si no, regalarlo sería la forma de volverlo
+eterno). Esa fecha se puede cambiar o quitar después, desde el detalle del
+pack.

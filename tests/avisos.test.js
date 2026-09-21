@@ -53,6 +53,22 @@ function vender(extra = {}, userId = u.cliente.id) {
   return packsService.issuePack({ userId, size: 5, priceCents: 2000, actor: u.master, ...extra });
 }
 
+/**
+ * Un pack de cortesía, que es el único que puede llevar vencimiento: las
+ * entradas pagadas no caducan.
+ */
+function regalar(extra = {}, userId = u.cliente.id) {
+  return packsService.issuePack({
+    userId,
+    size: 5,
+    priceCents: 0,
+    paymentMethod: 'cortesia',
+    origin: 'loyalty',
+    actor: u.master,
+    ...extra,
+  });
+}
+
 function usar(pack, veces = 1) {
   for (let i = 0; i < veces; i += 1) {
     redemptions.redeemByCode({ code: pack.code, scanner: { id: u.staff.id, email: u.staff.email } });
@@ -264,7 +280,7 @@ test('ampliar el horario pone en la cola lo que esperaba a la mañana', async ()
 
 test('dos recordatorios a la misma persona se separan al menos 48 horas', async () => {
   activar({ kinds: { purchase: false } });
-  vender({ size: 5, expiresAt: iso(Date.now() + 3 * DIA) });
+  regalar({ expiresAt: iso(Date.now() + 3 * DIA) });
   const otro = vender({ size: 3 });
   usar(otro); // saldo total 7: sin «quedan pocas»
 
@@ -290,7 +306,7 @@ test('dos recordatorios a la misma persona se separan al menos 48 horas', async 
 
 test('por vencer: avisa una vez, y otra si se cambia la fecha', async () => {
   activar({ kinds: { purchase: false } });
-  const pack = vender({ size: 5, expiresAt: iso(Date.now() + 3 * DIA) });
+  const pack = regalar({ expiresAt: iso(Date.now() + 3 * DIA) });
 
   await avisos.ciclo();
   await avisos.ciclo();
@@ -320,7 +336,7 @@ test('inactividad: escribe a quien tiene entradas y no viene, una sola vez', asy
 
 test('si ya se le recordó algo después de su última visita, no se insiste por inactividad', async () => {
   activar({ kinds: { purchase: false } });
-  vender({ size: 5, expiresAt: iso(Date.now() + 3 * DIA) });
+  regalar({ expiresAt: iso(Date.now() + 3 * DIA) });
   envejecerCliente(u.cliente.id, 40);
 
   await avisos.ciclo();
@@ -622,7 +638,7 @@ test('clientes por recuperar: cada uno en su grupo más urgente, con WhatsApp li
   usar(pocas); // Carlos: le quedan 2
 
   const ana = await crearClienteExtra('Ana Vence', 'ana@pista.ec', '+593992223344');
-  vender({ size: 5, expiresAt: iso(Date.now() + 3 * DIA) }, ana.id);
+  regalar({ expiresAt: iso(Date.now() + 3 * DIA) }, ana.id);
   const beto = await crearClienteExtra('Beto Sin', 'beto@pista.ec');
   usar(vender({ size: 1 }, beto.id));
   const dora = await crearClienteExtra('Dora Quieta', 'dora@pista.ec');
@@ -632,7 +648,7 @@ test('clientes por recuperar: cada uno en su grupo más urgente, con WhatsApp li
   vender({ size: 10 }, eva.id);
   // Un pack que vence y que además lleva tiempo sin venir: manda el vencimiento.
   const fito = await crearClienteExtra('Fito Doble', 'fito@pista.ec');
-  vender({ size: 2, expiresAt: iso(Date.now() + 2 * DIA) }, fito.id);
+  regalar({ size: 2, expiresAt: iso(Date.now() + 2 * DIA) }, fito.id);
   envejecerCliente(fito.id, 50);
 
   const r = await u.cMaster.get('/api/admin/notifications/overview');
@@ -645,7 +661,7 @@ test('clientes por recuperar: cada uno en su grupo más urgente, con WhatsApp li
   assert.deepEqual(nombres('inactive'), ['Dora Quieta']);
   assert.deepEqual(nombres('lowBalance'), ['Carlos Piloto']);
   assert.equal(totals.customers, 5);
-  assert.equal(totals.ticketsAtStake, 5 + 2 + 5, 'entradas pagadas por vencer o sin usar');
+  assert.equal(totals.ticketsAtStake, 5 + 2 + 5, 'entradas por vencer o sin usar');
   assert.equal(groups.inactive.items[0].daysSinceActivity, 45);
 
   const carlos = groups.lowBalance.items[0];

@@ -174,18 +174,14 @@ await paso('el máster vende un pack de 10', async () => {
 const codigo = (await admin.textContent('#detalle-cuerpo h2')).trim();
 console.log('       código del pack:', codigo);
 
-await paso('el detalle del pack permite poner vencimiento', async () => {
+await paso('un pack pagado no ofrece ponerle vencimiento', async () => {
+  // Las entradas compradas no caducan: el botón solo existe en los packs de
+  // cortesía. Que el servidor lo rechace no basta —si el panel lo ofreciera,
+  // el máster pulsaría algo que siempre falla—, así que se mira la pantalla.
   const boton = admin.locator('#dialogo-detalle button', { hasText: /vencimiento/ });
-  if ((await boton.count()) === 0) throw new Error('no aparece la acción de vencimiento');
-  await boton.first().click();
-  const campo = admin.locator('dialog[open] input[type=date]').first();
-  await campo.waitFor({ timeout: 8000 });
-  await campo.fill(new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10));
-  await admin.locator('dialog[open] button[type=submit]').last().click();
-  await admin.waitForSelector('.brindis--ok', { timeout: 10000 });
-  await admin.waitForFunction(() => document.querySelector('#detalle-cuerpo')?.textContent.includes('Vence el'), {
-    timeout: 10000,
-  });
+  if ((await boton.count()) !== 0) throw new Error('un pack pagado no debería ofrecer vencimiento');
+  const cuerpo = await admin.textContent('#detalle-cuerpo');
+  if (/Vence el/.test(cuerpo)) throw new Error('un pack pagado no debería mostrar fecha de vencimiento');
 });
 
 await paso('el pase impreso sale solo, y solo él, en la hoja', async () => {
