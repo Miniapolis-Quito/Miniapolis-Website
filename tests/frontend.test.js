@@ -246,6 +246,16 @@ test('la portada no repite el mismo encuadre fotográfico en dos bloques', () =>
   assert.deepEqual(repetidas, [], 'cada bloque visual debe tener una imagen principal distinta');
 });
 
+test('la portada mantiene un copy editorial breve y sin repeticiones', () => {
+  const src = leer(PORTADA);
+  assert.match(src, /Compra tu pack, guárdalo y entra a rodar\./);
+  assert.match(src, /Un circuito de asfalto bajo techo, con rectas y chicanes\./);
+  assert.match(src, /Tu pase, siempre contigo\./);
+  assert.doesNotMatch(src, /para disfrutar de verdad|dar tus primeras vueltas|buscar tu mejor tiempo|desde cualquier celular/);
+  const descripcion = src.match(/<p class="entrada__seccion-descripcion">([\s\S]*?)<\/p>/)?.[1] ?? '';
+  assert.ok(descripcion.replace(/\s+/g, ' ').trim().length < 100, 'la descripción del trazado debe ser breve');
+});
+
 test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
   const src = leer(PORTADA);
   assert.match(src, /\/js\/portada\.js/);
