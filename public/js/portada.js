@@ -139,7 +139,9 @@ function montarTablero(motor) {
   motor.registrar(seccion, {
     modo: 'vista',
     alActualizar: (p) => {
-      const n = lucesEncendidas(fase(p, 0.22, 0.7), luces.length);
+      // La barra debe completar su secuencia mientras el tablero sigue visible,
+      // no esperar a que la sección ya esté terminando de salir de pantalla.
+      const n = lucesEncendidas(fase(p, 0.08, 0.48), luces.length);
       if (n !== encendidas) {
         luces.forEach((luz, i) => luz.classList.toggle('on', i < n));
         encendidas = n;
