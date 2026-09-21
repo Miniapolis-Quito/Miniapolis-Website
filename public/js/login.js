@@ -38,6 +38,7 @@ btnVerPassword.addEventListener('click', () => {
   const mostrar = entrarPassword.type === 'password';
   entrarPassword.type = mostrar ? 'text' : 'password';
   btnVerPassword.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+  btnVerPassword.setAttribute('aria-label', `${mostrar ? 'Ocultar' : 'Mostrar'} contraseña`);
   btnVerPassword.setAttribute('aria-pressed', String(mostrar));
 });
 
