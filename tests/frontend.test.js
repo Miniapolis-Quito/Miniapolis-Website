@@ -316,6 +316,19 @@ test('la capa de movimiento tiene una salida global para movimiento reducido', (
   assert.match(js, /portada-revela--visible/);
 });
 
+test('el sistema de interacción cubre hovers, pulsación y superficies con una salida accesible', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /--t-hover:/, 'la interacción debe tener un ritmo propio');
+  assert.match(css, /@media\s*\(hover:\s*hover\)/, 'los efectos intensos deben reservarse a dispositivos con hover real');
+  assert.match(css, /\.boton:hover:not\(:disabled\)[\s\S]*transform:\s*translateY\(-2px\)/);
+  assert.match(css, /\.boton:active:not\(:disabled\)[\s\S]*transform:\s*translateY\(1px\)/);
+  assert.match(css, /\.pack:hover[\s\S]*transform:\s*translateY\(-4px\)/);
+  assert.match(css, /\.opcion-pack:hover[\s\S]*box-shadow:/);
+  assert.match(css, /\.pestana:hover[\s\S]*color:/);
+  assert.match(css, /input:hover:not\(:disabled\)[\s\S]*box-shadow:/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*transition-duration:\s*\.01ms/);
+});
+
 test('las páginas operativas conservan el shell y la hoja de estilos compartida', () => {
   for (const html of ['public/app.html', 'public/scan.html', 'public/admin.html']) {
     const src = leer(html);
@@ -372,4 +385,18 @@ test('la identidad para abrir el escáner sin red se olvida con la misma clave c
   const prefijo = cola.match(/const PREFIJO_DATO = '([^']+)'/)[1];
   assert.ok(escaner.includes("almacen.recordar('operador'"), 'el escáner guarda la identidad como «operador»');
   assert.ok(api.includes(`'${prefijo}operador'`), `api.js debe olvidar ${prefijo}operador`);
+});
+
+test('la cabecera de la portada permanece visible durante el scroll', () => {
+  const html = leer(PORTADA);
+  const css = leer('public/css/styles.css');
+
+  assert.match(html, /<header class="entrada__barra"[^>]*>/);
+  assert.match(html, /miniapolis-logo-oficial\.webp/);
+  assert.match(html, /class="entrada__accion"[^>]*href="#acceso"/);
+  assert.match(
+    css,
+    /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;/s,
+    'la regla específica de la portada debe mantener el encabezado sticky',
+  );
 });

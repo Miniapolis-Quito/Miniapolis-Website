@@ -6,6 +6,7 @@ import { $, el, render, icono, brindis, fecha, horaCorta, dinero, plural, estado
 import { api, iniciarPagina, getUsuario, cerrarSesion, redirigirAlPerderSesion, cambiarPassword, ErrorRed } from './api.js';
 import { ConexionEnVivo } from './realtime.js';
 import { montarCabecera, aplicarMarca, revelarAlEntrar } from './shell.js';
+import { montarSeguridad } from './dos-factores.js';
 
 const estado = {
   resumen: null,
@@ -489,6 +490,9 @@ async function cargarTodo({ conHistorial = true } = {}) {
   estado.resumen = datos.summary;
   estado.packs = datos.packs;
   estado.fidelidad = datos.loyalty ?? null;
+  // Los datos de la cuenta a la que transferir llegan con el saldo, no con la
+  // configuración pública: llevan el titular y su cédula o RUC.
+  estado.pago = datos.payment ?? estado.pago ?? null;
   estado.qrConfig = datos.qrConfig || estado.qrConfig;
 
   pintarSaldo(anterior);
@@ -702,7 +706,7 @@ function montarComprarPack() {
       if (primero) primero.classList.add('activo');
     }
 
-    const pago = estado.configuracion?.payment;
+    const pago = estado.pago;
     if (pago) {
       $('#pago-banco-nombre').textContent = pago.bankName || 'Transferencia';
       render(
@@ -787,6 +791,10 @@ function montarComprarPack() {
 
 function montarCuenta() {
   const dialogo = $('#dialogo-cuenta');
+  // El panel de seguridad se pinta la primera vez que se abre «Mi cuenta» y se
+  // refresca en cada apertura: así refleja lo que se haya hecho desde otro
+  // dispositivo sin recargar la página.
+  let refrescarSeguridad = null;
 
   $('#btn-cuenta').addEventListener('click', () => {
     $('#perfil-nombre').value = getUsuario()?.fullName ?? '';
@@ -796,6 +804,8 @@ function montarCuenta() {
     mostrarAviso($('#aviso-perfil'), '');
     mostrarAviso($('#aviso-password'), '');
     mostrarAviso($('#aviso-recordatorios'), '');
+    if (refrescarSeguridad) refrescarSeguridad();
+    else refrescarSeguridad = montarSeguridad($('#seccion-dos-factores'));
     dialogo.showModal();
   });
 

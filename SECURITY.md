@@ -16,6 +16,12 @@ Cuenta qué viste, cómo reproducirlo y qué podría hacer alguien con ello.
 - Si un secreto se filtra, cámbialo: `ACCESS_TOKEN_SECRET` y
   `REFRESH_TOKEN_SECRET` cierran todas las sesiones, `QR_SECRET` invalida los
   códigos emitidos (los pases impresos habrá que reimprimirlos).
+- `TWOFA_SECRET` cifra los segundos factores y firma los códigos de respaldo.
+  Si se deja vacío se deriva de `ACCESS_TOKEN_SECRET`, así que **rotar el
+  secreto de acceso deja ilegibles los segundos factores**: nadie queda dentro
+  por error —el sistema lo detecta y niega el acceso—, pero cada persona tiene
+  que volver a configurarlo y el máster tiene que retirárselo antes desde
+  «Administración → Seguridad». Fíjalo aparte si usas dos pasos.
 
 ## En el repositorio
 

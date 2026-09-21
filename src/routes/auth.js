@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { rateLimit, consume, reset as resetRateLimit } from '../lib/rateLimit.js';
+import QRCode from 'qrcode';
 import { badRequest, forbidden, notFound, tooManyRequests, unauthorized } from '../lib/errors.js';
 import {
   loginSchema,
@@ -13,9 +14,12 @@ import {
   forgotPasswordSchema,
   resetTokenSchema,
   resetPasswordSchema,
+  twoFactorLoginSchema,
+  twoFactorConfirmSchema,
+  twoFactorDisableSchema,
   parseOrThrow,
 } from '../lib/validate.js';
-import { validatePasswordStrength } from '../lib/passwords.js';
+import { validatePasswordStrength, verifyPassword } from '../lib/passwords.js';
 import * as users from '../services/users.js';
 import * as sessions from '../services/sessions.js';
 import * as audit from '../services/audit.js';
@@ -23,6 +27,7 @@ import { setRefreshCookie, clearRefreshCookie, readRefreshToken } from '../lib/c
 import { summaryForUser } from '../services/packs.js';
 import * as recuperacion from '../services/recuperacion.js';
 import * as avisos from '../services/avisos.js';
+import * as dosFactores from '../services/dosFactores.js';
 
 export const router = express.Router();
 
@@ -49,6 +54,51 @@ const registerLimiter = rateLimit({
 });
 
 const refreshLimiter = rateLimit({ name: 'refresh-ip', limit: 120, windowSeconds: 15 * 60 });
+
+/**
+ * El segundo paso tiene su propio techo por conexión, además del tope de
+ * intentos que lleva cada desafío. Sin él, alguien con la contraseña podría
+ * pedir desafíos nuevos sin parar y probar seis dígitos de cinco en cinco.
+ */
+const segundoPasoLimiter = rateLimit({
+  name: 'login-2fa-ip',
+  limit: 30,
+  windowSeconds: 15 * 60,
+  message: 'Demasiados códigos desde esta conexión. Espera unos minutos.',
+});
+
+/** Configurar el segundo factor también se limita, por cuenta. */
+const gestionDosFactoresLimiter = rateLimit({
+  name: 'dos-factores-user',
+  limit: 20,
+  windowSeconds: 15 * 60,
+  keyFn: (req) => req.user?.id,
+  message: 'Demasiados intentos con la verificación en dos pasos. Espera unos minutos.',
+});
+
+/**
+ * Abre la sesión y responde. Es el final común del acceso: cuando no hay
+ * segundo factor se llega aquí desde /login, y cuando lo hay desde /login/2fa.
+ */
+function abrirSesion(req, res, user, { metadata = null, estado = 200 } = {}) {
+  const { accessToken, refreshToken } = sessions.issueSession(user, {
+    ip: req.clientIp,
+    userAgent: req.get('user-agent'),
+  });
+  setRefreshCookie(res, refreshToken);
+
+  audit.record({
+    actor: { id: user.id, email: user.email },
+    action: 'login.exitoso',
+    entityType: 'user',
+    entityId: user.id,
+    metadata,
+    ip: req.clientIp,
+    userAgent: req.get('user-agent'),
+  });
+
+  return res.status(estado).json({ accessToken, ...sessionResponse(user) });
+}
 
 router.post(
   '/register',
@@ -140,22 +190,54 @@ router.post(
     // contraseñas ajenas sin límite desde la misma IP.
     resetRateLimit(`login-cuenta:${data.email}`);
 
-    const { accessToken, refreshToken } = sessions.issueSession(result.user, {
-      ip: req.clientIp,
-      userAgent: req.get('user-agent'),
-    });
-    setRefreshCookie(res, refreshToken);
+    // Con verificación en dos pasos, acertar la contraseña no abre sesión:
+    // abre un desafío de unos minutos. La cookie de refresco no se toca, así
+    // que quedarse a medias no deja nada utilizable en el navegador.
+    if (result.user.totp_enabled) {
+      const desafio = dosFactores.crearDesafio(result.user, {
+        ip: req.clientIp,
+        userAgent: req.get('user-agent'),
+      });
+      audit.record({
+        actor: { id: result.user.id, email: result.user.email },
+        action: 'login.segundo_paso_pendiente',
+        entityType: 'user',
+        entityId: result.user.id,
+        ip: req.clientIp,
+        userAgent: req.get('user-agent'),
+      });
+      return res.json({
+        twoFactorRequired: true,
+        challengeToken: desafio.token,
+        expiresInSeconds: desafio.expiresInSeconds,
+        digits: config.twoFactor.digitos,
+      });
+    }
 
-    audit.record({
-      actor: { id: result.user.id, email: result.user.email },
-      action: 'login.exitoso',
-      entityType: 'user',
-      entityId: result.user.id,
-      ip: req.clientIp,
-      userAgent: req.get('user-agent'),
-    });
+    return abrirSesion(req, res, result.user);
+  }),
+);
 
-    res.json({ accessToken, ...sessionResponse(result.user) });
+/**
+ * Segundo paso del acceso. El desafío dice de quién es; el código dice que el
+ * teléfono está delante. Un código de respaldo sirve igual y se gasta.
+ */
+router.post(
+  '/login/2fa',
+  segundoPasoLimiter,
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(twoFactorLoginSchema, req.body, badRequest);
+    const resultado = dosFactores.resolverDesafio(data.challengeToken, data.code, { ip: req.clientIp });
+
+    const user = users.findById(resultado.userId);
+    if (!user) throw unauthorized('Tu cuenta ya no existe.', 'usuario_inexistente');
+    if (user.status !== 'active') {
+      throw forbidden('Tu cuenta está suspendida. Contacta con el administrador.', 'cuenta_suspendida');
+    }
+
+    return abrirSesion(req, res, user, {
+      metadata: { segundoFactor: resultado.via, codigosRestantes: resultado.codigosRestantes },
+    });
   }),
 );
 
@@ -306,6 +388,123 @@ router.post(
     setRefreshCookie(res, refreshToken);
     recuperacion.avisarCambio(user, { via: 'cuenta', ip: req.clientIp });
     res.json({ ok: true, accessToken, ...sessionResponse(user) });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Verificación en dos pasos
+// ---------------------------------------------------------------------------
+
+/** Cómo está la cuenta y si la pista se la exige. */
+router.get(
+  '/2fa',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    res.json(dosFactores.estado(req.user));
+  }),
+);
+
+/**
+ * Empieza la configuración: entrega el secreto, el QR para escanearlo y el
+ * mismo secreto en texto por si la cámara no colabora. Todavía no cambia nada:
+ * hasta confirmar con un código, la cuenta entra como siempre.
+ */
+router.post(
+  '/2fa/setup',
+  requireAuth,
+  gestionDosFactoresLimiter,
+  asyncHandler(async (req, res) => {
+    const alta = dosFactores.iniciarAlta(req.user);
+    // El QR se dibuja en el servidor: la página no necesita ninguna librería de
+    // terceros y la política de contenidos puede seguir cerrada a cal y canto.
+    const qrDataUrl = await QRCode.toDataURL(alta.otpauthUri, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 320,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+    res.json({ ...alta, qrDataUrl });
+  }),
+);
+
+/** Confirma la configuración con el primer código y entrega los de respaldo. */
+router.post(
+  '/2fa/activate',
+  requireAuth,
+  gestionDosFactoresLimiter,
+  asyncHandler(async (req, res) => {
+    const { code } = parseOrThrow(twoFactorConfirmSchema, req.body, badRequest);
+    const recoveryCodes = dosFactores.activar(req.user, code, {
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+
+    // Las sesiones que se abrieron solo con la contraseña dejan de valer; la
+    // que acaba de activarla sigue viva para poder apuntar los códigos.
+    const cerradas = sessions.revokeOtherSessions(req.user.id, req.user.sessionId, 'dos_factores_activada');
+
+    res.json({
+      ok: true,
+      recoveryCodes,
+      sesionesCerradas: cerradas,
+      estado: dosFactores.estado(req.user),
+    });
+  }),
+);
+
+/**
+ * Renueva los códigos de respaldo. Pide un código del teléfono: quien tenga la
+ * pantalla abierta un momento no puede llevarse una tanda nueva.
+ */
+router.post(
+  '/2fa/recovery-codes',
+  requireAuth,
+  gestionDosFactoresLimiter,
+  asyncHandler(async (req, res) => {
+    const { code } = parseOrThrow(twoFactorConfirmSchema, req.body, badRequest);
+    dosFactores.exigirCodigo(req.user, code, { ip: req.clientIp });
+    const recoveryCodes = dosFactores.renovarCodigos(req.user, {
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+    res.json({ ok: true, recoveryCodes, estado: dosFactores.estado(req.user) });
+  }),
+);
+
+/**
+ * La quita. Pide la contraseña y un código: con solo una sesión robada no se
+ * puede desarmar el segundo factor.
+ */
+router.post(
+  '/2fa/disable',
+  requireAuth,
+  gestionDosFactoresLimiter,
+  asyncHandler(async (req, res) => {
+    const data = parseOrThrow(twoFactorDisableSchema, req.body, badRequest);
+
+    const cuenta = users.findById(req.user.id);
+    if (!cuenta) throw unauthorized('Tu sesión ya no es válida. Vuelve a entrar.');
+    if (!(await verifyPassword(data.password, cuenta.password_hash))) {
+      // Se cuenta igual que un fallo al cambiar la contraseña: al quinto, esta
+      // sesión se cierra sola.
+      registrarFalloDePasswordActual(req, res);
+      throw badRequest(
+        'La contraseña no es correcta.',
+        { fields: { password: 'Contraseña incorrecta.' } },
+        'password_incorrecta',
+      );
+    }
+    dosFactores.exigirCodigo(req.user, data.code, { ip: req.clientIp });
+    resetRateLimit(`password-actual-fallos:${req.user.id}`);
+
+    dosFactores.desactivar(cuenta, {
+      motivo: 'usuario',
+      actor: req.user,
+      ip: req.clientIp,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.json({ ok: true, estado: dosFactores.estado(req.user) });
   }),
 );
 
