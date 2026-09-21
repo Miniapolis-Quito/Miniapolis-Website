@@ -92,6 +92,15 @@ test('la cabecera de la portada permanece fija durante el scroll', () => {
   assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s);
 });
 
+test('la capa negra de la cabecera entra desde arriba con una transición suave', () => {
+  assert.match(
+    CSS,
+    /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{[^}]*transform:\s*translate3d\(0,\s*-100%,\s*0\)[^}]*transition:\s*transform\s+720ms/s,
+  );
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada::before\s*\{[^}]*transform:\s*translate3d\(0,\s*0,\s*0\)/s);
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*overflow:\s*hidden/s);
+});
+
 test('la portada mantiene un copy breve, natural y sin ruido', () => {
   for (const frase of ['Ven a', 'rodar.', 'Asfalto, curvas y control.', 'Pista indoor', 'La pista.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'Tu pase.', 'Entra y guarda tu pase.']) {
     assert.ok(HTML.includes(frase), `falta «${frase}»`);

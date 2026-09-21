@@ -49,16 +49,29 @@
   position: fixed;
   inset: 0 0 auto;
   z-index: 60;
+  isolation: isolate;
+  overflow: hidden;
   border-bottom: 1px solid transparent;
   background: linear-gradient(180deg, rgba(5, 7, 6, .82), rgba(5, 7, 6, 0)) no-repeat; /* sin repetir: si no, el degradado vuelve a pintarse en el borde de 1 px */
-  transition: background-color var(--t-hover) var(--curva-hover), border-color var(--t-hover) var(--curva-hover);
+  transition: border-color var(--t-hover) var(--curva-hover);
 }
-.pagina-entrada > .entrada__barra.esta-desplazada { border-bottom-color: var(--borde); background: rgba(5, 7, 6, .92); }
-.entrada__barra-interior { display: flex; align-items: center; justify-content: space-between; min-height: var(--altura-cabecera); }
+.pagina-entrada > .entrada__barra::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(5, 7, 6, .92);
+  transform: translate3d(0, -100%, 0);
+  transition: transform 720ms var(--salida);
+  will-change: transform;
+}
+.pagina-entrada > .entrada__barra.esta-desplazada { border-bottom-color: var(--borde); }
+.pagina-entrada > .entrada__barra.esta-desplazada::before { transform: translate3d(0, 0, 0); }
+.entrada__barra-interior { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; min-height: var(--altura-cabecera); }
 .entrada__marca { display: inline-flex; }
 .entrada__marca-sello { display: block; }
 .entrada__marca-sello img { display: block; width: auto; height: 34px; }
-.entrada__progreso { position: absolute; inset: auto 0 -1px; height: 2px; }
+.entrada__progreso { position: absolute; inset: auto 0 -1px; z-index: 1; height: 2px; }
 .entrada__progreso span {
   display: block;
   height: 100%;
