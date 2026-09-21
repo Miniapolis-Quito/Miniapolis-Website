@@ -261,6 +261,15 @@ test('la portada mantiene un copy editorial breve, natural y sin ruido visual', 
   assert.ok(descripcion.replace(/\s+/g, ' ').trim().length < 100, 'la descripción del trazado debe ser breve');
 });
 
+test('la portada gana presencia con capas visuales, no con más copy', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /\.pagina-entrada \.entrada__hero::before\s*\{/);
+  assert.match(css, /\.pagina-entrada \.entrada__hero::after\s*\{/);
+  assert.match(css, /\.pagina-entrada \.entrada__cifras\s*\{[^}]*background:/s);
+  assert.match(css, /\.pagina-entrada \.entrada__media-destacada\s*\{[^}]*position:\s*relative/s);
+  assert.match(css, /\.pagina-entrada \.entrada__acceso-panel\s*\{[^}]*backdrop-filter:/s);
+});
+
 test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
   const src = leer(PORTADA);
   assert.match(src, /\/js\/portada\.js/);
