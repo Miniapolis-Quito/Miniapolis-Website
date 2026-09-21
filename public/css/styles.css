@@ -1685,19 +1685,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
   color-scheme: dark;
 }
 
-.pagina-entrada::before {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  content: '';
-  opacity: .18;
-  background-image:
-    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: linear-gradient(to bottom, #000, transparent 70%);
-}
+.pagina-entrada::before { display: none; }
 
 .pagina-entrada > * { position: relative; z-index: 1; }
 .pagina-entrada h1,
@@ -2564,11 +2552,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
     radial-gradient(circle at 0 54%, rgba(61, 254, 64, .045), transparent 27rem),
     linear-gradient(180deg, #080b0c 0%, #050708 52%, #080b0c 100%);
 }
-.pagina-entrada::before {
-  opacity: .34;
-  background-size: 64px 64px;
-  mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
-}
+.pagina-entrada::before { display: none; }
 .pagina-entrada::after {
   position: fixed;
   inset: 0;
@@ -2872,6 +2856,425 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   .pagina-entrada .entrada__foto:hover img,
   .pagina-entrada .entrada__media-foto:hover img { transform: none; }
   .pagina-entrada .entrada__hero::after { animation: none; }
+}
+
+/* ==========================================================================
+   Portada cinematográfica
+
+   La pista y las fotos hacen el trabajo visual. El copy queda subordinado a
+   la imagen, y la textura real sustituye cualquier dibujo geométrico.
+   ========================================================================== */
+
+.pagina-entrada {
+  background:
+    linear-gradient(180deg, #060809 0%, #0a0d0e 38%, #060809 100%);
+}
+
+.pagina-entrada::before,
+.pagina-entrada::after { display: none; }
+
+.pagina-entrada .contenedor--portada {
+  width: min(1320px, 100%);
+}
+
+.pagina-entrada .entrada__barra {
+  background: rgba(6, 8, 9, .78);
+  border-bottom-color: rgba(244, 247, 244, .14);
+}
+
+.pagina-entrada .entrada__hero--cinematica {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: min(840px, calc(100dvh - 82px));
+  margin-inline: calc(50% - 50vw);
+  padding: clamp(150px, 19vw, 260px) clamp(22px, 8vw, 132px) clamp(76px, 9vw, 124px);
+  overflow: hidden;
+  background: #080b0c;
+}
+
+.pagina-entrada .entrada__hero--cinematica::before {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  content: '';
+  background-image:
+    linear-gradient(90deg, rgba(5, 7, 8, .94) 0%, rgba(5, 7, 8, .68) 31%, rgba(5, 7, 8, .16) 68%, rgba(5, 7, 8, .72) 100%),
+    linear-gradient(180deg, rgba(5, 7, 8, .2) 0%, transparent 43%, rgba(5, 7, 8, .86) 100%),
+    url("/images/pista/miniapolis-asphalt-detail.webp");
+  background-position: center;
+  background-size: cover;
+  opacity: .72;
+  mix-blend-mode: screen;
+}
+
+.pagina-entrada .entrada__hero--cinematica::after {
+  position: absolute;
+  right: -8vw;
+  bottom: 17%;
+  z-index: -1;
+  width: 42vw;
+  height: 1px;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgba(61, 254, 64, .9), transparent);
+  box-shadow: 0 0 24px rgba(61, 254, 64, .55);
+  transform: rotate(-16deg);
+}
+
+.pagina-entrada .entrada__hero-fondo {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pagina-entrada .entrada__hero-fondo::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(100deg, rgba(4, 6, 7, .86) 0%, rgba(4, 6, 7, .18) 58%, rgba(4, 6, 7, .72) 100%);
+}
+
+.pagina-entrada .entrada__hero-fondo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 56%;
+  filter: saturate(.84) contrast(1.08) brightness(.72);
+  transform: scale(1.04);
+}
+
+.pagina-entrada .entrada__hero-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 510px;
+}
+
+.pagina-entrada .entrada__hero h1 {
+  max-width: 6ch;
+  font-size: clamp(4.8rem, 10.5vw, 10.8rem);
+  font-weight: 600;
+  letter-spacing: -.105em;
+  line-height: .79;
+  text-wrap: balance;
+}
+
+.pagina-entrada .entrada__titulo-linea { display: block; }
+.pagina-entrada .entrada__titulo-linea--acento { color: var(--acento); }
+
+.pagina-entrada .entrada__descripcion {
+  max-width: 22ch;
+  margin-top: clamp(26px, 3vw, 42px);
+  color: rgba(244, 247, 244, .78);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  line-height: 1.35;
+}
+
+.pagina-entrada .entrada__hero-acciones {
+  margin-top: clamp(28px, 3vw, 42px);
+}
+
+.pagina-entrada .entrada__hero-aside {
+  position: absolute;
+  top: 11%;
+  right: clamp(28px, 10vw, 154px);
+  z-index: 2;
+  width: min(30vw, 420px);
+  height: min(72%, 650px);
+  transform: translate3d(0, var(--parallax-y, 0), 0) rotate(3deg);
+  transition: transform 800ms var(--curva);
+}
+
+.pagina-entrada .entrada__hero-foto {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(244, 247, 244, .38);
+  border-radius: 2px;
+  background: #0b0e0f;
+  box-shadow: 18px 28px 90px -28px rgba(0, 0, 0, .94), 0 0 0 1px rgba(61, 254, 64, .08);
+}
+
+.pagina-entrada .entrada__hero-foto::before {
+  position: absolute;
+  inset: 13px;
+  z-index: 2;
+  border: 1px solid rgba(244, 247, 244, .24);
+  pointer-events: none;
+  content: '';
+}
+
+.pagina-entrada .entrada__hero-foto::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(180deg, transparent 44%, rgba(4, 6, 7, .82) 100%);
+}
+
+.pagina-entrada .entrada__hero-foto picture,
+.pagina-entrada .entrada__hero-foto picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pagina-entrada .entrada__hero-foto picture img {
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.88) contrast(1.08);
+}
+
+.pagina-entrada .entrada__hero-foto figcaption {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: rgba(244, 247, 244, .68);
+  font-family: var(--mono);
+  font-size: .59rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.pagina-entrada .entrada__hero-foto figcaption span:first-child { color: var(--acento); }
+
+.pagina-entrada .entrada__hero-cinta {
+  position: absolute;
+  right: -8vw;
+  bottom: 2.5%;
+  left: -8vw;
+  height: 13px;
+  pointer-events: none;
+  background: repeating-linear-gradient(135deg, #f4f7f4 0 24px, #c94b38 24px 48px, #111719 48px 72px);
+  opacity: .72;
+  transform: rotate(-1.8deg);
+  box-shadow: 0 0 24px rgba(0, 0, 0, .45);
+}
+
+.pagina-entrada .entrada__cifras {
+  position: relative;
+  z-index: 2;
+  margin-top: -1px;
+  padding: clamp(22px, 3vw, 34px) clamp(4px, 2vw, 24px);
+  border: 0;
+  border-top: 1px solid rgba(244, 247, 244, .2);
+  border-bottom: 1px solid rgba(244, 247, 244, .12);
+  border-radius: 0;
+  background: rgba(8, 11, 12, .78);
+  box-shadow: none;
+}
+
+.pagina-entrada .cifra { padding: 4px clamp(10px, 2vw, 30px); }
+.pagina-entrada .cifra::before { display: none; }
+.pagina-entrada .cifra + .cifra { border-left-color: rgba(244, 247, 244, .16); }
+.pagina-entrada .cifra__num { padding-top: 0; color: var(--texto); }
+.pagina-entrada .cifra__texto { color: var(--texto-3); }
+
+.pagina-entrada .entrada__pista-real {
+  position: relative;
+  margin-top: clamp(136px, 18vw, 240px);
+}
+
+.pagina-entrada .entrada__seccion-cabeza {
+  display: block;
+  max-width: 720px;
+  margin-bottom: clamp(38px, 5vw, 70px);
+  padding-bottom: 0;
+  border: 0;
+}
+
+.pagina-entrada .entrada__seccion-cabeza::after { display: none; }
+.pagina-entrada .entrada__seccion-cabeza h2,
+.pagina-entrada .entrada__acceso-intro h2 {
+  max-width: 7ch;
+  font-size: clamp(4rem, 9vw, 9.5rem);
+  letter-spacing: -.105em;
+  line-height: .79;
+}
+
+.pagina-entrada .entrada__seccion-descripcion {
+  max-width: 24ch;
+  margin-top: 26px;
+  color: var(--texto-2);
+  font-size: clamp(1.05rem, 1.7vw, 1.3rem);
+}
+
+.pagina-entrada .entrada__foto img,
+.pagina-entrada .entrada__media-foto img,
+.pagina-entrada .entrada__foto picture,
+.pagina-entrada .entrada__foto picture img,
+.pagina-entrada .entrada__media-foto picture,
+.pagina-entrada .entrada__media-foto picture img {
+  display: block;
+  width: 100%;
+}
+
+.pagina-entrada .entrada__foto img,
+.pagina-entrada .entrada__media-foto img,
+.pagina-entrada .entrada__foto picture img,
+.pagina-entrada .entrada__media-foto picture img {
+  border: 0;
+  border-radius: 0;
+  filter: saturate(.82) contrast(1.08);
+}
+
+.pagina-entrada .entrada__foto--marquesina {
+  overflow: hidden;
+  border: 1px solid rgba(244, 247, 244, .16);
+  background: #0b0f10;
+}
+
+.pagina-entrada .entrada__foto--marquesina img { aspect-ratio: 2.05 / 1; }
+
+.pagina-entrada .entrada__media-destacada {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+  align-items: end;
+  gap: clamp(36px, 8vw, 130px);
+  margin-top: clamp(86px, 12vw, 170px);
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pagina-entrada .entrada__media-destacada::before {
+  position: absolute;
+  top: -30px;
+  right: 0;
+  left: 0;
+  z-index: -1;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, var(--acento), rgba(61, 254, 64, 0));
+  opacity: .7;
+}
+
+.pagina-entrada .entrada__media-destacada-copy { padding-bottom: clamp(22px, 3vw, 40px); }
+.pagina-entrada .entrada__media-destacada-copy h3 {
+  margin: 0;
+  font-size: clamp(2.4rem, 4.8vw, 5.2rem);
+  letter-spacing: -.08em;
+  line-height: .86;
+}
+.pagina-entrada .entrada__media-destacada-copy p { margin-top: 24px; color: var(--texto-2); }
+.pagina-entrada .entrada__media-lista { margin-top: 38px; }
+.pagina-entrada .entrada__media-lista li { padding-block: 13px; border-top-color: rgba(244, 247, 244, .14); }
+.pagina-entrada .entrada__media-lista li span:first-child { color: var(--acento); }
+
+.pagina-entrada .entrada__media-foto {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(244, 247, 244, .18);
+  background: #0b0e0f;
+}
+.pagina-entrada .entrada__media-foto picture,
+.pagina-entrada .entrada__media-foto img { height: 100%; }
+.pagina-entrada .entrada__media-foto img { aspect-ratio: 4 / 5; object-fit: cover; object-position: center 52%; }
+
+.pagina-entrada .entrada__galeria-ritmo {
+  display: grid;
+  grid-template-columns: minmax(0, .73fr) minmax(0, 1.27fr);
+  align-items: end;
+  gap: clamp(14px, 3vw, 46px);
+  margin-top: clamp(28px, 5vw, 70px);
+}
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:first-child { margin-bottom: clamp(20px, 8vw, 110px); }
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:first-child img { aspect-ratio: 4 / 5; }
+.pagina-entrada .entrada__galeria-ritmo .entrada__foto:last-child img { aspect-ratio: 16 / 10; }
+
+.pagina-entrada .entrada__acceso {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(36px, 5vw, 68px);
+  margin-top: clamp(150px, 20vw, 260px);
+  padding-top: clamp(50px, 7vw, 94px);
+  border-top-color: rgba(61, 254, 64, .42);
+}
+.pagina-entrada .entrada__acceso::before { width: min(26%, 300px); }
+.pagina-entrada .entrada__acceso-intro { max-width: 640px; }
+.pagina-entrada .entrada__acceso-nota { margin-top: 26px; color: var(--texto-2); font-size: 1.08rem; }
+.pagina-entrada .entrada__acceso-panel {
+  width: min(100%, 620px);
+  margin-left: auto;
+  border-color: rgba(244, 247, 244, .2);
+  border-radius: 2px;
+  background:
+    linear-gradient(135deg, rgba(7, 10, 11, .92), rgba(16, 23, 25, .83)),
+    url("/images/pista/miniapolis-asphalt-detail.webp") center / cover;
+  box-shadow: 0 42px 110px -48px rgba(0, 0, 0, .9);
+}
+
+.pagina-entrada .entrada__pie { margin-top: clamp(100px, 14vw, 190px); }
+
+@media (max-width: 900px) {
+  .pagina-entrada .entrada__hero--cinematica {
+    min-height: 820px;
+    padding-top: 116px;
+  }
+  .pagina-entrada .entrada__hero-aside {
+    top: 10%;
+    right: 7vw;
+    width: min(42vw, 340px);
+    height: 59%;
+  }
+  .pagina-entrada .entrada__hero-copy { margin-top: auto; }
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr .92fr; gap: 24px; }
+}
+
+@media (max-width: 620px) {
+  .pagina-entrada .entrada__hero--cinematica {
+    min-height: 760px;
+    margin-inline: -16px;
+    padding: 92px 20px 72px;
+  }
+  .pagina-entrada .entrada__hero--cinematica::before { opacity: .52; }
+  .pagina-entrada .entrada__hero-fondo img { object-position: 64% center; }
+  .pagina-entrada .entrada__hero-aside {
+    top: 8%;
+    right: 9%;
+    width: 54vw;
+    height: 55%;
+  }
+  .pagina-entrada .entrada__hero-copy { max-width: 300px; }
+  .pagina-entrada .entrada__hero h1 { font-size: clamp(4.6rem, 22vw, 6.9rem); }
+  .pagina-entrada .entrada__hero-acciones { align-items: flex-start; flex-direction: row; }
+  .pagina-entrada .entrada__hero-acciones .boton { width: auto; }
+  .pagina-entrada .entrada__hero-cinta { bottom: 3%; }
+  .pagina-entrada .entrada__cifras { grid-template-columns: 1fr; gap: 0; padding-block: 14px; }
+  .pagina-entrada .cifra { grid-template-columns: auto 1fr; gap: 12px; padding: 12px 0; }
+  .pagina-entrada .cifra + .cifra { border-top: 1px solid rgba(244, 247, 244, .12); border-left: 0; }
+  .pagina-entrada .entrada__pista-real { margin-top: 120px; }
+  .pagina-entrada .entrada__seccion-cabeza h2,
+  .pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(4rem, 20vw, 6.6rem); }
+  .pagina-entrada .entrada__media-destacada { grid-template-columns: 1fr; gap: 26px; }
+  .pagina-entrada .entrada__media-foto { width: min(88%, 420px); margin-left: auto; }
+  .pagina-entrada .entrada__galeria-ritmo { grid-template-columns: 1fr; gap: 20px; }
+  .pagina-entrada .entrada__galeria-ritmo .entrada__foto:first-child { width: 78%; margin-bottom: 0; }
+  .pagina-entrada .entrada__galeria-ritmo .entrada__foto:last-child { width: 100%; }
+  .pagina-entrada .entrada__acceso-panel { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina-entrada .entrada__hero-aside,
+  .pagina-entrada .entrada__foto--marquesina,
+  .pagina-entrada .entrada__media-foto { transform: none !important; transition: none !important; }
 }
 
 @media print {

@@ -234,8 +234,10 @@ test('la portada usa la pista real y los recursos fotográficos inmersivos', () 
   const src = leer(PORTADA);
   assert.match(src, /\/images\/pista\/miniapolis-track-wide\.webp/);
   assert.match(src, /\/images\/pista\/miniapolis-track-corner-wide\.webp/);
-  assert.match(src, /\/images\/pista\/miniapolis-hangar-vertical\.webp/);
-  assert.match(src, /\/images\/pista\/miniapolis-curb-detail-vertical\.webp/);
+  assert.match(src, /\/images\/landing\/miniapolis-track-portrait\.webp/);
+  assert.match(src, /\/images\/landing\/miniapolis-action\.webp/);
+  assert.match(src, /\/images\/landing\/miniapolis-track-atmosphere\.webp/);
+  assert.match(src, /\/images\/landing\/miniapolis-car-portrait\.webp/);
   assert.match(src, /data-depth="[0-9.]+"/);
   assert.doesNotMatch(src, /césped|cesped|grass/i, 'la pista debe describirse como asfalto');
 });
@@ -248,10 +250,10 @@ test('la portada no repite el mismo encuadre fotográfico en dos bloques', () =>
 
 test('la portada mantiene un copy editorial breve, natural y sin ruido visual', () => {
   const src = leer(PORTADA);
-  assert.match(src, /Compra tu pack y entra a rodar\./);
-  assert.match(src, /Asfalto bajo techo, con rectas y chicanes\./);
+  assert.match(src, /Ven a[\s\S]*rodar\./);
+  assert.match(src, /Asfalto, curvas y control\./);
   assert.match(src, /Tu pase\./);
-  assert.match(src, /Inicia sesión y muestra tu QR\./);
+  assert.match(src, /Entra y guarda tu pase\./);
   assert.doesNotMatch(src, /·/, 'la portada no debe usar puntos medios como separadores');
   assert.doesNotMatch(src, /Track\s+\d+/i, 'la portada no debe mostrar identificadores artificiales de pista');
   assert.doesNotMatch(src, /0°\d+|\d+°\d+['’]/, 'la portada no debe mostrar coordenadas decorativas');
@@ -263,11 +265,22 @@ test('la portada mantiene un copy editorial breve, natural y sin ruido visual', 
 
 test('la portada gana presencia con capas visuales, no con más copy', () => {
   const css = leer('public/css/styles.css');
-  assert.match(css, /\.pagina-entrada \.entrada__hero::before\s*\{/);
-  assert.match(css, /\.pagina-entrada \.entrada__hero::after\s*\{/);
+  assert.match(css, /\.pagina-entrada \.entrada__hero\s*\{[^}]*min-height:\s*min\(/s);
+  assert.match(css, /\.pagina-entrada \.entrada__hero-foto::after\s*\{/);
   assert.match(css, /\.pagina-entrada \.entrada__cifras\s*\{[^}]*background:/s);
   assert.match(css, /\.pagina-entrada \.entrada__media-destacada\s*\{[^}]*position:\s*relative/s);
   assert.match(css, /\.pagina-entrada \.entrada__acceso-panel\s*\{[^}]*backdrop-filter:/s);
+});
+
+test('la portada prepara una dirección de arte cinematográfica y no una retícula decorativa', () => {
+  const src = leer(PORTADA);
+  const css = leer('public/css/styles.css');
+  assert.match(src, /entrada__hero--cinematica/);
+  assert.match(src, /entrada__galeria-ritmo/);
+  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica\s*\{[^}]*isolation:\s*isolate/s);
+  assert.match(css, /\.pagina-entrada \.entrada__galeria-ritmo\s*\{[^}]*display:\s*grid/s);
+  assert.match(css, /\.pagina-entrada \.entrada__hero--cinematica::before\s*\{[^}]*background-image:[^}]*url\(/s);
+  assert.doesNotMatch(css, /\.pagina-entrada::before\s*\{[^}]*background-size:\s*64px 64px/s);
 });
 
 test('la portada carga su capa de movimiento y respeta el movimiento reducido', () => {
