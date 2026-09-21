@@ -1084,7 +1084,7 @@ EOF
 .portada__linea--acento { color: var(--acento); }
 .portada__lema { max-width: 32ch; margin-top: 26px; color: var(--texto-2); font-size: clamp(1.05rem, 1.7vw, 1.4rem); }
 .portada__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 34px; }
-.portada__auto { position: absolute; right: var(--gutter); bottom: clamp(40px, 9vh, 110px); z-index: 2; width: clamp(210px, 28vw, 430px); margin: 0; }
+.portada__auto { position: absolute; right: var(--gutter); bottom: clamp(40px, 9vh, 110px); z-index: 2; width: clamp(210px, 28vw, 430px); margin: 0; clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%); }
 .portada__auto img { display: block; width: 100%; height: auto; }
 
 /* --- Tablero -------------------------------------------------------------- */
@@ -1121,6 +1121,7 @@ EOF
 .portada__recta-marco { position: relative; }
 .portada__panel--ancho { width: 100%; }
 .portada__panel--alto { width: 100%; max-width: min(100%, 520px); }
+.portada__panel--alto img { aspect-ratio: 4 / 5; object-fit: cover; }
 .portada__panel--texto { align-self: center; max-width: 46ch; overflow: visible; }
 .portada__panel--texto h3 { font-size: clamp(1.8rem, 3vw, 2.6rem); letter-spacing: -.03em; }
 .portada__panel--texto > p { margin: 12px 0 22px; color: var(--texto-2); }
@@ -1203,6 +1204,7 @@ EOF
   .portada__cifras { grid-template-columns: 1fr; gap: 28px; }
   .cifra, .cifra:first-child { padding: 0 0 0 16px; border-left: 2px solid var(--acento); }
   .portada__luces { max-width: 100%; }
+  .portada__boxes { padding-top: 176px; }
 }
 @media (max-width: 620px) {
   .entrada__acceso-panel .pestanas { gap: 3px; padding: 3px; }
@@ -1697,7 +1699,7 @@ git commit -m "feat: add scroll engine and landing orchestration" -m "Co-Authore
 /* ==========================================================================
    Movimiento: salida
    ========================================================================== */
-.portada-motor .portada__salida { height: 200svh; }
+.portada-motor .portada__salida { height: 150svh; }
 .portada-motor .portada__salida-marco { position: sticky; top: 0; height: 100svh; min-height: 0; }
 
 /* La cámara avanza hacia el punto de fuga. */
@@ -1710,8 +1712,8 @@ git commit -m "feat: add scroll engine and landing orchestration" -m "Co-Authore
 /* Titular: sale hacia arriba y se inclina con la velocidad del scroll. */
 .portada-motor .portada__salida-copy {
   transform-origin: 0 100%;
-  transform: translate3d(0, calc(var(--p, 0) * -16svh), 0) skewY(calc(var(--vel, 0) * -4deg));
-  opacity: calc(1 - var(--p, 0) * 1.8);
+  transform: translate3d(0, calc(var(--p, 0) * -14svh), 0) skewY(calc(var(--vel, 0) * -4deg));
+  opacity: calc(1.25 - var(--p, 0) * 1.6);
   will-change: transform, opacity;
 }
 
@@ -1740,13 +1742,13 @@ git commit -m "feat: add scroll engine and landing orchestration" -m "Co-Authore
 /* El auto sale disparado hacia un lado al hacer scroll. */
 .portada-motor .portada__auto {
   transform: translate3d(calc(var(--p, 0) * 22vw), calc(var(--p, 0) * -14vh), 0) rotate(calc(var(--p, 0) * 5deg));
-  opacity: calc(1 - var(--p, 0) * 1.6);
+  opacity: calc(1.2 - var(--p, 0) * 1.5);
   will-change: transform, opacity;
 }
-.portada-motor .portada__auto img { clip-path: inset(0 0 0 100%); }
+.portada-motor .portada__auto img { transform: translate3d(105%, 0, 0); }
 .portada-listos .portada__auto img {
-  clip-path: inset(0);
-  transition: clip-path 1000ms var(--salida) calc(var(--espera, 1250ms) + 150ms);
+  transform: translate3d(0, 0, 0);
+  transition: transform 1000ms var(--salida) calc(var(--espera, 1250ms) + 150ms);
 }
 
 /* Semáforo de salida: cinco luces rojas, todas fuera a la vez. */
@@ -1891,9 +1893,9 @@ git commit -m "feat: add shift lights and odometer digits to the stats board" -m
   overflow: hidden;
 }
 .portada-fija .portada__recta-cabeza { position: absolute; top: calc(var(--altura-cabecera) + 3svh); left: 0; right: 0; margin: 0; }
-.portada-fija .portada__recta-cabeza h2 { font-size: clamp(3rem, min(9.5vw, 15svh), 9.5rem); }
+.portada-fija .portada__recta-cabeza h2 { font-size: clamp(3rem, min(8vw, 12svh), 8rem); }
 .portada-fija .portada__riel {
-  --alto-panel: min(54svh, 600px);
+  --alto-panel: min(60svh, 660px);
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -1914,6 +1916,8 @@ git commit -m "feat: add shift lights and odometer digits to the stats board" -m
   width: auto;
   height: 100%;
   max-width: none;
+  aspect-ratio: auto;
+  object-fit: fill;
   transform: translate3d(calc((.5 - var(--p, 0)) * 7%), 0, 0) scale(1.08);
 }
 .portada-fija .portada__panel--texto {
@@ -2092,7 +2096,7 @@ test('sin movimiento reducido el motor no se monta y la página queda estática'
     /if \(reducir[^)]*\) \{\s*montarProgresoSimple\(\);\s*\} else \{[\s\S]*classList\.add\('portada-motor'\)[\s\S]*crearMotor\(\)/,
     'crearMotor y .portada-motor solo pueden ir en la rama con movimiento',
   );
-  assert.doesNotMatch(CSS, /\.portada__estela\s*\{[^}]*display:\s*block/, 'la estela solo existe con motor');
+  assert.doesNotMatch(CSS, /(?<!\.portada-motor )\.portada__estela\s*\{[^}]*display:\s*block/, 'la estela solo existe con motor');
 });
 
 test('la mira conserva su apariencia y reacciona solo a lo clicable', () => {
