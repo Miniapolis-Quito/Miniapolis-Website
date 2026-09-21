@@ -328,3 +328,116 @@
   .entrada__acceso-panel .pestana { min-height: 44px; padding-inline: 8px; font-size: .88rem; }
 }
 @media print { .entrada__barra, .entrada__pie, .portada__estela { display: none !important; } }
+
+
+/* ==========================================================================
+   Movimiento: salida
+   ========================================================================== */
+.portada-motor .portada__salida { height: 200svh; }
+.portada-motor .portada__salida-marco { position: sticky; top: 0; height: 100svh; min-height: 0; }
+
+/* La cámara avanza hacia el punto de fuga. */
+.portada-motor .portada__cielo img {
+  transform-origin: 60% 45%;
+  transform: scale(calc(1.04 + var(--p, 0) * .42)) translate3d(calc(var(--p, 0) * -2.5%), calc(var(--p, 0) * 3%), 0);
+  will-change: transform;
+}
+
+/* Titular: sale hacia arriba y se inclina con la velocidad del scroll. */
+.portada-motor .portada__salida-copy {
+  transform-origin: 0 100%;
+  transform: translate3d(0, calc(var(--p, 0) * -16svh), 0) skewY(calc(var(--vel, 0) * -4deg));
+  opacity: calc(1 - var(--p, 0) * 1.8);
+  will-change: transform, opacity;
+}
+
+/* Luces fuera: el titular entra de golpe, línea por línea, con máscara. */
+.portada-motor .portada__linea > span { transform: translate3d(0, 112%, 0) skewX(-8deg); }
+.portada__linea:nth-child(2) { --i: 1; }
+.portada-listos .portada__linea > span {
+  transform: translate3d(0, 0, 0) skewX(-8deg);
+  transition: transform 900ms var(--salida);
+  transition-delay: calc(var(--espera, 1250ms) + var(--i, 0) * 110ms);
+}
+.portada-rapido { --espera: 0ms; }
+
+.portada-motor .portada__kicker,
+.portada-motor .portada__lema,
+.portada-motor .portada__acciones { opacity: 0; transform: translate3d(0, 18px, 0); }
+.portada-listos .portada__kicker,
+.portada-listos .portada__lema,
+.portada-listos .portada__acciones {
+  opacity: 1;
+  transform: none;
+  transition: opacity 700ms var(--salida), transform 700ms var(--salida);
+  transition-delay: calc(var(--espera, 1250ms) + 350ms);
+}
+
+/* El auto sale disparado hacia un lado al hacer scroll. */
+.portada-motor .portada__auto {
+  transform: translate3d(calc(var(--p, 0) * 22vw), calc(var(--p, 0) * -14vh), 0) rotate(calc(var(--p, 0) * 5deg));
+  opacity: calc(1 - var(--p, 0) * 1.6);
+  will-change: transform, opacity;
+}
+.portada-motor .portada__auto img { clip-path: inset(0 0 0 100%); }
+.portada-listos .portada__auto img {
+  clip-path: inset(0);
+  transition: clip-path 1000ms var(--salida) calc(var(--espera, 1250ms) + 150ms);
+}
+
+/* Semáforo de salida: cinco luces rojas, todas fuera a la vez. */
+.portada-motor .portada__semaforo {
+  position: absolute;
+  top: calc(var(--altura-cabecera) + 5svh);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  gap: clamp(10px, 1.6vw, 22px);
+  padding: 12px 20px;
+  translate: -50% 0;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: rgba(5, 7, 6, .72);
+  opacity: 0;
+  pointer-events: none;
+}
+.portada-motor .portada__luz {
+  width: clamp(16px, 2.3vw, 30px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #1a0d0c;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .06);
+}
+.portada__luz:nth-child(2) { --i: 1; }
+.portada__luz:nth-child(3) { --i: 2; }
+.portada__luz:nth-child(4) { --i: 3; }
+.portada__luz:nth-child(5) { --i: 4; }
+.portada-listos .portada__semaforo { animation: semaforo 1.45s linear forwards; }
+.portada-listos .portada__luz { animation: luz-roja .01s linear forwards; animation-delay: calc(var(--i, 0) * 160ms + 120ms); }
+.portada-rapido .portada__semaforo { display: none; }
+@keyframes semaforo { 0% { opacity: 0; } 8%, 84% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes luz-roja { to { background: var(--rojo); box-shadow: 0 0 22px 4px rgba(226, 58, 50, .7); } }
+
+/* Estela: rayas en los bordes, visibles solo cuando el scroll va rápido. */
+.portada__estela { display: none; }
+.portada-motor .portada__estela {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: calc(var(--vel-abs, 0) * .9);
+  -webkit-mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
+  mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
+}
+.portada-motor .portada__estela::before {
+  content: '';
+  position: absolute;
+  inset: -640px 0 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='640'%3E%3Cg fill='white'%3E%3Crect x='10' y='30' width='1' height='170' opacity='.5'/%3E%3Crect x='34' y='300' width='1' height='90' opacity='.3'/%3E%3Crect x='58' y='120' width='2' height='240' opacity='.4'/%3E%3Crect x='96' y='480' width='1' height='130' opacity='.3'/%3E%3Crect x='128' y='60' width='1' height='110' opacity='.35'/%3E%3Crect x='160' y='380' width='2' height='200' opacity='.45'/%3E%3Crect x='190' y='210' width='1' height='150' opacity='.3'/%3E%3Crect x='208' y='540' width='1' height='80' opacity='.4'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 220px 640px;
+  transform: translate3d(0, mod(var(--scroll-px, 0) * -2.2px, 640px), 0);
+}
+
+/* Los titulares de sección se inclinan con la velocidad. */
+.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
