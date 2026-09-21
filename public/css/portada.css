@@ -172,7 +172,7 @@
 }
 .portada__semaforo { display: none; }
 .portada__luz { display: block; }
-.portada__salida-copy { position: relative; z-index: 2; max-width: min(880px, 100%); }
+.portada__salida-copy { position: relative; z-index: 2; max-width: min(max(880px, 60vw), 100%); }
 .portada__kicker {
   display: flex;
   align-items: center;
@@ -184,13 +184,13 @@
   text-transform: uppercase;
 }
 .portada__kicker::before { content: ''; width: 34px; height: 2px; background: currentColor; }
-.portada__salida h1 { font-size: clamp(3.2rem, 9.2vw, 9.6rem); line-height: .9; }
+.portada__salida h1 { font-size: clamp(3.2rem, min(9.2vw, 17svh), 22rem); line-height: .9; }
 .portada__linea { display: block; overflow: hidden; padding: .05em .25em .08em 0; }
 .portada__linea > span { display: inline-block; transform: skewX(-8deg); transform-origin: 0 100%; }
 .portada__linea--acento { color: var(--acento); }
 .portada__lema { max-width: 32ch; margin-top: 26px; color: var(--texto-2); font-size: clamp(1.05rem, 1.7vw, 1.4rem); }
 .portada__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 34px; }
-.portada__auto { position: absolute; right: var(--gutter); bottom: clamp(40px, 9vh, 110px); z-index: 2; width: clamp(210px, 28vw, 430px); margin: 0; clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%); }
+.portada__auto { position: absolute; right: var(--gutter); bottom: clamp(40px, 9vh, 110px); z-index: 2; width: min(clamp(210px, 28vw, 640px), 46svh); margin: 0; clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%); }
 .portada__auto img { display: block; width: 100%; height: auto; }
 
 /* --- Tablero -------------------------------------------------------------- */
@@ -201,7 +201,7 @@
 .portada__cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: clamp(40px, 7vw, 96px) 0 0; padding: 0; list-style: none; }
 .cifra { padding: 0 clamp(16px, 3vw, 44px); border-left: 1px solid var(--borde); }
 .cifra:first-child { padding-left: 0; border-left: 0; }
-.cifra__num { display: flex; align-items: baseline; font-family: var(--display); font-stretch: 118%; font-weight: 650; font-size: clamp(2.8rem, 7.6vw, 7.6rem); line-height: .95; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.cifra__num { display: flex; align-items: baseline; font-family: var(--display); font-stretch: 118%; font-weight: 650; font-size: clamp(2.8rem, 7.6vw, 10.5rem); line-height: .95; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .cifra__afijo { font-size: .3em; letter-spacing: 0; color: var(--acento); }
 .cifra__afijo--pre { margin-right: .2em; }
 .cifra__afijo--suf { margin-left: .3em; }
@@ -214,11 +214,11 @@
 /* --- Recta (apilada por defecto; horizontal fija con .portada-fija) ------- */
 .portada__recta { padding: clamp(72px, 11vw, 150px) 0; }
 .portada__recta-cabeza { padding-inline: var(--gutter); margin-bottom: clamp(28px, 4vw, 56px); }
-.portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 7rem); line-height: .95; }
+.portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 10rem); line-height: .95; }
 .portada__recta-cabeza p { margin-top: 14px; color: var(--texto-2); font-size: clamp(1rem, 1.5vw, 1.25rem); }
 .portada__riel { display: grid; gap: clamp(20px, 3vw, 40px); padding-inline: var(--gutter); }
 .portada__panel { position: relative; margin: 0; overflow: hidden; }
-.portada__panel img { display: block; width: 100%; height: auto; }
+.portada__panel img { display: block; width: 100%; height: auto; max-height: 84svh; object-fit: cover; }
 .portada__recta-marco { position: relative; }
 .portada__panel--ancho { width: 100%; }
 .portada__panel--alto { width: 100%; max-width: min(100%, 520px); }
@@ -242,7 +242,7 @@
   overflow-x: clip;
 }
 .portada__bandera { display: none; }
-.portada__intro h2 { font-size: clamp(2.8rem, 7.6vw, 7.6rem); line-height: .95; }
+.portada__intro h2 { font-size: clamp(2.8rem, 7.6vw, 10.5rem); line-height: .95; }
 .entrada__acceso-nota { margin-top: 18px; color: var(--texto-2); }
 .entrada__acceso-subtitulo { margin: 0 0 6px; font-size: 1.35rem; }
 .entrada__acceso-pie { margin: 18px 0 0; text-align: center; }
@@ -455,9 +455,9 @@
   overflow: hidden;
 }
 .portada-fija .portada__recta-cabeza { position: absolute; top: calc(var(--altura-cabecera) + 3svh); left: 0; right: 0; margin: 0; }
-.portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.6rem, min(6.4vw, 11svh), 6.4rem); }
+.portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.6rem, min(6.4vw, 11svh), 9rem); }
 .portada-fija .portada__riel {
-  --alto-panel: min(60svh, 660px);
+  --alto-panel: min(60svh, 900px, 50vw); /* una foto ancha nunca mide más que la pantalla */
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -479,6 +479,7 @@
   height: 100%;
   max-width: none;
   aspect-ratio: auto;
+  max-height: none;
   object-fit: fill;
   transform: translate3d(calc((.5 - var(--p, 0)) * 7%), 0, 0) scale(1.08);
 }
@@ -535,4 +536,86 @@
 .portada-motor .portada__intro h2 {
   transform-origin: 0 100%;
   transform: translate3d(calc((1 - var(--entra, 1)) * -8vw), 0, 0) skewY(calc(var(--vel, 0) * -3deg));
+}
+
+
+/* ==========================================================================
+   Formatos: pantallas cortas, móviles estrechos, táctil y apaisado
+   ========================================================================== */
+@media (max-width: 899px) {
+  .portada__salida h1 { font-size: clamp(3.2rem, min(13vw, 17svh), 6.6rem); }
+}
+
+/* Pantallas cortas: el bloque de texto se compacta para no chocar con el auto. */
+@media (max-height: 640px) {
+  .portada__kicker { margin-bottom: 12px; }
+  .portada__lema { margin-top: 14px; }
+  .portada__acciones { margin-top: 22px; }
+}
+@media (max-width: 700px) and (max-height: 640px) {
+  .portada__auto { width: min(46vw, 24svh); }
+}
+
+/* Móvil apaisado: poco alto, mucho ancho. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .portada__auto { top: auto; bottom: clamp(24px, 8vh, 40px); width: min(24vw, 44svh); }
+  .portada__salida-marco { padding-bottom: clamp(24px, 8vh, 40px); }
+}
+
+/* Táctil: todo lo pulsable mide al menos 44 px. */
+@media (pointer: coarse) {
+  .entrada__accion { min-height: 44px; }
+  .portada__enlace {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 10px;
+    background-position: 0 calc(100% - 9px);
+  }
+}
+
+/* Móviles estrechos: las dos pestañas caben en una línea. */
+@media (max-width: 440px) {
+  .entrada__acceso-panel { padding: 16px; }
+  .entrada__acceso-panel .pestana { padding-inline: 4px; font-size: .66rem; letter-spacing: .05em; }
+}
+
+/* Pantallas grandes (QHD, 4K, televisor): el texto pequeño acompaña al titular. */
+@media (min-width: 1800px) {
+  .pagina-entrada { --altura-cabecera: 96px; }
+  .entrada__marca-sello img { height: 46px; }
+  .entrada__accion { padding: 14px 24px; font-size: .95rem; }
+  .portada__kicker { font-size: 1rem; }
+  .portada__lema { max-width: 40ch; font-size: 1.9rem; }
+  .portada__acciones { zoom: 1.35; }
+  .portada__recta-cabeza p { font-size: 1.6rem; }
+  .portada__panel--texto { zoom: 1.35; }
+  .cifra__texto { font-size: 1rem; }
+  .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 680px); }
+  .entrada__acceso-panel { zoom: 1.3; }
+  .entrada__pie-marca { font-size: 1.25rem; }
+}
+
+/* Apilado (pantallas en vertical, estrechas o con movimiento reducido): las fotos verticales van de dos en dos. */
+@media (min-width: 600px) {
+  .portada__riel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portada__panel--ancho,
+  .portada__panel--texto { grid-column: 1 / -1; }
+  .portada__panel--alto { max-width: none; }
+}
+
+/* Pantallas de 3000 px o más. */
+@media (min-width: 3000px) {
+  .pagina-entrada { --altura-cabecera: 128px; }
+  .entrada__marca-sello img { height: 62px; }
+  .entrada__accion { padding: 18px 32px; font-size: 1.25rem; }
+  .portada__kicker { font-size: 1.4rem; }
+  .portada__lema { font-size: 2.7rem; }
+  .portada__acciones { zoom: 1.9; }
+  .portada__recta-cabeza p { font-size: 2.2rem; }
+  .portada__panel--texto { zoom: 1.9; }
+  .cifra__texto { font-size: 1.4rem; }
+  .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 900px); }
+  .entrada__acceso-panel { zoom: 1.75; }
+  .entrada__pie-marca { font-size: 1.7rem; }
 }

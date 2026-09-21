@@ -30,6 +30,16 @@ export function progresoVista(scroll, altoVentana, top, alto) {
   return limitar((scroll + altoVentana - top) / (altoVentana + Math.max(alto, 1)));
 }
 
+/**
+ * Hasta dónde llega el progreso de una escena `vista` al llegar al final de la
+ * página. Una escena que queda cerca del pie (o en una pantalla muy alta) nunca
+ * alcanza p = 1: sin este tope su animación se quedaría a medias.
+ */
+export function progresoMaximo(altoEscena, restanteDebajo, altoVentana) {
+  const alto = Math.max(altoEscena, 1);
+  return limitar((alto + Math.max(0, restanteDebajo)) / (altoVentana + alto));
+}
+
 export function normalizarVelocidad(pxPorSegundo, maximo = 2400) {
   return limitar(pxPorSegundo / maximo, -1, 1);
 }
@@ -138,8 +148,11 @@ export function crearMotor() {
       e.alto = r.height;
       e.p = -1;
     }
+    for (const fn of alMedir) fn();
     despertar();
   }
+
+  const alMedir = [];
 
   const medirEnFotograma = () => {
     if (midiendo) return;
@@ -172,6 +185,11 @@ export function crearMotor() {
       document.fonts?.ready.then(medirEnFotograma);
       new ResizeObserver(medirEnFotograma).observe(document.body);
       medir();
+    },
+    /** Ejecuta `fn` ahora y cada vez que se vuelven a medir las escenas. */
+    alMedir(fn) {
+      alMedir.push(fn);
+      fn();
     },
     medir,
   };

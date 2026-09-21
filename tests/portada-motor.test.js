@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   limitar, suavizar, progresoFijo, progresoVista, normalizarVelocidad,
-  fase, easeOutCubic, lucesEncendidas, digitosDe, entradaPanel,
+  fase, easeOutCubic, lucesEncendidas, digitosDe, entradaPanel, progresoMaximo,
 } from '../public/js/portada-motor.js';
 
 const cerca = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} no está a ${eps} de ${b}`);
@@ -78,4 +78,16 @@ test('entradaPanel es 0 fuera de pantalla y 1 cuando el panel pasó la mitad', (
   assert.equal(entradaPanel(-200, 1000), 1);
   assert.equal(entradaPanel(750, 1000), 0.5);
   assert.equal(entradaPanel(10, 0), 1);
+});
+
+test('progresoMaximo dice hasta dónde llega p al llegar al final de la página', () => {
+  // Última escena de 700 px con 84 px de pie en una pantalla de 1440: p solo llega a 0,366.
+  cerca(progresoMaximo(700, 84, 1440), 784 / 2140);
+  // Con al menos una pantalla de contenido debajo, p llega a 1.
+  assert.equal(progresoMaximo(700, 1440, 900), 1);
+  assert.equal(progresoMaximo(700, 5000, 900), 1);
+  // Sin nada debajo, p llega a alto / (ventana + alto).
+  cerca(progresoMaximo(800, 0, 800), 0.5);
+  // Nunca negativo ni mayor que 1.
+  assert.equal(progresoMaximo(800, -50, 800), 0.5);
 });
