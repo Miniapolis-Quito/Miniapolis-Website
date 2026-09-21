@@ -1827,10 +1827,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 .pagina-entrada .cifra__texto { color: var(--texto-3); font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
 
 .pagina-entrada .entrada__pista-real { margin-top: clamp(92px, 14vw, 180px); content-visibility: auto; contain-intrinsic-size: 1000px; }
-.pagina-entrada .entrada__seccion-cabeza { grid-template-columns: minmax(80px, .35fr) minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: clamp(18px, 3vw, 48px); }
+.pagina-entrada .entrada__seccion-cabeza { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: clamp(18px, 3vw, 48px); }
 .entrada__seccion-indice { align-self: start; margin: 0; color: var(--acento); font-family: var(--mono); font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; }
-.pagina-entrada .entrada__seccion-cabeza h2 { grid-column: 2; font-size: clamp(2.3rem, 5vw, 5.4rem); letter-spacing: -.065em; }
-.pagina-entrada .entrada__seccion-descripcion { grid-column: 3; color: var(--texto-2); font-size: 1rem; line-height: 1.55; }
+.pagina-entrada .entrada__seccion-cabeza h2 { grid-column: 1; font-size: clamp(2.3rem, 5vw, 5.4rem); letter-spacing: -.065em; }
+.pagina-entrada .entrada__seccion-descripcion { grid-column: 2; color: var(--texto-2); font-size: 1rem; line-height: 1.55; }
 .pagina-entrada .entrada__foto img,
 .pagina-entrada .entrada__media-foto img { border: 1px solid var(--borde); border-radius: 2px; filter: saturate(.88) contrast(1.06); }
 .pagina-entrada .entrada__foto--marquesina img { aspect-ratio: 16 / 7.7; object-position: center 54%; }
@@ -1851,7 +1851,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(3px); }
 
 .pagina-entrada .entrada__acceso { margin-top: clamp(92px, 14vw, 180px); padding-top: clamp(36px, 5vw, 64px); border-top-color: var(--borde-fuerte); content-visibility: auto; contain-intrinsic-size: 800px; }
 
-.pagina-entrada .entrada__acceso-intro h2 { margin-top: 10px; font-size: clamp(2.3rem, 5vw, 5rem); letter-spacing: -.065em; }
+.pagina-entrada .entrada__acceso-intro h2 { margin-top: 0; font-size: clamp(2.3rem, 5vw, 5rem); letter-spacing: -.065em; }
 .pagina-entrada .entrada__acceso-nota { color: var(--texto-2); }
 .pagina-entrada .entrada__pasos li { border-top-color: var(--borde); color: var(--texto-2); }
 .pagina-entrada .entrada__pasos li::before { color: var(--acento); font-family: var(--mono); }
@@ -2582,7 +2582,7 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
 .pagina-entrada .entrada__hero {
   min-height: min(820px, calc(100dvh - 82px));
   gap: clamp(34px, 7vw, 104px);
-  padding-block: clamp(58px, 8vw, 104px) clamp(48px, 6vw, 84px);
+  padding-block: clamp(72px, 10vw, 128px) clamp(60px, 8vw, 108px);
 }
 .pagina-entrada .entrada__hero-copy { max-width: 45ch; }
 .pagina-entrada .entrada__hero h1 {
