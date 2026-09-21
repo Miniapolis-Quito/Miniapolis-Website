@@ -30,4 +30,4 @@ coverage/
 output/
 _site/
 .claude/
-
+.worktrees/
