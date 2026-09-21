@@ -451,3 +451,69 @@
 /* Sin dato todavía, la rueda enseña el valor final: nunca una cifra falsa. */
 .portada-motor .rueda__tira { transform: translate3d(0, calc(var(--rueda, 1) * var(--d, 0) * -10%), 0); will-change: transform; }
 .portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+
+
+/* ==========================================================================
+   Movimiento: recta
+   ========================================================================== */
+.portada__panel picture { display: contents; }
+
+/* Horizontal fija: el scroll vertical recorre el riel de lado a lado. */
+.portada-fija .portada__recta { height: var(--alto-recta, 400svh); padding: 0; }
+.portada-fija .portada__recta-marco {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100svh;
+  padding-bottom: clamp(36px, 7svh, 84px);
+  overflow: hidden;
+}
+.portada-fija .portada__recta-cabeza { position: absolute; top: calc(var(--altura-cabecera) + 3svh); left: 0; right: 0; margin: 0; }
+.portada-fija .portada__recta-cabeza h2 { font-size: clamp(3rem, min(9.5vw, 15svh), 9.5rem); }
+.portada-fija .portada__riel {
+  --alto-panel: min(54svh, 600px);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(28px, 3vw, 56px);
+  width: max-content;
+  transform: translate3d(calc(var(--p, 0) * var(--recorrido, 0) * -1px), 0, 0);
+  will-change: transform;
+}
+.portada-fija .portada__panel {
+  flex: none;
+  width: auto;
+  max-width: none;
+  height: var(--alto-panel);
+  /* Corte diagonal de chicane: el panel se descubre según cuánto ha entrado. */
+  clip-path: polygon(calc((1 - var(--q, 1)) * 100%) 0, 100% 0, 100% 100%, calc((1 - var(--q, 1)) * 100% - 14%) 100%);
+}
+.portada-fija .portada__panel img {
+  width: auto;
+  height: 100%;
+  max-width: none;
+  transform: translate3d(calc((.5 - var(--p, 0)) * 7%), 0, 0) scale(1.08);
+}
+.portada-fija .portada__panel--texto {
+  align-self: center;
+  width: clamp(280px, 26vw, 420px);
+  height: auto;
+  clip-path: none;
+  opacity: calc(.2 + var(--q, 1) * .8);
+}
+
+/* Bordillo rojo y blanco pegado al suelo: corre al ritmo del riel. */
+.portada-fija .portada__bordillo { position: absolute; inset: auto 0 0; display: block; height: 10px; overflow: hidden; }
+.portada-fija .portada__bordillo::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 -96px;
+  background: repeating-linear-gradient(90deg, var(--rojo) 0 48px, #f2f2f2 48px 96px);
+  transform: translate3d(mod(var(--p, 0) * var(--recorrido, 0) * -1px, 96px), 0, 0);
+}
+
+/* Apilado (pantallas pequeñas): cada foto se descubre al llegar. */
+.portada-motor:not(.portada-fija) .portada__panel:not(.visto) { clip-path: inset(0 0 100% 0); }
+.portada-motor:not(.portada-fija) .portada__panel.visto { clip-path: inset(0); transition: clip-path 900ms var(--salida); }
