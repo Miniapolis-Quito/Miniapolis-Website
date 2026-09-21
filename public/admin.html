@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#000000">
   <title>Administración · Miniápolis #3</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/interior.css">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
-<body>
+<body class="pagina-interior pagina-interior--admin">
   <header class="barra" id="cabecera"></header>
 
   <main class="contenedor">
@@ -375,11 +376,6 @@
         <div class="campo">
           <label for="pack-referencia">Referencia de pago <span class="tenue-2">(opcional)</span></label>
           <input id="pack-referencia" name="paymentReference" type="text" maxlength="120">
-        </div>
-        <div class="campo">
-          <label for="pack-vence">Vence el <span class="tenue-2">(opcional)</span></label>
-          <input id="pack-vence" name="expiresAt" type="date">
-          <div class="campo__ayuda">Déjalo vacío si el pack no vence.</div>
         </div>
         <div class="campo">
           <label for="pack-nota">Nota <span class="tenue-2">(opcional)</span></label>

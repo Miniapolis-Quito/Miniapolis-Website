@@ -677,6 +677,89 @@ export const migrations = [
       `);
     },
   },
+  {
+    name: '015-solo-la-cortesia-vence',
+    up: (db) => {
+      // ---------------------------------------------------------------
+      // Las entradas pagadas dejan de caducar.
+      //
+      // El vencimiento pasa a ser cosa del programa de fidelidad: el premio
+      // nace con sus días contados y quien lo recibe por transferencia los
+      // hereda. Todo lo demás —ventas y recargas— vale hasta que se usa.
+      //
+      // Aquí se limpian las fechas que quedaron puestas a mano cuando el
+      // panel todavía las ofrecía. La descendencia de un pack de cortesía se
+      // salva, y se reconoce siguiendo la cadena de transferencias: cada pack
+      // transferido guarda el código de su origen en `payment_reference`
+      // ('from:RHE-XXXX-XXXX'), así que la recursión sube hasta la raíz y
+      // deja intacto lo que salió de un premio, por muchas manos que haya
+      // pasado.
+      // ---------------------------------------------------------------
+      const aLimpiar = db
+        .prepare(
+          `WITH RECURSIVE cortesia(id) AS (
+             SELECT id FROM packs WHERE origin = 'loyalty'
+             UNION
+             SELECT hijo.id
+               FROM packs hijo
+               JOIN packs padre ON hijo.payment_reference = 'from:' || padre.code
+               JOIN cortesia    ON padre.id = cortesia.id
+              WHERE hijo.origin = 'transfer'
+           )
+           SELECT id, remaining, status FROM packs
+            WHERE expires_at IS NOT NULL AND id NOT IN (SELECT id FROM cortesia)`,
+        )
+        .all();
+
+      if (aLimpiar.length === 0) return;
+
+      const ahora = new Date().toISOString();
+      const quitarFecha = db.prepare('UPDATE packs SET expires_at = NULL, updated_at = ? WHERE id = ?');
+      // Un pack que el barrido ya había marcado vuelve al servicio: se quedó
+      // sin la fecha que lo mató. El que además está sin saldo queda agotado,
+      // que es lo que de verdad le pasa. No se tocan los vencidos que ya no
+      // tenían fecha: esos los dejó así una mano, no el reloj.
+      const revivir = db.prepare(
+        `UPDATE packs SET status = CASE WHEN remaining > 0 THEN 'active' ELSE 'depleted' END, updated_at = ?
+          WHERE id = ?`,
+      );
+
+      for (const pack of aLimpiar) {
+        quitarFecha.run(ahora, pack.id);
+        if (pack.status === 'expired') revivir.run(ahora, pack.id);
+      }
+    },
+  },
+  {
+    name: '016-cartera-al-dia',
+    up: (db) => {
+      db.exec(`
+        -- ---------------------------------------------------------------
+        -- Que el pase de la cartera nunca se quede atrás
+        --
+        -- Avisar del cambio es una llamada a Apple y otra a Google, y las
+        -- dos pueden fallar: un corte de red, un permiso caducado, Google
+        -- de mantenimiento. Antes eso se perdía —el aviso salía una vez y
+        -- si fallaba, el saldo del pase se quedaba viejo para siempre—,
+        -- así que ahora el cambio queda anotado hasta que se comunica de
+        -- verdad, y se reintenta con esperas cada vez más largas.
+        --
+        -- \`sync_pending_at\` es la hora del cambio sin comunicar; cuando
+        -- está en NULL, el pase está al día.
+        -- ---------------------------------------------------------------
+        ALTER TABLE wallet_passes ADD COLUMN sync_pending_at TEXT;
+        ALTER TABLE wallet_passes ADD COLUMN sync_attempts INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE wallet_passes ADD COLUMN sync_next_at TEXT;
+        ALTER TABLE wallet_passes ADD COLUMN synced_at TEXT;
+
+        -- El barrido de reintentos pregunta siempre por lo mismo: qué
+        -- pases están pendientes y ya les toca. Índice parcial, porque lo
+        -- normal es que no haya ninguno.
+        CREATE INDEX idx_wallet_passes_pendientes
+          ON wallet_passes(sync_next_at) WHERE sync_pending_at IS NOT NULL;
+      `);
+    },
+  },
 ];
 
 export default migrations;

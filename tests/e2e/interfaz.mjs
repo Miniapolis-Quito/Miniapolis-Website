@@ -174,18 +174,14 @@ await paso('el máster vende un pack de 10', async () => {
 const codigo = (await admin.textContent('#detalle-cuerpo h2')).trim();
 console.log('       código del pack:', codigo);
 
-await paso('el detalle del pack permite poner vencimiento', async () => {
+await paso('un pack pagado no ofrece ponerle vencimiento', async () => {
+  // Las entradas compradas no caducan: el botón solo existe en los packs de
+  // cortesía. Que el servidor lo rechace no basta —si el panel lo ofreciera,
+  // el máster pulsaría algo que siempre falla—, así que se mira la pantalla.
   const boton = admin.locator('#dialogo-detalle button', { hasText: /vencimiento/ });
-  if ((await boton.count()) === 0) throw new Error('no aparece la acción de vencimiento');
-  await boton.first().click();
-  const campo = admin.locator('dialog[open] input[type=date]').first();
-  await campo.waitFor({ timeout: 8000 });
-  await campo.fill(new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10));
-  await admin.locator('dialog[open] button[type=submit]').last().click();
-  await admin.waitForSelector('.brindis--ok', { timeout: 10000 });
-  await admin.waitForFunction(() => document.querySelector('#detalle-cuerpo')?.textContent.includes('Vence el'), {
-    timeout: 10000,
-  });
+  if ((await boton.count()) !== 0) throw new Error('un pack pagado no debería ofrecer vencimiento');
+  const cuerpo = await admin.textContent('#detalle-cuerpo');
+  if (/Vence el/.test(cuerpo)) throw new Error('un pack pagado no debería mostrar fecha de vencimiento');
 });
 
 await paso('el pase impreso sale solo, y solo él, en la hoja', async () => {
@@ -226,6 +222,44 @@ await paso('el pase impreso sale solo, y solo él, en la hoja', async () => {
   if (await admin.locator('#dialogo-detalle').isVisible()) throw new Error('el diálogo saldría impreso');
   if (!(await admin.locator('#pase-impreso').isVisible())) throw new Error('el pase no se vería en la hoja');
   await admin.emulateMedia({ media: 'screen' });
+});
+
+await paso('desde la ficha se entrega el pase de cartera con un QR en pantalla', async () => {
+  // Las credenciales de Apple y de Google las emite el negocio; aquí se finge
+  // lo que responde el servidor para poder ver la pantalla que verá el
+  // mostrador. Lo que hace el servidor de verdad lo cubre la suite de API.
+  await admin.route('**/api/admin/packs/*/wallet', async (ruta) => {
+    await ruta.fulfill({
+      json: { carteras: { apple: true, google: true }, guardado: false, telefonos: 0, google: false, alDia: true },
+    });
+  });
+  await admin.route('**/api/admin/packs/*/wallet/invitacion', async (ruta) => {
+    await ruta.fulfill({
+      json: {
+        url: 'https://entradas.example/cartera#p=11111111-2222-4333-8444-555555555555&t=1.aaa',
+        qr: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+        validoMinutos: 10,
+      },
+    });
+  });
+
+  await admin.locator('#dialogo-detalle button', { hasText: 'Pase de cartera' }).click();
+  const dialogo = admin.locator('dialog[open]').last();
+  await dialogo.getByText('todavía no ha guardado', { exact: false }).waitFor({ timeout: 15000 });
+
+  await dialogo.locator('button', { hasText: 'Entregar el pase' }).click();
+  await dialogo.locator('.cartera-qr svg').waitFor({ timeout: 15000 });
+  const texto = await dialogo.textContent();
+  if (!/Este código sirve \d+:\d\d más/.test(texto)) {
+    throw new Error(`el mostrador no ve hasta cuándo sirve el código: ${texto}`);
+  }
+  if (!(await dialogo.locator('button', { hasText: 'Copiar enlace' }).count())) {
+    throw new Error('sin manera de mandarle el enlace al cliente que no está delante');
+  }
+
+  await dialogo.locator('button', { hasText: 'Cerrar' }).click();
+  await admin.unroute('**/api/admin/packs/*/wallet');
+  await admin.unroute('**/api/admin/packs/*/wallet/invitacion');
 });
 
 // ---------------------------------------------------------------------------
@@ -381,7 +415,45 @@ await paso('la app ofrece guardar el pase cuando hay carteras configuradas', asy
   const botones = await zona.locator('button').allTextContents();
   if (!botones.some((t) => /Apple/i.test(t))) throw new Error(`sin botón de Apple: ${botones.join(' | ')}`);
   if (!botones.some((t) => /Google/i.test(t))) throw new Error(`sin botón de Google: ${botones.join(' | ')}`);
+
+  // La sección explica para qué sirve el pase, no solo enseña dos botones.
+  const ayuda = await cliente.locator('#cartera-ayuda').textContent();
+  if (!/se actualiza|baja solo/i.test(ayuda)) throw new Error(`la sección no explica nada: ${ayuda}`);
+
+  // Y cada pack tiene el suyo, que es lo que se pulsa cuando hay varios.
+  const enLaTarjeta = cliente.locator('#lista-packs button', { hasText: 'Añadir a la cartera' });
+  if ((await enLaTarjeta.count()) === 0) throw new Error('la tarjeta del pack no ofrece guardarlo en la cartera');
+
+  // Este navegador no es un teléfono, así que no hay cartera que adivinar: con
+  // las dos configuradas, el botón tiene que preguntar en vez de no hacer nada.
+  await enLaTarjeta.first().click();
+  const eleccion = cliente.locator('dialog[open]', { hasText: '¿En qué cartera' });
+  await eleccion.waitFor({ timeout: 15000 });
+  const opciones = await eleccion.locator('.fila-acciones button').allTextContents();
+  if (opciones.length !== 2) throw new Error(`el diálogo no ofrece las dos carteras: ${opciones.join(' | ')}`);
+  await eleccion.locator('button', { hasText: 'Cancelar' }).click();
+
   await cliente.unroute('**/api/config');
+});
+
+await paso('la invitación del mostrador se explica sola cuando el código ya no sirve', async () => {
+  const pagina = await abrirPestana(430, 900, 'cartera');
+  await pagina.goto(`${B}/cartera#p=11111111-2222-4333-8444-555555555555&t=1.aaaaaaaaaaaaaaaaaaaaaaaa`);
+
+  const aviso = pagina.locator('#aviso:not([hidden])');
+  await aviso.waitFor({ timeout: 15000 });
+  const texto = await aviso.textContent();
+  if (!/caduc/i.test(texto)) throw new Error(`el cliente no entiende qué pasó: ${texto}`);
+
+  // El permiso no puede quedarse en la barra: de ahí pasa al historial del
+  // teléfono y a cualquier captura que la persona comparta.
+  if (await pagina.evaluate(() => window.location.hash)) {
+    throw new Error('el permiso sigue en la dirección después de leerlo');
+  }
+  // Y siempre queda una salida hacia su cuenta.
+  if (!(await pagina.locator('#acciones-final a[href="/app"]').count())) {
+    throw new Error('la página deja al cliente sin a dónde ir');
+  }
 });
 
 await navegador.close();

@@ -37,6 +37,11 @@ if (CAPTURAS) mkdirSync(CAPTURAS, { recursive: true });
 
 const vender = (userId, extra = {}) =>
   packsService.issuePack({ userId, size: 5, priceCents: 2500, actor: master, ...extra });
+/** Lo único que vence es la cortesía: las entradas pagadas no caducan. */
+const regalar = (userId, extra = {}) =>
+  packsService.issuePack({
+    userId, size: 5, priceCents: 0, paymentMethod: 'cortesia', origin: 'loyalty', actor: master, ...extra,
+  });
 const usar = (pack) => redemptions.redeemByCode({ code: pack.code, scanner: { id: staff.id, email: staff.email } });
 const nuevoCliente = (fullName, email, phone = null) =>
   users.createUser({ email, fullName, phone, password: 'Rueda-Delantera-2026' });
@@ -53,7 +58,7 @@ users.updateUser(cliente.id, { phone: '0991112233' });
 usar(vender(cliente.id, { size: 3 })); // Carlos: le quedan 2
 
 const ana = await nuevoCliente('Ana Vence', 'ana@pista.ec', '+593992223344');
-vender(ana.id, { expiresAt: iso(Date.now() + 3 * DIA) });
+regalar(ana.id, { expiresAt: iso(Date.now() + 3 * DIA) });
 
 const beto = await nuevoCliente('Beto Sin', 'beto@pista.ec');
 usar(vender(beto.id, { size: 1 }));

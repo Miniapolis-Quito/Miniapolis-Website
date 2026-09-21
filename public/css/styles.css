@@ -86,7 +86,9 @@
   --t-media: 260ms;
   --t-lenta: 460ms;
   --transicion: var(--t-rapida) var(--curva);
-  --t-hover: 220ms;
+  /* Un único ritmo para las respuestas al puntero: un poco más pausado para
+     que el hover se sienta intencional y no nervioso. */
+  --t-hover: 300ms;
   --curva-hover: cubic-bezier(0.16, 1, 0.3, 1);
   --sombra-hover: 0 18px 42px -24px rgba(61, 254, 64, .52);
 
@@ -183,14 +185,14 @@ thead th,
 }
 p  { margin: 0 0 1em; }
 
-a { color: var(--acento); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a { color: var(--acento); text-underline-offset: 3px; text-decoration-thickness: 1px; transition: color var(--t-hover) var(--curva-hover); }
 a:hover { color: var(--acento-2); }
 
 ::selection { background: var(--acento); color: var(--sobre-acento); }
 
 * { scrollbar-width: thin; scrollbar-color: var(--borde-fuerte) transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
-*::-webkit-scrollbar-thumb { background: var(--borde-fuerte); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; transition: background-color var(--transicion); }
+*::-webkit-scrollbar-thumb { background: var(--borde-fuerte); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; transition: background-color var(--t-hover) var(--curva-hover); }
 *::-webkit-scrollbar-thumb:hover { background: var(--acento-borde); background-clip: content-box; }
 
 /* --------------------------------------------------------------------------
@@ -785,6 +787,39 @@ fieldset { border: 0; margin: 0; padding: 0; }
 }
 
 /* --------------------------------------------------------------------------
+   Guardar el pase en la cartera del teléfono
+
+   Va dentro de la tarjeta del pase, así que se separa con un recuadro propio
+   en vez de con otra tarjeta: anidar tarjetas hace que ninguna de las dos se
+   lea como el borde de nada.
+   -------------------------------------------------------------------------- */
+
+.cartera {
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-s);
+  background: var(--fondo-2);
+  text-align: center;
+}
+.cartera__titulo {
+  margin: 0 0 4px;
+  font-size: .95rem;
+  letter-spacing: .02em;
+}
+.cartera .fila { flex-wrap: wrap; }
+
+/* En el mostrador: el QR que el cliente escanea para guardar su pase. Fondo
+   blanco siempre: un QR sobre el lienzo negro no lo lee ninguna cámara. */
+.cartera-qr {
+  width: min(232px, 60vw);
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: var(--radio-s);
+  background: #fff;
+}
+.cartera-qr svg { display: block; width: 100%; height: auto; }
+
+/* --------------------------------------------------------------------------
    Escáner
    -------------------------------------------------------------------------- */
 
@@ -910,7 +945,7 @@ tbody td { padding: 13px 12px; border-bottom: 1px solid var(--borde); vertical-a
 thead th:first-child, tbody td:first-child { padding-left: 2px; }
 thead th:last-child, tbody td:last-child { padding-right: 2px; }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr { transition: background-color var(--t-rapida) var(--curva); }
+tbody tr { transition: background-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover); }
 tbody tr:hover { background: var(--superficie-2); }
 td.mono, .mono { font-family: var(--mono); font-size: .88em; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -1680,6 +1715,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
     linear-gradient(135deg, rgba(255, 255, 255, .028), transparent 38%),
     var(--superficie);
   box-shadow: var(--sombra-baja);
+  transition: border-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover);
 }
 .tarjeta::before {
   position: absolute;
@@ -2158,7 +2194,8 @@ textarea:hover:not(:disabled),
   --track-boton: .11em;
   --curva-turbo: cubic-bezier(.19, 1, .22, 1);
   --curva-resorte: cubic-bezier(.34, 1.56, .64, 1);
-  --t-turbo: 420ms;
+  /* Los movimientos de hover comparten el mismo tiempo de llegada. */
+  --t-turbo: var(--t-hover);
   --inclinacion: -13deg;
   --estela: rgba(61, 254, 64, .9);
 }
@@ -2350,7 +2387,7 @@ th {
   transform: translate3d(22px, -50%, 0) scaleX(.2);
   transform-origin: right center;
   animation: none;
-  transition: opacity 200ms var(--curva-hover), transform var(--t-turbo) var(--curva-turbo);
+  transition: opacity var(--t-hover) var(--curva-hover), transform var(--t-hover) var(--curva-hover);
 }
 
 .boton.boton--principal {
@@ -2431,9 +2468,9 @@ textarea:focus-visible {
     transform: skewX(-18deg) scaleX(1.035);
     background-position: 260% 0, 0 0;
     transition:
-      background-position 720ms var(--curva-turbo),
-      box-shadow var(--t-turbo) var(--curva-turbo),
-      transform var(--t-turbo) var(--curva-turbo);
+      background-position var(--t-hover) var(--curva-hover),
+      box-shadow var(--t-hover) var(--curva-hover),
+      transform var(--t-hover) var(--curva-hover);
   }
   .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::after {
     opacity: 1;

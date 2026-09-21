@@ -29,9 +29,15 @@ ingresa a mano. Funciona igual.
 
 ### Guardarlo en la cartera del teléfono
 
-Si el botón aparece bajo el QR, puedes guardar tu pack en **Apple Wallet** o en
-**Google Wallet**. Ahí ves cuántas entradas te quedan sin abrir nada, y el
-número baja solo cada vez que usas una: no hace falta que hagas nada.
+Cada pack tiene su botón **Añadir a la cartera**, y bajo el QR hay una sección
+para lo mismo. Si tienes iPhone se guarda en **Apple Wallet**; si tienes
+Android —Samsung, Xiaomi, Motorola, Honor y el resto—, en **Google Wallet**.
+Ahí ves cuántas entradas te quedan sin abrir nada, y el número baja solo cada
+vez que usas una: no hace falta que hagas nada.
+
+Si estás en la pista, también puedes pedirlo en el mostrador: te enseñan un
+código en la pantalla, lo escaneas con la cámara y listo, sin tener que entrar
+a tu cuenta ahí mismo.
 
 Para entrar a la pista sigue siendo mejor el QR de la app, que cambia cada
 pocos segundos. El pase de la cartera es para llevar la cuenta.
@@ -45,7 +51,8 @@ completa te llega el pack de regalo al momento, sin canjear nada ni decir nada
 en la puerta.
 
 Las entradas de regalo no cuentan para ganar la siguiente, y el pack de
-cortesía puede tener fecha de vencimiento: mírala en tu lista de packs.
+cortesía es el único que puede tener fecha de vencimiento: mírala en tu lista
+de packs. Las entradas que compras no caducan nunca.
 
 ### Transferir entradas a otro piloto
 
@@ -76,8 +83,8 @@ Puedes adquirir tus packs pagando por transferencia bancaria, DeUna o efectivo:
 ### Consejos
 
 - Guarda la página en la pantalla de inicio del celular para abrirla más rápido.
-- Si compras un segundo pack, se usa primero el que vence antes. Puedes elegir
-  otro con los botones bajo el QR.
+- Tus entradas compradas no caducan. Si tienes un pack de cortesía con fecha,
+  se usa primero ese. Puedes elegir otro con los botones bajo el QR.
 - En **Mi cuenta** cambias tu contraseña y cierras sesión en otros dispositivos.
 - Si la pista tiene los avisos encendidos, te llega un correo con el
   comprobante de cada compra, y otro cuando te quedan pocas entradas, se te
@@ -275,10 +282,16 @@ normalidad.
 Abre el pack y usa **Ajustar entradas**. Número positivo acredita, negativo
 descuenta. Siempre pide un motivo y todo queda en el historial del pack.
 
-### Cambiar o quitar el vencimiento de un pack
+### Cambiar o quitar el vencimiento de un pack de cortesía
 
-Abre el pack y toca **Cambiar vencimiento**. Si dejas la fecha vacía, el pack
-deja de caducar.
+**Las entradas pagadas no vencen.** No hay fecha al venderlas y no se les puede
+poner después: quien pagó ya puso el dinero, y la pista no se lo queda por no
+venir a tiempo. El botón de vencimiento solo aparece en los packs de cortesía
+del programa de fidelidad y en lo que alguien haya transferido desde uno.
+
+En esos, abre el pack y toca **Cambiar vencimiento**. Si dejas la fecha vacía,
+el pack deja de caducar. Los días que trae de nacimiento se fijan en los
+ajustes del programa de fidelidad.
 
 Si el pack ya venció, ponerle una fecha nueva (o quitarla) lo devuelve al
 servicio en el mismo paso. Reactivarlo sin tocar la fecha no se puede: volvería
@@ -455,11 +468,26 @@ esperando. En **Fidelidad** verás el aviso de premios sin entregar y el botón
 **Otorgar ahora** los entrega en el acto.
 
 **Un cliente pregunta si puede llevar sus entradas en la cartera del teléfono.**
-Sí, si el sistema tiene configuradas las carteras: bajo su QR le aparece el
-botón para guardarlas. El saldo del pase se actualiza solo cada vez que le
-descuentas una entrada. Para entrar sigue mostrando el QR de la app; el pase de
-la cartera solo lleva código si le habilitaste el QR impreso a ese pack.
+Sí, si el sistema tiene configuradas las carteras. Puede hacerlo él desde su
+cuenta —cada pack tiene su botón **Añadir a la cartera**— o se lo entregas tú
+ahí mismo: en su ficha, en el pack, pulsa **Pase de cartera** y **Entregar el
+pase**. Sale un código en pantalla que el cliente escanea con su cámara; no
+tiene que iniciar sesión delante de la cola. El código sirve diez minutos.
+
+El saldo del pase se actualiza solo cada vez que le descuentas una entrada.
+Para entrar sigue mostrando el QR de la app; el pase de la cartera solo lleva
+código si le habilitaste el QR impreso a ese pack.
+
+**Un cliente dice que su pase no se actualiza.**
+Míralo antes de tocar nada: en su ficha, en el pack, **Pase de cartera** te
+dice si lo tiene guardado, en cuántos teléfonos y si queda algo por comunicar.
+Si dice que hay un cambio pendiente, el sistema lo sigue intentando solo. Si
+dice que no lo tiene guardado, es que lo borró del teléfono: vuelve a
+entregárselo.
 
 **¿Las entradas caducan?**
-Solo si al venderlas se les puso fecha de vencimiento. Sin fecha, no caducan. La
-fecha se puede cambiar o quitar después, desde el detalle del pack.
+Las que se compran, no: duran hasta que se usan. Solo caducan los packs de
+cortesía del programa de fidelidad, con los días que fijes en sus ajustes, y lo
+que se transfiera desde uno (si no, regalarlo sería la forma de volverlo
+eterno). Esa fecha se puede cambiar o quitar después, desde el detalle del
+pack.

@@ -24,3 +24,6 @@ export const notFound = (message = 'No encontramos lo que buscas.', code = 'no_e
 export const conflict = (message, code = 'conflicto', details) => new AppError(409, code, message, details);
 export const tooManyRequests = (message, details) =>
   new AppError(429, 'demasiados_intentos', message, details);
+/** Algo de fuera (Apple, Google, el correo) no contestó. No es culpa de quien pide. */
+export const servicioNoDisponible = (message, code = 'servicio_no_disponible', details) =>
+  new AppError(503, code, message, details);

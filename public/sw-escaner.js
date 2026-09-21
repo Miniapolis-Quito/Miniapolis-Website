@@ -16,7 +16,7 @@
 /* Al cambiar el aspecto o el código del escáner hay que subir este número: la
    copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
    un teléfono sin conexión seguiría abriendo el diseño anterior. */
-const CACHE = 'miniapolis-escaner-v5';
+const CACHE = 'miniapolis-escaner-v6';
 
 /** Nombres de caché propios. Incluye el prefijo anterior a la marca actual para
  *  que los teléfonos que ya tenían el escáner instalado suelten la copia vieja. */
@@ -26,6 +26,7 @@ const PREFIJOS_CACHE = ['miniapolis-escaner-', 'rh-escaner-'];
 const RECURSOS = [
   '/escanear',
   '/css/styles.css',
+  '/css/interior.css',
   '/js/escaner.js',
   '/js/sin-conexion.js',
   '/js/cola-sin-conexion.js',

@@ -20,6 +20,8 @@ const pestanaRegistro = $('#pestana-registro');
 const formRecuperar = $('#form-recuperar');
 const formSegundoPaso = $('#form-segundo-paso');
 const zonaOlvido = $('#zona-olvido');
+const entrarPassword = $('#entrar-password');
+const btnVerPassword = $('#btn-ver-password');
 
 /**
  * Desafío en curso del segundo paso. Vive solo en memoria y solo mientras se
@@ -30,6 +32,15 @@ let desafioEnCurso = null;
 
 /** Lo decide /api/config: sin correo configurado no se ofrece. */
 let recuperacionDisponible = false;
+
+/** Alterna la visibilidad sin cambiar el valor ni el flujo de acceso. */
+btnVerPassword.addEventListener('click', () => {
+  const mostrar = entrarPassword.type === 'password';
+  entrarPassword.type = mostrar ? 'text' : 'password';
+  btnVerPassword.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+  btnVerPassword.setAttribute('aria-label', `${mostrar ? 'Ocultar' : 'Mostrar'} contraseña`);
+  btnVerPassword.setAttribute('aria-pressed', String(mostrar));
+});
 
 /** Vuelve a la página que el usuario intentaba abrir, si es una ruta interna. */
 function destino(usuario) {

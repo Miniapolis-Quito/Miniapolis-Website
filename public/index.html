@@ -53,7 +53,7 @@
       </div>
     </section>
 
-    <section class="portada__tablero" data-escena="tablero" aria-label="La pista en cifras">
+    <section class="portada__tablero" data-escena="tablero" aria-label="La pista en datos">
       <div class="portada__luces" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
@@ -67,8 +67,8 @@
           <span class="cifra__texto">GT y touring</span>
         </li>
         <li class="cifra">
-          <span class="cifra__num" data-cifra="7" data-sufijo="días">7 días</span>
-          <span class="cifra__texto">Packs activos</span>
+          <span class="cifra__num cifra__num--rango">5–10</span>
+          <span class="cifra__texto">Entradas por pack</span>
         </li>
       </ul>
     </section>
@@ -144,7 +144,11 @@
             </div>
             <div class="campo">
               <label for="entrar-password">Contraseña</label>
-              <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
+              <div class="campo__password">
+                <input id="entrar-password" name="password" type="password" autocomplete="current-password" required>
+                <button class="boton boton--enlace campo__password-toggle" id="btn-ver-password" type="button"
+                        aria-label="Mostrar contraseña" aria-controls="entrar-password" aria-pressed="false">Mostrar</button>
+              </div>
               <div class="campo__error"></div>
             </div>
             <button class="boton boton--principal boton--bloque boton--grande" type="submit">Entrar</button>

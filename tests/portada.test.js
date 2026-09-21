@@ -20,6 +20,11 @@ test('la portada anula lo que el resto de la app le pondría por defecto', () =>
   assert.match(CSS, /\.pagina-entrada main > \.revelar\s*,\s*\.pagina-entrada main > \.revelar--visible\s*\{[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las escenas');
 });
 
+test('el enlace «Ver la pista» comparte el chasis inclinado de los botones', () => {
+  assert.match(CSS, /\.portada__enlace::before\s*\{[^}]*transform:\s*skewX\(var\(--inclinacion\)\)/s);
+  assert.match(CSS, /\.portada__enlace:hover::before\s*\{[^}]*box-shadow:[^}]*var\(--acento\)/s);
+});
+
 test('la portada carga los estilos compartidos, los propios y sus dos módulos', () => {
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/styles\.css">/);
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/portada\.css">/);
@@ -90,6 +95,15 @@ test('la cabecera de la portada permanece fija durante el scroll', () => {
   assert.match(HTML, /miniapolis-logo-oficial\.webp/);
   assert.match(HTML, /class="entrada__accion"[^>]*href="#acceso"/);
   assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s);
+});
+
+test('la capa negra de la cabecera entra desde arriba con una transición suave', () => {
+  assert.match(
+    CSS,
+    /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{[^}]*transform:\s*translate3d\(0,\s*-100%,\s*0\)[^}]*transition:\s*transform\s+720ms/s,
+  );
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada::before\s*\{[^}]*transform:\s*translate3d\(0,\s*0,\s*0\)/s);
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*overflow:\s*hidden/s);
 });
 
 test('la portada mantiene un copy breve, natural y sin ruido', () => {

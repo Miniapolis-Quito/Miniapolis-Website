@@ -1,0 +1,364 @@
+/*
+ * Capa común de las pantallas autenticadas.
+ *
+ * La portada marca el ritmo: lienzo oscuro, verde eléctrico, Saira ancha,
+ * planos con mucho aire y un solo gesto visual por bloque. Esta capa lleva
+ * ese lenguaje a los paneles sin tocar sus datos ni sus estados funcionales.
+ */
+
+.pagina-interior {
+  --interior-gutter: clamp(18px, 4vw, 42px);
+  --interior-max: 1240px;
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+/* Las variantes quedan nombradas para que las páginas puedan evolucionar sin
+   perder la comprobación estática de clases del frontend. */
+.pagina-interior--admin,
+.pagina-interior--cliente,
+.pagina-interior--escaner,
+.pagina-interior--sola { color-scheme: dark; }
+
+.pagina-interior .contenedor {
+  width: min(var(--interior-max), 100%);
+  padding-inline: var(--interior-gutter);
+}
+
+.pagina-interior main {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Un único motivo de pista acompaña el encabezado, sin convertir cada página
+   en otra portada llena de imágenes. */
+.pagina-interior main::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: -1;
+  height: 240px;
+  content: '';
+  pointer-events: none;
+  opacity: .16;
+  background:
+    linear-gradient(90deg, var(--fondo) 0%, rgba(0, 0, 0, .58) 48%, var(--fondo) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, .2), var(--fondo)),
+    url('../images/oficial/pista-circuito-panorama.webp') 62% 42% / cover no-repeat;
+  mask-image: linear-gradient(to bottom, #000 0, rgba(0, 0, 0, .78) 46%, transparent 100%);
+}
+
+.pagina-interior .barra {
+  background: rgba(4, 7, 8, .88);
+  border-bottom-color: rgba(226, 240, 231, .16);
+  box-shadow: 0 18px 38px -28px rgba(0, 0, 0, .95);
+}
+
+.pagina-interior .barra__interior {
+  min-height: 76px;
+  padding-block: 12px;
+}
+
+.pagina-interior .barra__marca {
+  position: relative;
+  gap: 12px;
+}
+
+.pagina-interior .barra__marca::after {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  content: '';
+  background: var(--acento);
+  box-shadow: 0 0 0 5px rgba(61, 254, 64, .08), 0 0 18px rgba(61, 254, 64, .55);
+}
+
+.pagina-interior .barra__marca span:last-child {
+  font-family: var(--display);
+  font-stretch: 118%;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.pagina-interior .marca__logo { height: 30px; }
+
+.pagina-interior .encabezado-pista {
+  display: flex;
+  min-height: 178px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: clamp(34px, 6vw, 66px) clamp(26px, 3vw, 38px);
+  border-bottom-color: rgba(226, 240, 231, .2);
+}
+
+.pagina-interior .encabezado-pista > * { min-width: 0; }
+
+.pagina-interior .encabezado-pista h1 {
+  max-width: 18ch;
+  font-size: clamp(2.35rem, 6vw, 5.5rem);
+  line-height: .9;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.pagina-interior .encabezado-pista p {
+  max-width: 60ch;
+  margin-top: 14px;
+  color: var(--texto-2);
+  font-size: .95rem;
+}
+
+.pagina-interior .seccion-marca {
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .18em;
+}
+
+.pagina-interior .encabezado-pista::after {
+  width: min(220px, 34%);
+  height: 2px;
+  background: var(--acento);
+  box-shadow: 0 0 18px rgba(61, 254, 64, .38);
+}
+
+/* El panel de administración usa muchas pestañas: se lee como una banda de
+   boxes y conserva desplazamiento horizontal solo en pantallas pequeñas. */
+.pagina-interior .pestanas {
+  gap: 4px;
+  margin-bottom: clamp(24px, 3.4vw, 38px);
+  padding: 5px;
+  border: 1px solid rgba(226, 240, 231, .14);
+  border-radius: 8px;
+  background: rgba(226, 240, 231, .035);
+}
+
+.pagina-interior .pestana {
+  min-height: 42px;
+  padding: 9px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: .69rem;
+  letter-spacing: .1em;
+}
+
+.pagina-interior .pestana[aria-selected="true"] {
+  color: var(--sobre-acento);
+  background: var(--acento);
+  box-shadow: 0 8px 24px -16px rgba(61, 254, 64, .95);
+}
+
+.pagina-interior .pestana[aria-selected="true"]::after { display: none; }
+
+.pagina-interior .tarjeta,
+.pagina-interior .saldo,
+.pagina-interior .ficha__cabecera,
+.pagina-interior .resultado {
+  border-color: rgba(226, 240, 231, .15);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .028), transparent 42%),
+    var(--superficie);
+  box-shadow: 0 22px 56px -42px rgba(0, 0, 0, .98);
+}
+
+.pagina-interior .tarjeta {
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.pagina-interior .tarjeta__titulo {
+  align-items: flex-start;
+  gap: 14px 20px;
+}
+
+.pagina-interior .tarjeta__titulo h2,
+.pagina-interior .tarjeta__titulo h3 {
+  max-width: 30ch;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.pagina-interior .rejilla--metricas .tarjeta {
+  min-height: 116px;
+  display: grid;
+  align-content: center;
+}
+
+.pagina-interior .metrica__valor {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.pagina-interior .saldo {
+  position: relative;
+  min-height: 230px;
+  overflow: hidden;
+}
+
+.pagina-interior .saldo::before {
+  position: absolute;
+  top: 0;
+  left: 32px;
+  width: min(190px, 32%);
+  height: 2px;
+  content: '';
+  background: var(--acento);
+  box-shadow: 0 0 18px rgba(61, 254, 64, .65);
+}
+
+.pagina-interior .saldo::after {
+  position: absolute;
+  right: 28px;
+  bottom: 24px;
+  width: 88px;
+  height: 88px;
+  content: '';
+  opacity: .22;
+  border: 1px solid var(--acento);
+  border-radius: 50%;
+  box-shadow: 0 0 0 10px rgba(61, 254, 64, .05), 0 0 0 20px rgba(61, 254, 64, .035);
+}
+
+.pagina-interior .saldo__texto { letter-spacing: .02em; }
+
+.pagina-interior .pack,
+.pagina-interior .mini-pack,
+.pagina-interior .opcion-pack,
+.pagina-interior .dispositivo {
+  border-color: rgba(226, 240, 231, .14);
+  background: rgba(13, 18, 20, .78);
+}
+
+.pagina-interior .pack:hover,
+.pagina-interior .mini-pack:hover,
+.pagina-interior .opcion-pack:hover {
+  border-color: var(--acento-borde);
+}
+
+.pagina-interior input,
+.pagina-interior select,
+.pagina-interior textarea {
+  min-width: 0;
+  border-color: rgba(226, 240, 231, .3);
+  background: rgba(0, 0, 0, .28);
+}
+
+.pagina-interior input::placeholder,
+.pagina-interior textarea::placeholder { color: #829089; }
+
+.pagina-interior .fila > input,
+.pagina-interior .fila > select { flex: 1 1 190px; }
+
+.pagina-interior .fila > .ancho-auto,
+.pagina-interior .fila > .ancho-puesto { flex: 0 1 auto; }
+
+.pagina-interior .boton:not(.boton--enlace):not(.boton--nav) {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.pagina-interior .boton--chico { min-height: 38px; padding-inline: 16px; }
+
+/* El contenido de las celdas puede ser largo (correos, notas, JSON). El
+   envoltorio absorbe el ancho en móvil y el resto de la página no se estira. */
+.pagina-interior .tabla-envoltura {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(226, 240, 231, .12);
+  border-radius: 8px;
+  scrollbar-width: thin;
+}
+
+.pagina-interior table { min-width: 620px; }
+
+.pagina-interior th,
+.pagina-interior td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pagina-interior th { background: rgba(226, 240, 231, .035); }
+
+.pagina-interior .escaner {
+  border-color: rgba(61, 254, 64, .3);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05), 0 28px 70px -44px rgba(61, 254, 64, .5);
+}
+
+.pagina-interior .resultado { border-radius: 8px; }
+
+.pagina-interior .resultado__titulo {
+  max-width: 34ch;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+.pagina-interior .modal__pie { gap: 10px; }
+
+.pagina-interior dialog {
+  border-color: rgba(226, 240, 231, .24);
+  background: #0b1012;
+}
+
+.pagina-interior .pagina-sola {
+  padding-block: clamp(42px, 8vh, 90px);
+}
+
+@media (max-width: 900px) {
+  /* En tablet la barra tiene espacio para la marca y las acciones, pero no
+     para una segunda fila accidental de botones. La navegación pasa a una
+     banda propia y mantiene todos sus destinos a la vista mediante scroll
+     horizontal. La pantalla del cliente conserva su línea compacta porque
+     solo lleva un destino. */
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav {
+    order: 4;
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav::-webkit-scrollbar { display: none; }
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav .boton--nav { flex: 0 0 auto; }
+  .pagina-interior .encabezado-pista { min-height: 0; }
+  .pagina-interior .encabezado-pista h1 { max-width: 16ch; }
+}
+
+@media (max-width: 620px) {
+  .pagina-interior .barra__interior { min-height: 66px; }
+  .pagina-interior .barra__marca span:last-child { display: none; }
+  .pagina-interior .encabezado-pista {
+    display: grid;
+    align-items: start;
+    gap: 22px;
+    padding-block: 30px 24px;
+  }
+  .pagina-interior .encabezado-pista h1 {
+    max-width: none;
+    font-size: clamp(2rem, 11vw, 3.35rem);
+    overflow-wrap: anywhere;
+  }
+  .pagina-interior .encabezado-pista .fila { width: 100%; }
+  .pagina-interior .encabezado-pista .fila > input,
+  .pagina-interior .encabezado-pista .fila > select { flex-basis: 160px; }
+  .pagina-interior .pestanas { margin-inline: -2px; }
+  .pagina-interior .pestana { padding-inline: 12px; }
+  .pagina-interior .tarjeta { padding: 18px; }
+  .pagina-interior .saldo { min-height: 220px; padding: 42px 24px 30px; }
+  .pagina-interior .saldo::before { left: 24px; }
+  .pagina-interior .saldo::after { right: 20px; bottom: 20px; width: 72px; height: 72px; }
+  .pagina-interior .fila > input,
+  .pagina-interior .fila > select { flex-basis: 100%; }
+  .pagina-interior .fila > .ancho-auto,
+  .pagina-interior .fila > .ancho-puesto { flex: 1 1 150px; }
+  .pagina-interior .modal__pie .boton { flex: 1 1 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina-interior .saldo::after { box-shadow: none; }
+}

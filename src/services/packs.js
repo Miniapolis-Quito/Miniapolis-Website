@@ -136,6 +136,29 @@ function generateUniqueCode(db) {
       throw conflict('No se pudo generar un código único para el pack. Intenta de nuevo.', 'codigo_colision');
 }
 
+/**
+ * Si un pack puede llevar fecha de vencimiento.
+ *
+ * Las entradas pagadas no caducan nunca: quien las compró ya puso el dinero y
+ * la pista no se queda con él por no venir a tiempo. El vencimiento existe
+ * solo para el premio de fidelidad, que nace con los días que fije el
+ * programa, y para lo que se transfiera desde uno: si al pasarle un pack de
+ * cortesía a otro piloto la fecha se perdiera, regalarlo sería justo la forma
+ * de volverlo eterno. De ahí que baste con que la fecha ya esté puesta —solo
+ * un pack de esa descendencia la tiene— para poder moverla.
+ */
+function puedeVencer(pack) {
+  return pack.origin === 'loyalty' || Boolean(pack.expires_at);
+}
+
+/** Aviso único para los dos sitios donde se rechaza una fecha. */
+const vencimientoNoAdmitido = () =>
+  badRequest(
+    'Las entradas pagadas no vencen; la fecha solo se admite en packs de cortesía.',
+    { fields: { expiresAt: 'Solo los packs de cortesía vencen.' } },
+    'vencimiento_no_admitido',
+  );
+
 /** Emite un pack nuevo para un cliente. */
 export function issuePack({
   userId,
@@ -144,6 +167,7 @@ export function issuePack({
   paymentMethod = null,
   paymentReference = null,
   note = null,
+  /** Solo para `origin: 'loyalty'`: lo pagado no vence. */
   expiresAt = null,
   allowStaticQr = false,
   /** 'sale' lo normal; 'loyalty' un pack de cortesía del programa de fidelidad. */
@@ -156,6 +180,7 @@ export function issuePack({
   const owner = db.prepare('SELECT id, full_name, email, status FROM users WHERE id = ?').get(userId);
   if (!owner) throw notFound('El cliente indicado no existe.', 'cliente_no_encontrado');
   if (owner.status !== 'active') throw badRequest('La cuenta del cliente está suspendida.', null, 'cliente_suspendido');
+  if (expiresAt && origin !== 'loyalty') throw vencimientoNoAdmitido();
   if (expiresAt && Date.parse(expiresAt) <= Date.now()) {
     throw badRequest('La fecha de vencimiento debe ser futura.', { fields: { expiresAt: 'Debe ser futura.' } });
   }
@@ -328,12 +353,28 @@ export function expireDuePacks(db = getDb()) {
     .get(now);
   if (!hayVencidos) return 0;
 
-  return db
+  const vencidos = db
     .prepare(
       `UPDATE packs SET status = 'expired', updated_at = ?
-        WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?`,
+        WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?
+        RETURNING id`,
     )
-    .run(now, now).changes;
+    .all(now, now);
+
+  // Vencer es un cambio como cualquier otro y tiene que contarse igual: sin
+  // este aviso, la pantalla del cliente seguía mostrando el pack como bueno
+  // hasta recargar, y —lo importante— el pase de la cartera se quedaba
+  // diciendo "Activo" para un pack que en la puerta ya no abre.
+  for (const { id } of vencidos) {
+    const pack = findById(id, db);
+    if (!pack) continue;
+    hub.publish([channels.user(pack.user_id), channels.admin], 'pack.actualizado', {
+      pack: toPublicPack(pack),
+      reason: 'vencido',
+    });
+  }
+
+  return vencidos.length;
 }
 
 /** Cambia estado, nota, vencimiento o modo de QR estático de un pack. */
@@ -368,6 +409,8 @@ export function updatePack(packId, changes, { actor, ip, userAgent } = {}) {
     params.note = changes.note || null;
   }
   if (changes.expiresAt !== undefined) {
+    // Quitarla siempre se puede; ponerla, solo donde el vencimiento tiene sentido.
+    if (changes.expiresAt && !puedeVencer(pack)) throw vencimientoNoAdmitido();
     if (changes.expiresAt && Date.parse(changes.expiresAt) <= Date.now()) {
       throw badRequest('La fecha de vencimiento debe ser futura.', { fields: { expiresAt: 'Debe ser futura.' } });
     }
@@ -633,6 +676,9 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
     const newCode = generateUniqueCode(db);
     const newSecret = randomHex(32);
     const noteReceiver = `Transferido por ${sender.full_name}${note ? `: ${note}` : ''}`;
+    // La fecha viaja con las entradas. Solo la tiene un pack de cortesía (o
+    // algo transferido desde uno), y perderla al cambiar de manos convertiría
+    // la transferencia en el atajo para que un premio no venciera nunca.
     const expiresAt = sourcePack.expires_at || null;
 
     db.prepare(
