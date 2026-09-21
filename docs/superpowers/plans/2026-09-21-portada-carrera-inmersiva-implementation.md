@@ -904,7 +904,7 @@ EOF
 .pagina-entrada main { overflow-x: clip; }
 .pagina-entrada h1,
 .pagina-entrada h2,
-.pagina-entrada h3 { margin: 0; color: var(--texto); font-weight: 900; }
+.pagina-entrada h3 { margin: 0; color: var(--texto); font-weight: 900; word-spacing: .14em; }
 .pagina-entrada p { margin: 0; }
 .pagina-entrada .contenedor--portada { width: min(1400px, 100%); margin-inline: auto; padding-inline: var(--gutter); }
 .portada__lectura { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -1065,6 +1065,7 @@ EOF
     linear-gradient(0deg, rgba(5, 7, 6, .9) 0, rgba(5, 7, 6, 0) 34%);
 }
 .portada__semaforo { display: none; }
+.portada__luz { display: block; }
 .portada__salida-copy { position: relative; z-index: 2; max-width: min(880px, 100%); }
 .portada__kicker {
   display: flex;
@@ -1117,6 +1118,9 @@ EOF
 .portada__riel { display: grid; gap: clamp(20px, 3vw, 40px); padding-inline: var(--gutter); }
 .portada__panel { position: relative; margin: 0; overflow: hidden; }
 .portada__panel img { display: block; width: 100%; height: auto; }
+.portada__recta-marco { position: relative; }
+.portada__panel--ancho { width: 100%; }
+.portada__panel--alto { width: 100%; max-width: min(100%, 520px); }
 .portada__panel--texto { align-self: center; max-width: 46ch; overflow: visible; }
 .portada__panel--texto h3 { font-size: clamp(1.8rem, 3vw, 2.6rem); letter-spacing: -.03em; }
 .portada__panel--texto > p { margin: 12px 0 22px; color: var(--texto-2); }
@@ -1900,6 +1904,8 @@ git commit -m "feat: add shift lights and odometer digits to the stats board" -m
 }
 .portada-fija .portada__panel {
   flex: none;
+  width: auto;
+  max-width: none;
   height: var(--alto-panel);
   /* Corte diagonal de chicane: el panel se descubre según cuánto ha entrado. */
   clip-path: polygon(calc((1 - var(--q, 1)) * 100%) 0, 100% 0, 100% 100%, calc((1 - var(--q, 1)) * 100% - 14%) 100%);
