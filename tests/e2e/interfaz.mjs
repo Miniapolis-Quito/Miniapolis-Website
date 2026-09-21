@@ -77,6 +77,53 @@ async function entrar(pagina, email, clave, destino) {
   await pagina.waitForURL(`**${destino}`, { timeout: 15000 });
 }
 
+const portada = await abrirPestana(1280, 900, 'portada');
+
+await paso('el selector de acceso es simétrico y legible', async () => {
+  await portada.goto(B, { waitUntil: 'domcontentloaded' });
+  await portada.waitForSelector('.entrada__acceso-panel .pestanas');
+
+  const datos = await portada.locator('.entrada__acceso-panel .pestana').evaluateAll((elementos) => {
+    const contenedor = elementos[0].parentElement;
+    const caja = contenedor.getBoundingClientRect();
+    const cajas = elementos.map((elemento) => elemento.getBoundingClientRect());
+    const estilo = getComputedStyle(elementos[0]);
+    const activo = elementos.find((elemento) => elemento.getAttribute('aria-selected') === 'true');
+    const estiloActivo = getComputedStyle(activo);
+    const rgb = (valor) => valor.match(/\d+(?:\.\d+)?/g)?.slice(0, 3).map(Number) || [0, 0, 0];
+    const lineal = (canal) => {
+      const normalizado = canal / 255;
+      return normalizado <= .03928 ? normalizado / 12.92 : ((normalizado + .055) / 1.055) ** 2.4;
+    };
+    const luminancia = (valor) => {
+      const [rojo, verde, azul] = rgb(valor);
+      return .2126 * lineal(rojo) + .7152 * lineal(verde) + .0722 * lineal(azul);
+    };
+    const fondo = luminancia(estiloActivo.backgroundColor);
+    const texto = luminancia(estiloActivo.color);
+    const contraste = (Math.max(fondo, texto) + .05) / (Math.min(fondo, texto) + .05);
+    return {
+      display: getComputedStyle(contenedor).display,
+      diferenciasAncho: Math.abs(cajas[0].width - cajas[1].width),
+      margenIzquierdo: cajas[0].left - caja.left,
+      margenDerecho: caja.right - cajas[1].right,
+      contraste,
+      subrayado: getComputedStyle(activo, '::after').display,
+      colorActivo: estiloActivo.color,
+      fondoActivo: estiloActivo.backgroundColor,
+      colorInactivo: estilo.color,
+    };
+  });
+
+  if (datos.display !== 'grid') throw new Error(`las pestañas siguen en ${datos.display}, no en una cuadrícula simétrica`);
+  if (datos.diferenciasAncho > 1) throw new Error(`anchos desiguales: ${datos.diferenciasAncho.toFixed(2)}px`);
+  if (Math.abs(datos.margenIzquierdo - datos.margenDerecho) > 1) {
+    throw new Error(`márgenes desiguales: ${datos.margenIzquierdo.toFixed(2)}px / ${datos.margenDerecho.toFixed(2)}px`);
+  }
+  if (datos.subrayado !== 'none') throw new Error('el estado activo todavía conserva el subrayado antiguo');
+  if (datos.contraste < 4.5) throw new Error(`contraste insuficiente: ${datos.contraste.toFixed(2)}:1`);
+});
+
 // ---------------------------------------------------------------------------
 // Administración
 // ---------------------------------------------------------------------------

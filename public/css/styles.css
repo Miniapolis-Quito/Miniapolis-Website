@@ -2689,6 +2689,64 @@ tbody tr:hover { background: rgba(61, 254, 64, .045); }
   .pagina-entrada .entrada__acceso-intro h2 { font-size: clamp(3.2rem, 18vw, 5.8rem); }
   .pagina-entrada .entrada__pie { margin-top: 50px; }
 }
+
+/* --- Acceso: selector segmentado ---------------------------------------
+   Las pestañas de la portada son una sola decisión: dos opciones del mismo
+   peso, no un enlace con una raya que intenta adivinar el ancho del texto. */
+.pagina-entrada .entrada__acceso-panel .pestanas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 clamp(22px, 3vw, 34px);
+  padding: 4px;
+  overflow: visible;
+  border: 1px solid rgba(226, 240, 231, .2);
+  border-radius: 14px;
+  background: rgba(226, 240, 231, .045);
+}
+.pagina-entrada .entrada__acceso-panel .pestana {
+  min-width: 0;
+  min-height: 48px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--texto-2);
+  font-size: .95rem;
+  font-weight: 650;
+  line-height: 1.15;
+  transition:
+    background-color var(--transicion),
+    border-color var(--transicion),
+    color var(--transicion),
+    box-shadow var(--transicion),
+    transform var(--transicion);
+}
+.pagina-entrada .entrada__acceso-panel .pestana:hover {
+  background: rgba(226, 240, 231, .08);
+  color: var(--texto);
+}
+.pagina-entrada .entrada__acceso-panel .pestana[aria-selected="true"] {
+  background: var(--acento);
+  border-color: transparent;
+  color: var(--sobre-acento);
+  box-shadow: none;
+}
+.pagina-entrada .entrada__acceso-panel .pestana[aria-selected="true"]::after {
+  display: none;
+  content: none;
+}
+
+@media (max-width: 620px) {
+  .pagina-entrada .entrada__acceso-panel .pestanas { gap: 3px; padding: 3px; }
+  .pagina-entrada .entrada__acceso-panel .pestana {
+    min-height: 44px;
+    padding-inline: 8px;
+    font-size: .88rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .revelar,
   .revelar--visible { opacity: 1 !important; transform: none !important; transition: none !important; }
