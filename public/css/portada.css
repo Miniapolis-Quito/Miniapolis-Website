@@ -62,7 +62,7 @@
   z-index: -1;
   background: rgba(5, 7, 6, .92);
   transform: translate3d(0, -100%, 0);
-  transition: transform 720ms var(--salida);
+  transition: transform 1400ms cubic-bezier(.33, 1, .68, 1);
   will-change: transform;
 }
 .pagina-entrada > .entrada__barra.esta-desplazada { border-bottom-color: var(--borde); }
@@ -435,7 +435,7 @@
 }
 
 .pagina-entrada > .entrada__barra.esta-desplazada {
-  background: rgba(7, 10, 9, .84);
+  background: transparent;
   border-bottom-color: rgba(221, 231, 222, .18);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
