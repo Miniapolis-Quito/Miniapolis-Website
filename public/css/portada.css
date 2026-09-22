@@ -458,7 +458,7 @@
 }
 
 .portada__salida-marco::after {
-  content: 'MINIÁPOLIS / CIRCUITO RC / 03';
+  content: 'MINIÁPOLIS / CIRCUITO RC';
   position: absolute;
   right: var(--gutter);
   bottom: 28px;
