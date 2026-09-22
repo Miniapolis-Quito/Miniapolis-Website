@@ -72,8 +72,10 @@ export function entradaPanel(izquierdaEnPantalla, anchoVentana) {
  * Una escena se registra con su elemento y un modo:
  *  - 'fija': contenedor alto con un marco `position: sticky` dentro.
  *  - 'vista': cruza la pantalla de abajo arriba.
- * `alActualizar` solo se llama cuando `p` cambia y la escena está cerca de la
- * pantalla. El bucle se duerme en cuanto el scroll se asienta.
+ * `alActualizar` solo se llama cuando `p` cambia. Como la portada tiene pocas
+ * escenas, todas se sincronizan siempre: depender de la visibilidad del
+ * `IntersectionObserver` puede dejar una escena dormida al invertir el scroll
+ * justo en los límites de la página.
  */
 export function crearMotor() {
   const raiz = document.documentElement;
@@ -96,7 +98,6 @@ export function crearMotor() {
 
   function pintar() {
     for (const e of escenas) {
-      if (!e.visible) continue;
       const p = calcular(e);
       if (Math.abs(p - e.p) < 0.0004) continue;
       e.p = p;
@@ -152,21 +153,10 @@ export function crearMotor() {
     requestAnimationFrame(() => { midiendo = false; medir(); });
   };
 
-  const observador = new IntersectionObserver((entradas) => {
-    for (const entrada of entradas) {
-      const escena = escenas.find((e) => e.el === entrada.target);
-      if (!escena) continue;
-      escena.visible = entrada.isIntersecting;
-      escena.p = -1;
-    }
-    despertar();
-  }, { rootMargin: '25% 0px 25% 0px' });
-
   return {
     registrar(el, { modo = 'vista', alActualizar } = {}) {
-      const escena = { el, modo, alActualizar, top: 0, alto: 0, p: -1, visible: false };
+      const escena = { el, modo, alActualizar, top: 0, alto: 0, p: -1 };
       escenas.push(escena);
-      observador.observe(el);
       medir();
       return escena;
     },
