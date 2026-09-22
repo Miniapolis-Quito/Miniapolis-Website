@@ -259,7 +259,7 @@ test('las referencias visuales de la portada apuntan a archivos existentes', () 
 test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--fondo:\s*#000000/);
-  assert.match(css, /--acento:\s*#7ed500/);
+  assert.match(css, /--acento:\s*#9ad54d/);
   assert.match(css, /\.barra[\s\S]*\.tarjeta/);
 });
 
