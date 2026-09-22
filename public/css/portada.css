@@ -17,10 +17,10 @@
   --texto: #f4f7f4;
   --texto-2: #b4c0b9;
   --texto-3: #78877f;
-  --acento: #9ad54d;
-  --acento-2: #9ad54d;
-  --acento-suave: rgba(154, 213, 77, .12);
-  --acento-borde: rgba(154, 213, 77, .45);
+  --acento: #93d241;
+  --acento-2: #93d241;
+  --acento-suave: rgba(147, 210, 65, .12);
+  --acento-borde: rgba(147, 210, 65, .45);
   --rojo: #e23a32;
   --altura-cabecera: 76px;
   --gutter: clamp(18px, 4.2vw, 64px);
@@ -76,7 +76,7 @@
   display: block;
   height: 100%;
   background: var(--acento);
-  box-shadow: 0 0 12px rgba(154, 213, 77, .6);
+  box-shadow: 0 0 12px rgba(147, 210, 65, .6);
   transform: scaleX(var(--scroll, 0));
   transform-origin: left center;
 }
@@ -116,7 +116,7 @@
 .pagina-entrada .boton.boton--principal {
   --chasis: var(--acento);
   --chasis-borde: rgba(255, 255, 255, .22);
-  --chasis-halo: 0 12px 30px -16px rgba(154, 213, 77, .85);
+  --chasis-halo: 0 12px 30px -16px rgba(147, 210, 65, .85);
   --texto-boton: var(--sobre-acento);
 }
 
@@ -166,8 +166,8 @@
   .entrada__accion:hover::after { transform: translate3d(5px, 0, 0); }
   .portada__enlace:hover { color: var(--acento); transform: translateY(-1px); }
   .portada__enlace:hover::before {
-    background: rgba(154, 213, 77, .08);
-    box-shadow: inset 0 0 0 1px var(--acento), 0 0 34px -10px rgba(154, 213, 77, .7);
+    background: rgba(147, 210, 65, .08);
+    box-shadow: inset 0 0 0 1px var(--acento), 0 0 34px -10px rgba(147, 210, 65, .7);
     transform: skewX(-18deg) scaleX(1.035);
   }
   .portada__enlace:hover::after { transform: translateX(5px); }
@@ -186,11 +186,11 @@
 .pagina-entrada.mira-activa textarea { cursor: none; }
 .entrada__mira { position: fixed; top: 0; left: 0; z-index: 80; width: 26px; height: 26px; pointer-events: none; opacity: .9; transform: translate3d(calc(var(--puntero-x, -100px) - 13px), calc(var(--puntero-y, -100px) - 13px), 0) scale(var(--mira-escala, 1)); transition: opacity var(--t-hover) var(--curva-hover); will-change: transform; mix-blend-mode: screen; }
 .entrada__mira::before,
-.entrada__mira::after { position: absolute; content: ''; background: var(--mira-color, rgba(244,247,244,.92)); box-shadow: 0 0 8px var(--mira-color, rgba(154,213,77,.45)); }
+.entrada__mira::after { position: absolute; content: ''; background: var(--mira-color, rgba(244,247,244,.92)); box-shadow: 0 0 8px var(--mira-color, rgba(147,210,65,.45)); }
 .entrada__mira::before { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); }
 .entrada__mira::after { top: 50%; right: 0; left: 0; height: 1px; transform: translateY(-50%); }
-.entrada__mira--segmento { position: absolute; inset: -14px; border: 1px dashed var(--mira-color, rgba(154,213,77,.76)); border-radius: 50%; animation: miraOrbita 8s linear infinite, miraPulso 2.4s ease-in-out infinite; }
-.entrada__mira-centro { position: absolute; inset: 9px; border: 1px solid var(--mira-color, rgba(154,213,77,.92)); border-radius: 50%; box-shadow: 0 0 12px var(--mira-color, rgba(154,213,77,.45)); }
+.entrada__mira--segmento { position: absolute; inset: -14px; border: 1px dashed var(--mira-color, rgba(147,210,65,.76)); border-radius: 50%; animation: miraOrbita 8s linear infinite, miraPulso 2.4s ease-in-out infinite; }
+.entrada__mira-centro { position: absolute; inset: 9px; border: 1px solid var(--mira-color, rgba(147,210,65,.92)); border-radius: 50%; box-shadow: 0 0 12px var(--mira-color, rgba(147,210,65,.45)); }
 .mira-sobre-objetivo .entrada__mira { --mira-escala: 1.3; --mira-color: var(--acento); opacity: 1; }
 .mira-sobre-objetivo .entrada__mira--segmento { animation-duration: 3.6s, 1.2s; }
 @media (max-width: 620px) { .entrada__mira { display: none; } }
@@ -250,7 +250,7 @@
   overflow: hidden;
   border: 1px solid rgba(217, 230, 222, .28);
   background: rgba(5, 7, 6, .72);
-  box-shadow: 0 26px 70px -34px rgba(0, 0, 0, .95), 0 0 0 1px rgba(154, 213, 77, .08);
+  box-shadow: 0 26px 70px -34px rgba(0, 0, 0, .95), 0 0 0 1px rgba(147, 210, 65, .08);
   clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%);
 }
 .portada__auto::after {
@@ -259,7 +259,7 @@
   inset: auto 10% 0 10%;
   height: 3px;
   background: var(--acento);
-  box-shadow: 0 0 18px rgba(154, 213, 77, .7);
+  box-shadow: 0 0 18px rgba(147, 210, 65, .7);
 }
 .portada__auto img {
   display: block;
@@ -271,7 +271,7 @@
 /* --- Tablero -------------------------------------------------------------- */
 .portada__tablero { padding: clamp(64px, 11vw, 150px) var(--gutter); border-block: 1px solid var(--borde); background: var(--fondo-2); }
 .portada__luces { display: flex; gap: 6px; max-width: 760px; }
-.portada__luces span { flex: 1; height: 8px; background: var(--acento); box-shadow: 0 0 18px rgba(154, 213, 77, .55); transform: skewX(-20deg); }
+.portada__luces span { flex: 1; height: 8px; background: var(--acento); box-shadow: 0 0 18px rgba(147, 210, 65, .55); transform: skewX(-20deg); }
 .portada__luces span:nth-child(n + 7) { background: var(--rojo); box-shadow: 0 0 18px rgba(226, 58, 50, .6); }
 .portada__cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: clamp(40px, 7vw, 96px) 0 0; padding: 0; list-style: none; }
 .cifra { padding: 0 clamp(16px, 3vw, 44px); border-left: 1px solid var(--borde); }
@@ -344,7 +344,7 @@
   transform: translateY(-50%);
   font-size: .76rem;
 }
-.entrada__acceso-panel .campo input:focus { border-color: var(--acento); box-shadow: 0 0 0 3px rgba(154, 213, 77, .12); }
+.entrada__acceso-panel .campo input:focus { border-color: var(--acento); box-shadow: 0 0 0 3px rgba(147, 210, 65, .12); }
 
 /* Selector segmentado: dos opciones del mismo peso (lo verifica e2e/interfaz.mjs). */
 .entrada__acceso-panel .pestanas {
@@ -419,14 +419,14 @@
   --texto: #f5f6f0;
   --texto-2: #b9c2ba;
   --texto-3: #87948a;
-  --acento: #9ad54d;
-  --acento-2: #9ad54d;
-  --acento-suave: rgba(154, 213, 77, .1);
-  --acento-borde: rgba(154, 213, 77, .46);
+  --acento: #93d241;
+  --acento-2: #93d241;
+  --acento-suave: rgba(147, 210, 65, .1);
+  --acento-borde: rgba(147, 210, 65, .46);
   --rojo: #ff5b47;
   --altura-cabecera: 82px;
   background:
-    radial-gradient(circle at 78% 8%, rgba(154, 213, 77, .07), transparent 24rem),
+    radial-gradient(circle at 78% 8%, rgba(147, 210, 65, .07), transparent 24rem),
     var(--fondo);
 }
 
@@ -475,7 +475,7 @@
 
 .portada__salida-marco::before {
   background:
-    radial-gradient(circle at 74% 38%, rgba(154, 213, 77, .1), transparent 26%),
+    radial-gradient(circle at 74% 38%, rgba(147, 210, 65, .1), transparent 26%),
     linear-gradient(90deg, rgba(7, 10, 9, .96) 0, rgba(7, 10, 9, .76) 34%, rgba(7, 10, 9, .18) 70%, rgba(7, 10, 9, .44) 100%),
     linear-gradient(0deg, rgba(7, 10, 9, .96) 0, rgba(7, 10, 9, 0) 42%);
 }
@@ -502,7 +502,7 @@
   border: 1px solid rgba(245, 246, 240, .36);
   border-radius: 2px 22px 2px 22px;
   background: rgba(7, 10, 9, .58);
-  box-shadow: 0 34px 80px -34px rgba(0, 0, 0, .92), 0 0 0 1px rgba(154, 213, 77, .12);
+  box-shadow: 0 34px 80px -34px rgba(0, 0, 0, .92), 0 0 0 1px rgba(147, 210, 65, .12);
   clip-path: none;
   transform: rotate(2deg);
 }
@@ -525,7 +525,7 @@
   left: 8%;
   height: 4px;
   border-radius: 99px;
-  box-shadow: 0 0 24px rgba(154, 213, 77, .8);
+  box-shadow: 0 0 24px rgba(147, 210, 65, .8);
 }
 .portada__auto img { transform: scale(1.04) translateY(-2%); }
 
@@ -559,7 +559,7 @@
   min-height: min(860px, 100svh);
   padding-block: clamp(88px, 10vw, 148px);
   background:
-    radial-gradient(circle at 15% 20%, rgba(154, 213, 77, .11), transparent 25rem),
+    radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .11), transparent 25rem),
     #e7e8df;
   color: #101612;
 }
@@ -589,7 +589,7 @@
 }
 .entrada__acceso-panel .pestana[aria-selected="true"] { background: var(--acento); }
 .entrada__acceso-panel .campo input { border-color: rgba(245, 246, 240, .28); background: #080b09; border-radius: 10px; }
-.entrada__acceso-panel .campo input:focus { border-color: var(--acento); box-shadow: 0 0 0 4px rgba(154, 213, 77, .13); }
+.entrada__acceso-panel .campo input:focus { border-color: var(--acento); box-shadow: 0 0 0 4px rgba(147, 210, 65, .13); }
 .entrada__acceso-panel .boton--principal { border-radius: 11px; }
 
 .entrada__pie { background: #070a09; }
