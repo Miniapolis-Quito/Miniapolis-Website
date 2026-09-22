@@ -100,10 +100,11 @@ test('la cabecera de la portada permanece fija durante el scroll', () => {
 test('la capa negra de la cabecera entra desde arriba con una transición suave', () => {
   assert.match(
     CSS,
-    /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{[^}]*transform:\s*translate3d\(0,\s*-100%,\s*0\)[^}]*transition:\s*transform\s+720ms/s,
+    /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{[^}]*transform:\s*translate3d\(0,\s*-100%,\s*0\)[^}]*transition:\s*transform\s+1400ms\s+cubic-bezier\(\.33,\s*1,\s*\.68,\s*1\)/s,
   );
   assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada::before\s*\{[^}]*transform:\s*translate3d\(0,\s*0,\s*0\)/s);
   assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*overflow:\s*hidden/s);
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada\s*\{[^}]*background:\s*transparent;/s);
 });
 
 test('la portada mantiene un copy breve, natural y sin ruido', () => {
