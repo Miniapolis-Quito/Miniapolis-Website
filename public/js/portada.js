@@ -229,6 +229,33 @@ function montarBoxes(motor) {
 }
 
 // ---------------------------------------------------------------------------
+// Información: la ficha entra como un tablero de boxes, bloque a bloque.
+// ---------------------------------------------------------------------------
+
+function montarInformacion(motor) {
+  const escenas = ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad'];
+  const secciones = escenas.flatMap((escena) => $$(`[data-escena="${escena}"]`));
+  if (!secciones.length) return;
+
+  secciones.forEach((seccion) => {
+    motor.registrar(seccion, {
+      modo: 'vista',
+      alActualizar: (p) => seccion.style.setProperty('--info-p', fase(p, 0, 1).toFixed(3)),
+    });
+  });
+
+  const observador = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      entrada.target.classList.add('visto');
+      observador.unobserve(entrada.target);
+    }
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+  secciones.forEach((seccion) => observador.observe(seccion));
+  setTimeout(() => secciones.forEach((seccion) => seccion.classList.add('visto')), 9000);
+}
+
+// ---------------------------------------------------------------------------
 // Montaje
 // ---------------------------------------------------------------------------
 
@@ -243,6 +270,7 @@ if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserv
   if (salida) motor.registrar(salida, { modo: 'fija' });
   montarTablero(motor);
   montarRecta(motor);
+  montarInformacion(motor);
   montarBoxes(motor);
   motor.iniciar();
   arrancarSalida();

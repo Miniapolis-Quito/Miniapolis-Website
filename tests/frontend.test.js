@@ -21,6 +21,7 @@ const PAGINAS = {
   'public/recordatorios.html': ['recordatorios.js'],
   'public/restablecer.html': ['restablecer.js'],
   'public/cartera.html': ['cartera.js'],
+  'public/posiciones.html': [],
 };
 /** Módulos que carga toda página autenticada. */
 const COMUNES = ['shell.js', 'ui.js', 'api.js', 'realtime.js'];
