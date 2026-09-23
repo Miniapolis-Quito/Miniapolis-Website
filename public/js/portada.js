@@ -7,7 +7,7 @@
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, easeOutCubic, digitosDe, entradaPanel, fase, lucesEncendidas, progresoMaximo,
+  crearMotor, digitosDe, easeOutCubic, entradaPanel, fase, lucesEncendidas, progresoCifra, progresoMaximo,
 } from './portada-motor.js';
 
 const raiz = document.documentElement;
@@ -47,6 +47,48 @@ function montarMira() {
   window.addEventListener('pointerout', (evento) => {
     if (!esObjetivo(evento.relatedTarget)) raiz.classList.remove('mira-sobre-objetivo');
   }, { passive: true });
+}
+
+// ---------------------------------------------------------------------------
+// Micro-interacciones de superficie
+// ---------------------------------------------------------------------------
+
+/**
+ * Mueve el halo de cada ficha según el puntero. No cambia el layout ni el
+ * contenido: solo hace que las superficies respondan como paneles físicos.
+ * Se desactiva por completo en touch y con movimiento reducido.
+ */
+function montarHalos() {
+  if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+
+  const selectores = [
+    '.portada__disciplina',
+    '.portada__spec',
+    '.portada__evento',
+    '.portada__pronto-visual',
+    '.portada__promo',
+  ];
+
+  $$(selectores.join(',')).forEach((pieza) => {
+    let rect = null;
+    const medir = () => { rect = pieza.getBoundingClientRect(); };
+    const actualizar = (evento) => {
+      if (!rect) medir();
+      if (!rect.width || !rect.height) return;
+      const x = ((evento.clientX - rect.left) / rect.width) * 100;
+      const y = ((evento.clientY - rect.top) / rect.height) * 100;
+      pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
+      pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
+    };
+    const limpiar = () => {
+      rect = null;
+      pieza.style.removeProperty('--spot-x');
+      pieza.style.removeProperty('--spot-y');
+    };
+    pieza.addEventListener('pointerenter', medir, { passive: true });
+    pieza.addEventListener('pointermove', actualizar, { passive: true });
+    pieza.addEventListener('pointerleave', limpiar, { passive: true });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +189,7 @@ function montarTablero(motor) {
         encendidas = n;
       }
       cifras.forEach((cifra, i) => {
-        cifra.style.setProperty('--rueda', easeOutCubic(fase(p, 0.18 + i * 0.1, 0.62 + i * 0.1)).toFixed(3));
+        cifra.style.setProperty('--rueda', progresoCifra(p, i).toFixed(3));
       });
     },
   });
@@ -238,10 +280,38 @@ function montarBoxes(motor) {
 }
 
 // ---------------------------------------------------------------------------
+// Información: la ficha entra como un tablero de boxes, bloque a bloque.
+// ---------------------------------------------------------------------------
+
+function montarInformacion(motor) {
+  const escenas = ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad'];
+  const secciones = escenas.flatMap((escena) => $$(`[data-escena="${escena}"]`));
+  if (!secciones.length) return;
+
+  secciones.forEach((seccion) => {
+    motor.registrar(seccion, {
+      modo: 'vista',
+      alActualizar: (p) => seccion.style.setProperty('--info-p', fase(p, 0, 1).toFixed(3)),
+    });
+  });
+
+  const observador = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      entrada.target.classList.add('visto');
+      observador.unobserve(entrada.target);
+    }
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+  secciones.forEach((seccion) => observador.observe(seccion));
+  setTimeout(() => secciones.forEach((seccion) => seccion.classList.add('visto')), 9000);
+}
+
+// ---------------------------------------------------------------------------
 // Montaje
 // ---------------------------------------------------------------------------
 
 montarMira();
+montarHalos();
 
 if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
   montarProgresoSimple();
@@ -252,6 +322,7 @@ if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserv
   if (salida) motor.registrar(salida, { modo: 'fija' });
   montarTablero(motor);
   montarRecta(motor);
+  montarInformacion(motor);
   montarBoxes(motor);
   motor.iniciar();
   arrancarSalida();

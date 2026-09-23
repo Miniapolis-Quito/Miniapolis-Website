@@ -777,7 +777,7 @@ export function transferTickets(sourcePackId, { quantity, recipient, note = null
       saludo(outcome.recipient),
       `<strong>${escaparHtml(outcome.sender.full_name)}</strong> te envió <strong>${cantTexto}</strong> para la pista de ${escaparHtml(config.brandName)}.`,
       ...(outcome.note
-        ? [`<blockquote style="margin:0 0 16px;padding:8px 16px;border-left:4px solid #3cfe3f;background:#f9f9f9;font-style:italic">"${escaparHtml(outcome.note)}"</blockquote>`]
+        ? [`<blockquote style="margin:0 0 16px;padding:8px 16px;border-left:4px solid #93d241;background:#f9f9f9;font-style:italic">"${escaparHtml(outcome.note)}"</blockquote>`]
         : []),
       `<p style="margin:0 0 8px">Código de tu nuevo pack: <strong style="font-family:monospace;font-size:16px">${escaparHtml(publicNew.code)}</strong><br>Entradas disponibles: <strong>${publicNew.remaining}</strong></p>`,
       boton(`${config.publicUrl}/app`, 'Ver mis entradas'),

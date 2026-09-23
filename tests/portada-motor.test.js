@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   limitar, suavizar, progresoFijo, progresoVista, normalizarVelocidad,
-  fase, easeOutCubic, lucesEncendidas, digitosDe, entradaPanel, progresoMaximo,
+  fase, easeOutCubic, lucesEncendidas, digitosDe, entradaPanel, progresoMaximo, progresoCifra,
 } from '../public/js/portada-motor.js';
 
 const cerca = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} no está a ${eps} de ${b}`);
@@ -64,6 +64,13 @@ test('lucesEncendidas cuenta luces enteras', () => {
   assert.equal(lucesEncendidas(0.5, 10), 5);
   assert.equal(lucesEncendidas(0.99, 10), 9);
   assert.equal(lucesEncendidas(1, 10), 10);
+});
+
+test('las cifras terminan antes de que el tablero se vaya', () => {
+  assert.equal(progresoCifra(0.18, 0), 0);
+  assert.equal(progresoCifra(0.54, 0), 1);
+  assert.equal(progresoCifra(0.64, 1), 1);
+  assert.ok(progresoCifra(0.64, 2) < 1, 'la tercera fase conserva su pequeño desfase');
 });
 
 test('digitosDe ignora todo lo que no es un dígito', () => {

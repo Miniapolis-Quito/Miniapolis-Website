@@ -27,6 +27,7 @@ coverage/
 *.pkpass
 # Estado local de las herramientas de navegador automatizado.
 .playwright-cli/
+.tmp-shots/
 output/
 _site/
 .claude/

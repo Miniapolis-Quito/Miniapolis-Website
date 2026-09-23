@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/portada.css">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="./favicon.png" type="image/png">
   <link rel="preload" href="./images/oficial/pista-circuito-panorama.webp" as="image" fetchpriority="high">
   <link rel="preload" href="./fonts/saira-var.woff2" as="font" type="font/woff2" crossorigin>
 </head>
@@ -34,6 +34,9 @@
           <span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span>
         </div>
         <div class="portada__salida-copy">
+          <div class="portada__logo" aria-hidden="true">
+            <img src="./images/oficial/miniapolis-logo-dark.webp" width="1536" height="1024" alt="">
+          </div>
           <p class="portada__kicker">Pista indoor</p>
           <h1 id="titulo-entrada"><span class="portada__linea"><span>Ven a</span></span><span class="portada__linea portada__linea--acento"><span>rodar.</span></span></h1>
           <p class="portada__lema">Asfalto, curvas y control.</p>
@@ -118,6 +121,143 @@
         </div>
         <div class="portada__bordillo" aria-hidden="true"></div>
       </div>
+    </section>
+
+    <section id="complejo" class="portada__info portada__info--complejo" data-escena="detalle" aria-labelledby="titulo-complejo">
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">Miniápolis #3 / Racing Hobbies</p>
+        <h2 id="titulo-complejo">Complejo de radio control indoor.</h2>
+        <p class="portada__info-lead">Pista de asfalto de 1.000 m², iluminación nocturna, boxes para 60 pilotos y un ecosistema completo para rodar, competir y aprender.</p>
+      </div>
+      <div class="portada__disciplinas" aria-label="Disciplinas disponibles">
+        <article class="portada__disciplina">
+          <span class="portada__indice">01</span>
+          <h3>Pista de asfalto</h3>
+          <p>Curvas, rectas y siete trazados modulares para buscar tu mejor vuelta.</p>
+        </article>
+        <article class="portada__disciplina">
+          <span class="portada__indice">02</span>
+          <h3>Pista de Crawling</h3>
+          <p>Circuito de obstáculos y rocas para avanzar con precisión y control.</p>
+        </article>
+        <article class="portada__disciplina">
+          <span class="portada__indice">03</span>
+          <h3>Pista de rally</h3>
+          <p>Superficie mixta de asfalto y tierra para cambiar de ritmo en cada tramo.</p>
+        </article>
+        <article class="portada__disciplina">
+          <span class="portada__indice">04</span>
+          <h3>Circuito para drones</h3>
+          <p>Obstáculos y gates modulares para volar bajo presión y encontrar la línea.</p>
+        </article>
+        <article class="portada__disciplina">
+          <span class="portada__indice">05</span>
+          <h3>Simuladores FPV</h3>
+          <p>Simuladores de carreras y manejo en primera persona para entrenar todo el año.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="pista-datos" class="portada__info portada__info--datos" data-escena="detalle" aria-labelledby="titulo-pista-datos">
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">El circuito, por dentro</p>
+        <h2 id="titulo-pista-datos">Todo listo para tu próxima vuelta.</h2>
+      </div>
+      <div class="portada__spec-grid">
+        <div class="portada__spec portada__spec--wide"><strong>44 m × 22,5 m</strong><span>1.000 m² de asfalto iluminado</span></div>
+        <div class="portada__spec"><strong>7</strong><span>trazados modulares</span></div>
+        <div class="portada__spec"><strong>172 m</strong><span>de recorrido aproximado</span></div>
+        <div class="portada__spec"><strong>AMB / MyLaps</strong><span>cuenta vueltas electrónico</span></div>
+        <div class="portada__spec"><strong>60 pilotos</strong><span>boxes con mesas, luz y asientos</span></div>
+        <div class="portada__spec"><strong>200 vehículos</strong><span>parqueadero cubierto y seguro</span></div>
+        <div class="portada__spec"><strong>17 pilotos</strong><span>tarima elevada de conducción</span></div>
+        <div class="portada__spec"><strong>Snack bar</strong><span>baños y compresor disponibles</span></div>
+      </div>
+    </section>
+
+    <section id="horarios" class="portada__info portada__info--split" data-escena="horario" aria-labelledby="titulo-horarios">
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">Pasa por boxes</p>
+        <h2 id="titulo-horarios">Horarios.</h2>
+        <p class="portada__info-lead">Consulta disponibilidad según el cronograma antes de preparar el auto.</p>
+      </div>
+      <div class="portada__horarios" aria-label="Horarios de apertura">
+        <div class="portada__horario"><span>Miércoles</span><strong>19:00 — 23:30</strong></div>
+        <div class="portada__horario"><span>Sábados</span><strong>09:00 — 23:00</strong></div>
+        <div class="portada__horario"><span>Domingos</span><strong>09:00 — 18:00</strong></div>
+        <p class="portada__nota">La disponibilidad puede variar de acuerdo con el cronograma de carreras y eventos.</p>
+      </div>
+    </section>
+
+    <section id="records" class="portada__info portada__info--records" data-escena="records" aria-labelledby="titulo-records">
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">Telemetría de pista</p>
+        <h2 id="titulo-records">Mejores tiempos.</h2>
+        <p class="portada__info-lead">La vuelta perfecta se mide en tiempo real y queda en la memoria del circuito.</p>
+      </div>
+      <div class="portada__records">
+        <div class="portada__record portada__record--primero"><span>01</span><strong>Danilo M.</strong><b>12.46</b></div>
+        <div class="portada__record"><span>02</span><strong>Stalin G.</strong><b>12.86</b></div>
+        <div class="portada__record"><span>03</span><strong>Marco A.</strong><b>13.04</b></div>
+      </div>
+      <div class="portada__record-meta"><span>Cuenta vueltas electrónico</span><span>Resultados en tiempo real</span><a class="boton boton--fantasma boton--chico" href="./posiciones.html">Records por circuito</a></div>
+    </section>
+
+    <section id="eventos" class="portada__info portada__info--eventos" data-escena="eventos" aria-labelledby="titulo-eventos">
+      <div class="portada__evento-fondo" aria-hidden="true"><img src="./images/pista-real/recta-pilotos.jpeg" width="665" height="1182" alt="" loading="lazy" decoding="async"></div>
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">Calendario de pista</p>
+        <h2 id="titulo-eventos">Próximos eventos.</h2>
+        <p class="portada__info-lead">Corre por la experiencia completa: comunidad, competencia y noches que se quedan contigo.</p>
+      </div>
+      <div class="portada__eventos-lista">
+        <article class="portada__evento"><span>25 / MAY</span><h3>Torneo del Recuerdo</h3><p>Una fecha para volver a lo esencial: manejar, compartir y competir.</p></article>
+        <article class="portada__evento"><span>08 / JUN</span><h3>Noche de Drift</h3><p>Asfalto, luces y control fino para dibujar la curva de lado.</p></article>
+        <article class="portada__evento"><span>22 / JUN</span><h3>Campeonato Miniápolis</h3><p>La temporada se corre vuelta a vuelta en la pista de casa.</p></article>
+      </div>
+      <a class="boton boton--principal boton--chico" href="#acceso">Entérate de nuestros eventos</a>
+    </section>
+
+    <section id="muy-pronto" class="portada__info portada__info--pronto" data-escena="eventos" aria-labelledby="titulo-pronto">
+      <div class="portada__pronto-copy">
+        <p class="portada__eyebrow">En construcción</p>
+        <h2 id="titulo-pronto">Muy pronto.</h2>
+        <h3>Algo grande se está construyendo para ti.</h3>
+        <p class="portada__info-lead">La próxima experiencia de Miniápolis está tomando forma. Quédate cerca de la bandera.</p>
+      </div>
+      <figure class="portada__pronto-visual"><img src="./images/pista-real/pista-baja.jpeg" width="360" height="640" alt="Vista baja del asfalto y la estructura del circuito de Miniápolis" loading="lazy" decoding="async"></figure>
+      <a class="boton boton--fantasma boton--chico" href="#acceso">Entérate pronto</a>
+    </section>
+
+    <section id="galeria" class="portada__info portada__info--galeria" data-escena="galeria" aria-labelledby="titulo-galeria">
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">Una mirada al circuito</p>
+        <h2 id="titulo-galeria">Más que una pista.</h2>
+      </div>
+      <div class="portada__galeria">
+        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista-real/pista-amplia.jpeg" width="640" height="359" alt="Vista amplia del asfalto y las curvas de Miniápolis" loading="lazy" decoding="async"><figcaption>La línea ideal aparece cuando el ritmo se encuentra con el asfalto.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista-real/curva-ventanas.jpeg" width="665" height="1182" alt="Curva iluminada por las ventanas del hangar" loading="lazy" decoding="async"><figcaption>Luz natural, asfalto real y espacio para encontrar tu trazada.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista-real/hangar-recta.jpeg" width="360" height="638" alt="Recta interior del hangar con luz natural y bordillos" loading="lazy" decoding="async"><figcaption>La luz del hangar dibuja otra forma de correr.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista-real/hangar-ancho.jpeg" width="640" height="359" alt="Vista panorámica del hangar y el circuito" loading="lazy" decoding="async"><figcaption>Un hangar entero para vivir la carrera desde cualquier ángulo.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista-real/pista-lateral.jpeg" width="480" height="360" alt="Vista lateral de una recta y una curva del circuito" loading="lazy" decoding="async"><figcaption>Rectas para acelerar y bordillos para afinar la vuelta.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista-real/boxes-curva.jpeg" width="360" height="640" alt="Curva del circuito junto a la zona de boxes" loading="lazy" decoding="async"><figcaption>Boxes cerca, comunidad alrededor y la próxima vuelta esperando.</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="comunidad" class="portada__info portada__info--comunidad" data-escena="comunidad" aria-labelledby="titulo-comunidad">
+      <div class="portada__info-cabeza">
+        <p class="portada__eyebrow">Racing Hobbies</p>
+        <h2 id="titulo-comunidad">Tu pasión, tu mejor equipo.</h2>
+        <p class="portada__info-lead">Máximo control, máxima velocidad. Encuentra llantas, motores, amortiguadores y autos para llevar tu próxima carrera más lejos.</p>
+      </div>
+      <div class="portada__promos">
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/lancia-delta-integrale.png" width="1024" height="1536" alt="Lancia Delta Integrale de competición" loading="lazy" decoding="async"><span>Tu pasión, tu mejor equipo</span><strong>Lancia Delta Integrale</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/amortiguadores.png" width="1536" height="1024" alt="Amortiguadores de alto rendimiento" loading="lazy" decoding="async"><span>Precisión en cada detalle</span><strong>Amortiguadores de alto rendimiento</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/llantas.png" width="550" height="862" alt="Llantas de competición" loading="lazy" decoding="async"><span>Máximo control, máxima velocidad</span><strong>Llantas de competición</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/motor-competicion.png" width="790" height="640" alt="Motor de competición" loading="lazy" decoding="async"><span>Fuerza que te lleva más lejos</span><strong>Motores de competición</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo portada__promo--muted" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/rc-builder.png" width="337" height="407" alt="Kit de RC Builder" loading="lazy" decoding="async"><span>Racing Hobbies</span><strong>RC Builder</strong><em>Próximamente ↗</em></a>
+      </div>
+      <p class="portada__comunidad-cierre">Más que una pista, una comunidad.</p>
     </section>
 
     <section id="acceso" class="portada__boxes" data-escena="boxes" aria-labelledby="titulo-acceso">
@@ -222,7 +362,8 @@
 
   <footer class="entrada__pie">
     <div class="entrada__pie-interior contenedor contenedor--portada">
-      <p class="entrada__pie-marca">Miniápolis&nbsp;#3</p>
+      <p class="entrada__pie-marca">Miniápolis&nbsp;#3 — Racing Hobbies</p>
+      <p class="entrada__pie-copy">© 2026 — Más que una pista, una comunidad.</p>
     </div>
   </footer>
 

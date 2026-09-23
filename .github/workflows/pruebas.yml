@@ -48,5 +48,12 @@ jobs:
 
       - run: npm ci
 
+      # No se acepta integrar una dependencia con una vulnerabilidad conocida
+      # de severidad alta o crítica. Se ejecuta después de `npm ci` para revisar
+      # exactamente el árbol fijado por package-lock.json, incluidos los
+      # paquetes de desarrollo que también se ejecutan en CI.
+      - name: Audita dependencias
+        run: npm audit --audit-level=high
+
       # Las pruebas se ejecutan contra una base en memoria; no hace falta nada más.
       - run: npm test

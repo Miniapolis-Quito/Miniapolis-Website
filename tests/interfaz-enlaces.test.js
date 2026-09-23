@@ -96,6 +96,13 @@ test('las direcciones normales siguen funcionando', () => {
   assert.equal(el('img', { src: '/images/miniapolis-logo-oficial.webp' }).getAttribute('src'), '/images/miniapolis-logo-oficial.webp');
 });
 
+test('el QR PNG embebido funciona en una imagen, sin abrir data URL en enlaces', () => {
+  const qr = 'data:image/png;base64,iVBORw0KGgo=';
+  assert.equal(el('img', { src: qr }).getAttribute('src'), qr);
+  assert.equal(el('a', { href: qr }).getAttribute('href'), null);
+  assert.equal(el('img', { src: 'data:image/svg+xml,<svg></svg>' }).getAttribute('src'), null);
+});
+
 test('el texto de un elemento sigue insertándose como texto y nunca como marcado', () => {
   const nodo = el('span', {}, '<img src=x onerror=alert(1)>');
   assert.equal(nodo.hijos.length, 1);

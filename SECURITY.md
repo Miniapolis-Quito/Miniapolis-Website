@@ -13,6 +13,9 @@ Cuenta qué viste, cómo reproducirlo y qué podría hacer alguien con ello.
 - Los archivos `*.example` solo llevan valores de ejemplo. En producción la
   aplicación **se niega a arrancar** con cualquiera de ellos, con un secreto que
   contenga «cambiame» o con el mismo secreto repetido para dos usos.
+- En producción también se niega a arrancar si `COOKIE_SECURE` no está activo o
+  si `PUBLIC_URL` no usa HTTPS. Así una configuración incompleta no puede
+  enviar cookies de sesión ni enlaces de recuperación por HTTP.
 - Si un secreto se filtra, cámbialo: `ACCESS_TOKEN_SECRET` y
   `REFRESH_TOKEN_SECRET` cierran todas las sesiones, `QR_SECRET` invalida los
   códigos emitidos (los pases impresos habrá que reimprimirlos).
@@ -29,7 +32,8 @@ Cuenta qué viste, cómo reproducirlo y qué podría hacer alguien con ello.
 - Las alertas de vulnerabilidades de Dependabot y sus correcciones automáticas
   están activas, y `.github/dependabot.yml` propone actualizaciones semanales.
 - Las acciones de GitHub deben ir fijadas a un commit, y el flujo de pruebas
-  solo tiene permiso de lectura.
+  solo tiene permiso de lectura. El flujo además ejecuta `npm audit` con nivel
+  alto antes de aceptar la suite.
 
 Cómo se protege la aplicación en sí está descrito en la sección «Cómo se
 protege el sistema» del README.

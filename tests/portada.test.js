@@ -40,6 +40,11 @@ test('el HTML declara las cuatro escenas y portada.js las monta', () => {
   }
 });
 
+test('portada.js importa todas las funciones que usa el motor de escenas', () => {
+  assert.match(JS, /import \{[^}]*\beaseOutCubic\b[^}]*\} from '\.\/portada-motor\.js'/s);
+  assert.match(JS, /easeOutCubic\(fase\(/);
+});
+
 test('solo lo clicable tiene :hover', () => {
   const CLICABLE = /^(?:a|button|input|select|textarea|label|summary)(?![\w-])|\.(?:boton(?:--[\w-]+)?|entrada__accion|entrada__marca|portada__enlace|pestana)(?![\w-])|\[role="tab"\]/;
   const fallos = [];
@@ -97,13 +102,12 @@ test('la cabecera de la portada permanece fija durante el scroll', () => {
   assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s);
 });
 
-test('la capa negra de la cabecera entra desde arriba con una transición suave', () => {
-  assert.match(
-    CSS,
-    /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{[^}]*transform:\s*translate3d\(0,\s*-100%,\s*0\)[^}]*transition:\s*transform\s+720ms/s,
-  );
-  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada::before\s*\{[^}]*transform:\s*translate3d\(0,\s*0,\s*0\)/s);
-  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*overflow:\s*hidden/s);
+test('la cabecera permanece negra desde el primer render y no anima su entrada', () => {
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*background:\s*rgba\([^;]+\);/s);
+  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*border-bottom:\s*1px\s+solid\s+var\(--borde\);/s);
+  assert.doesNotMatch(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{/);
+  assert.doesNotMatch(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada\s*\{[^}]*background:\s*transparent;/s);
+  assert.doesNotMatch(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra[^}]*transition:\s*transform/);
 });
 
 test('la portada mantiene un copy breve, natural y sin ruido', () => {
@@ -137,6 +141,10 @@ test('portada.css y el JS no dependen de rutas absolutas ni de terceros', () => 
   assert.doesNotMatch(CSS, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
   assert.doesNotMatch(JS + MOTOR, /https?:\/\//, 'sin CDN ni recursos externos');
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
+});
+
+test('las cajas de contenido permanecen nítidas durante la coreografía', () => {
+  assert.doesNotMatch(CSS, /(^|[;\s])filter:\s*blur\(/, 'el movimiento puede desplazar u ocultar suavemente, pero nunca desenfocar el contenido');
 });
 
 test('el motor solo escribe las variables que el CSS consume', () => {
