@@ -937,7 +937,7 @@
 .portada__record-meta { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; margin-top: 26px; color: var(--texto-2); font: 600 .7rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .portada__record-meta span::before { content: '↗'; margin-right: 8px; color: var(--acento); }
 .portada__record-meta .boton { margin-left: auto; }
-.portada__info--eventos { background: linear-gradient(135deg, rgba(17, 23, 19, .94), rgba(7, 9, 8, .98)), url('../images/contenido/eventos-fondo.png') center / cover; }
+.portada__info--eventos { background: linear-gradient(135deg, rgba(17, 23, 19, .94), rgba(7, 9, 8, .98)), url('../images/contenido/eventos-fondo.webp') center / cover; }
 .portada__eventos-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 30px; }
 .portada__evento { display: flex; flex-direction: column; min-height: 238px; padding: 24px; border: 1px solid var(--borde); background: rgba(5, 7, 6, .68); }
 .portada__evento span { color: var(--acento); font: 650 .75rem/1 var(--mono); letter-spacing: .12em; }
@@ -1817,7 +1817,7 @@
 .pagina-entrada .portada__info--eventos {
   background:
     linear-gradient(135deg, rgba(11, 17, 13, .93), rgba(5, 7, 6, .97)),
-    url('../images/contenido/eventos-fondo.png') center / cover;
+    url('../images/contenido/eventos-fondo.webp') center / cover;
 }
 .pagina-entrada .portada__eventos-lista { gap: 16px; }
 .pagina-entrada .portada__evento {
