@@ -53,7 +53,7 @@ const ATRIBUTOS_DE_DIRECCION = new Set(['href', 'src', 'action', 'formaction', '
  * también donde no la haya (la copia estática publicada en GitHub Pages) y sin
  * depender de que el navegador la respete.
  */
-function direccionSegura(valor) {
+function direccionSegura(valor, etiqueta, clave) {
   // El navegador ignora los espacios y los caracteres de control al leer el
   // esquema, así que "java\tscript:" es lo mismo que "javascript:". Se quitan
   // antes de mirar, y solo hasta los dos puntos: el resto de la dirección no
@@ -65,7 +65,16 @@ function direccionSegura(valor) {
     esquema += caracter;
     if (caracter === ':' || esquema.length > 16) break;
   }
-  return !/^(?:javascript|data|vbscript):/i.test(esquema);
+  if (/^(?:javascript|vbscript):/i.test(esquema)) return false;
+
+  // El servidor entrega el QR de 2FA como un PNG data URL. Se permite solo
+  // ese caso concreto: un PNG base64 dentro de <img src>. Los data URL en
+  // enlaces, formularios o con otro tipo MIME siguen quedando bloqueados.
+  if (/^data:/i.test(esquema)) {
+    return etiqueta === 'img' && clave === 'src' && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(String(valor));
+  }
+
+  return true;
 }
 
 /** Crea un elemento con atributos e hijos. Los textos se insertan como texto,
@@ -81,7 +90,7 @@ export function el(etiqueta, atributos = {}, ...hijos) {
       nodo.addEventListener(clave.slice(2).toLowerCase(), valor);
     } else if (clave === 'html') nodo.innerHTML = valor; // solo para marcado propio (SVG del QR)
     else if (valor === true) nodo.setAttribute(clave, '');
-    else if (ATRIBUTOS_DE_DIRECCION.has(clave) && !direccionSegura(valor)) {
+    else if (ATRIBUTOS_DE_DIRECCION.has(clave) && !direccionSegura(valor, etiqueta, clave)) {
       // Se deja el elemento sin enlace en vez de romper la pantalla entera: lo
       // que no se puede es dejar que el navegador lo siga.
       console.error(`Dirección descartada por insegura en <${etiqueta} ${clave}>`);

@@ -111,6 +111,22 @@ function bool(name, fallback) {
   return ['1', 'true', 'yes', 'si', 'sí', 'on'].includes(raw.toLowerCase());
 }
 
+/**
+ * En producción una sesión nunca puede depender de una cookie que viaje por
+ * HTTP. Un valor mal escrito como `COOKIE_SECURE=tru` antes se convertía en
+ * `false` silenciosamente y dejaba la puerta abierta a robo por red.
+ */
+function cookieSecure() {
+  const secure = bool('COOKIE_SECURE', isProduction);
+  if (isProduction && !secure) {
+    throw new Error(
+      'Configuración inválida: COOKIE_SECURE debe estar activo en producción. ' +
+        'Sirve la aplicación por HTTPS y usa COOKIE_SECURE=true.',
+    );
+  }
+  return secure;
+}
+
 function list(name, fallback = []) {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -266,6 +282,11 @@ function publicUrl() {
   ) {
     throw new Error(
       'Configuración inválida: PUBLIC_URL debe ser una URL HTTP(S) sin credenciales, consulta ni fragmento.',
+    );
+  }
+  if (isProduction && parsed.protocol !== 'https:') {
+    throw new Error(
+      'Configuración inválida: PUBLIC_URL debe usar HTTPS en producción; los enlaces de recuperación y cartera llevan permisos sensibles.',
     );
   }
   return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`;
@@ -526,7 +547,7 @@ export const config = Object.freeze({
     /** Orígenes permitidos para CORS. Vacío = solo mismo origen. */
     corsOrigins: Object.freeze(corsOrigins()),
     /** Marca Secure en las cookies. Por defecto activa en producción. */
-    cookieSecure: bool('COOKIE_SECURE', isProduction),
+    cookieSecure: cookieSecure(),
     /** Proxies concretos autorizados a aportar X-Forwarded-For. */
     trustedProxyIps: Object.freeze(trustedProxyIps()),
     /** Tamaño máximo del cuerpo JSON aceptado. */
