@@ -585,7 +585,9 @@
 
 @media (max-width: 899px) {
   .portada__salida-copy { max-width: 70vw; }
-  .portada__auto { right: 7vw; bottom: 9vh; }
+  /* En formatos intermedios el copy sigue anclado abajo; la tarjeta ocupa el
+     plano superior para no tapar el titular ni las acciones. */
+  .portada__auto { top: calc(var(--altura-cabecera) + 24px); right: 7vw; bottom: auto; }
   .portada__boxes { background: linear-gradient(180deg, #e7e8df, #dfe2d8); }
 }
 
@@ -597,7 +599,7 @@
   .portada__salida-copy { max-width: 100%; }
   .portada__salida h1 { max-width: 6ch; font-size: clamp(3.8rem, 18vw, 6.4rem); }
   .portada__lema { max-width: 21ch; }
-  .portada__auto { top: auto; right: 10vw; bottom: 76px; width: 45vw; max-width: 230px; }
+  .portada__auto { top: calc(var(--altura-cabecera) + 18px); right: var(--gutter); bottom: auto; width: min(45vw, 230px); max-width: none; }
   .portada__auto::before { top: 10px; left: 10px; padding: 5px 7px; font-size: .42rem; }
   .portada__salida-marco::before {
     background:
@@ -608,6 +610,18 @@
   .portada__boxes { padding-top: 112px; }
   .portada__boxes::before { top: 48px; }
   .entrada__acceso-panel { border-radius: 2px 18px 2px 18px; }
+}
+
+/* Apaisado bajo: el hero sigue siendo vertical, pero el copy debe reservar
+   una columna limpia para la tarjeta superior. */
+@media (max-width: 899px) and (max-height: 700px) and (orientation: landscape) {
+  .portada__salida-copy { max-width: 48vw; }
+}
+
+/* A partir de 900 px la recta fija espera al menos 560 px de alto. Mientras
+   tanto, conserva la escena completa sin permitir que el coche invada el copy. */
+@media (min-width: 900px) and (max-height: 559px) {
+  .portada__salida-copy { max-width: min(56vw, 600px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -836,4 +850,11 @@
 .portada-motor .portada__intro h2 {
   transform-origin: 0 100%;
   transform: translate3d(calc((1 - var(--entra, 1)) * -8vw), 0, 0) skewY(calc(var(--vel, 0) * -3deg));
+}
+
+/* Ventanas verticales muy bajas: reserva una altura real para que el hero no
+   fuerce la tarjeta sobre el titular. La navegación sigue siendo nativa. */
+@media (max-width: 700px) and (max-height: 760px) {
+  .portada-motor .portada__salida { height: max(150svh, 800px); }
+  .portada-motor .portada__salida-marco { height: 800px; min-height: 800px; }
 }

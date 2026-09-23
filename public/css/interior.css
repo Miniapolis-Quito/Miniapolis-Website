@@ -9,8 +9,31 @@
 .pagina-interior {
   --interior-gutter: clamp(18px, 4vw, 42px);
   --interior-max: 1240px;
+  --interior-linea: rgba(217, 230, 222, .16);
+  --interior-linea-fuerte: rgba(217, 230, 222, .3);
+  --interior-superficie: rgba(14, 19, 17, .86);
+  position: relative;
   min-width: 320px;
+  background:
+    radial-gradient(circle at 82% -10%, rgba(147, 210, 65, .1), transparent 30rem),
+    linear-gradient(180deg, #050706 0%, #080c0a 34%, #050706 100%);
   overflow-x: clip;
+}
+
+/* La portada tiene una profundidad de imagen; las interiores la traducen a
+   una retícula técnica muy tenue. Así el cambio de ruta no cambia de marca. */
+.pagina-interior::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  pointer-events: none;
+  opacity: .32;
+  background-image:
+    linear-gradient(rgba(217, 230, 222, .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217, 230, 222, .025) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(to bottom, #000, transparent 78%);
 }
 
 /* Las variantes quedan nombradas para que las páginas puedan evolucionar sin
@@ -38,10 +61,10 @@
   right: 0;
   left: 0;
   z-index: -1;
-  height: 240px;
+  height: 280px;
   content: '';
   pointer-events: none;
-  opacity: .16;
+  opacity: .2;
   background:
     linear-gradient(90deg, var(--fondo) 0%, rgba(0, 0, 0, .58) 48%, var(--fondo) 100%),
     linear-gradient(180deg, rgba(0, 0, 0, .2), var(--fondo)),
@@ -50,8 +73,8 @@
 }
 
 .pagina-interior .barra {
-  background: rgba(4, 7, 8, .88);
-  border-bottom-color: rgba(226, 240, 231, .16);
+  background: linear-gradient(180deg, rgba(5, 7, 6, .96), rgba(5, 7, 6, .78));
+  border-bottom-color: var(--interior-linea);
   box-shadow: 0 18px 38px -28px rgba(0, 0, 0, .95);
 }
 
@@ -85,22 +108,24 @@
 .pagina-interior .marca__logo { height: 30px; }
 
 .pagina-interior .encabezado-pista {
+  position: relative;
   display: flex;
-  min-height: 178px;
+  min-height: 218px;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  padding-block: clamp(34px, 6vw, 66px) clamp(26px, 3vw, 38px);
-  border-bottom-color: rgba(226, 240, 231, .2);
+  padding-block: clamp(42px, 7vw, 78px) clamp(28px, 3vw, 42px);
+  border-bottom-color: var(--interior-linea-fuerte);
 }
 
 .pagina-interior .encabezado-pista > * { min-width: 0; }
 
 .pagina-interior .encabezado-pista h1 {
   max-width: 18ch;
-  font-size: clamp(2.35rem, 6vw, 5.5rem);
+  font-size: clamp(2.7rem, 7vw, 6.8rem);
   line-height: .9;
-  letter-spacing: -.01em;
+  font-stretch: 125%;
+  letter-spacing: .005em;
   text-wrap: balance;
 }
 
@@ -119,27 +144,43 @@
 }
 
 .pagina-interior .encabezado-pista::after {
-  width: min(220px, 34%);
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  width: min(280px, 34%);
   height: 2px;
   background: var(--acento);
   box-shadow: 0 0 18px rgba(147, 210, 65, .38);
 }
 
+.pagina-interior .encabezado-pista::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: min(44vw, 520px);
+  height: 1px;
+  content: '';
+  opacity: .42;
+  background: linear-gradient(90deg, transparent, var(--interior-linea-fuerte));
+}
+
 /* El panel de administración usa muchas pestañas: se lee como una banda de
    boxes y conserva desplazamiento horizontal solo en pantallas pequeñas. */
 .pagina-interior .pestanas {
-  gap: 4px;
+  gap: 2px;
   margin-bottom: clamp(24px, 3.4vw, 38px);
-  padding: 5px;
-  border: 1px solid rgba(226, 240, 231, .14);
-  border-radius: 8px;
-  background: rgba(226, 240, 231, .035);
+  padding: 0 0 5px;
+  border: 0;
+  border-bottom: 1px solid var(--interior-linea);
+  border-radius: 0;
+  background: transparent;
 }
 
 .pagina-interior .pestana {
   min-height: 42px;
   padding: 9px 14px;
-  border-radius: 4px;
+  border: 1px solid transparent;
+  border-radius: 0;
   white-space: nowrap;
   font-size: .69rem;
   letter-spacing: .1em;
@@ -157,11 +198,26 @@
 .pagina-interior .saldo,
 .pagina-interior .ficha__cabecera,
 .pagina-interior .resultado {
-  border-color: rgba(226, 240, 231, .15);
+  position: relative;
+  border-color: var(--interior-linea);
+  border-radius: 0;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, .028), transparent 42%),
-    var(--superficie);
+    linear-gradient(135deg, rgba(255, 255, 255, .035), transparent 42%),
+    var(--interior-superficie);
   box-shadow: 0 22px 56px -42px rgba(0, 0, 0, .98);
+}
+
+.pagina-interior .tarjeta::before,
+.pagina-interior .resultado::before,
+.pagina-interior .ficha__cabecera::before {
+  position: absolute;
+  top: -1px;
+  left: 24px;
+  width: 76px;
+  height: 2px;
+  content: '';
+  background: var(--acento);
+  box-shadow: 0 0 14px rgba(147, 210, 65, .42);
 }
 
 .pagina-interior .tarjeta {
@@ -176,6 +232,7 @@
 .pagina-interior .tarjeta__titulo h2,
 .pagina-interior .tarjeta__titulo h3 {
   max-width: 30ch;
+  font-stretch: 118%;
   line-height: 1.05;
   text-wrap: balance;
 }
@@ -193,8 +250,16 @@
 
 .pagina-interior .saldo {
   position: relative;
-  min-height: 230px;
+  min-height: 278px;
   overflow: hidden;
+  place-items: start;
+  align-content: center;
+  padding: clamp(34px, 5vw, 56px) clamp(24px, 5vw, 54px);
+  text-align: left;
+  background:
+    radial-gradient(circle at 88% 72%, rgba(147, 210, 65, .12), transparent 13rem),
+    linear-gradient(135deg, rgba(255, 255, 255, .045), transparent 45%),
+    var(--interior-superficie);
 }
 
 .pagina-interior .saldo::before {
@@ -223,11 +288,28 @@
 
 .pagina-interior .saldo__texto { letter-spacing: .02em; }
 
+.pagina-interior .saldo__numero {
+  font-family: var(--display);
+  font-stretch: 125%;
+  font-size: clamp(6rem, 18vw, 11rem);
+  line-height: .78;
+}
+
+.pagina-interior .saldo__texto {
+  margin-top: 14px;
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
 .pagina-interior .pack,
 .pagina-interior .mini-pack,
 .pagina-interior .opcion-pack,
 .pagina-interior .dispositivo {
-  border-color: rgba(226, 240, 231, .14);
+  border-color: var(--interior-linea);
+  border-radius: 0;
   background: rgba(13, 18, 20, .78);
 }
 
@@ -241,8 +323,25 @@
 .pagina-interior select,
 .pagina-interior textarea {
   min-width: 0;
-  border-color: rgba(226, 240, 231, .3);
-  background: rgba(0, 0, 0, .28);
+  border-color: var(--interior-linea-fuerte);
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: rgba(0, 0, 0, .18);
+}
+
+.pagina-interior input:focus,
+.pagina-interior select:focus,
+.pagina-interior textarea:focus {
+  box-shadow: 0 2px 0 var(--acento), 0 8px 20px -18px rgba(147, 210, 65, .8);
+}
+
+.pagina-interior .campo > label,
+.pagina-interior .campo__etiqueta,
+.pagina-interior .selector-cantidad__etiqueta {
+  color: var(--acento);
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
 }
 
 .pagina-interior input::placeholder,
@@ -269,7 +368,7 @@
   max-width: 100%;
   overflow-x: auto;
   border: 1px solid rgba(226, 240, 231, .12);
-  border-radius: 8px;
+  border-radius: 0;
   scrollbar-width: thin;
 }
 
@@ -285,11 +384,11 @@
 
 .pagina-interior .escaner {
   border-color: rgba(147, 210, 65, .3);
-  border-radius: 8px;
+  border-radius: 0;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05), 0 28px 70px -44px rgba(147, 210, 65, .5);
 }
 
-.pagina-interior .resultado { border-radius: 8px; }
+.pagina-interior .resultado { border-radius: 0; }
 
 .pagina-interior .resultado__titulo {
   max-width: 34ch;
@@ -301,11 +400,59 @@
 
 .pagina-interior dialog {
   border-color: rgba(226, 240, 231, .24);
+  border-radius: 0;
   background: #0b1012;
 }
 
 .pagina-interior .pagina-sola {
-  padding-block: clamp(42px, 8vh, 90px);
+  padding-block: clamp(56px, 10vh, 120px);
+}
+
+/* Los botones de la portada tienen una silueta de pieza mecanizada. La
+   aplicación conserva sus tamaños táctiles, pero comparte esa silueta y sus
+   rótulos en mayúsculas. */
+.pagina-interior .boton {
+  border-radius: 0;
+  font-family: var(--display);
+  font-stretch: 116%;
+  font-weight: 650;
+  letter-spacing: var(--track-boton, .08em);
+  text-transform: uppercase;
+}
+
+.pagina-interior .boton--principal {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), inset 0 -1px 0 rgba(0, 0, 0, .22), 0 12px 30px -18px rgba(147, 210, 65, .9);
+}
+
+.pagina-interior .boton--nav {
+  color: var(--texto-2);
+  letter-spacing: .06em;
+}
+
+.pagina-interior .boton--nav[aria-current="page"] {
+  color: var(--acento);
+  background: var(--acento-suave);
+}
+
+.pagina-interior .estado-conexion {
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pagina-interior .aviso {
+  border-radius: 0;
+  border-left-width: 2px;
+  background: rgba(14, 19, 17, .74);
+}
+
+.pagina-interior .etiqueta {
+  border-radius: 0;
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 900px) {
@@ -336,7 +483,7 @@
     display: grid;
     align-items: start;
     gap: 22px;
-    padding-block: 30px 24px;
+    padding-block: 42px 26px;
   }
   .pagina-interior .encabezado-pista h1 {
     max-width: none;
@@ -349,7 +496,7 @@
   .pagina-interior .pestanas { margin-inline: -2px; }
   .pagina-interior .pestana { padding-inline: 12px; }
   .pagina-interior .tarjeta { padding: 18px; }
-  .pagina-interior .saldo { min-height: 220px; padding: 42px 24px 30px; }
+  .pagina-interior .saldo { min-height: 230px; padding: 44px 24px 34px; }
   .pagina-interior .saldo::before { left: 24px; }
   .pagina-interior .saldo::after { right: 20px; bottom: 20px; width: 72px; height: 72px; }
   .pagina-interior .fila > input,
