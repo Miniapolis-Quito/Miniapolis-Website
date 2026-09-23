@@ -1992,7 +1992,7 @@
    Ajuste responsive final: nada se sale de su caja en ningún ancho.
    ========================================================================== */
 /* Una palabra larga («Amortiguadores», «vehículos») parte antes que asomar. */
-.portada__spec strong, .portada__promo strong { overflow-wrap: break-word; hyphens: auto; }
+.portada__spec strong, .portada__spec span, .portada__promo strong { overflow-wrap: break-word; hyphens: auto; }
 
 /* Cinco productos por fila solo caben con holgura desde 1180 px. */
 @media (min-width: 701px) and (max-width: 1180px) {
@@ -2014,7 +2014,11 @@
 }
 
 /* Teléfonos de 320-380 px: las fichas de dos columnas ganan aire. */
+/* Con el mismo peso que `.pagina-entrada .portada__spec`, que si no las anula. */
+@media (max-width: 700px) {
+  .pagina-entrada .portada__spec { min-height: 132px; padding: 18px; }
+}
 @media (max-width: 380px) {
-  .portada__spec { padding: 16px 14px; }
+  .pagina-entrada .portada__spec { padding: 16px 14px; }
   .portada__spec strong { font-size: 1.15rem; }
 }
