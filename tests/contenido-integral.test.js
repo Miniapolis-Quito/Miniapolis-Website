@@ -87,6 +87,16 @@ test('los nuevos bloques tienen sistema visual, responsive y salida accesible', 
   assert.match(css, /@media\s*\(max-width:\s*760px\)/);
 });
 
+test('cada tarjeta editorial tiene un fondo distinto y local', () => {
+  const fondos = [
+    ...portadaCss.matchAll(/--card-fondo:\s*url\('([^']+)'\)/g),
+    ...portadaCss.matchAll(/--caption-fondo:\s*url\('([^']+)'\)/g),
+  ].map((match) => match[1]);
+  assert.equal(fondos.length, 30);
+  assert.equal(new Set(fondos).size, fondos.length);
+  for (const fondo of fondos) assert.ok(fs.existsSync(path.resolve('public/css', fondo)), `falta ${fondo}`);
+});
+
 test('el motor de portada monta las escenas informativas y conserva el fallback', () => {
   for (const escena of ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad']) {
     assert.match(portada, new RegExp(`data-escena="${escena}"`));

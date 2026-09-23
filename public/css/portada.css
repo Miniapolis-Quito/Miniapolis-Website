@@ -2142,3 +2142,107 @@
 .pagina-entrada .portada__boxes::before { color: rgba(245, 246, 240, .48); }
 .pagina-entrada .portada__intro h2 { color: var(--texto); }
 .pagina-entrada .portada__intro .entrada__acceso-nota { color: var(--texto-2); }
+
+/* Tarjetas editoriales: cada caja de contenido tiene su propia escena, pero
+   conserva la misma capa de contraste, borde y tratamiento tipográfico. */
+.pagina-entrada .portada__recta-cabeza {
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid rgba(221, 231, 222, .16);
+  background-image:
+    linear-gradient(135deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .62)),
+    url('../images/contenido/tarjetas/recta-cabeza-fondo.webp') !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+}
+
+.pagina-entrada .portada__disciplina,
+.pagina-entrada .portada__spec,
+.pagina-entrada .portada__horario,
+.pagina-entrada .portada__record,
+.pagina-entrada .portada__evento,
+.pagina-entrada .portada__promo,
+.pagina-entrada .portada__galeria figcaption {
+  background-color: #080d0a !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+}
+
+.pagina-entrada .portada__disciplina,
+.pagina-entrada .portada__spec,
+.pagina-entrada .portada__horario,
+.pagina-entrada .portada__record,
+.pagina-entrada .portada__evento,
+.pagina-entrada .portada__promo {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .64) 55%, rgba(7, 10, 9, .88)),
+    var(--card-fondo) !important;
+  background-position: center !important;
+}
+
+.pagina-entrada .portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); background-position: 72% center !important; }
+.pagina-entrada .portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); background-position: 38% center !important; }
+.pagina-entrada .portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); background-position: 68% center !important; }
+.pagina-entrada .portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); background-position: center !important; }
+.pagina-entrada .portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); background-position: 74% center !important; }
+
+.pagina-entrada .portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); background-position: center !important; }
+.pagina-entrada .portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); background-position: 70% center !important; }
+.pagina-entrada .portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); background-position: center 38% !important; }
+.pagina-entrada .portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); background-position: 58% center !important; }
+.pagina-entrada .portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); background-position: center 62% !important; }
+.pagina-entrada .portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); background-position: center !important; }
+.pagina-entrada .portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); background-position: 68% center !important; }
+.pagina-entrada .portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); background-position: 32% center !important; }
+
+.pagina-entrada .portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); background-position: 68% center !important; }
+.pagina-entrada .portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); background-position: 30% center !important; }
+.pagina-entrada .portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); background-position: 64% center !important; }
+.pagina-entrada .portada__horario { padding-inline: 20px !important; border: 1px solid rgba(221, 231, 222, .14); margin-bottom: 8px; }
+
+.pagina-entrada .portada__record:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/record-danilo-fondo.webp'); background-position: 72% center !important; }
+.pagina-entrada .portada__record:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/record-stalin-fondo.webp'); background-position: 32% center !important; }
+.pagina-entrada .portada__record:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/record-marco-fondo.webp'); background-position: 62% center !important; }
+.pagina-entrada .portada__record { padding-inline: 20px !important; border: 1px solid rgba(221, 231, 222, .14); margin-bottom: 8px; }
+
+.pagina-entrada .portada__evento:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/evento-experiencia-fondo.webp'); background-position: 68% center !important; }
+.pagina-entrada .portada__evento:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/evento-drift-fondo.webp'); background-position: 32% center !important; }
+.pagina-entrada .portada__evento:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/evento-campeonato-fondo.webp'); background-position: 64% center !important; }
+
+.pagina-entrada .portada__galeria figcaption {
+  --caption-fondo: url('../images/landing/miniapolis-track-atmosphere.webp');
+  padding: 14px 16px;
+  border: 1px solid rgba(221, 231, 222, .16);
+  color: #c5cec6;
+  background-image:
+    linear-gradient(135deg, rgba(7, 10, 9, .84), rgba(7, 10, 9, .62)),
+    var(--caption-fondo) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+}
+.pagina-entrada .portada__galeria figure:nth-child(2) figcaption { --caption-fondo: url('../images/landing/miniapolis-track-portrait.webp'); background-position: 62% center !important; }
+.pagina-entrada .portada__galeria figure:nth-child(3) figcaption { --caption-fondo: url('../images/pista/miniapolis-track-wide.webp'); background-position: 38% center !important; }
+
+.pagina-entrada .portada__promo:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); background-position: 68% center !important; }
+.pagina-entrada .portada__promo:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); background-position: 34% center !important; }
+.pagina-entrada .portada__promo:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/promo-llantas-fondo.webp'); background-position: 64% center !important; }
+.pagina-entrada .portada__promo:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/promo-motor-fondo.webp'); background-position: 42% center !important; }
+.pagina-entrada .portada__promo:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/promo-builder-fondo.webp'); background-position: 72% center !important; }
+.pagina-entrada .portada__promo::before { background: linear-gradient(180deg, rgba(5, 7, 6, .3), rgba(5, 7, 6, .9) 84%); }
+.pagina-entrada .portada__promo > img { opacity: .58; }
+
+.pagina-entrada .entrada__acceso-panel {
+  background-image:
+    linear-gradient(145deg, rgba(8, 12, 10, .94), rgba(8, 12, 10, .72)),
+    url('../images/oficial/miniapolis-bandera-hero.webp') !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+}
+
+@media (max-width: 700px) {
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
+  .pagina-entrada .portada__horario,
+  .pagina-entrada .portada__record { padding-inline: 14px !important; }
+}
