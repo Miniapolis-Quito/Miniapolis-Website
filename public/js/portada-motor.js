@@ -30,6 +30,16 @@ export function progresoVista(scroll, altoVentana, top, alto) {
   return limitar((scroll + altoVentana - top) / (altoVentana + Math.max(alto, 1)));
 }
 
+/**
+ * Hasta dónde llega el progreso de una escena `vista` al llegar al final de la
+ * página. Una escena que queda cerca del pie (o en una pantalla muy alta) nunca
+ * alcanza p = 1: sin este tope su animación se quedaría a medias.
+ */
+export function progresoMaximo(altoEscena, restanteDebajo, altoVentana) {
+  const alto = Math.max(altoEscena, 1);
+  return limitar((alto + Math.max(0, restanteDebajo)) / (altoVentana + alto));
+}
+
 export function normalizarVelocidad(pxPorSegundo, maximo = 2400) {
   return limitar(pxPorSegundo / maximo, -1, 1);
 }
@@ -88,7 +98,11 @@ export function crearMotor() {
   let corriendo = false;
   let midiendo = false;
 
-  const maximo = () => Math.max(raiz.scrollHeight - alto, 1);
+  let limiteScroll = 1;
+  let ultVel = null;
+  let ultVelAbs = null;
+  let ultScroll = null;
+  let ultScrollPx = null;
 
   function calcular(e) {
     return e.modo === 'fija'
@@ -107,7 +121,7 @@ export function crearMotor() {
   }
 
   function cuadro(ahora) {
-    const dt = Math.min(0.05, Math.max(0.001, (ahora - ultimo) / 1000));
+    const dt = Math.min(0.1, Math.max(0.001, (ahora - ultimo) / 1000));
     ultimo = ahora;
     const objetivo = window.scrollY;
     const previo = suave;
@@ -116,10 +130,26 @@ export function crearMotor() {
     const quieto = Math.abs(objetivo - suave) < 0.1 && Math.abs(velocidad) < 0.003;
     if (quieto) { suave = objetivo; velocidad = 0; }
 
-    raiz.style.setProperty('--vel', velocidad.toFixed(3));
-    raiz.style.setProperty('--vel-abs', Math.abs(velocidad).toFixed(3));
-    raiz.style.setProperty('--scroll', limitar(suave / maximo()).toFixed(4));
-    raiz.style.setProperty('--scroll-px', suave.toFixed(1));
+    const vStr = velocidad.toFixed(3);
+    if (vStr !== ultVel) {
+      ultVel = vStr;
+      raiz.style.setProperty('--vel', vStr);
+    }
+    const vAbsStr = Math.abs(velocidad).toFixed(3);
+    if (vAbsStr !== ultVelAbs) {
+      ultVelAbs = vAbsStr;
+      raiz.style.setProperty('--vel-abs', vAbsStr);
+    }
+    const sStr = limitar(suave / limiteScroll).toFixed(4);
+    if (sStr !== ultScroll) {
+      ultScroll = sStr;
+      raiz.style.setProperty('--scroll', sStr);
+    }
+    const sPxStr = suave.toFixed(1);
+    if (sPxStr !== ultScrollPx) {
+      ultScrollPx = sPxStr;
+      raiz.style.setProperty('--scroll-px', sPxStr);
+    }
     pintar();
 
     if (quieto) { corriendo = false; return; }
@@ -138,14 +168,18 @@ export function crearMotor() {
     alto = window.innerHeight;
     ancho = window.innerWidth;
     const y = window.scrollY;
+    limiteScroll = Math.max(raiz.scrollHeight - alto, 1);
     for (const e of escenas) {
       const r = e.el.getBoundingClientRect();
       e.top = r.top + y;
       e.alto = r.height;
       e.p = -1;
     }
+    for (const fn of alMedir) fn();
     despertar();
   }
+
+  const alMedir = [];
 
   const medirEnFotograma = () => {
     if (midiendo) return;
@@ -167,6 +201,11 @@ export function crearMotor() {
       document.fonts?.ready.then(medirEnFotograma);
       new ResizeObserver(medirEnFotograma).observe(document.body);
       medir();
+    },
+    /** Ejecuta `fn` ahora y cada vez que se vuelven a medir las escenas. */
+    alMedir(fn) {
+      alMedir.push(fn);
+      fn();
     },
     medir,
   };

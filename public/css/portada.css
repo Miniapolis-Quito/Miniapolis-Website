@@ -70,6 +70,7 @@
   box-shadow: 0 0 12px rgba(147, 210, 65, .6);
   transform: scaleX(var(--scroll, 0));
   transform-origin: left center;
+  will-change: transform;
 }
 
 /* --- Solo lo clicable reacciona ----------------------------------------- */
@@ -213,7 +214,7 @@
 }
 .portada__semaforo { display: none; }
 .portada__luz { display: block; }
-.portada__salida-copy { position: relative; z-index: 2; max-width: min(880px, 100%); }
+.portada__salida-copy { position: relative; z-index: 2; max-width: min(max(880px, 60vw), 100%); }
 .portada__logo {
   width: clamp(190px, 22vw, 300px);
   height: clamp(70px, 7.2vw, 100px);
@@ -239,7 +240,7 @@
   text-transform: uppercase;
 }
 .portada__kicker::before { content: ''; width: 34px; height: 2px; background: currentColor; }
-.portada__salida h1 { font-size: clamp(3.2rem, 9.2vw, 9.6rem); line-height: .9; }
+.portada__salida h1 { font-size: clamp(3.2rem, min(9.2vw, 17svh), 22rem); line-height: .9; }
 .portada__linea { display: block; overflow: hidden; padding: .05em .25em .08em 0; }
 .portada__linea > span { display: inline-block; transform: skewX(-8deg); transform-origin: 0 100%; }
 .portada__linea--acento { color: var(--acento); }
@@ -250,7 +251,7 @@
   right: clamp(var(--gutter), 6vw, 88px);
   bottom: clamp(54px, 11vh, 128px);
   z-index: 2;
-  width: clamp(250px, 29vw, 430px);
+  width: min(clamp(250px, 29vw, 640px), 46svh);
   margin: 0;
   overflow: hidden;
   border: 1px solid rgba(217, 230, 222, .28);
@@ -281,7 +282,7 @@
 .portada__cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: clamp(40px, 7vw, 96px) 0 0; padding: 0; list-style: none; }
 .cifra { padding: 0 clamp(16px, 3vw, 44px); border-left: 1px solid var(--borde); }
 .cifra:first-child { padding-left: 0; border-left: 0; }
-.cifra__num { display: flex; align-items: baseline; font-family: var(--display); font-stretch: 118%; font-weight: 650; font-size: clamp(2.8rem, 7.6vw, 7.6rem); line-height: .95; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.cifra__num { display: flex; align-items: baseline; font-family: var(--display); font-stretch: 118%; font-weight: 650; font-size: clamp(2.8rem, 7.6vw, 10.5rem); line-height: .95; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .cifra__num--rango { color: var(--texto); white-space: nowrap; }
 .cifra__afijo { font-size: .3em; letter-spacing: 0; color: var(--acento); }
 .cifra__afijo--pre { margin-right: .2em; }
@@ -295,11 +296,11 @@
 /* --- Recta (apilada por defecto; horizontal fija con .portada-fija) ------- */
 .portada__recta { padding: clamp(72px, 11vw, 150px) 0; }
 .portada__recta-cabeza { padding-inline: var(--gutter); margin-bottom: clamp(28px, 4vw, 56px); }
-.portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 7rem); line-height: .95; }
+.portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 10rem); line-height: .95; }
 .portada__recta-cabeza p { margin-top: 14px; color: var(--texto-2); font-size: clamp(1rem, 1.5vw, 1.25rem); }
 .portada__riel { display: grid; gap: clamp(20px, 3vw, 40px); padding-inline: var(--gutter); }
 .portada__panel { position: relative; margin: 0; overflow: hidden; }
-.portada__panel img { display: block; width: 100%; height: auto; }
+.portada__panel img { display: block; width: 100%; height: auto; max-height: 84svh; object-fit: cover; }
 .portada__recta-marco { position: relative; }
 .portada__panel--ancho { width: 100%; }
 .portada__panel--alto { width: 100%; max-width: min(100%, 520px); }
@@ -324,7 +325,7 @@
   overflow-x: clip;
 }
 .portada__bandera { display: none; }
-.portada__intro h2 { font-size: clamp(2.8rem, 7.6vw, 7.6rem); line-height: .95; }
+.portada__intro h2 { font-size: clamp(2.8rem, 7.6vw, 10.5rem); line-height: .95; }
 .entrada__acceso-nota { margin-top: 18px; color: var(--texto-2); }
 .entrada__acceso-subtitulo { margin: 0 0 6px; font-size: 1.35rem; }
 .entrada__acceso-pie { margin: 18px 0 0; text-align: center; }
@@ -748,6 +749,8 @@
   opacity: calc(var(--vel-abs, 0) * .9);
   -webkit-mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
   mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
+  will-change: opacity;
+  contain: strict;
 }
 .portada-motor .portada__estela::before {
   content: '';
@@ -755,10 +758,11 @@
   inset: -640px 0 0;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='640'%3E%3Cg fill='white'%3E%3Crect x='10' y='30' width='1' height='170' opacity='.5'/%3E%3Crect x='34' y='300' width='1' height='90' opacity='.3'/%3E%3Crect x='58' y='120' width='2' height='240' opacity='.4'/%3E%3Crect x='96' y='480' width='1' height='130' opacity='.3'/%3E%3Crect x='128' y='60' width='1' height='110' opacity='.35'/%3E%3Crect x='160' y='380' width='2' height='200' opacity='.45'/%3E%3Crect x='190' y='210' width='1' height='150' opacity='.3'/%3E%3Crect x='208' y='540' width='1' height='80' opacity='.4'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 220px 640px;
   transform: translate3d(0, mod(var(--scroll-px, 0) * -2.2px, 640px), 0);
+  will-change: transform;
 }
 
 /* Los titulares de sección se inclinan con la velocidad. */
-.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); will-change: transform; }
 
 
 /* ==========================================================================
@@ -768,7 +772,7 @@
 .portada-motor .portada__luces span:not(.on) { background: rgba(217, 230, 222, .1); box-shadow: none; }
 /* Sin dato todavía, la rueda enseña el valor final: nunca una cifra falsa. */
 .portada-motor .rueda__tira { transform: translate3d(0, calc(var(--rueda, 1) * var(--d, 0) * -10%), 0); will-change: transform; }
-.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); will-change: transform; }
 
 
 /* ==========================================================================
@@ -789,9 +793,9 @@
   overflow: hidden;
 }
 .portada-fija .portada__recta-cabeza { position: absolute; top: calc(var(--altura-cabecera) + 3svh); left: 0; right: 0; margin: 0; }
-.portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.6rem, min(6.4vw, 11svh), 6.4rem); }
+.portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.6rem, min(6.4vw, 11svh), 9rem); }
 .portada-fija .portada__riel {
-  --alto-panel: min(60svh, 660px);
+  --alto-panel: min(60svh, 900px, 50vw); /* una foto ancha nunca mide más que la pantalla */
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -807,14 +811,17 @@
   height: var(--alto-panel);
   /* Corte diagonal de chicane: el panel se descubre según cuánto ha entrado. */
   clip-path: polygon(calc((1 - var(--q, 1)) * 100%) 0, 100% 0, 100% 100%, calc((1 - var(--q, 1)) * 100% - 14%) 100%);
+  will-change: clip-path;
 }
 .portada-fija .portada__panel img {
   width: auto;
   height: 100%;
   max-width: none;
   aspect-ratio: auto;
+  max-height: none;
   object-fit: fill;
   transform: translate3d(calc((.5 - var(--p, 0)) * 7%), 0, 0) scale(1.08);
+  will-change: transform;
 }
 .portada-fija .portada__panel--texto {
   align-self: center;
@@ -832,6 +839,7 @@
   inset: 0 0 0 -96px;
   background: repeating-linear-gradient(90deg, var(--rojo) 0 48px, #f2f2f2 48px 96px);
   transform: translate3d(mod(var(--p, 0) * var(--recorrido, 0) * -1px, 96px), 0, 0);
+  will-change: transform;
 }
 
 /* Apilado (pantallas pequeñas): cada foto se descubre al llegar. */
@@ -859,6 +867,7 @@
   inset: 0;
   background: conic-gradient(#f5f5f5 25%, #050706 0 50%, #f5f5f5 0 75%, #050706 0) 0 0 / 96px 96px;
   transform: translate3d(calc(-110% + var(--cruce, 0) * 220%), 0, 0) skewX(-16deg);
+  will-change: transform;
 }
 /* El panel entra frenando, como un auto que llega a boxes. */
 .portada-motor .entrada__acceso-panel {
@@ -869,6 +878,114 @@
 .portada-motor .portada__intro h2 {
   transform-origin: 0 100%;
   transform: translate3d(calc((1 - var(--entra, 1)) * -8vw), 0, 0) skewY(calc(var(--vel, 0) * -3deg));
+  will-change: transform;
+}
+
+
+/* ==========================================================================
+   Formatos: pantallas cortas, móviles estrechos, táctil y apaisado
+   ========================================================================== */
+@media (max-width: 899px) {
+  .portada__salida h1 { font-size: clamp(3.2rem, min(13vw, 17svh), 6.6rem); }
+}
+
+/* Pantallas cortas: el bloque de texto se compacta para no chocar con el auto. */
+@media (max-height: 640px) {
+  .portada__kicker { margin-bottom: 12px; }
+  .portada__lema { margin-top: 14px; }
+  .portada__acciones { margin-top: 22px; }
+}
+@media (max-width: 700px) and (max-height: 640px) {
+  .portada__auto { width: min(46vw, 24svh); }
+}
+
+/* Móvil apaisado: poco alto, mucho ancho. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .portada__auto { top: auto; bottom: clamp(24px, 8vh, 40px); width: min(24vw, 44svh); }
+  .portada__salida-marco { padding-bottom: clamp(24px, 8vh, 40px); }
+}
+
+/* Táctil: todo lo pulsable mide al menos 44 px. */
+@media (pointer: coarse) {
+  .entrada__accion { min-height: 44px; }
+  .portada__enlace {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 10px;
+    background-position: 0 calc(100% - 9px);
+  }
+}
+
+/* Móviles estrechos: las dos pestañas caben en una línea. */
+@media (max-width: 440px) {
+  .entrada__acceso-panel { padding: 16px; }
+  .entrada__acceso-panel .pestana { padding-inline: 4px; font-size: .66rem; letter-spacing: .05em; }
+}
+
+/* Pantallas grandes (QHD, 4K, televisor): el texto pequeño acompaña al titular. */
+@media (min-width: 1800px) {
+  .pagina-entrada { --altura-cabecera: 96px; }
+  .entrada__marca-sello img { height: 46px; }
+  .entrada__accion { padding: 14px 24px; font-size: .95rem; }
+  .portada__kicker { font-size: 1rem; }
+  .portada__lema { max-width: 40ch; font-size: 1.9rem; }
+  .portada__acciones { zoom: 1.35; }
+  .portada__recta-cabeza p { font-size: 1.6rem; }
+  .portada__panel--texto { zoom: 1.35; }
+  .cifra__texto { font-size: 1rem; }
+  .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 680px); }
+  .entrada__acceso-panel { zoom: 1.3; }
+  .entrada__pie-marca { font-size: 1.25rem; }
+}
+
+/* Apilado (pantallas en vertical, estrechas o con movimiento reducido): las fotos verticales van de dos en dos. */
+@media (min-width: 600px) {
+  .portada__riel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portada__panel--ancho,
+  .portada__panel--texto { grid-column: 1 / -1; }
+  .portada__panel--alto { max-width: none; }
+}
+
+/* Pantallas de 3000 px o más. */
+@media (min-width: 3000px) {
+  .pagina-entrada { --altura-cabecera: 128px; }
+  .entrada__marca-sello img { height: 62px; }
+  .entrada__accion { padding: 18px 32px; font-size: 1.25rem; }
+  .portada__kicker { font-size: 1.4rem; }
+  .portada__lema { font-size: 2.7rem; }
+  .portada__acciones { zoom: 1.9; }
+  .portada__recta-cabeza p { font-size: 2.2rem; }
+  .portada__panel--texto { zoom: 1.9; }
+  .cifra__texto { font-size: 1.4rem; }
+  .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 900px); }
+  .entrada__acceso-panel { zoom: 1.75; }
+  .entrada__pie-marca { font-size: 1.7rem; }
+}
+
+/* En vertical el texto ocupa la parte baja: el auto se coloca arriba a la derecha, bajo la cabecera. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .portada__auto {
+    top: calc(var(--altura-cabecera) + 16px);
+    right: var(--gutter);
+    bottom: auto;
+    width: min(46vw, 30svh, 380px);
+    max-width: none;
+  }
+}
+@media (max-width: 899px) and (orientation: portrait) and (max-height: 640px) {
+  .portada__auto { width: min(46vw, 24svh); }
+}
+
+/* El hero móvil no puede ser más alto que la pantalla: el botón principal tiene que verse sin hacer scroll. */
+@media (max-width: 700px) {
+  .portada__salida-marco { min-height: min(760px, 100svh); }
+  /* La foto se ve: el degradado oscurece solo donde va el texto. */
+  .portada__salida-marco::before {
+    background:
+      linear-gradient(180deg, rgba(7, 10, 9, .16) 0, rgba(7, 10, 9, .3) 42%, rgba(7, 10, 9, .9) 100%),
+      linear-gradient(90deg, rgba(7, 10, 9, .55), rgba(7, 10, 9, 0));
+  }
 }
 
 /* Ventanas verticales muy bajas: reserva una altura real para que el hero no
