@@ -64,6 +64,25 @@ export function entradaPanel(izquierdaEnPantalla, anchoVentana) {
   return limitar((anchoVentana - izquierdaEnPantalla) / (anchoVentana * 0.5));
 }
 
+/**
+ * Entrada de una pieza de contenido según su borde superior en pantalla:
+ * 0 mientras sigue bajo la ventana, 1 cuando ya subió un 30 % de su alto.
+ * `retraso` (px) escalona las piezas de una misma fila de izquierda a derecha.
+ */
+export function entradaPieza(arriba, altoVentana, retraso = 0) {
+  if (altoVentana <= 0) return 1;
+  return easeOutCubic((altoVentana - arriba - retraso) / (altoVentana * 0.3));
+}
+
+/**
+ * Salida de una pieza: 0 mientras se lee y 1 cuando ya pasó entera bajo la
+ * cabecera (`techo`). Acelera al final, como un auto que se aleja.
+ */
+export function salidaPieza(arriba, altoPieza, techo) {
+  const t = limitar((techo - arriba) / Math.max(altoPieza, 1));
+  return t * t;
+}
+
 // ---------------------------------------------------------------------------
 // Motor (DOM)
 // ---------------------------------------------------------------------------
