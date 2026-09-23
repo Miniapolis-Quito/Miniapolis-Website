@@ -382,6 +382,24 @@
 .entrada__acceso-panel .pestana[aria-selected="true"]::after { display: none; content: none; }
 .entrada__acceso-panel .pestanas__indicador { display: none; }
 
+/* --- La recta y el acceso comparten la familia fotográfica ------------------ */
+.portada__panel--texto {
+  background:
+    linear-gradient(135deg, rgba(8, 12, 10, .93), rgba(8, 12, 10, .72)),
+    url('../images/contenido/pista-texto-fondo.webp') center / cover;
+}
+.portada__boxes {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .1), transparent 25rem),
+    linear-gradient(90deg, rgba(7, 10, 9, .94) 0%, rgba(7, 10, 9, .82) 50%, rgba(7, 10, 9, .7) 100%),
+    url('../images/contenido/acceso-fondo.webp') center / cover;
+  color: var(--texto);
+}
+.portada__boxes::before { color: rgba(245, 246, 240, .48); }
+.portada__intro h2 { color: var(--texto); }
+.portada__intro .entrada__acceso-nota { color: var(--texto-2); }
+.entrada__acceso-panel { border-color: rgba(245, 246, 240, .16); box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95); }
+
 /* --- Pie ------------------------------------------------------------------ */
 .entrada__pie { border-top: 1px solid var(--borde); background: var(--fondo); }
 .entrada__pie-interior { display: flex; align-items: center; min-height: 84px; }
@@ -893,6 +911,11 @@
   --panel: linear-gradient(160deg, #121a16 0%, #0a0f0c 100%);
   --panel-borde: rgba(221, 231, 222, .14);
   --esquina: 2px 20px 2px 20px;
+  /* Velo de lectura sobre la foto del hangar: negro a la izquierda, donde va
+     el texto, y fundido arriba y abajo para coser una escena con la siguiente. */
+  --velo:
+    linear-gradient(90deg, #070a09 0%, rgba(7, 10, 9, .9) 34%, rgba(7, 10, 9, .6) 72%, rgba(7, 10, 9, .74) 100%),
+    linear-gradient(0deg, #070a09 0%, rgba(7, 10, 9, 0) 28%, rgba(7, 10, 9, 0) 74%, #070a09 100%);
   position: relative;
   isolation: isolate;
   padding: clamp(96px, 12vw, 168px) var(--margen);
@@ -963,7 +986,12 @@
 .portada__info-lead { max-width: 54ch; margin-top: 26px !important; color: #aebbb0; font-size: clamp(1.02rem, 1.4vw, 1.25rem); line-height: 1.6; }
 
 /* --- 01 Complejo: cinco estaciones ------------------------------------------ */
-.portada__info--complejo::before { background: radial-gradient(ellipse 50% 60% at calc(12% + var(--deriva) * 16%) 20%, rgba(147, 210, 65, .09), transparent 70%); }
+.portada__info--complejo::before {
+  background:
+    radial-gradient(ellipse 50% 60% at calc(12% + var(--deriva) * 16%) 20%, rgba(147, 210, 65, .09), transparent 70%),
+    var(--velo),
+    url('../images/contenido/complejo-fondo.webp') center / cover no-repeat;
+}
 .portada__disciplinas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .portada__disciplina {
   --spot-x: 50%;
@@ -1015,7 +1043,12 @@
 
 /* --- 02 Datos: tablero de telemetría -------------------------------------- */
 .portada__info--datos { background: linear-gradient(180deg, #0e1512, #0a0e0c); }
-.portada__info--datos::before { background: radial-gradient(ellipse 40% 50% at calc(86% - var(--deriva) * 14%) 12%, rgba(147, 210, 65, .07), transparent 70%); }
+.portada__info--datos::before {
+  background:
+    radial-gradient(ellipse 40% 50% at calc(86% - var(--deriva) * 14%) 12%, rgba(147, 210, 65, .07), transparent 70%),
+    var(--velo),
+    url('../images/contenido/datos-fondo.webp') center / cover no-repeat;
+}
 .portada__spec-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1078,8 +1111,7 @@
 }
 .portada__info--split::before {
   background:
-    linear-gradient(90deg, #070a09 0%, rgba(7, 10, 9, .9) 30%, rgba(7, 10, 9, .45) 64%, rgba(7, 10, 9, .62) 100%),
-    linear-gradient(0deg, #070a09 0%, rgba(7, 10, 9, 0) 30%, rgba(7, 10, 9, 0) 76%, #070a09 100%),
+    var(--velo),
     url('../images/contenido/horarios-fondo.webp') center / cover no-repeat;
 }
 .portada__info--split .portada__info-cabeza { margin-bottom: 0; }
@@ -1142,8 +1174,7 @@
 /* --- 04 Récords: pantalla de cronometraje -------------------------------- */
 .portada__info--records::before {
   background:
-    linear-gradient(90deg, #070a09 0%, rgba(7, 10, 9, .92) 34%, rgba(7, 10, 9, .5) 72%, rgba(7, 10, 9, .66) 100%),
-    linear-gradient(0deg, #070a09 0%, rgba(7, 10, 9, 0) 26%, rgba(7, 10, 9, 0) 76%, #070a09 100%),
+    var(--velo),
     url('../images/contenido/records-fondo.webp') center / cover no-repeat;
 }
 .portada__records {
@@ -1196,9 +1227,8 @@
 /* --- 05 Eventos: parrilla de fechas ----------------------------------------- */
 .portada__info--eventos::before {
   background:
-    radial-gradient(ellipse 60% 70% at 70% 40%, rgba(7, 10, 9, .6), #070a09 90%),
-    linear-gradient(180deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .78) 50%, #070a09),
-    url('../images/contenido/eventos-fondo.png') center / cover no-repeat;
+    var(--velo),
+    url('../images/contenido/eventos-fondo.webp') center / cover no-repeat;
 }
 .portada__eventos-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 36px; }
 .portada__evento {
@@ -1238,6 +1268,12 @@
 
 /* --- 06 Muy pronto: escenario bajo lona ----------------------------------- */
 .portada__info--pronto { display: grid; align-items: center; }
+.portada__info--pronto::before {
+  background:
+    radial-gradient(ellipse 60% 50% at 62% 70%, rgba(255, 111, 32, .08), transparent 70%),
+    linear-gradient(0deg, #070a09 0%, rgba(7, 10, 9, .82) 30%, rgba(7, 10, 9, .82) 70%, #070a09 100%),
+    url('../images/contenido/pronto-fondo.webp') center / cover no-repeat;
+}
 .portada__info--pronto > * { min-width: 0; }
 .portada__pronto-visual {
   --spot-x: 64%;
@@ -1288,7 +1324,11 @@
 .portada__pronto-copy .boton { margin-top: 32px; }
 
 /* --- 07 Galería: hoja de contactos ----------------------------------------- */
-.portada__info--galeria { background: linear-gradient(180deg, #0e1512, #0a0e0c); }
+.portada__info--galeria::before {
+  background:
+    var(--velo),
+    url('../images/contenido/galeria-fondo.webp') center / cover no-repeat;
+}
 .portada__galeria {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
@@ -1343,7 +1383,12 @@
 .portada__galeria figcaption::before { content: ''; display: block; width: 28px; height: 2px; margin-bottom: 12px; background: var(--acento); box-shadow: 0 0 12px rgba(147, 210, 65, .7); }
 
 /* --- 08 Comunidad: catálogo -------------------------------------------------- */
-.portada__info--comunidad::before { background: radial-gradient(ellipse 45% 55% at calc(80% + var(--deriva) * 12%) 18%, rgba(147, 210, 65, .08), transparent 70%); }
+.portada__info--comunidad::before {
+  background:
+    radial-gradient(ellipse 45% 55% at calc(80% + var(--deriva) * 12%) 18%, rgba(147, 210, 65, .08), transparent 70%),
+    var(--velo),
+    url('../images/contenido/comunidad-fondo.webp') center / cover no-repeat;
+}
 .portada__promos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .portada__promo {
   --spot-x: 50%;
@@ -1413,6 +1458,24 @@
   transform: skewX(-16deg);
 }
 .portada__comunidad-cierre span { color: var(--acento); }
+
+/* --- La recta y el acceso comparten la familia fotográfica ------------------ */
+.portada__panel--texto {
+  background:
+    linear-gradient(135deg, rgba(8, 12, 10, .93), rgba(8, 12, 10, .72)),
+    url('../images/contenido/pista-texto-fondo.webp') center / cover;
+}
+.portada__boxes {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .1), transparent 25rem),
+    linear-gradient(90deg, rgba(7, 10, 9, .94) 0%, rgba(7, 10, 9, .82) 50%, rgba(7, 10, 9, .7) 100%),
+    url('../images/contenido/acceso-fondo.webp') center / cover;
+  color: var(--texto);
+}
+.portada__boxes::before { color: rgba(245, 246, 240, .48); }
+.portada__intro h2 { color: var(--texto); }
+.portada__intro .entrada__acceso-nota { color: var(--texto-2); }
+.entrada__acceso-panel { border-color: rgba(245, 246, 240, .16); box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95); }
 
 /* --- Pie ------------------------------------------------------------------ */
 .entrada__pie-interior { flex-wrap: wrap; justify-content: space-between; gap: 10px 32px; padding-block: 28px; }
@@ -1525,7 +1588,7 @@
 }
 .portada-motor .portada__info--datos .portada__spec strong {
   opacity: var(--lectura);
-  filter: blur(calc((1 - var(--item-in, 1)) * 5px));
+  clip-path: inset(-.2em calc((1 - var(--item-in, 1)) * 100%) -.2em 0);
   transform: translate3d(calc((1 - var(--item-in, 1)) * 18px), calc(var(--item-out, 0) * -16px), 0);
 }
 .portada-motor .portada__info--datos .portada__spec span { opacity: var(--lectura); transform: translate3d(calc((1 - var(--item-in, 1)) * 10px), 0, 0); }
@@ -1601,6 +1664,7 @@
   .portada__info .portada__record,
   .portada__info .portada__evento,
   .portada__info .portada__promo,
-  .portada__info--galeria figure { opacity: 1 !important; transform: none !important; clip-path: none !important; filter: none !important; }
+  .portada__info--galeria figure,
+  .portada__info--datos .portada__spec strong { opacity: 1 !important; transform: none !important; clip-path: none !important; }
   .portada__record-meta span::before { animation: none !important; }
 }

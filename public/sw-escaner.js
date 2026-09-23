@@ -16,7 +16,7 @@
 /* Al cambiar el aspecto o el código del escáner hay que subir este número: la
    copia guardada se reemplaza entera y las versiones viejas se borran. Si no,
    un teléfono sin conexión seguiría abriendo el diseño anterior. */
-const CACHE = 'miniapolis-escaner-v6';
+const CACHE = 'miniapolis-escaner-v7';
 
 /** Nombres de caché propios. Incluye el prefijo anterior a la marca actual para
  *  que los teléfonos que ya tenían el escáner instalado suelten la copia vieja. */
@@ -41,7 +41,7 @@ const RECURSOS = [
   '/fonts/saira-var.woff2',
   '/fonts/sora-var.woff2',
   '/images/miniapolis-logo-oficial.webp',
-  '/favicon.svg',
+  '/favicon.png',
   '/manifest.webmanifest',
 ];
 

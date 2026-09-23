@@ -153,6 +153,27 @@ test('las referencias de accesibilidad apuntan a elementos reales', () => {
   assert.deepEqual(fallos, []);
 });
 
+test('todas las páginas usan el logo oficial como icono de pestaña', () => {
+  const favicon = 'public/favicon.png';
+  assert.ok(fs.existsSync(favicon), 'debe existir el favicon oficial en PNG');
+
+  for (const html of [...Object.keys(PAGINAS), 'public/404.html']) {
+    assert.match(
+      leer(html),
+      /<link rel="icon" href="(?:\/|\.\/)favicon\.png" type="image\/png">/,
+      `${html} debe cargar el logo oficial en sus pestañas`,
+    );
+  }
+
+  const manifest = JSON.parse(leer('public/manifest.webmanifest'));
+  assert.deepEqual(manifest.icons[0], {
+    src: '/favicon.png',
+    sizes: '1254x1254',
+    type: 'image/png',
+    purpose: 'any',
+  });
+});
+
 test('no hay identificadores repetidos en una misma página', () => {
   for (const html of [...Object.keys(PAGINAS), 'public/404.html']) {
     const vistos = new Set();

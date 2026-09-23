@@ -143,6 +143,10 @@ test('portada.css y el JS no dependen de rutas absolutas ni de terceros', () => 
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
 });
 
+test('las cajas de contenido permanecen nítidas durante la coreografía', () => {
+  assert.doesNotMatch(CSS, /(^|[;\s])filter:\s*blur\(/, 'el movimiento puede desplazar u ocultar suavemente, pero nunca desenfocar el contenido');
+});
+
 test('el motor solo escribe las variables que el CSS consume', () => {
   for (const variable of ['--p', '--vel', '--vel-abs', '--scroll', '--scroll-px']) {
     assert.ok(MOTOR.includes(`'${variable}'`), `el motor no publica ${variable}`);
