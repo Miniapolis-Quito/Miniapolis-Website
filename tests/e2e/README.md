@@ -35,6 +35,26 @@ Dos pasos merecen mención aparte:
   que habría salido por la impresora: el pase con su QR, y nada más —ni la
   cabecera, ni el panel, ni el diálogo desde el que se pidió—.
 
+## `responsivo.mjs` — que todo quepa en cualquier pantalla
+
+```bash
+npm run test:responsivo
+```
+
+Recorre cada página —portada, posiciones, las de enlace, la del cliente, el
+escáner y cada pestaña del panel máster— en catorce formatos, del teléfono de
+320 px al monitor de 1920 px, más un teléfono girado. Lo hace dos veces: con el
+movimiento de la portada y con movimiento reducido, que es la maquetación en
+reposo. Falla si la página tiene desplazamiento lateral, si algo asoma por el
+costado fuera de un contenedor que se desplaza a propósito, si un texto no cabe
+en su caja, si hay una imagen rota o si en el teléfono un campo tiene letra de
+menos de 16 px (Safari en iOS acercaría la vista al tocarlo). Comprueba además
+que el panel de acceso y el último panel del riel terminan enteros dentro de la
+pantalla cuando se llega a ellos.
+
+Con `CAPTURAS_DIR=/ruta` guarda una captura de cada combinación para revisarlas
+a ojo.
+
 ## `recuperacion.mjs` — recuperar y cambiar la contraseña
 
 ```bash

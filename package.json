@@ -22,6 +22,7 @@
     "test:e2e:fidelidad": "node tests/e2e/fidelidad.mjs",
     "test:e2e:dos-factores": "node tests/e2e/dos-factores.mjs",
     "test:ui": "node tests/e2e/interfaz.mjs",
+    "test:responsivo": "node tests/e2e/responsivo.mjs",
     "test:camara": "node tests/e2e/camara.mjs",
     "test:e2e:sin-conexion": "node tests/e2e/sin-conexion.mjs"
   },

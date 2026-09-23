@@ -261,7 +261,9 @@ function montarBoxes(motor) {
     modo: 'vista',
     alActualizar: (p) => {
       seccion.style.setProperty('--cruce', fase(p, 0.04, 0.5).toFixed(3));
-      seccion.style.setProperty('--entra', easeOutCubic(fase(p, 0.2, 0.62)).toFixed(3));
+      // Termina antes de p = 0,5, que es la sección centrada en la pantalla:
+      // en reposo el panel ya está entero y no asoma por el costado.
+      seccion.style.setProperty('--entra', easeOutCubic(fase(p, 0.12, 0.45)).toFixed(3));
     },
   });
 }
