@@ -163,3 +163,24 @@ test('los formatos: boxes se asienta al final, el toque mide 44 px y el recorrid
   assert.doesNotMatch(CSS, /\.portada__salida-copy\s*\{[^}]*max-width:\s*min\(880px,\s*100%\)/, 'un tope fijo recorta el titular en pantallas enormes');
   assert.match(CSS, /--alto-panel:\s*min\([^)]*50vw\)/, 'una foto ancha nunca debe medir más que la pantalla');
 });
+
+test('portada.css cierra cada bloque y cada comentario: una llave huérfana anida el resto de la hoja', () => {
+  const aperturas = (CSS.match(/\/\*/g) || []).length;
+  const cierres = (CSS.match(/\*\//g) || []).length;
+  assert.equal(aperturas, cierres, 'hay un comentario sin abrir o sin cerrar');
+  let profundidad = 0;
+  for (const caracter of sinComentarios(CSS)) {
+    if (caracter === '{') profundidad += 1;
+    if (caracter === '}') profundidad -= 1;
+    assert.ok(profundidad >= 0, 'hay una llave de cierre de más');
+  }
+  assert.equal(profundidad, 0, 'hay un bloque sin cerrar');
+});
+
+test('cada pieza de contenido tiene su propio reloj: se lee quieta entre la entrada y la salida', () => {
+  assert.match(JS, /entradaPieza\(/, 'la entrada de cada pieza depende de su posición');
+  assert.match(JS, /salidaPieza\(/, 'la salida de cada pieza depende de la cabecera');
+  assert.match(JS, /setProperty\('--item-in'/);
+  assert.match(JS, /setProperty\('--item-out'/);
+  assert.doesNotMatch(CSS, /\.portada__info\s*\{[^}]*width:\s*min\(1400px/, 'las escenas van a sangre como la salida y la recta');
+});
