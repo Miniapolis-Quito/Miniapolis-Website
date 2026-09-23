@@ -1259,6 +1259,301 @@
 }
 
 /* ==========================================================================
+   Acabado de competición: superficies, señales y micro-interacciones
+
+   Las escenas ya tienen movimiento ligado al scroll. Esta capa añade una
+   lectura más física a cada familia de contenido: tarjetas como paneles de
+   boxes, métricas como telemetría, eventos como una línea de salida y
+   productos como fichas de catálogo.
+   ========================================================================== */
+
+@keyframes portadaBarrido {
+  from { transform: translate3d(-120%, 0, 0) skewX(-18deg); }
+  to { transform: translate3d(120%, 0, 0) skewX(-18deg); }
+}
+
+@keyframes portadaPulsoVerde {
+  0%, 100% { opacity: .38; transform: scale(.82); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes portadaRaya {
+  from { background-position: 0 0; }
+  to { background-position: 160px 0; }
+}
+
+.portada__info {
+  isolation: isolate;
+  background-image:
+    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(180deg, var(--fondo) 0%, var(--fondo-2) 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+.portada__info::before {
+  height: 2px;
+  background: linear-gradient(90deg, var(--acento), rgba(147, 210, 65, .28) 32%, transparent 78%);
+  box-shadow: 0 0 18px rgba(147, 210, 65, .18);
+}
+
+.portada__info-cabeza { position: relative; }
+.portada__info-cabeza::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--texto-3);
+  font: 600 .58rem/1 var(--mono);
+  letter-spacing: .18em;
+  opacity: .68;
+}
+.portada__info--complejo .portada__info-cabeza::after { content: '01 / FACILITIES'; }
+.portada__info--datos .portada__info-cabeza::after { content: '02 / TELEMETRY'; }
+.portada__info--split .portada__info-cabeza::after { content: '03 / PIT LANE'; }
+.portada__info--records .portada__info-cabeza::after { content: '04 / TIMING'; }
+.portada__info--eventos .portada__info-cabeza::after { content: '05 / CALENDAR'; }
+.portada__info--pronto .portada__pronto-copy::after { content: '06 / NEXT BUILD'; position: absolute; top: -24px; right: 0; color: var(--texto-3); font: 600 .58rem/1 var(--mono); letter-spacing: .18em; }
+.portada__info--galeria .portada__info-cabeza::after { content: '07 / VISUALS'; }
+.portada__info--comunidad .portada__info-cabeza::after { content: '08 / SUPPLY DEPOT'; }
+
+/* Complejo: módulos que se sienten como estaciones independientes. */
+.portada__info--complejo {
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(147, 210, 65, .08), transparent 24rem),
+    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
+    #080c0a;
+  background-size: auto, 42px 42px, 42px 42px, auto;
+}
+.portada__disciplina {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(21, 29, 24, .98), rgba(8, 12, 10, .98));
+  --spot-x: 50%;
+  --spot-y: 50%;
+}
+.portada__disciplina::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .17), transparent 42%);
+  opacity: .55;
+  transition: opacity 280ms ease;
+}
+.portada__disciplina .portada__indice,
+.portada__disciplina h3,
+.portada__disciplina p { position: relative; z-index: 1; }
+.portada__disciplina .portada__indice::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--acento);
+  box-shadow: 0 0 12px rgba(147, 210, 65, .8);
+  vertical-align: 2px;
+}
+/* Datos: cada cifra tiene un marco vivo y un barrido de telemetría. */
+.portada__info--datos .portada__spec {
+  position: relative;
+  overflow: hidden;
+  --spot-x: 50%;
+  --spot-y: 50%;
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 48%),
+    linear-gradient(145deg, rgba(14, 19, 17, .92), rgba(7, 11, 9, .72));
+  transition: border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
+}
+.portada__spec::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 38px;
+  height: 2px;
+  background: var(--acento);
+  box-shadow: 0 0 16px rgba(147, 210, 65, .72);
+}
+.portada__spec span::before {
+  content: '// ';
+  color: var(--acento);
+  opacity: .72;
+}
+/* Pit lane: guía lateral y estado luminoso por cada jornada. */
+.portada__info--split {
+  background:
+    linear-gradient(90deg, rgba(10, 14, 12, .98) 0%, rgba(10, 14, 12, .9) 42%, rgba(10, 14, 12, .7) 100%),
+    linear-gradient(90deg, rgba(147, 210, 65, .025) 1px, transparent 1px),
+    linear-gradient(180deg, #0e1512, #0a0e0c),
+    url('../images/contenido/horarios-fondo.webp') center / cover;
+  background-size: auto, 54px 100%, auto, cover;
+}
+.portada__horarios { position: relative; }
+.portada__horarios::before {
+  content: 'PIT LANE // OPEN SESSIONS';
+  display: block;
+  margin-bottom: 14px;
+  color: var(--acento);
+  font: 600 .58rem/1 var(--mono);
+  letter-spacing: .16em;
+}
+.portada__horario { position: relative; padding-inline: 16px 0; transition: background-color 240ms ease, padding-left 240ms ease; }
+.portada__horario::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--acento);
+  border-radius: 50%;
+  background: var(--fondo-2);
+  box-shadow: 0 0 0 0 rgba(147, 210, 65, .45);
+  transition: box-shadow 240ms ease, background-color 240ms ease;
+}
+/* Telemetría: la tabla gana ritmo de marcador y un primer puesto reconocible. */
+.portada__info--records {
+  background:
+    linear-gradient(90deg, rgba(8, 12, 10, .98) 0%, rgba(8, 12, 10, .9) 40%, rgba(8, 12, 10, .68) 100%),
+    radial-gradient(circle at 84% 42%, rgba(147, 210, 65, .08), transparent 24rem),
+    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
+    url('../images/contenido/records-fondo.webp') center / cover;
+  background-size: auto, auto, 42px 42px, 42px 42px, cover;
+}
+.portada__record { position: relative; overflow: hidden; transition: background-color 220ms ease, padding-left 220ms ease; }
+.portada__record::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--acento);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 260ms ease;
+}
+.portada__record--primero { background: linear-gradient(90deg, rgba(147, 210, 65, .09), transparent 48%); }
+.portada__record--primero::before { transform: scaleY(1); animation: portadaPulsoVerde 2.2s ease-in-out infinite; }
+/* Eventos: el calendario se lee como una línea de salida. */
+.portada__info--eventos {
+  background-image:
+    linear-gradient(135deg, rgba(17, 23, 19, .92), rgba(7, 9, 8, .97)),
+    url('../images/contenido/eventos-fondo.png');
+  background-position: center;
+  background-size: cover;
+}
+.portada__eventos-lista::before { top: 17px; opacity: .7; }
+.portada__evento { --spot-x: 50%; --spot-y: 50%; background-image: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .11), transparent 48%), linear-gradient(145deg, rgba(5, 7, 6, .78), rgba(5, 7, 6, .94)); transition: border-color 240ms ease, box-shadow 240ms ease, background-color 240ms ease; }
+.portada__evento::after {
+  content: 'OPEN';
+  position: absolute;
+  top: 17px;
+  right: 20px;
+  color: var(--texto-3);
+  font: 600 .54rem/1 var(--mono);
+  letter-spacing: .16em;
+}
+.portada__evento:nth-child(2)::after { content: 'NIGHT'; }
+.portada__evento:nth-child(3)::after { content: 'RACE'; color: var(--acento); }
+/* Próximo: fondo en movimiento muy lento, como una obra cubierta bajo lona. */
+.portada__info--pronto { background-size: 160px 160px, auto; animation: portadaRaya 16s linear infinite; }
+.portada__pronto-visual { --spot-x: 50%; --spot-y: 50%; }
+.portada__pronto-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 34%);
+  mix-blend-mode: screen;
+  opacity: .62;
+  transition: opacity 260ms ease;
+}
+.portada__pronto-visual::after { z-index: 2; }
+
+/* Galería: marcos de contacto y profundidad de lente. */
+.portada__galeria figure { position: relative; overflow: hidden; }
+.portada__galeria figure::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border: 1px solid rgba(221, 231, 222, .18);
+  box-shadow: inset 0 0 0 1px rgba(5, 7, 6, .36);
+}
+.portada__galeria figure::after {
+  content: 'FRAME / 0' counter(galeria-frame);
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 2;
+  color: #f5f6f0;
+  font: 600 .54rem/1 var(--mono);
+  letter-spacing: .14em;
+  text-shadow: 0 1px 8px #050706;
+}
+.portada__galeria { counter-reset: galeria-frame; }
+.portada__galeria figure { counter-increment: galeria-frame; }
+.portada__galeria figure:nth-child(1)::after { content: 'FRAME / 01'; }
+.portada__galeria figure:nth-child(2)::after { content: 'FRAME / 02'; }
+.portada__galeria figure:nth-child(3)::after { content: 'FRAME / 03'; }
+.portada__galeria img { transition: transform 700ms var(--salida), filter 260ms ease; }
+/* Catálogo: halo de cursor, profundidad y etiqueta de producto. */
+.portada__promo {
+  --spot-x: 50%;
+  --spot-y: 50%;
+  transition: border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
+}
+.portada__promo::before {
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .12), transparent 35%),
+    linear-gradient(180deg, rgba(5, 7, 6, .16), rgba(5, 7, 6, .94) 82%);
+  transition: background 260ms ease;
+}
+.portada__promo::after { height: 3px; box-shadow: 0 0 18px rgba(147, 210, 65, .62); }
+.portada__promo > img { transition: transform 900ms var(--salida), filter 260ms ease; }
+@media (hover: hover) {
+  a.portada__promo:hover { border-color: var(--acento-borde); box-shadow: 0 24px 46px -34px rgba(147, 210, 65, .78); }
+  a.portada__promo:hover > img { transform: scale(1.14); }
+}
+
+@media (max-width: 700px) {
+  .portada__info-cabeza::after,
+  .portada__info--pronto .portada__pronto-copy::after { position: static; display: block; margin-top: 20px; }
+  .portada__horario { padding-inline: 0 12px; }
+  .portada__horario::after { right: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portada__info--pronto { animation: none; }
+  .portada__record--primero::before { animation: none; }
+  .portada__galeria img,
+  .portada__promo > img { transition: none; }
+}
+
+/* Fondos editoriales: quedan después de la capa técnica para que la imagen
+   siga visible sin perder la rejilla de telemetría de la portada. */
+.portada__info.portada__info--split,
+.portada__info.portada__info--records {
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  background-position: 0 0, 0 0, 0 0, center;
+  background-size: 42px 42px, 42px 42px, auto, cover;
+}
+.portada__info.portada__info--split {
+  background-image:
+    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(7, 10, 9, .97) 0%, rgba(7, 10, 9, .88) 34%, rgba(7, 10, 9, .54) 72%, rgba(7, 10, 9, .7) 100%),
+    url('../images/contenido/horarios-fondo.webp');
+}
+.portada__info.portada__info--records {
+  background-image:
+    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 12, 10, .97) 0%, rgba(8, 12, 10, .9) 38%, rgba(8, 12, 10, .58) 76%, rgba(8, 12, 10, .74) 100%),
+    url('../images/contenido/records-fondo.webp');
    Cinematografía de boxes
 
    Cada escena tiene tres tiempos: entrar, sostener la lectura y salir.
