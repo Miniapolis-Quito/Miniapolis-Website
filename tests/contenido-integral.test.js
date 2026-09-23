@@ -103,6 +103,27 @@ test('las secciones informativas consumen el progreso del motor para animarse co
   }
 });
 
+test('los titulares largos y las tarjetas con imagen conservan el texto dentro del layout móvil', () => {
+  const posiciones = leer('public/css/posiciones.css');
+  const portada = leer('public/css/portada.css');
+
+  assert.match(
+    posiciones,
+    /@media\s*\(max-width:\s*760px\)[\s\S]*\.posiciones__hero h1\s*\{[^}]*max-width:\s*(?:none|12ch)/,
+    'el título de posiciones no debe dejar una palabra huérfana en móvil',
+  );
+  assert.match(
+    portada,
+    /\.portada__info--pronto\s* >\s*\*\s*\{[^}]*min-width:\s*0/,
+    'el bloque de muy pronto debe permitir que sus textos se encojan dentro de la rejilla',
+  );
+  assert.match(
+    portada,
+    /\.portada__promo\s*\{[^}]*min-width:\s*0/,
+    'las promociones no deben forzar overflow cuando el texto ocupa varias líneas',
+  );
+});
+
 test('la tabla pública conserva una entrada animada y legible', () => {
   const css = posicionesCss();
   assert.match(css, /@keyframes\s+posicionesEntrada/);

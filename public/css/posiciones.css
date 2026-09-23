@@ -114,6 +114,8 @@
   .posiciones__nav { gap: 12px; }
   .posiciones__nav a:not(.boton) { display: none; }
   .posiciones__hero { grid-template-columns: 1fr; }
+  .posiciones__hero h1 { max-width: none; font-size: clamp(2.8rem, 15vw, 5.4rem); }
+  .posiciones__hero h1 { max-width: 12ch; font-size: clamp(2.75rem, 12vw, 5rem); }
   .posiciones__datos { min-width: 0; }
   .posiciones__grid { grid-template-columns: 1fr; }
   .posiciones__tabla-panel { grid-column: auto; }
