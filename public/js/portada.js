@@ -50,6 +50,44 @@ function montarMira() {
 }
 
 // ---------------------------------------------------------------------------
+// Micro-interacciones de superficie
+// ---------------------------------------------------------------------------
+
+/**
+ * Mueve el halo de cada ficha según el puntero. No cambia el layout ni el
+ * contenido: solo hace que las superficies respondan como paneles físicos.
+ * Se desactiva por completo en touch y con movimiento reducido.
+ */
+function montarHalos() {
+  if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
+
+  const selectores = [
+    '.portada__disciplina',
+    '.portada__spec',
+    '.portada__evento',
+    '.portada__pronto-visual',
+    '.portada__promo',
+  ];
+
+  $$(selectores.join(',')).forEach((pieza) => {
+    const actualizar = (evento) => {
+      const rect = pieza.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const x = ((evento.clientX - rect.left) / rect.width) * 100;
+      const y = ((evento.clientY - rect.top) / rect.height) * 100;
+      pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
+      pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
+    };
+    const limpiar = () => {
+      pieza.style.removeProperty('--spot-x');
+      pieza.style.removeProperty('--spot-y');
+    };
+    pieza.addEventListener('pointermove', actualizar, { passive: true });
+    pieza.addEventListener('pointerleave', limpiar, { passive: true });
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Progreso de la cabecera cuando no hay motor
 // ---------------------------------------------------------------------------
 
@@ -260,6 +298,7 @@ function montarInformacion(motor) {
 // ---------------------------------------------------------------------------
 
 montarMira();
+montarHalos();
 
 if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
   montarProgresoSimple();
