@@ -246,13 +246,14 @@ for (const movimiento of ['no-preference', 'reduce']) {
     await anon.evaluate(async () => {
       const recta = document.querySelector('.portada__recta');
       const fin = recta.getBoundingClientRect().bottom + scrollY - innerHeight - 2;
-      for (let y = scrollY; y < fin; y += innerHeight / 2) {
+      for (let y = scrollY; y < fin; y += 150) {
         scrollTo(0, y);
         await new Promise((r) => setTimeout(r, 30));
       }
       scrollTo(0, fin);
     });
-    await anon.waitForTimeout(1500);
+    // El motor suaviza el recorrido: se le da tiempo a llegar al final.
+    await anon.waitForTimeout(2500);
     const caja = await anon.evaluate(() => {
       const r = [...document.querySelectorAll('.portada__riel .portada__panel')].at(-1).getBoundingClientRect();
       return { izq: r.left, der: r.right, vw: document.documentElement.clientWidth };

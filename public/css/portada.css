@@ -1987,3 +1987,34 @@
 .pagina-entrada .portada__boxes::before { color: rgba(245, 246, 240, .48); }
 .pagina-entrada .portada__intro h2 { color: var(--texto); }
 .pagina-entrada .portada__intro .entrada__acceso-nota { color: var(--texto-2); }
+
+/* ==========================================================================
+   Ajuste responsive final: nada se sale de su caja en ningún ancho.
+   ========================================================================== */
+/* Una palabra larga («Amortiguadores», «vehículos») parte antes que asomar. */
+.portada__spec strong, .portada__promo strong { overflow-wrap: break-word; hyphens: auto; }
+
+/* Cinco productos por fila solo caben con holgura desde 1180 px. */
+@media (min-width: 701px) and (max-width: 1180px) {
+  .portada__promos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* «Muy pronto»: en tableta el texto necesita la fila entera; la imagen y el
+   botón comparten la de abajo. */
+@media (min-width: 701px) and (max-width: 1180px) {
+  .portada__info--pronto { grid-template-columns: minmax(0, 1fr) auto; }
+  .portada__info--pronto .portada__pronto-copy { grid-column: 1 / -1; }
+}
+.pagina-entrada .portada__info--pronto h2 { font-size: clamp(3.2rem, 6.4vw, 6.4rem); }
+
+/* En el teléfono la imagen se ajusta al ancho: con `aspect-ratio`, la altura
+   mínima arrastraba también un ancho mínimo mayor que la pantalla. */
+@media (max-width: 700px) {
+  .portada__pronto-visual { width: 100%; }
+}
+
+/* Teléfonos de 320-380 px: las fichas de dos columnas ganan aire. */
+@media (max-width: 380px) {
+  .portada__spec { padding: 16px 14px; }
+  .portada__spec strong { font-size: 1.15rem; }
+}
