@@ -95,3 +95,18 @@ test('el motor de portada monta las escenas informativas y conserva el fallback'
   assert.match(portadaJs, /IntersectionObserver/);
   assert.match(portadaJs, /prefers-reduced-motion|sinMovimiento/);
 });
+
+test('las secciones informativas consumen el progreso del motor para animarse con el scroll', () => {
+  assert.match(portadaCss, /var\(--info-p/);
+  for (const selector of ['.portada__info--complejo', '.portada__info--datos', '.portada__info--records', '.portada__info--eventos', '.portada__info--galeria', '.portada__info--comunidad']) {
+    assert.match(portadaCss, new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*var\\(--info-p`), `falta movimiento ligado al scroll en ${selector}`);
+  }
+});
+
+test('la tabla pública conserva una entrada animada y legible', () => {
+  const css = posicionesCss();
+  assert.match(css, /@keyframes\s+posicionesEntrada/);
+  assert.match(css, /\.posiciones__hero[^}]*animation/);
+  assert.match(css, /\.posiciones__tabla tbody tr[^}]*animation/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+});
