@@ -103,13 +103,47 @@ test('las secciones informativas consumen el progreso del motor para animarse co
   }
 });
 
+test('las secciones nuevas tienen una coreografía propia de pista', () => {
+  for (const [selector, propiedad] of [
+    ['.portada-motor .portada__info--complejo .portada__disciplina', 'clip-path'],
+    ['.portada-motor .portada__info--datos .portada__spec strong', 'transform'],
+    ['.portada-motor .portada__info--split .portada__horario strong', 'transform'],
+    ['.portada-motor .portada__info--eventos .portada__evento h3', 'transform'],
+    ['.portada-motor .portada__info--pronto .portada__pronto-visual img', 'transform'],
+    ['.portada-motor .portada__info--galeria .portada__galeria figcaption', 'transform'],
+    ['.portada-motor .portada__info--comunidad .portada__promo > span', 'transform'],
+  ]) {
+    const bloque = new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*${propiedad}`);
+    assert.match(portadaCss, bloque, `falta ${propiedad} específico en ${selector}`);
+  }
+  assert.match(portadaCss, /\.portada-motor[^{]*\{[^}]*--vel-abs|\.portada-motor[\s\S]*var\(--vel-abs/, 'la energía del scroll debe alimentar el movimiento de las escenas');
+});
+
+test('cada caja nueva tiene una entrada y una salida de escena diferenciadas', () => {
+  assert.match(portadaCss, /--info-out/);
+  assert.match(portadaCss, /--item-out/);
+  for (const selector of [
+    '.portada-motor .portada__info--complejo .portada__disciplina',
+    '.portada-motor .portada__info--datos .portada__spec',
+    '.portada-motor .portada__info--split .portada__horario',
+    '.portada-motor .portada__info--records .portada__record',
+    '.portada-motor .portada__info--eventos .portada__evento',
+    '.portada-motor .portada__info--galeria figure',
+    '.portada-motor .portada__info--comunidad .portada__promo',
+  ]) {
+    const bloque = new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*var\\(--item-out`);
+    assert.match(portadaCss, bloque, `falta salida coreografiada en ${selector}`);
+  }
+  assert.match(portadaCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*--info-out/);
+});
+
 test('los titulares largos y las tarjetas con imagen conservan el texto dentro del layout móvil', () => {
   const posiciones = leer('public/css/posiciones.css');
   const portada = leer('public/css/portada.css');
 
   assert.match(
     posiciones,
-    /@media\s*\(max-width:\s*760px\)[\s\S]*\.posiciones__hero h1\s*\{[^}]*max-width:\s*(?:none|12ch)/,
+    /@media\s*\(max-width:\s*760px\)[\s\S]*\.posiciones__hero h1\s*\{[^}]*max-width:\s*(?:none|12ch|100%)/,
     'el título de posiciones no debe dejar una palabra huérfana en móvil',
   );
   assert.match(
