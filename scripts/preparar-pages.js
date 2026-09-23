@@ -42,7 +42,7 @@ for (const file of htmlFiles) {
     .replace(/src="\/js\//g, 'src="./js/')
     .replace(/src="\/images\//g, 'src="./images/')
     .replace(/src="\/vendor\//g, 'src="./vendor/')
-    .replace(/href="\/favicon\.svg"/g, 'href="./favicon.svg"')
+    .replace(/href="\/favicon\.png"/g, 'href="./favicon.png"')
     .replace(/href="\/manifest\.webmanifest"/g, 'href="./manifest.webmanifest"')
     .replace(/href="\/"/g, 'href="./index.html"');
 
