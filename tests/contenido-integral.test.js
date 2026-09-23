@@ -106,7 +106,7 @@ test('las secciones informativas consumen el progreso del motor para animarse co
 test('las secciones nuevas tienen una coreografía propia de pista', () => {
   for (const [selector, propiedad] of [
     ['.portada-motor .portada__info--complejo .portada__disciplina', 'clip-path'],
-    ['.portada-motor .portada__info--datos .portada__spec strong', 'filter'],
+    ['.portada-motor .portada__info--datos .portada__spec strong', 'transform'],
     ['.portada-motor .portada__info--split .portada__horario strong', 'transform'],
     ['.portada-motor .portada__info--eventos .portada__evento h3', 'transform'],
     ['.portada-motor .portada__info--pronto .portada__pronto-visual img', 'transform'],
