@@ -2281,3 +2281,17 @@
   .pagina-entrada .portada__spec { padding: 16px 14px; }
   .portada__spec strong { font-size: 1.15rem; }
 }
+
+/* Recorrido horizontal: la banda del título lleva fondo propio y, en
+   pantallas bajas (portátiles de 600-768 px de alto), se montaba sobre las
+   fotos. Con relleno y letra atados a la altura, siempre queda aire entre
+   el título y la fila de fotos. */
+.portada-fija .pagina-entrada .portada__recta-cabeza { padding: clamp(12px, 2svh, 24px) clamp(24px, 4vw, 48px); }
+.portada-fija .pagina-entrada .portada__recta-cabeza h2 { font-size: clamp(2.4rem, min(6vw, 9svh), 6rem); }
+.portada-fija .portada__riel { --alto-panel: min(56svh, 620px); }
+@media (max-height: 620px) {
+  .portada-fija .portada__riel { --alto-panel: 50svh; }
+}
+@media (max-height: 760px) {
+  .portada-fija .portada__panel--texto { padding: clamp(16px, 3svh, 28px) clamp(20px, 3vw, 40px); }
+}
