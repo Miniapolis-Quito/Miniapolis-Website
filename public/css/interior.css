@@ -509,3 +509,339 @@
 @media (prefers-reduced-motion: reduce) {
   .pagina-interior .saldo::after { box-shadow: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Cliente en móvil: la app se convierte en una vuelta de pit lane
+
+   La portada tiene una coreografía editorial; en el teléfono la misma idea
+   se concentra en el ritmo vertical. Esta capa se mantiene al final para que
+   gane a las adaptaciones generales sin alterar el lienzo de escritorio.
+   -------------------------------------------------------------------------- */
+
+@keyframes clienteMovilEntrada {
+  from { opacity: 0; transform: translateY(18px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes clienteMovilBrillo {
+  0%, 100% { opacity: .34; transform: scale(.92); }
+  50% { opacity: .78; transform: scale(1); }
+}
+
+@keyframes clienteMovilLinea {
+  from { transform: scaleX(0); transform-origin: left; opacity: 0; }
+  to { transform: scaleX(1); transform-origin: left; opacity: 1; }
+}
+
+@media (max-width: 620px) {
+  .pagina-interior--cliente {
+    --cliente-radio: 16px;
+    background:
+      radial-gradient(circle at 100% 12%, rgba(147, 210, 65, .13), transparent 18rem),
+      radial-gradient(circle at -10% 58%, rgba(147, 210, 65, .055), transparent 17rem),
+      linear-gradient(180deg, #050706 0%, #080c0a 42%, #050706 100%);
+  }
+
+  .pagina-interior--cliente::after {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    content: '';
+    pointer-events: none;
+    opacity: .2;
+    background:
+      linear-gradient(115deg, transparent 0 49%, rgba(147, 210, 65, .2) 49.2% 49.35%, transparent 49.5%),
+      linear-gradient(25deg, transparent 0 68%, rgba(217, 230, 222, .08) 68.2% 68.35%, transparent 68.5%);
+    mask-image: linear-gradient(to bottom, #000, transparent 72%);
+  }
+
+  .pagina-interior--cliente .barra__interior {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 8px 12px;
+    min-height: 0;
+    padding-block: 10px 8px;
+  }
+
+  .pagina-interior--cliente .barra__marca {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 34px;
+  }
+
+  .pagina-interior--cliente .barra__marca::after { display: block; }
+  .pagina-interior--cliente .marca__logo { height: 30px; }
+
+  .pagina-interior--cliente .barra__nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    order: initial;
+    gap: 0;
+    padding: 3px;
+    border: 1px solid rgba(147, 210, 65, .12);
+    background: rgba(147, 210, 65, .045);
+  }
+
+  .pagina-interior--cliente .barra__nav .boton--nav {
+    min-height: 38px;
+    padding-inline: 14px;
+    text-align: center;
+    letter-spacing: .12em;
+  }
+
+  .pagina-interior--cliente .barra__nav .boton--nav[aria-current="page"] {
+    background: linear-gradient(90deg, rgba(147, 210, 65, .15), rgba(147, 210, 65, .05));
+    box-shadow: inset 0 -2px 0 var(--acento), 0 8px 24px -20px rgba(147, 210, 65, .9);
+  }
+
+  .pagina-interior--cliente .barra__nav .boton--nav[aria-current="page"]::after { display: none; }
+
+  .pagina-interior--cliente .barra > .contenedor::after {
+    width: 72px;
+    opacity: .8;
+  }
+
+  .pagina-interior--cliente main {
+    padding-top: 0;
+    padding-bottom: 88px;
+  }
+
+  .pagina-interior--cliente main::before {
+    top: 0;
+    height: 330px;
+    opacity: .28;
+    background-position: 64% 35%;
+    mask-image: linear-gradient(to bottom, #000 0, rgba(0, 0, 0, .75) 40%, transparent 100%);
+  }
+
+  .pagina-interior--cliente .encabezado-pista {
+    gap: 20px;
+    padding-block: 42px 26px;
+    border-bottom-color: rgba(217, 230, 222, .22);
+  }
+
+  .pagina-interior--cliente .encabezado-pista::before {
+    top: 34px;
+    right: 0;
+    width: 46%;
+    opacity: .5;
+    background: linear-gradient(90deg, transparent, var(--interior-linea-fuerte));
+  }
+
+  .pagina-interior--cliente .encabezado-pista::after {
+    width: 38%;
+    animation: clienteMovilLinea 720ms var(--curva) 180ms both;
+  }
+
+  .pagina-interior--cliente .encabezado-pista h1 {
+    max-width: 9ch;
+    font-size: clamp(2.7rem, 14vw, 4.2rem);
+    line-height: .86;
+    text-wrap: pretty;
+  }
+
+  .pagina-interior--cliente .encabezado-pista p {
+    max-width: 31ch;
+    margin-top: 12px;
+    font-size: .86rem;
+  }
+
+  .pagina-interior--cliente .encabezado-pista > .fila {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    width: 100%;
+    gap: 10px;
+  }
+
+  .pagina-interior--cliente .encabezado-pista > .fila .boton {
+    width: 100%;
+    min-height: 46px;
+    padding-inline: 10px;
+  }
+
+  .pagina-interior--cliente .tarjeta,
+  .pagina-interior--cliente .saldo,
+  .pagina-interior--cliente .ficha__cabecera,
+  .pagina-interior--cliente .resultado {
+    border-radius: var(--cliente-radio);
+    box-shadow: 0 24px 60px -42px rgba(0, 0, 0, .98), 0 0 0 1px rgba(255, 255, 255, .015);
+  }
+
+  .pagina-interior--cliente .tarjeta {
+    padding: 20px;
+    background:
+      linear-gradient(140deg, rgba(255, 255, 255, .045), transparent 34%),
+      linear-gradient(180deg, rgba(14, 19, 17, .96), rgba(8, 12, 10, .92));
+  }
+
+  .pagina-interior--cliente .tarjeta::before {
+    left: 20px;
+    width: 54px;
+    background: linear-gradient(90deg, var(--acento), rgba(147, 210, 65, .15));
+  }
+
+  .pagina-interior--cliente .tarjeta__titulo {
+    margin-bottom: 18px;
+  }
+
+  .pagina-interior--cliente .tarjeta__titulo h2,
+  .pagina-interior--cliente .tarjeta__titulo h3 {
+    font-size: 1.02rem;
+    letter-spacing: .07em;
+  }
+
+  .pagina-interior--cliente .saldo {
+    min-height: 208px;
+    padding: 46px 24px 30px;
+    border-color: rgba(147, 210, 65, .38);
+    background:
+      radial-gradient(circle at 92% 82%, rgba(147, 210, 65, .18), transparent 9rem),
+      linear-gradient(135deg, rgba(147, 210, 65, .09), transparent 48%),
+      rgba(14, 19, 17, .88);
+  }
+
+  .pagina-interior--cliente .saldo::before {
+    top: 22px;
+    left: 24px;
+    width: 132px;
+    height: 1px;
+    content: 'LIVE / PIT PASS';
+    color: var(--acento);
+    font-size: .6rem;
+    letter-spacing: .17em;
+    background: linear-gradient(90deg, var(--acento), transparent);
+    box-shadow: none;
+  }
+
+  .pagina-interior--cliente .saldo::after {
+    right: 22px;
+    bottom: 22px;
+    width: 66px;
+    height: 66px;
+    opacity: .5;
+    animation: clienteMovilBrillo 3.8s ease-in-out infinite;
+  }
+
+  .pagina-interior--cliente .saldo__numero {
+    font-size: clamp(5.6rem, 27vw, 7.6rem);
+    line-height: .78;
+    text-shadow: 0 0 34px rgba(147, 210, 65, .3);
+  }
+
+  .pagina-interior--cliente .saldo__texto {
+    margin-top: 14px;
+    font-size: .68rem;
+    letter-spacing: .15em;
+  }
+
+  .pagina-interior--cliente #seccion-qr {
+    padding: 20px 16px 18px;
+  }
+
+  .pagina-interior--cliente #seccion-qr > .tarjeta__titulo { padding-inline: 4px; }
+  .pagina-interior--cliente #seccion-qr > p { padding-inline: 4px; line-height: 1.5; }
+
+  .pagina-interior--cliente .qr-caja {
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 14px;
+    background: #f8faf7;
+    box-shadow: 0 18px 34px -25px rgba(147, 210, 65, .45);
+  }
+
+  .pagina-interior--cliente .qr-caja svg { width: min(250px, 70vw); }
+  .pagina-interior--cliente .qr-pie { margin-top: 14px; }
+  .pagina-interior--cliente .codigo-grande { font-size: .96rem; }
+
+  .pagina-interior--cliente #seccion-qr > .fila:not(#selector-packs) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pagina-interior--cliente #seccion-qr > .fila .boton { width: 100%; padding-inline: 7px; }
+
+  .pagina-interior--cliente #selector-packs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .pagina-interior--cliente #selector-packs > span { grid-column: 1 / -1; }
+  .pagina-interior--cliente #selector-packs .boton { min-height: 42px; padding-inline: 6px; }
+
+  .pagina-interior--cliente .pack {
+    padding: 18px;
+    border-radius: var(--cliente-radio);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, .035), transparent 38%),
+      rgba(13, 18, 20, .86);
+  }
+
+  .pagina-interior--cliente .pack__cabecera {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .pagina-interior--cliente .pack > .fila {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .pagina-interior--cliente .pack > .fila > .fila {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+  }
+
+  .pagina-interior--cliente .pack > .fila > .fila .boton {
+    width: 100%;
+    min-height: 42px;
+    padding-inline: 6px;
+  }
+
+  .pagina-interior--cliente .pack__restantes {
+    font-size: 2.3rem;
+    text-shadow: 0 0 20px rgba(147, 210, 65, .2);
+  }
+
+  .pagina-interior--cliente .barra-progreso {
+    height: 6px;
+    margin-top: 2px;
+    background: rgba(147, 210, 65, .08);
+  }
+
+  .pagina-interior--cliente #historial:has(.vacio) {
+    min-height: 180px;
+    display: grid;
+    place-items: center;
+  }
+
+  .pagina-interior--cliente .vacio { padding: 30px 16px; }
+
+  .pagina-interior--cliente #contenido > * {
+    animation: clienteMovilEntrada 680ms var(--curva) both;
+  }
+
+  .pagina-interior--cliente #contenido > *:nth-child(2) { animation-delay: 80ms; }
+  .pagina-interior--cliente #contenido > *:nth-child(3) { animation-delay: 140ms; }
+  .pagina-interior--cliente #contenido > *:nth-child(4) { animation-delay: 200ms; }
+  .pagina-interior--cliente #contenido > *:nth-child(5) { animation-delay: 260ms; }
+  .pagina-interior--cliente #contenido > *:nth-child(6) { animation-delay: 320ms; }
+  .pagina-interior--cliente #contenido > *:nth-child(7) { animation-delay: 380ms; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina-interior--cliente .encabezado-pista::after,
+  .pagina-interior--cliente .saldo::after,
+  .pagina-interior--cliente #contenido > * { animation: none !important; }
+}
