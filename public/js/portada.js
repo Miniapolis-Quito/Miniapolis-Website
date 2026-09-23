@@ -7,7 +7,7 @@
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, digitosDe, entradaPanel, fase, lucesEncendidas, progresoCifra,
+  crearMotor, digitosDe, easeOutCubic, entradaPanel, fase, lucesEncendidas, progresoCifra,
 } from './portada-motor.js';
 
 const raiz = document.documentElement;

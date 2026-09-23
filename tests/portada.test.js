@@ -40,6 +40,11 @@ test('el HTML declara las cuatro escenas y portada.js las monta', () => {
   }
 });
 
+test('portada.js importa todas las funciones que usa el motor de escenas', () => {
+  assert.match(JS, /import \{[^}]*\beaseOutCubic\b[^}]*\} from '\.\/portada-motor\.js'/s);
+  assert.match(JS, /easeOutCubic\(fase\(p, 0\.2, 0\.62\)\)/);
+});
+
 test('solo lo clicable tiene :hover', () => {
   const CLICABLE = /^(?:a|button|input|select|textarea|label|summary)(?![\w-])|\.(?:boton(?:--[\w-]+)?|entrada__accion|entrada__marca|portada__enlace|pestana)(?![\w-])|\[role="tab"\]/;
   const fallos = [];
