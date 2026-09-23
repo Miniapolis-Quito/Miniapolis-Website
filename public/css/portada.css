@@ -211,6 +211,20 @@
 .portada__semaforo { display: none; }
 .portada__luz { display: block; }
 .portada__salida-copy { position: relative; z-index: 2; max-width: min(880px, 100%); }
+.portada__logo {
+  width: clamp(190px, 22vw, 300px);
+  height: clamp(70px, 7.2vw, 100px);
+  margin: 0 0 18px -12px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.portada__logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
 .portada__kicker {
   display: flex;
   align-items: center;
@@ -661,9 +675,11 @@
 .portada-rapido { --espera: 0ms; }
 
 .portada-motor .portada__kicker,
+.portada-motor .portada__logo,
 .portada-motor .portada__lema,
 .portada-motor .portada__acciones { opacity: 0; transform: translate3d(0, 18px, 0); }
 .portada-listos .portada__kicker,
+.portada-listos .portada__logo,
 .portada-listos .portada__lema,
 .portada-listos .portada__acciones {
   opacity: 1;
