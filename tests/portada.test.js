@@ -42,7 +42,7 @@ test('el HTML declara las cuatro escenas y portada.js las monta', () => {
 
 test('portada.js importa todas las funciones que usa el motor de escenas', () => {
   assert.match(JS, /import \{[^}]*\beaseOutCubic\b[^}]*\} from '\.\/portada-motor\.js'/s);
-  assert.match(JS, /easeOutCubic\(fase\(p, 0\.2, 0\.62\)\)/);
+  assert.match(JS, /easeOutCubic\(fase\(/);
 });
 
 test('solo lo clicable tiene :hover', () => {
@@ -152,6 +152,16 @@ test('el motor solo escribe las variables que el CSS consume', () => {
     assert.ok(MOTOR.includes(`'${variable}'`), `el motor no publica ${variable}`);
     assert.ok(CSS.includes(`var(${variable}`), `portada.css no usa ${variable}`);
   }
+});
+
+test('los formatos: boxes se asienta al final, el toque mide 44 px y el recorrido horizontal es solo apaisado', () => {
+  assert.match(JS, /progresoMaximo\(/, 'la última escena debe normalizarse contra lo que se puede recorrer');
+  assert.match(JS, /motor\.alMedir\(/);
+  assert.match(JS, /min-aspect-ratio:\s*1\/1/, 'en pantallas verticales una foto ancha no cabe en un recorrido horizontal');
+  const tactil = CSS.slice(CSS.indexOf('@media (pointer: coarse)'));
+  assert.ok((tactil.match(/min-height:\s*44px/g) ?? []).length >= 2, 'la acción de cabecera y el enlace del hero miden 44 px en táctil');
+  assert.doesNotMatch(CSS, /\.portada__salida-copy\s*\{[^}]*max-width:\s*min\(880px,\s*100%\)/, 'un tope fijo recorta el titular en pantallas enormes');
+  assert.match(CSS, /--alto-panel:\s*min\([^)]*50vw\)/, 'una foto ancha nunca debe medir más que la pantalla');
 });
 
 test('portada.css cierra cada bloque y cada comentario: una llave huérfana anida el resto de la hoja', () => {

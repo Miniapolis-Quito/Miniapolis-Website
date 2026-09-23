@@ -31,6 +31,7 @@ function arrancaEnProduccion(variables = {}) {
     env: {
       ...process.env,
       NODE_ENV: 'production',
+      ENV_FILE: '/dev/null',
       DATABASE_FILE: ':memory:',
       ACCESS_TOKEN_SECRET: 'access-production-test-secret-unique-000000000000',
       REFRESH_TOKEN_SECRET: 'refresh-production-test-secret-unique-000000000000',

@@ -70,6 +70,7 @@
   box-shadow: 0 0 12px rgba(147, 210, 65, .6);
   transform: scaleX(var(--scroll, 0));
   transform-origin: left center;
+  will-change: transform;
 }
 
 /* --- Solo lo clicable reacciona ----------------------------------------- */
@@ -213,7 +214,7 @@
 }
 .portada__semaforo { display: none; }
 .portada__luz { display: block; }
-.portada__salida-copy { position: relative; z-index: 2; max-width: min(880px, 100%); }
+.portada__salida-copy { position: relative; z-index: 2; max-width: min(max(880px, 60vw), 100%); }
 .portada__logo {
   width: clamp(190px, 22vw, 300px);
   height: clamp(70px, 7.2vw, 100px);
@@ -239,7 +240,7 @@
   text-transform: uppercase;
 }
 .portada__kicker::before { content: ''; width: 34px; height: 2px; background: currentColor; }
-.portada__salida h1 { font-size: clamp(3.2rem, 9.2vw, 9.6rem); line-height: .9; }
+.portada__salida h1 { font-size: clamp(3.2rem, min(9.2vw, 17svh), 22rem); line-height: .9; }
 .portada__linea { display: block; overflow: hidden; padding: .05em .25em .08em 0; }
 .portada__linea > span { display: inline-block; transform: skewX(-8deg); transform-origin: 0 100%; }
 .portada__linea--acento { color: var(--acento); }
@@ -250,7 +251,7 @@
   right: clamp(var(--gutter), 6vw, 88px);
   bottom: clamp(54px, 11vh, 128px);
   z-index: 2;
-  width: clamp(250px, 29vw, 430px);
+  width: min(clamp(250px, 29vw, 640px), 46svh);
   margin: 0;
   overflow: hidden;
   border: 1px solid rgba(217, 230, 222, .28);
@@ -281,7 +282,7 @@
 .portada__cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: clamp(40px, 7vw, 96px) 0 0; padding: 0; list-style: none; }
 .cifra { padding: 0 clamp(16px, 3vw, 44px); border-left: 1px solid var(--borde); }
 .cifra:first-child { padding-left: 0; border-left: 0; }
-.cifra__num { display: flex; align-items: baseline; font-family: var(--display); font-stretch: 118%; font-weight: 650; font-size: clamp(2.8rem, 7.6vw, 7.6rem); line-height: .95; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.cifra__num { display: flex; align-items: baseline; font-family: var(--display); font-stretch: 118%; font-weight: 650; font-size: clamp(2.8rem, 7.6vw, 10.5rem); line-height: .95; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .cifra__num--rango { color: var(--texto); white-space: nowrap; }
 .cifra__afijo { font-size: .3em; letter-spacing: 0; color: var(--acento); }
 .cifra__afijo--pre { margin-right: .2em; }
@@ -295,11 +296,11 @@
 /* --- Recta (apilada por defecto; horizontal fija con .portada-fija) ------- */
 .portada__recta { padding: clamp(72px, 11vw, 150px) 0; }
 .portada__recta-cabeza { padding-inline: var(--gutter); margin-bottom: clamp(28px, 4vw, 56px); }
-.portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 7rem); line-height: .95; }
+.portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 10rem); line-height: .95; }
 .portada__recta-cabeza p { margin-top: 14px; color: var(--texto-2); font-size: clamp(1rem, 1.5vw, 1.25rem); }
 .portada__riel { display: grid; gap: clamp(20px, 3vw, 40px); padding-inline: var(--gutter); }
 .portada__panel { position: relative; margin: 0; overflow: hidden; }
-.portada__panel img { display: block; width: 100%; height: auto; }
+.portada__panel img { display: block; width: 100%; height: auto; max-height: 84svh; object-fit: cover; }
 .portada__recta-marco { position: relative; }
 .portada__panel--ancho { width: 100%; }
 .portada__panel--alto { width: 100%; max-width: min(100%, 520px); }
@@ -324,7 +325,7 @@
   overflow-x: clip;
 }
 .portada__bandera { display: none; }
-.portada__intro h2 { font-size: clamp(2.8rem, 7.6vw, 7.6rem); line-height: .95; }
+.portada__intro h2 { font-size: clamp(2.8rem, 7.6vw, 10.5rem); line-height: .95; }
 .entrada__acceso-nota { margin-top: 18px; color: var(--texto-2); }
 .entrada__acceso-subtitulo { margin: 0 0 6px; font-size: 1.35rem; }
 .entrada__acceso-pie { margin: 18px 0 0; text-align: center; }
@@ -381,24 +382,6 @@
 .entrada__acceso-panel .pestana[aria-selected="true"] { background: var(--acento); color: #04120a; box-shadow: none; }
 .entrada__acceso-panel .pestana[aria-selected="true"]::after { display: none; content: none; }
 .entrada__acceso-panel .pestanas__indicador { display: none; }
-
-/* --- La recta y el acceso comparten la familia fotográfica ------------------ */
-.portada__panel--texto {
-  background:
-    linear-gradient(135deg, rgba(8, 12, 10, .93), rgba(8, 12, 10, .72)),
-    url('../images/contenido/pista-texto-fondo.webp') center / cover;
-}
-.portada__boxes {
-  background:
-    radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .1), transparent 25rem),
-    linear-gradient(90deg, rgba(7, 10, 9, .94) 0%, rgba(7, 10, 9, .82) 50%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/acceso-fondo.webp') center / cover;
-  color: var(--texto);
-}
-.portada__boxes::before { color: rgba(245, 246, 240, .48); }
-.portada__intro h2 { color: var(--texto); }
-.portada__intro .entrada__acceso-nota { color: var(--texto-2); }
-.entrada__acceso-panel { border-color: rgba(245, 246, 240, .16); box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95); }
 
 /* --- Pie ------------------------------------------------------------------ */
 .entrada__pie { border-top: 1px solid var(--borde); background: var(--fondo); }
@@ -766,6 +749,8 @@
   opacity: calc(var(--vel-abs, 0) * .9);
   -webkit-mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
   mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
+  will-change: opacity;
+  contain: strict;
 }
 .portada-motor .portada__estela::before {
   content: '';
@@ -773,10 +758,11 @@
   inset: -640px 0 0;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='640'%3E%3Cg fill='white'%3E%3Crect x='10' y='30' width='1' height='170' opacity='.5'/%3E%3Crect x='34' y='300' width='1' height='90' opacity='.3'/%3E%3Crect x='58' y='120' width='2' height='240' opacity='.4'/%3E%3Crect x='96' y='480' width='1' height='130' opacity='.3'/%3E%3Crect x='128' y='60' width='1' height='110' opacity='.35'/%3E%3Crect x='160' y='380' width='2' height='200' opacity='.45'/%3E%3Crect x='190' y='210' width='1' height='150' opacity='.3'/%3E%3Crect x='208' y='540' width='1' height='80' opacity='.4'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 220px 640px;
   transform: translate3d(0, mod(var(--scroll-px, 0) * -2.2px, 640px), 0);
+  will-change: transform;
 }
 
 /* Los titulares de sección se inclinan con la velocidad. */
-.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); will-change: transform; }
 
 
 /* ==========================================================================
@@ -786,7 +772,7 @@
 .portada-motor .portada__luces span:not(.on) { background: rgba(217, 230, 222, .1); box-shadow: none; }
 /* Sin dato todavía, la rueda enseña el valor final: nunca una cifra falsa. */
 .portada-motor .rueda__tira { transform: translate3d(0, calc(var(--rueda, 1) * var(--d, 0) * -10%), 0); will-change: transform; }
-.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); will-change: transform; }
 
 
 /* ==========================================================================
@@ -807,9 +793,9 @@
   overflow: hidden;
 }
 .portada-fija .portada__recta-cabeza { position: absolute; top: calc(var(--altura-cabecera) + 3svh); left: 0; right: 0; margin: 0; }
-.portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.6rem, min(6.4vw, 11svh), 6.4rem); }
+.portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.6rem, min(6.4vw, 11svh), 9rem); }
 .portada-fija .portada__riel {
-  --alto-panel: min(60svh, 660px);
+  --alto-panel: min(60svh, 900px, 50vw); /* una foto ancha nunca mide más que la pantalla */
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -825,14 +811,17 @@
   height: var(--alto-panel);
   /* Corte diagonal de chicane: el panel se descubre según cuánto ha entrado. */
   clip-path: polygon(calc((1 - var(--q, 1)) * 100%) 0, 100% 0, 100% 100%, calc((1 - var(--q, 1)) * 100% - 14%) 100%);
+  will-change: clip-path;
 }
 .portada-fija .portada__panel img {
   width: auto;
   height: 100%;
   max-width: none;
   aspect-ratio: auto;
+  max-height: none;
   object-fit: fill;
   transform: translate3d(calc((.5 - var(--p, 0)) * 7%), 0, 0) scale(1.08);
+  will-change: transform;
 }
 .portada-fija .portada__panel--texto {
   align-self: center;
@@ -850,6 +839,7 @@
   inset: 0 0 0 -96px;
   background: repeating-linear-gradient(90deg, var(--rojo) 0 48px, #f2f2f2 48px 96px);
   transform: translate3d(mod(var(--p, 0) * var(--recorrido, 0) * -1px, 96px), 0, 0);
+  will-change: transform;
 }
 
 /* Apilado (pantallas pequeñas): cada foto se descubre al llegar. */
@@ -877,6 +867,7 @@
   inset: 0;
   background: conic-gradient(#f5f5f5 25%, #050706 0 50%, #f5f5f5 0 75%, #050706 0) 0 0 / 96px 96px;
   transform: translate3d(calc(-110% + var(--cruce, 0) * 220%), 0, 0) skewX(-16deg);
+  will-change: transform;
 }
 /* El panel entra frenando, como un auto que llega a boxes. */
 .portada-motor .entrada__acceso-panel {
@@ -887,6 +878,114 @@
 .portada-motor .portada__intro h2 {
   transform-origin: 0 100%;
   transform: translate3d(calc((1 - var(--entra, 1)) * -8vw), 0, 0) skewY(calc(var(--vel, 0) * -3deg));
+  will-change: transform;
+}
+
+
+/* ==========================================================================
+   Formatos: pantallas cortas, móviles estrechos, táctil y apaisado
+   ========================================================================== */
+@media (max-width: 899px) {
+  .portada__salida h1 { font-size: clamp(3.2rem, min(13vw, 17svh), 6.6rem); }
+}
+
+/* Pantallas cortas: el bloque de texto se compacta para no chocar con el auto. */
+@media (max-height: 640px) {
+  .portada__kicker { margin-bottom: 12px; }
+  .portada__lema { margin-top: 14px; }
+  .portada__acciones { margin-top: 22px; }
+}
+@media (max-width: 700px) and (max-height: 640px) {
+  .portada__auto { width: min(46vw, 24svh); }
+}
+
+/* Móvil apaisado: poco alto, mucho ancho. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .portada__auto { top: auto; bottom: clamp(24px, 8vh, 40px); width: min(24vw, 44svh); }
+  .portada__salida-marco { padding-bottom: clamp(24px, 8vh, 40px); }
+}
+
+/* Táctil: todo lo pulsable mide al menos 44 px. */
+@media (pointer: coarse) {
+  .entrada__accion { min-height: 44px; }
+  .portada__enlace {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 10px;
+    background-position: 0 calc(100% - 9px);
+  }
+}
+
+/* Móviles estrechos: las dos pestañas caben en una línea. */
+@media (max-width: 440px) {
+  .entrada__acceso-panel { padding: 16px; }
+  .entrada__acceso-panel .pestana { padding-inline: 4px; font-size: .66rem; letter-spacing: .05em; }
+}
+
+/* Pantallas grandes (QHD, 4K, televisor): el texto pequeño acompaña al titular. */
+@media (min-width: 1800px) {
+  .pagina-entrada { --altura-cabecera: 96px; }
+  .entrada__marca-sello img { height: 46px; }
+  .entrada__accion { padding: 14px 24px; font-size: .95rem; }
+  .portada__kicker { font-size: 1rem; }
+  .portada__lema { max-width: 40ch; font-size: 1.9rem; }
+  .portada__acciones { zoom: 1.35; }
+  .portada__recta-cabeza p { font-size: 1.6rem; }
+  .portada__panel--texto { zoom: 1.35; }
+  .cifra__texto { font-size: 1rem; }
+  .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 680px); }
+  .entrada__acceso-panel { zoom: 1.3; }
+  .entrada__pie-marca { font-size: 1.25rem; }
+}
+
+/* Apilado (pantallas en vertical, estrechas o con movimiento reducido): las fotos verticales van de dos en dos. */
+@media (min-width: 600px) {
+  .portada__riel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portada__panel--ancho,
+  .portada__panel--texto { grid-column: 1 / -1; }
+  .portada__panel--alto { max-width: none; }
+}
+
+/* Pantallas de 3000 px o más. */
+@media (min-width: 3000px) {
+  .pagina-entrada { --altura-cabecera: 128px; }
+  .entrada__marca-sello img { height: 62px; }
+  .entrada__accion { padding: 18px 32px; font-size: 1.25rem; }
+  .portada__kicker { font-size: 1.4rem; }
+  .portada__lema { font-size: 2.7rem; }
+  .portada__acciones { zoom: 1.9; }
+  .portada__recta-cabeza p { font-size: 2.2rem; }
+  .portada__panel--texto { zoom: 1.9; }
+  .cifra__texto { font-size: 1.4rem; }
+  .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 900px); }
+  .entrada__acceso-panel { zoom: 1.75; }
+  .entrada__pie-marca { font-size: 1.7rem; }
+}
+
+/* En vertical el texto ocupa la parte baja: el auto se coloca arriba a la derecha, bajo la cabecera. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .portada__auto {
+    top: calc(var(--altura-cabecera) + 16px);
+    right: var(--gutter);
+    bottom: auto;
+    width: min(46vw, 30svh, 380px);
+    max-width: none;
+  }
+}
+@media (max-width: 899px) and (orientation: portrait) and (max-height: 640px) {
+  .portada__auto { width: min(46vw, 24svh); }
+}
+
+/* El hero móvil no puede ser más alto que la pantalla: el botón principal tiene que verse sin hacer scroll. */
+@media (max-width: 700px) {
+  .portada__salida-marco { min-height: min(760px, 100svh); }
+  /* La foto se ve: el degradado oscurece solo donde va el texto. */
+  .portada__salida-marco::before {
+    background:
+      linear-gradient(180deg, rgba(7, 10, 9, .16) 0, rgba(7, 10, 9, .3) 42%, rgba(7, 10, 9, .9) 100%),
+      linear-gradient(90deg, rgba(7, 10, 9, .55), rgba(7, 10, 9, 0));
+  }
 }
 
 /* Ventanas verticales muy bajas: reserva una altura real para que el hero no
@@ -895,7 +994,6 @@
   .portada-motor .portada__salida { height: max(150svh, 800px); }
   .portada-motor .portada__salida-marco { height: 800px; min-height: 800px; }
 }
-
 
 /* ==========================================================================
    Contenido integral de la pista
@@ -1006,7 +1104,7 @@
   isolation: isolate;
   border: 1px solid var(--panel-borde);
   border-radius: var(--esquina);
-  background: var(--panel);
+  background: linear-gradient(160deg, rgba(18, 26, 22, .9), rgba(9, 13, 11, .84)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
 }
 .portada__disciplina::before {
   content: '';
@@ -1069,7 +1167,11 @@
   min-width: 0;
   min-height: clamp(180px, 16vw, 220px);
   padding: clamp(22px, 2.6vw, 36px);
-  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .08), transparent 55%), #0b100d;
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .08), transparent 55%),
+    linear-gradient(160deg, rgba(11, 16, 13, .92), rgba(11, 16, 13, .84)),
+    var(--card-fondo, none) var(--card-pos, center) / cover no-repeat,
+    #0b100d;
 }
 .portada__spec::before {
   content: '';
@@ -1087,6 +1189,8 @@
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 220' fill='none'%3E%3Cpath d='M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z' stroke='%23f5f6f0' stroke-opacity='.08' stroke-width='16' stroke-linejoin='round'/%3E%3Cpath d='M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z' stroke='%2393d241' stroke-opacity='.7' stroke-width='1.5' stroke-dasharray='6 7'/%3E%3Cpath d='M128 174v24' stroke='%23f5f6f0' stroke-opacity='.8' stroke-width='3'/%3E%3Ccircle cx='236' cy='78' r='4' fill='%2393d241'/%3E%3C/svg%3E") right clamp(18px, 3vw, 40px) top clamp(22px, 2.6vw, 36px) / auto 56% no-repeat,
     radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%),
     linear-gradient(120deg, rgba(147, 210, 65, .12), rgba(147, 210, 65, 0) 60%),
+    linear-gradient(160deg, rgba(11, 16, 13, .9), rgba(11, 16, 13, .82)),
+    var(--card-fondo, none) var(--card-pos, center) / cover no-repeat,
     #0b100d;
 }
 .portada__spec strong {
@@ -1141,8 +1245,9 @@
   grid-template-columns: auto minmax(24px, 1fr) auto;
   align-items: center;
   gap: clamp(14px, 2vw, 24px);
-  padding: clamp(18px, 2.2vw, 26px) 0;
+  padding: clamp(18px, 2.2vw, 26px) 16px;
   border-bottom: 1px solid rgba(221, 231, 222, .12);
+  background: linear-gradient(90deg, rgba(7, 10, 9, .95), rgba(7, 10, 9, .76)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat;
 }
 .portada__horario span {
   display: inline-flex;
@@ -1202,13 +1307,14 @@
   gap: clamp(12px, 2vw, 24px);
   padding: clamp(18px, 2.2vw, 26px) clamp(18px, 2.6vw, 32px);
   border-bottom: 1px solid rgba(221, 231, 222, .1);
+  background: linear-gradient(90deg, rgba(7, 10, 9, .95), rgba(7, 10, 9, .74)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat;
 }
 .portada__record:last-child { border-bottom: 0; }
 .portada__record span { color: rgba(245, 246, 240, .3); font: 650 clamp(1.5rem, 2.6vw, 2.5rem)/1 var(--display); font-stretch: 118%; font-variant-numeric: tabular-nums; }
 .portada__record strong { min-width: 0; color: #f5f6f0; font: 650 clamp(1.2rem, 2vw, 1.8rem)/1.05 var(--display); font-stretch: 116%; }
 .portada__record b { color: var(--acento); font: 650 clamp(1.35rem, 2.5vw, 2.3rem)/1 var(--mono); font-variant-numeric: tabular-nums; }
 .portada__record b::after { content: 's'; margin-left: .18em; color: var(--texto-3); font-size: .5em; }
-.portada__record--primero { background: linear-gradient(90deg, rgba(147, 210, 65, .16), rgba(147, 210, 65, .03) 58%, transparent); }
+.portada__record--primero { background: linear-gradient(90deg, rgba(147, 210, 65, .18), rgba(147, 210, 65, .03) 58%, transparent), linear-gradient(90deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, .7)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat; }
 .portada__record--primero::before {
   content: '';
   position: absolute;
@@ -1225,11 +1331,16 @@
 .portada__record-meta .boton { margin-left: auto; }
 
 /* --- 05 Eventos: parrilla de fechas ----------------------------------------- */
-.portada__info--eventos::before {
-  background:
-    var(--velo),
-    url('../images/contenido/eventos-fondo.webp') center / cover no-repeat;
+.portada__evento-fondo {
+  position: absolute;
+  inset: -6% 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translate3d(0, calc(var(--deriva) * -6%), 0);
 }
+.portada__evento-fondo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 54% 48%; filter: saturate(.75) contrast(1.08); }
+.portada__evento-fondo::after { content: ''; position: absolute; inset: 0; background: var(--velo); }
 .portada__eventos-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 36px; }
 .portada__evento {
   --spot-x: 50%;
@@ -1244,7 +1355,7 @@
   isolation: isolate;
   border: 1px solid var(--panel-borde);
   border-radius: var(--esquina);
-  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%), linear-gradient(165deg, rgba(18, 26, 22, .94), rgba(7, 10, 9, .97));
+  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%), linear-gradient(165deg, rgba(18, 26, 22, .9), rgba(7, 10, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
 }
 .portada__evento::after {
   content: 'OPEN';
@@ -1260,35 +1371,45 @@
 }
 .portada__evento:nth-child(2)::after { content: 'NIGHT'; }
 .portada__evento:nth-child(3)::after { content: 'RACE'; border-color: var(--acento); background: var(--acento); color: #04120a; }
-.portada__evento:nth-child(3) { border-color: var(--acento-borde); background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%), linear-gradient(165deg, rgba(26, 38, 24, .96), rgba(8, 12, 9, .97)); }
+.portada__evento:nth-child(3) { border-color: var(--acento-borde); background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%), linear-gradient(165deg, rgba(26, 38, 24, .9), rgba(8, 12, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d; }
 .portada__evento-fecha { display: flex; align-items: baseline; gap: 12px; color: var(--acento); font: 650 .78rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; }
 .portada__evento-fecha b { color: #f5f6f0; font: 650 clamp(3.6rem, 5.4vw, 5.6rem)/.8 var(--display); font-stretch: 118%; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .portada__evento h3 { display: flex; align-items: flex-end; min-height: 2.04em; margin-top: auto; padding-top: 48px; box-sizing: content-box; font-size: clamp(1.3rem, 1.9vw, 1.8rem); line-height: 1.02; }
 .portada__evento h3 + p { min-height: 3.1em; margin-top: 14px; color: var(--texto-2); font-size: .92rem; line-height: 1.55; }
 
-/* --- 06 Muy pronto: escenario bajo lona ----------------------------------- */
-.portada__info--pronto { display: grid; align-items: center; }
+/* --- 06 Muy pronto: obra bajo lona -------------------------------------- */
+.portada__info--pronto {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: clamp(40px, 7vw, 112px);
+  align-items: center;
+}
 .portada__info--pronto::before {
   background:
-    radial-gradient(ellipse 60% 50% at 62% 70%, rgba(255, 111, 32, .08), transparent 70%),
-    linear-gradient(0deg, #070a09 0%, rgba(7, 10, 9, .82) 30%, rgba(7, 10, 9, .82) 70%, #070a09 100%),
+    radial-gradient(ellipse 50% 60% at 78% 55%, rgba(255, 111, 32, .1), transparent 70%),
+    var(--velo),
     url('../images/contenido/pronto-fondo.webp') center / cover no-repeat;
 }
 .portada__info--pronto > * { min-width: 0; }
+.portada__pronto-copy { position: relative; grid-column: 1; grid-row: 1; max-width: 640px; }
 .portada__pronto-visual {
-  --spot-x: 64%;
+  --spot-x: 50%;
   --spot-y: 60%;
   position: relative;
-  grid-area: 1 / 1;
-  min-height: clamp(520px, 46vw, 660px);
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  width: min(100%, 460px);
+  aspect-ratio: 4 / 5;
   margin: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 138, 61, .22);
+  border: 1px solid rgba(255, 138, 61, .32);
   border-radius: 2px 28px 2px 28px;
   background: #000;
-  box-shadow: 0 50px 110px -60px rgba(255, 111, 32, .6);
+  box-shadow: 0 50px 110px -56px rgba(255, 111, 32, .55), 0 0 0 1px rgba(0, 0, 0, .4);
 }
-.portada__pronto-visual img { position: absolute; top: 0; right: 0; display: block; width: min(80%, 1120px); height: 100%; object-fit: cover; object-position: 55% 50%; }
+.portada__pronto-visual img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; filter: grayscale(.3) contrast(1.1) brightness(.8); }
+/* Cinta de obra arriba y un foco cálido que sigue al puntero. */
 .portada__pronto-visual::before {
   content: '';
   position: absolute;
@@ -1296,9 +1417,8 @@
   z-index: 2;
   pointer-events: none;
   background:
-    repeating-linear-gradient(-45deg, #ff6f20 0 14px, #000 14px 28px) top / 100% 6px no-repeat,
-    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .2), transparent 36%);
-  mix-blend-mode: screen;
+    repeating-linear-gradient(-45deg, #ff6f20 0 14px, #0a0a0a 14px 28px) top / 100% 10px no-repeat,
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 40%);
 }
 .portada__pronto-visual::after {
   content: '06 / NEXT BUILD';
@@ -1306,19 +1426,17 @@
   inset: 0;
   z-index: 1;
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 30px clamp(24px, 3vw, 40px);
-  color: rgba(245, 246, 240, .5);
+  align-items: flex-end;
+  padding: 24px;
+  color: rgba(245, 246, 240, .78);
   font: 600 .62rem/1 var(--mono);
   letter-spacing: .18em;
   pointer-events: none;
   background:
-    linear-gradient(90deg, #000 0%, #000 20%, rgba(0, 0, 0, .7) 38%, rgba(0, 0, 0, 0) 62%),
-    linear-gradient(0deg, rgba(0, 0, 0, .7) 0%, rgba(0, 0, 0, 0) 36%);
+    linear-gradient(0deg, rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, 0) 42%),
+    linear-gradient(160deg, rgba(255, 111, 32, .16), rgba(255, 111, 32, 0) 55%);
 }
-.portada__pronto-copy { position: relative; z-index: 2; grid-area: 1 / 1; align-self: center; max-width: 660px; padding: clamp(28px, 5vw, 72px); }
-.portada__info--pronto h2 { color: #f5f6f0; font-size: clamp(2.8rem, 6vw, 6rem); }
+.portada__info--pronto h2 { color: #f5f6f0; font-size: clamp(2.8rem, 6.4vw, 6.4rem); }
 .portada__info--pronto h3 { max-width: 20ch; margin-top: 22px; color: #ffb27a; font-size: clamp(1.2rem, 2vw, 1.9rem); line-height: 1.04; }
 .portada__info--pronto .portada__info-lead { max-width: 40ch; }
 .portada__pronto-copy .boton { margin-top: 32px; }
@@ -1331,27 +1449,37 @@
 }
 .portada__galeria {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
   counter-reset: galeria-frame;
 }
 .portada__galeria figure {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  grid-column: span 4;
+  min-width: 0;
   margin: 0;
   overflow: hidden;
   border-radius: var(--esquina);
   background: #0b100d;
   counter-increment: galeria-frame;
 }
-.portada__galeria figure:nth-child(1),
-.portada__galeria figure:nth-child(2) { grid-column: 1; aspect-ratio: 16 / 9; }
-.portada__galeria figure:nth-child(3) { grid-column: 2; grid-row: 1 / span 2; }
-.portada__galeria img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.88) contrast(1.05); }
+.portada__galeria figure:nth-child(1) { grid-column: span 6; }
+.portada__galeria figure:nth-child(2),
+.portada__galeria figure:nth-child(3),
+.portada__galeria figure:nth-child(6) { grid-column: span 3; }
+.portada__galeria figure:nth-child(4) { grid-column: span 5; }
+.portada__galeria-card { isolation: isolate; }
+/* Las fotos verticales encuadran el asfalto; las apaisadas, el hangar entero. */
+.portada__galeria-card--tall img { object-position: 50% 64%; }
+.portada__galeria-card--wide img { object-position: 50% 46%; }
+.portada__galeria img { display: block; flex: none; width: 100%; height: clamp(260px, 28vw, 420px); object-fit: cover; filter: saturate(.92) contrast(1.06); }
 .portada__galeria figure::before {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   border: 1px solid rgba(221, 231, 222, .16);
   border-radius: inherit;
@@ -1370,17 +1498,21 @@
   font: 650 .56rem/1 var(--mono);
   letter-spacing: .16em;
 }
+/* Placa de pie: una textura de pista distinta bajo cada foto. */
 .portada__galeria figcaption {
-  position: absolute;
-  inset: auto 0 0;
-  z-index: 1;
-  padding: 72px clamp(18px, 2.4vw, 28px) clamp(18px, 2.2vw, 26px);
-  background: linear-gradient(0deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, 0));
-  color: #e2e7df;
-  font-size: .92rem;
+  --caption-fondo: url('../images/landing/miniapolis-track-atmosphere.webp');
+  position: relative;
+  flex: 1;
+  padding: 16px clamp(16px, 2vw, 22px) 18px;
+  border-top: 1px solid rgba(221, 231, 222, .14);
+  color: #d3dad2;
+  font-size: .88rem;
   line-height: 1.45;
+  background: linear-gradient(135deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, .78)), var(--caption-fondo) center / cover no-repeat, #0b100d;
 }
-.portada__galeria figcaption::before { content: ''; display: block; width: 28px; height: 2px; margin-bottom: 12px; background: var(--acento); box-shadow: 0 0 12px rgba(147, 210, 65, .7); }
+.portada__galeria figure:nth-child(2) figcaption { --caption-fondo: url('../images/landing/miniapolis-track-portrait.webp'); }
+.portada__galeria figure:nth-child(3) figcaption { --caption-fondo: url('../images/pista/miniapolis-track-wide.webp'); }
+.portada__galeria figcaption::before { content: ''; display: block; width: 28px; height: 2px; margin-bottom: 10px; background: var(--acento); box-shadow: 0 0 12px rgba(147, 210, 65, .7); }
 
 /* --- 08 Comunidad: catálogo -------------------------------------------------- */
 .portada__info--comunidad::before {
@@ -1404,10 +1536,10 @@
   border: 1px solid var(--panel-borde);
   border-radius: var(--esquina);
   color: var(--texto);
-  background: #0b100d;
+  background: var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
   transition: border-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover), translate var(--t-hover) var(--curva-hover);
 }
-.portada__promo > img { position: absolute; inset: 0; z-index: -2; display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.9) contrast(1.06); transition: transform 900ms var(--salida), filter 260ms ease; }
+.portada__promo > img { position: absolute; inset: 0; z-index: -2; display: block; width: 100%; height: 100%; object-fit: cover; opacity: .88; filter: saturate(.9) contrast(1.06); transition: transform 900ms var(--salida), filter 260ms ease; }
 .portada__promo::before {
   content: '';
   position: absolute;
@@ -1459,6 +1591,45 @@
 }
 .portada__comunidad-cierre span { color: var(--acento); }
 
+
+/* --- Una escena por tarjeta ---------------------------------------------- */
+/* Cada caja tiene su propia foto de pista, siempre bajo el mismo velo: la
+   textura cambia, la lectura no. */
+.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); --card-pos: 72% center; }
+.portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); --card-pos: 38% center; }
+.portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); --card-pos: 68% center; }
+.portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); }
+.portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); --card-pos: 74% center; }
+.portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
+.portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); --card-pos: 70% center; }
+.portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); --card-pos: center 38%; }
+.portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); --card-pos: 58% center; }
+.portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); --card-pos: center 62%; }
+.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); }
+.portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
+.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); --card-pos: 32% center; }
+.portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
+.portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
+.portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
+.portada__record:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/record-danilo-fondo.webp'); --card-pos: 72% center; }
+.portada__record:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/record-stalin-fondo.webp'); --card-pos: 32% center; }
+.portada__record:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/record-marco-fondo.webp'); --card-pos: 62% center; }
+.portada__evento:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/evento-experiencia-fondo.webp'); --card-pos: 68% center; }
+.portada__evento:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/evento-drift-fondo.webp'); --card-pos: 32% center; }
+.portada__evento:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/evento-campeonato-fondo.webp'); --card-pos: 64% center; }
+.portada__promo:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); --card-pos: 68% center; }
+.portada__promo:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); --card-pos: 34% center; }
+.portada__promo:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/promo-llantas-fondo.webp'); --card-pos: 64% center; }
+.portada__promo:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/promo-motor-fondo.webp'); --card-pos: 42% center; }
+.portada__promo:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/promo-builder-fondo.webp'); --card-pos: 72% center; }
+
+.pagina-entrada .portada__recta-cabeza {
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid rgba(221, 231, 222, .16);
+  background: linear-gradient(135deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .62)), url('../images/contenido/tarjetas/recta-cabeza-fondo.webp') center / cover no-repeat;
+}
+.entrada__acceso-panel { background: linear-gradient(145deg, rgba(8, 12, 10, .94), rgba(8, 12, 10, .72)), url('../images/oficial/miniapolis-bandera-hero.webp') center / cover no-repeat, #101612; }
+
 /* --- La recta y el acceso comparten la familia fotográfica ------------------ */
 .portada__panel--texto {
   background:
@@ -1494,12 +1665,12 @@
   .portada__evento { min-height: 280px; }
   .portada__spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .portada__spec:last-child { grid-column: span 2; }
-  .portada__spec--wide { padding-top: 150px; background-position: right 18px top 22px, 0 0, 0 0, 0 0; background-size: auto 120px, auto, auto, auto; }
+  .portada__spec--wide { padding-top: 150px; background-position: right 18px top 22px, 0 0, 0 0, 0 0, var(--card-pos, center), 0 0; background-size: auto 120px, auto, auto, auto, cover, auto; }
 }
 @media (max-width: 700px) {
   .portada__info { padding-block: 88px; }
   .portada__info-cabeza { grid-template-columns: minmax(0, 1fr); }
-  .portada__info .portada__info-cabeza::after, .portada__pronto-visual::after { display: none; }
+  .portada__info .portada__info-cabeza::after { display: none; }
   .portada__info h2 { font-size: clamp(2.5rem, 11.5vw, 4rem); }
   .portada__disciplinas { grid-template-columns: 1fr; }
   .portada__disciplina, .portada__disciplina:nth-child(n + 4) { grid-column: auto; min-height: 0; }
@@ -1512,22 +1683,27 @@
   .portada__horario { grid-template-columns: minmax(0, 1fr) auto; }
   .portada__horario::after { display: none; }
   .portada__horario strong { font-size: 1.25rem; }
+  .portada__horario { gap: 10px; padding-inline: 12px; }
+  .portada__horario span { gap: 8px; font-size: .68rem; letter-spacing: .14em; }
   .portada__record { grid-template-columns: 40px minmax(0, 1fr) auto; }
   .portada__record-meta { align-items: flex-start; flex-direction: column; }
   .portada__record-meta .boton { margin-left: 0; }
   .portada__info--pronto { display: block; }
-  .portada__pronto-visual { min-height: 0; aspect-ratio: 3 / 2; border-radius: 2px 20px 2px 20px; }
-  .portada__pronto-visual img { width: 100%; }
-  .portada__pronto-copy { max-width: none; padding: 36px 0 0; }
-  .portada__galeria { grid-template-columns: 1fr; }
-  .portada__galeria figure:nth-child(1), .portada__galeria figure:nth-child(2) { aspect-ratio: 4 / 3; }
-  .portada__galeria figure:nth-child(3) { grid-column: 1; grid-row: auto; aspect-ratio: 4 / 5; }
+  .portada__pronto-visual { width: 100%; aspect-ratio: 4 / 3; border-radius: 2px 20px 2px 20px; }
+  .portada__pronto-copy { max-width: none; padding-top: 36px; }
+  .portada__galeria { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .portada__galeria figure, .portada__galeria figure:nth-child(n) { grid-column: span 2; }
+  .portada__galeria figure:nth-child(2), .portada__galeria figure:nth-child(3) { grid-column: span 1; }
+  .portada__galeria img { height: 58vw; }
+  .portada__galeria figure:nth-child(2) img, .portada__galeria figure:nth-child(3) img { height: 78vw; }
+  .portada__galeria figure::after { top: 10px; left: 10px; }
   .portada__promos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .portada__promo, .portada__promo:nth-child(n + 4) { grid-column: auto; min-height: 260px; padding: 18px; }
   .portada__promo:first-child { grid-column: span 2; min-height: 340px; }
   .portada__promo strong { font-size: 1.02rem; font-stretch: 100%; }
   .portada__promo:first-child strong { font-size: 1.3rem; }
   .portada__promo::after { left: 18px; }
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
 }
 
 /* ==========================================================================
@@ -1623,7 +1799,8 @@
   opacity: calc(.2 + var(--item-in, 1) * .8 - var(--item-out, 0) * .8);
   transform: translate3d(0, calc(var(--item-out, 0) * -32px), 0);
 }
-.portada-motor .portada__info--pronto .portada__pronto-visual img { transform: scale(calc(1.14 - var(--item-in, 1) * .14)) translate3d(calc((1 - var(--item-in, 1)) * 40px), 0, 0); transform-origin: 70% 60%; }
+/* La foto se acerca al entrar y se desliza dentro del marco con el paso de la escena. */
+.portada-motor .portada__info--pronto .portada__pronto-visual img { transform: scale(calc(1.18 - var(--item-in, 1) * .1)) translate3d(0, calc((.5 - var(--info-p, .5)) * 6%), 0); transform-origin: 50% 60%; }
 
 /* 07 Contactos: cada foto se revela de abajo arriba. */
 .portada-motor .portada__info--galeria figure {
@@ -1632,7 +1809,8 @@
   transform: translate3d(0, calc((1 - var(--item-in, 1)) * 36px - var(--item-out, 0) * 32px), 0);
   will-change: transform, clip-path;
 }
-.portada-motor .portada__info--galeria img { transform: scale(calc(1.14 - var(--item-in, 1) * .14)); }
+/* Cada foto se asienta al entrar y flota dentro de su marco con el scroll. */
+.portada-motor .portada__info--galeria .portada__galeria-card img { transform: scale(calc(1.16 - var(--item-in, 1) * .08)) translate3d(0, calc((.5 - var(--info-p, .5)) * 5%), 0); }
 .portada-motor .portada__info--galeria .portada__galeria figcaption { opacity: var(--item-in, 1); transform: translate3d(0, calc((1 - var(--item-in, 1)) * 20px), 0); }
 
 /* 08 Catálogo: fichas que suben, foto que se asienta y rótulos que llegan. */
@@ -1667,4 +1845,7 @@
   .portada__info--galeria figure,
   .portada__info--datos .portada__spec strong { opacity: 1 !important; transform: none !important; clip-path: none !important; }
   .portada__record-meta span::before { animation: none !important; }
+  .portada__pronto-visual img,
+  .portada__evento-fondo,
+  .portada__info--galeria img { transform: none !important; }
 }

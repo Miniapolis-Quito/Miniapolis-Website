@@ -8,7 +8,7 @@
 import { sinMovimiento } from './movimiento.js';
 import {
   crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, lucesEncendidas, progresoCifra,
-  salidaPieza,
+  progresoMaximo, salidaPieza,
 } from './portada-motor.js';
 
 const raiz = document.documentElement;
@@ -39,8 +39,8 @@ function montarMira() {
 
   const esObjetivo = (nodo) => nodo?.closest?.(CLICABLES);
   window.addEventListener('pointermove', (evento) => {
-    raiz.style.setProperty('--puntero-x', `${evento.clientX}px`);
-    raiz.style.setProperty('--puntero-y', `${evento.clientY}px`);
+    mira.style.setProperty('--puntero-x', `${evento.clientX}px`);
+    mira.style.setProperty('--puntero-y', `${evento.clientY}px`);
   }, { passive: true });
   window.addEventListener('pointerover', (evento) => {
     raiz.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
@@ -71,8 +71,10 @@ function montarHalos() {
   ];
 
   $$(selectores.join(',')).forEach((pieza) => {
+    let rect = null;
+    const medir = () => { rect = pieza.getBoundingClientRect(); };
     const actualizar = (evento) => {
-      const rect = pieza.getBoundingClientRect();
+      if (!rect) medir();
       if (!rect.width || !rect.height) return;
       const x = ((evento.clientX - rect.left) / rect.width) * 100;
       const y = ((evento.clientY - rect.top) / rect.height) * 100;
@@ -80,9 +82,11 @@ function montarHalos() {
       pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
     };
     const limpiar = () => {
+      rect = null;
       pieza.style.removeProperty('--spot-x');
       pieza.style.removeProperty('--spot-y');
     };
+    pieza.addEventListener('pointerenter', medir, { passive: true });
     pieza.addEventListener('pointermove', actualizar, { passive: true });
     pieza.addEventListener('pointerleave', limpiar, { passive: true });
   });
@@ -193,7 +197,7 @@ function montarTablero(motor) {
 }
 
 // ---------------------------------------------------------------------------
-// Recta: recorrido horizontal fijo (≥ 900 px) o apilado con revelado
+// Recta: recorrido horizontal fijo (≥ 900 px y apaisado) o apilado con revelado
 // ---------------------------------------------------------------------------
 
 function montarRecta(motor) {
@@ -201,7 +205,7 @@ function montarRecta(motor) {
   const riel = seccion && $('.portada__riel', seccion);
   if (!riel) return;
   const paneles = $$('.portada__panel', riel);
-  const fija = window.matchMedia('(min-width: 900px) and (min-height: 560px)');
+  const fija = window.matchMedia('(min-width: 900px) and (min-height: 560px) and (min-aspect-ratio: 1/1)');
   let recorrido = 0;
   let izquierdas = [];
 
@@ -258,12 +262,21 @@ function montarRecta(motor) {
 function montarBoxes(motor) {
   const seccion = $('[data-escena="boxes"]');
   if (!seccion) return;
-  motor.registrar(seccion, {
+  // Es la última escena: en pantallas altas la página no da para que p llegue a
+  // 1. Se normaliza contra lo que de verdad se puede recorrer, y así la bandera
+  // se va y el panel queda asentado al llegar al final.
+  let maximo = 1;
+  const escena = motor.registrar(seccion, {
     modo: 'vista',
     alActualizar: (p) => {
-      seccion.style.setProperty('--cruce', fase(p, 0.04, 0.4).toFixed(3));
-      seccion.style.setProperty('--entra', easeOutCubic(fase(p, 0.2, 0.62)).toFixed(3));
+      const q = p / maximo;
+      seccion.style.setProperty('--cruce', fase(q, 0.05, 0.55).toFixed(3));
+      seccion.style.setProperty('--entra', easeOutCubic(fase(q, 0.15, 0.6)).toFixed(3));
     },
+  });
+  motor.alMedir(() => {
+    const restante = document.documentElement.scrollHeight - (escena.top + escena.alto);
+    maximo = progresoMaximo(escena.alto, restante, window.innerHeight);
   });
 }
 
@@ -328,8 +341,7 @@ function montarInformacion(motor) {
       },
     });
   });
-  medirPiezas();
-  window.addEventListener('resize', medirPiezas, { passive: true });
+  motor.alMedir(medirPiezas);
 
   const observador = new IntersectionObserver((entradas) => {
     for (const entrada of entradas) {
