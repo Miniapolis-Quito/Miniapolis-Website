@@ -79,6 +79,7 @@
   box-shadow: 0 0 12px rgba(61, 254, 64, .6);
   transform: scaleX(var(--scroll, 0));
   transform-origin: left center;
+  will-change: transform;
 }
 
 /* --- Solo lo clicable reacciona ----------------------------------------- */
@@ -727,6 +728,8 @@
   opacity: calc(var(--vel-abs, 0) * .9);
   -webkit-mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
   mask-image: linear-gradient(90deg, #000 0, transparent 16%, transparent 84%, #000 100%);
+  will-change: opacity;
+  contain: strict;
 }
 .portada-motor .portada__estela::before {
   content: '';
@@ -734,10 +737,11 @@
   inset: -640px 0 0;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='640'%3E%3Cg fill='white'%3E%3Crect x='10' y='30' width='1' height='170' opacity='.5'/%3E%3Crect x='34' y='300' width='1' height='90' opacity='.3'/%3E%3Crect x='58' y='120' width='2' height='240' opacity='.4'/%3E%3Crect x='96' y='480' width='1' height='130' opacity='.3'/%3E%3Crect x='128' y='60' width='1' height='110' opacity='.35'/%3E%3Crect x='160' y='380' width='2' height='200' opacity='.45'/%3E%3Crect x='190' y='210' width='1' height='150' opacity='.3'/%3E%3Crect x='208' y='540' width='1' height='80' opacity='.4'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 220px 640px;
   transform: translate3d(0, mod(var(--scroll-px, 0) * -2.2px, 640px), 0);
+  will-change: transform;
 }
 
 /* Los titulares de sección se inclinan con la velocidad. */
-.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+.portada-motor .portada__recta-cabeza h2 { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); will-change: transform; }
 
 
 /* ==========================================================================
@@ -747,7 +751,7 @@
 .portada-motor .portada__luces span:not(.on) { background: rgba(217, 230, 222, .1); box-shadow: none; }
 /* Sin dato todavía, la rueda enseña el valor final: nunca una cifra falsa. */
 .portada-motor .rueda__tira { transform: translate3d(0, calc(var(--rueda, 1) * var(--d, 0) * -10%), 0); will-change: transform; }
-.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); }
+.portada-motor .cifra__num { transform-origin: 0 100%; transform: skewY(calc(var(--vel, 0) * -3deg)); will-change: transform; }
 
 
 /* ==========================================================================
@@ -786,6 +790,7 @@
   height: var(--alto-panel);
   /* Corte diagonal de chicane: el panel se descubre según cuánto ha entrado. */
   clip-path: polygon(calc((1 - var(--q, 1)) * 100%) 0, 100% 0, 100% 100%, calc((1 - var(--q, 1)) * 100% - 14%) 100%);
+  will-change: clip-path;
 }
 .portada-fija .portada__panel img {
   width: auto;
@@ -795,6 +800,7 @@
   max-height: none;
   object-fit: fill;
   transform: translate3d(calc((.5 - var(--p, 0)) * 7%), 0, 0) scale(1.08);
+  will-change: transform;
 }
 .portada-fija .portada__panel--texto {
   align-self: center;
@@ -812,6 +818,7 @@
   inset: 0 0 0 -96px;
   background: repeating-linear-gradient(90deg, var(--rojo) 0 48px, #f2f2f2 48px 96px);
   transform: translate3d(mod(var(--p, 0) * var(--recorrido, 0) * -1px, 96px), 0, 0);
+  will-change: transform;
 }
 
 /* Apilado (pantallas pequeñas): cada foto se descubre al llegar. */
@@ -839,6 +846,7 @@
   inset: 0;
   background: conic-gradient(#f5f5f5 25%, #050706 0 50%, #f5f5f5 0 75%, #050706 0) 0 0 / 96px 96px;
   transform: translate3d(calc(-110% + var(--cruce, 0) * 220%), 0, 0) skewX(-16deg);
+  will-change: transform;
 }
 /* El panel entra frenando, como un auto que llega a boxes. */
 .portada-motor .entrada__acceso-panel {
@@ -849,6 +857,7 @@
 .portada-motor .portada__intro h2 {
   transform-origin: 0 100%;
   transform: translate3d(calc((1 - var(--entra, 1)) * -8vw), 0, 0) skewY(calc(var(--vel, 0) * -3deg));
+  will-change: transform;
 }
 
 
@@ -931,4 +940,29 @@
   .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 900px); }
   .entrada__acceso-panel { zoom: 1.75; }
   .entrada__pie-marca { font-size: 1.7rem; }
+}
+
+/* En vertical el texto ocupa la parte baja: el auto se coloca arriba a la derecha, bajo la cabecera. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .portada__auto {
+    top: calc(var(--altura-cabecera) + 16px);
+    right: var(--gutter);
+    bottom: auto;
+    width: min(46vw, 30svh, 380px);
+    max-width: none;
+  }
+}
+@media (max-width: 899px) and (orientation: portrait) and (max-height: 640px) {
+  .portada__auto { width: min(46vw, 24svh); }
+}
+
+/* El hero móvil no puede ser más alto que la pantalla: el botón principal tiene que verse sin hacer scroll. */
+@media (max-width: 700px) {
+  .portada__salida-marco { min-height: min(760px, 100svh); }
+  /* La foto se ve: el degradado oscurece solo donde va el texto. */
+  .portada__salida-marco::before {
+    background:
+      linear-gradient(180deg, rgba(7, 10, 9, .16) 0, rgba(7, 10, 9, .3) 42%, rgba(7, 10, 9, .9) 100%),
+      linear-gradient(90deg, rgba(7, 10, 9, .55), rgba(7, 10, 9, 0));
+  }
 }

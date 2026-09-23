@@ -88,8 +88,10 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
   const hero = await pagina.evaluate(() => {
     const vw = window.innerWidth;
     const rects = (sel) => [...document.querySelectorAll(sel)].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
+    // Un párrafo o el kicker ocupan todo el ancho de su caja: se mide el texto, no la caja.
+    const texto = (sel) => [...document.querySelectorAll(sel)].map((e) => { const rango = document.createRange(); rango.selectNodeContents(e); return rango.getBoundingClientRect(); }).filter((r) => r.width > 0);
     const textos = [
-      ...rects('.portada__linea > span'), ...rects('.portada__lema'), ...rects('.portada__kicker'),
+      ...rects('.portada__linea > span'), ...texto('.portada__lema'), ...texto('.portada__kicker'),
       ...rects('.portada__acciones .boton'), ...rects('.portada__enlace'),
     ];
     const auto = document.querySelector('.portada__auto').getBoundingClientRect();

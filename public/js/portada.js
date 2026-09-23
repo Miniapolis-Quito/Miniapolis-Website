@@ -38,8 +38,8 @@ function montarMira() {
 
   const esObjetivo = (nodo) => nodo?.closest?.(CLICABLES);
   window.addEventListener('pointermove', (evento) => {
-    raiz.style.setProperty('--puntero-x', `${evento.clientX}px`);
-    raiz.style.setProperty('--puntero-y', `${evento.clientY}px`);
+    mira.style.setProperty('--puntero-x', `${evento.clientX}px`);
+    mira.style.setProperty('--puntero-y', `${evento.clientY}px`);
   }, { passive: true });
   window.addEventListener('pointerover', (evento) => {
     raiz.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
