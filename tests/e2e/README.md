@@ -8,6 +8,20 @@ npm install --no-save playwright
 npx playwright install chromium
 ```
 
+## `portada-formatos.mjs` — la portada en cada formato de pantalla
+
+```bash
+npm run test:portada
+```
+
+Recorre la portada en 22 formatos reales (pantalla 4K, portátiles, iPad en las
+dos orientaciones, móviles de 320 a 430 px, móvil apaisado, justo en el límite
+del recorrido horizontal y con movimiento reducido) y comprueba en todos lo
+mismo: sin desborde horizontal, sin titular recortado por la máscara, sin texto
+tapado por el auto, áreas táctiles de al menos 44 px, fotos de la recta sin
+recortar al empezar ni al terminar, pestañas de acceso en una línea y la escena
+de boxes asentada al llegar al final de la página.
+
 ## `interfaz.mjs` — la interfaz, sin montar nada
 
 ```bash

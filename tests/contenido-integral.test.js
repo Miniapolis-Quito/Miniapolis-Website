@@ -87,6 +87,16 @@ test('los nuevos bloques tienen sistema visual, responsive y salida accesible', 
   assert.match(css, /@media\s*\(max-width:\s*760px\)/);
 });
 
+test('cada tarjeta editorial tiene un fondo distinto y local', () => {
+  const fondos = [
+    ...portadaCss.matchAll(/--card-fondo:\s*url\('([^']+)'\)/g),
+    ...portadaCss.matchAll(/--caption-fondo:\s*url\('([^']+)'\)/g),
+  ].map((match) => match[1]);
+  assert.equal(fondos.length, 30);
+  assert.equal(new Set(fondos).size, fondos.length);
+  for (const fondo of fondos) assert.ok(fs.existsSync(path.resolve('public/css', fondo)), `falta ${fondo}`);
+});
+
 test('el motor de portada monta las escenas informativas y conserva el fallback', () => {
   for (const escena of ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad']) {
     assert.match(portada, new RegExp(`data-escena="${escena}"`));
@@ -156,6 +166,36 @@ test('los titulares largos y las tarjetas con imagen conservan el texto dentro d
     /\.portada__promo\s*\{[^}]*min-width:\s*0/,
     'las promociones no deben forzar overflow cuando el texto ocupa varias líneas',
   );
+});
+
+test('las secciones nuevas usan fotos reales distintas y animan sus visuales con el scroll', () => {
+  const fotos = [
+    'pista-amplia.jpeg',
+    'curva-ventanas.jpeg',
+    'hangar-ancho.jpeg',
+    'pista-lateral.jpeg',
+    'boxes-curva.jpeg',
+    'hangar-recta.jpeg',
+  ];
+  const galeria = portada.match(/<section id="galeria"[\s\S]*?<\/section>/)?.[0] ?? '';
+  const fotosGaleria = [...galeria.matchAll(/src="\.\/images\/pista-real\/([^"]+)"/g)].map(([, archivo]) => archivo);
+
+  assert.equal(
+    new Set(fotosGaleria).size,
+    fotos.length,
+    'la galería debe mostrar seis fotos reales sin repetir encuadres',
+  );
+  assert.doesNotMatch(galeria, /coche-salida\.jpeg/, 'la galería no debe repetir el coche como protagonista');
+  for (const foto of fotos) {
+    assert.match(galeria, new RegExp(`pista-real/${foto}`), `falta la foto ${foto} en la galería`);
+    assert.ok(fs.existsSync(path.join('public/images/pista-real', foto)), `falta el archivo ${foto}`);
+  }
+  assert.match(portada, /pista-real\/pista-baja\.jpeg/);
+  assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__pronto-visual img[\s\S]*var\(--info-p/);
+  assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__info--galeria \.portada__galeria-card[\s\S]*var\(--info-p/);
+  assert.match(portadaCss, /prefers-reduced-motion[\s\S]*\.portada__pronto-visual img[\s\S]*\.portada__info--galeria img/);
+  assert.doesNotMatch(portada, /images\/contenido\/muy-pronto\.png/);
+  assert.doesNotMatch(portadaCss, /images\/contenido\/eventos-fondo\.png/);
 });
 
 test('la tabla pública conserva una entrada animada y legible', () => {
