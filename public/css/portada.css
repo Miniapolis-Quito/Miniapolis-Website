@@ -997,767 +997,640 @@
 
 /* ==========================================================================
    Contenido integral de la pista
+
+   Mismo lenguaje que la salida y la recta: fondos limpios a sangre, titulares
+   nítidos, paneles con esquina de chicane (2px 20px) y rótulos en mono. El
+   contenido se lee siempre quieto y a plena luz: cada pieza entra al asomar
+   y solo sale cuando ya pasa bajo la cabecera.
    ========================================================================== */
 .portada__info {
+  --deriva: 0;
+  --margen: max(var(--gutter), calc((100% - 1400px) / 2 + var(--gutter)));
+  --panel: linear-gradient(160deg, #121a16 0%, #0a0f0c 100%);
+  --panel-borde: rgba(221, 231, 222, .14);
+  --esquina: 2px 20px 2px 20px;
+  /* Velo de lectura sobre la foto del hangar: negro a la izquierda, donde va
+     el texto, y fundido arriba y abajo para coser una escena con la siguiente. */
+  --velo:
+    linear-gradient(90deg, #070a09 0%, rgba(7, 10, 9, .9) 34%, rgba(7, 10, 9, .6) 72%, rgba(7, 10, 9, .74) 100%),
+    linear-gradient(0deg, #070a09 0%, rgba(7, 10, 9, 0) 28%, rgba(7, 10, 9, 0) 74%, #070a09 100%);
   position: relative;
-  width: min(1400px, 100%);
-  margin-inline: auto;
-  padding: clamp(74px, 10vw, 144px) var(--gutter);
-  overflow: hidden;
-  background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-2) 100%);
-}
-.portada__info::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: var(--gutter);
-  left: var(--gutter);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--borde-fuerte), transparent);
-}
-.portada__info--complejo { background: #080c0a; }
-.portada__info-cabeza { max-width: 820px; margin-bottom: clamp(38px, 5vw, 72px); }
-.portada__eyebrow {
-  margin-bottom: 16px;
-  color: var(--acento);
-  font: 650 .7rem/1 var(--mono);
-  letter-spacing: .18em;
-  text-transform: uppercase;
-}
-.portada__info h2 { max-width: 13ch; font-size: clamp(2.5rem, 5.8vw, 6rem); line-height: .92; }
-.portada__info-lead { max-width: 58ch; margin-top: 20px !important; color: var(--texto-2); font-size: clamp(1rem, 1.3vw, 1.2rem); line-height: 1.7; }
-.portada__disciplinas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--borde); background: var(--borde); }
-.portada__disciplina { display: flex; flex-direction: column; min-height: 248px; padding: 26px 22px; background: var(--fondo-2); }
-.portada__indice { display: block; margin-bottom: auto; color: var(--acento); font: 650 .72rem/1 var(--mono); }
-.portada__disciplina h3 { font-size: 1.15rem; line-height: 1.05; }
-.portada__disciplina p { margin-top: 14px; color: var(--texto-2); font-size: .9rem; line-height: 1.55; }
-.portada__info--datos { background: var(--fondo); }
-.portada__spec-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.portada__spec { display: flex; flex-direction: column; justify-content: space-between; min-height: 154px; padding: 24px; border: 1px solid var(--borde); background: rgba(14, 19, 17, .68); }
-.portada__spec--wide { grid-column: span 2; background: linear-gradient(135deg, rgba(147, 210, 65, .14), rgba(14, 19, 17, .7)); }
-.portada__spec strong { display: block; color: var(--texto); font: 650 clamp(1.25rem, 2.5vw, 2.3rem)/1 var(--display); font-stretch: 125%; }
-.portada__spec span { display: block; margin-top: 12px; color: var(--texto-2); font-size: .84rem; line-height: 1.45; }
-.portada__info--split { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(36px, 8vw, 120px); align-items: end; background: var(--fondo-2); }
-.portada__info--split .portada__info-cabeza { margin-bottom: 0; }
-.portada__horarios { border-top: 1px solid var(--borde-fuerte); }
-.portada__horario { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 21px 0; border-bottom: 1px solid var(--borde); }
-.portada__horario span { color: var(--texto-2); text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; }
-.portada__horario strong { color: var(--texto); font: 600 1.05rem/1 var(--display); font-stretch: 120%; }
-.portada__nota { margin-top: 22px !important; color: var(--texto-3); font-size: .8rem; line-height: 1.5; }
-.portada__info--records { background: #080c0a; }
-.portada__records { border-top: 1px solid var(--borde-fuerte); }
-.portada__record { display: grid; grid-template-columns: 50px 1fr auto; gap: 20px; align-items: center; padding: 19px 0; border-bottom: 1px solid var(--borde); }
-.portada__record span { color: var(--texto-3); font: 650 .78rem/1 var(--mono); }
-.portada__record strong { font: 650 1.2rem/1 var(--display); font-stretch: 120%; }
-.portada__record b { color: var(--acento); font: 650 1.3rem/1 var(--mono); }
-.portada__record--primero strong { color: var(--acento); }
-.portada__record-meta { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; margin-top: 26px; color: var(--texto-2); font: 600 .7rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
-.portada__record-meta span::before { content: '↗'; margin-right: 8px; color: var(--acento); }
-.portada__record-meta .boton { margin-left: auto; }
-.portada__info--eventos { isolation: isolate; background: linear-gradient(135deg, rgba(17, 23, 19, .94), rgba(7, 9, 8, .98)); }
-.portada__evento-fondo { position: absolute; inset: 0; z-index: -1; overflow: hidden; opacity: .24; pointer-events: none; }
-.portada__evento-fondo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7, 9, 8, .95), rgba(7, 9, 8, .38) 58%, rgba(7, 9, 8, .86)); }
-.portada__evento-fondo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 54% 48%; filter: saturate(.7) contrast(1.12); transform: scale(1.14); }
-.portada__info--eventos > :not(.portada__evento-fondo) { position: relative; z-index: 1; }
-.portada__eventos-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 30px; }
-.portada__evento { display: flex; flex-direction: column; min-height: 238px; padding: 24px; border: 1px solid var(--borde); background: rgba(5, 7, 6, .68); }
-.portada__evento span { color: var(--acento); font: 650 .75rem/1 var(--mono); letter-spacing: .12em; }
-.portada__evento h3 { margin-top: auto; padding-top: 42px; font-size: 1.4rem; line-height: 1; }
-.portada__evento p { margin-top: 14px; color: var(--texto-2); font-size: .86rem; line-height: 1.5; }
-.portada__info--pronto { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .7fr) auto; justify-content: space-between; gap: clamp(28px, 5vw, 76px); align-items: center; border-block: 1px solid var(--borde); background: repeating-linear-gradient(-45deg, rgba(147, 210, 65, .06) 0 12px, transparent 12px 24px), var(--fondo); }
-.portada__info--pronto > * { min-width: 0; }
-.portada__pronto-copy { position: relative; z-index: 1; }
-.portada__pronto-visual { position: relative; aspect-ratio: 16 / 9; min-height: 0; margin: 0; overflow: hidden; border: 1px solid var(--borde-fuerte); background: #050706; box-shadow: 0 24px 54px -38px rgba(147, 210, 65, .72); }
-.portada__pronto-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5, 7, 6, .1), rgba(5, 7, 6, .55)); pointer-events: none; }
-.portada__pronto-visual img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: cover; filter: saturate(.78) contrast(1.12); }
-.portada__info--pronto .portada__pronto-copy { margin-bottom: 0; }
-.portada__info--pronto h2 { color: var(--acento); }
-.portada__info--pronto h3 { max-width: 22ch; margin-top: 20px; font-size: clamp(1.3rem, 2.5vw, 2.4rem); line-height: 1; }
-.portada__info--galeria { background: var(--fondo-2); }
-.portada__galeria { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; }
-.portada__galeria figure { margin: 0; }
-.portada__galeria-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--borde); background: #050706; }
-.portada__galeria-card--wide, .portada__galeria-card--tall { grid-column: span 2; }
-.portada__galeria img { display: block; width: 100%; height: clamp(220px, 27vw, 390px); object-fit: cover; filter: saturate(.85) contrast(1.08); }
-.portada__galeria-card--tall img { height: clamp(320px, 42vw, 570px); }
-.portada__galeria figcaption { margin-top: 13px; color: var(--texto-2); font-size: .82rem; line-height: 1.4; }
-.portada__info--comunidad { background: #050706; }
-.portada__promos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-.portada__promo { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 328px; padding: 24px; overflow: hidden; isolation: isolate; border: 1px solid var(--borde); color: var(--texto); background: linear-gradient(145deg, rgba(21, 27, 24, .9), rgba(5, 7, 6, .9)); }
-.portada__promo::before { content: ''; position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgba(5, 7, 6, .2), rgba(5, 7, 6, .94) 82%); pointer-events: none; }
-.portada__promo > img { position: absolute; inset: 0; z-index: -1; display: block; width: 100%; height: 100%; object-fit: cover; opacity: .82; filter: saturate(.8) contrast(1.1); transform: scale(1.08); }
-.portada__promo > span, .portada__promo > strong, .portada__promo > em { position: relative; z-index: 1; }
-.portada__promo span { color: var(--texto-2); font-size: .75rem; line-height: 1.35; text-transform: uppercase; letter-spacing: .08em; }
-.portada__promo strong { max-width: 18ch; margin-top: auto; font: 650 1.18rem/1.06 var(--display); font-stretch: 118%; }
-.portada__promo em { margin-top: 18px; color: var(--acento); font: 650 .72rem/1 var(--mono); font-style: normal; text-transform: uppercase; }
-.portada__promo--muted { opacity: .82; }
-.portada__comunidad-cierre { margin-top: clamp(56px, 9vw, 120px) !important; color: var(--texto); font: 650 clamp(2.2rem, 6vw, 7rem)/.86 var(--display); font-stretch: 125%; text-transform: uppercase; }
-.entrada__pie-copy { margin-top: 10px !important; color: var(--texto-3); font: 600 .7rem/1.4 var(--mono); letter-spacing: .05em; }
-.portada-motor .portada__info::before {
-  transform: scaleX(clamp(.16, var(--info-p, 0), 1));
-  transform-origin: left center;
-  opacity: calc(.3 + var(--info-p, 0) * .7);
-  transition: opacity 180ms linear;
-}
-.portada-motor .portada__info::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: calc(.08 + var(--info-p, 0) * .1);
-  background: linear-gradient(105deg, transparent 0 42%, rgba(147, 210, 65, .12) 50%, transparent 58%);
-  transform: translate3d(calc((.5 - var(--info-p, 0)) * 18vw + var(--vel, 0) * 14px), 0, 0);
-  will-change: transform, opacity;
-}
-.portada-motor .portada__info > * { position: relative; z-index: 1; }
-.portada-motor .portada__info-cabeza {
-  --head-p: clamp(0, var(--info-p, 0), 1);
-  opacity: calc(.7 + var(--head-p) * .3);
-  transform: translate3d(calc((.5 - var(--head-p)) * 3vw + var(--vel, 0) * 4px), calc((1 - var(--head-p)) * 30px), 0);
-  will-change: transform, opacity;
-}
-.portada-motor .portada__info--complejo .portada__info-cabeza,
-.portada-motor .portada__info--datos .portada__info-cabeza,
-.portada-motor .portada__info--records .portada__info-cabeza,
-.portada-motor .portada__info--eventos .portada__info-cabeza,
-.portada-motor .portada__info--galeria .portada__info-cabeza,
-.portada-motor .portada__info--comunidad .portada__info-cabeza { transform: translate3d(calc((.5 - var(--info-p, 0)) * 2vw), calc((1 - var(--info-p, 0)) * 24px), 0); }
-.portada-motor .portada__info .portada__disciplina,
-.portada-motor .portada__info .portada__spec,
-.portada-motor .portada__info .portada__horario,
-.portada-motor .portada__info .portada__record,
-.portada-motor .portada__info .portada__evento,
-.portada-motor .portada__info .portada__promo {
-  --item-p: clamp(0, calc((var(--info-p, 0) - var(--item-delay, 0)) * 2.35), 1);
-  opacity: calc(.62 + var(--item-p) * .38);
-  transform: translate3d(calc(var(--vel, 0) * -5px), calc((1 - var(--item-p)) * 30px), 0) scale(calc(.965 + var(--item-p) * .035));
-  will-change: transform, opacity;
-}
-.portada-motor .portada__info .portada__disciplina:nth-child(2),
-.portada-motor .portada__info .portada__spec:nth-child(2),
-.portada-motor .portada__info .portada__horario:nth-child(2),
-.portada-motor .portada__info .portada__record:nth-child(2),
-.portada-motor .portada__info .portada__evento:nth-child(2),
-.portada-motor .portada__info .portada__promo:nth-child(2) { --item-delay: .06; }
-.portada-motor .portada__info .portada__disciplina:nth-child(3),
-.portada-motor .portada__info .portada__spec:nth-child(3),
-.portada-motor .portada__info .portada__horario:nth-child(3),
-.portada-motor .portada__info .portada__record:nth-child(3),
-.portada-motor .portada__info .portada__evento:nth-child(3),
-.portada-motor .portada__info .portada__promo:nth-child(3) { --item-delay: .12; }
-.portada-motor .portada__info .portada__disciplina:nth-child(4),
-.portada-motor .portada__info .portada__spec:nth-child(4),
-.portada-motor .portada__info .portada__horario:nth-child(4),
-.portada-motor .portada__info .portada__record:nth-child(4),
-.portada-motor .portada__info .portada__evento:nth-child(4),
-.portada-motor .portada__info .portada__promo:nth-child(4) { --item-delay: .18; }
-.portada-motor .portada__info .portada__disciplina:nth-child(5),
-.portada-motor .portada__info .portada__spec:nth-child(5),
-.portada-motor .portada__info .portada__promo:nth-child(5) { --item-delay: .24; }
-.portada-motor .portada__info--complejo .portada__disciplina {
-  position: relative;
-  --item-p: clamp(0, calc((var(--info-p, 0) - var(--item-delay, 0)) * 2.8), 1);
-  clip-path: inset(0 calc((1 - var(--item-p)) * 100%) 0 0);
-  transform: translate3d(calc((1 - var(--item-p)) * -42px + var(--vel, 0) * -8px), calc((1 - var(--item-p)) * 26px), 0) skewX(calc((1 - var(--item-p)) * -3deg));
-  transition: background-color 240ms ease, box-shadow 240ms ease;
-}
-.portada-motor .portada__info--complejo .portada__disciplina::after {
-  content: '';
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  left: 20px;
-  height: 2px;
-  background: var(--acento);
-  box-shadow: 0 0 16px rgba(147, 210, 65, .55);
-  transform: scaleX(var(--item-p));
-  transform-origin: left center;
-}
-.portada-motor .portada__info--complejo .portada__indice { transform: translate3d(calc((1 - var(--item-p)) * -16px), 0, 0); }
-.portada-motor .portada__info--complejo .portada__disciplina h3,
-.portada-motor .portada__info--complejo .portada__disciplina p { transform: translate3d(calc((1 - var(--item-p)) * 12px), 0, 0); }
-.portada-motor .portada__info--datos .portada__spec {
-  background-position: calc(var(--item-p) * 100%) 0;
-  transition: border-color 240ms ease, background-color 240ms ease;
-}
-.portada-motor .portada__info--datos .portada__spec strong {
-  transform: translate3d(calc((1 - var(--item-p)) * 18px), 0, 0) scale(calc(.84 + var(--item-p) * .16));
-  transform-origin: left center;
-  will-change: transform;
-}
-.portada-motor .portada__info--datos .portada__spec span {
-  opacity: calc(.45 + var(--item-p) * .55);
-  transform: translate3d(calc((1 - var(--item-p)) * 10px), 0, 0);
-}
-.portada-motor .portada__info--datos .portada__spec { position: relative; overflow: hidden; }
-.portada-motor .portada__info--datos .portada__spec::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  background: var(--acento);
-  box-shadow: 0 0 18px rgba(147, 210, 65, .62);
-  transform: scaleX(var(--item-p));
-  transform-origin: left center;
-}
-.portada-motor .portada__info--split .portada__horarios { position: relative; }
-.portada-motor .portada__info--split .portada__horario {
-  --row-p: clamp(0, calc((var(--info-p, 0) - var(--item-delay, 0)) * 2.7), 1);
-  position: relative;
-  transform: translate3d(calc((1 - var(--row-p)) * 54px + var(--vel, 0) * 8px), 0, 0);
-  opacity: calc(.56 + var(--row-p) * .44);
-  will-change: transform, opacity;
-}
-.portada-motor .portada__info--split .portada__horario::before {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 1px;
-  background: var(--acento);
-  transform: scaleX(var(--row-p));
-  transform-origin: right center;
-}
-.portada-motor .portada__info--split .portada__horario strong {
-  transform: translate3d(calc((1 - var(--row-p)) * 20px), 0, 0);
-  color: color-mix(in srgb, var(--texto) calc(70% + var(--row-p) * 30%), var(--acento));
-}
-.portada-motor .portada__info--split .portada__horario:nth-child(2) { --item-delay: .1; }
-.portada-motor .portada__info--split .portada__horario:nth-child(3) { --item-delay: .2; }
-.portada-motor .portada__info--records .portada__record {
-  transform: translate3d(calc((1 - var(--item-p)) * 52px + var(--vel, 0) * 9px), 0, 0);
-  opacity: calc(.62 + var(--item-p) * .38);
-}
-.portada-motor .portada__info--records .portada__record span { transform: translate3d(calc((1 - var(--item-p)) * -18px), 0, 0); }
-.portada-motor .portada__info--records .portada__record strong { transform: translate3d(calc((1 - var(--item-p)) * 12px), 0, 0); }
-.portada-motor .portada__info--records .portada__record b { transform: translate3d(calc((1 - var(--item-p)) * 24px), 0, 0) skewY(calc((1 - var(--item-p)) * 5deg)); text-shadow: 0 0 calc(var(--item-p) * 18px) rgba(147, 210, 65, .75); }
-.portada-motor .portada__info--records .portada__record::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--acento), transparent);
-  transform: scaleX(var(--item-p));
-}
-.portada-motor .portada__info--records .portada__record { position: relative; }
-.portada__eventos-lista { position: relative; }
-.portada__eventos-lista::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  right: 8%;
-  left: 8%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--acento), transparent);
-  transform: scaleX(var(--info-p, 0));
-  transform-origin: left center;
-}
-.portada__evento { position: relative; }
-.portada__evento::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  left: 24px;
-  width: 12px;
-  height: 12px;
-  border: 1px solid var(--acento);
-  background: var(--fondo);
-  transform: rotate(45deg) scale(var(--item-p, 0));
-  box-shadow: 0 0 18px rgba(147, 210, 65, .45);
-}
-.portada-motor .portada__info--eventos .portada__evento-fondo img {
-  transform: scale(calc(1.2 - var(--info-p, 0) * .08)) translate3d(calc((.5 - var(--info-p, 0)) * 2vw), calc((.5 - var(--info-p, 0)) * 18px), 0);
-  will-change: transform;
-}
-.portada-motor .portada__info--pronto .portada__pronto-visual {
-  transform: translate3d(calc((.5 - var(--info-p, 0)) * 2vw), calc((1 - var(--info-p, 0)) * 18px), 0) rotate(calc((.5 - var(--info-p, 0)) * 1.2deg));
-  will-change: transform;
-}
-.portada-motor .portada__info--pronto .portada__pronto-visual img {
-  transform: scale(calc(1.14 - var(--info-p, 0) * .08)) translate3d(calc((.5 - var(--info-p, 0)) * 12px), 0, 0);
-  will-change: transform;
-}
-.portada-motor .portada__info--galeria .portada__galeria-card {
-  --item-p: clamp(0, calc((var(--info-p, 0) - var(--item-delay, 0)) * 2.35), 1);
-  opacity: calc(.7 + var(--item-p) * .3);
-  transform: translate3d(calc((1 - var(--item-p)) * 24px), calc((1 - var(--item-p)) * 30px), 0) rotate(calc((1 - var(--item-p)) * var(--foto-inclinacion, 0deg)));
-  will-change: transform, opacity;
-}
-.portada-motor .portada__info--galeria .portada__galeria-card:nth-child(2) { --item-delay: .05; --foto-inclinacion: 1.2deg; }
-.portada-motor .portada__info--galeria .portada__galeria-card:nth-child(3) { --item-delay: .1; --foto-inclinacion: -1.1deg; }
-.portada-motor .portada__info--galeria .portada__galeria-card:nth-child(4) { --item-delay: .15; --foto-inclinacion: .8deg; }
-.portada-motor .portada__info--galeria .portada__galeria-card:nth-child(5) { --item-delay: .2; --foto-inclinacion: -1.3deg; }
-.portada-motor .portada__info--galeria .portada__galeria-card:nth-child(6) { --item-delay: .25; --foto-inclinacion: .9deg; }
-.portada-motor .portada__info--galeria .portada__galeria-card img {
-  transform: scale(calc(1.17 - var(--item-p) * .17)) translate3d(calc((.5 - var(--info-p, 0)) * 12px), 0, 0);
-  will-change: transform;
-}
-.portada-motor .portada__info--comunidad .portada__promo { transform: translate3d(calc((1 - var(--item-p)) * 22px), calc((1 - var(--item-p)) * 26px), 0) scale(calc(.96 + var(--item-p) * .04)); }
-.portada-motor .portada__info--comunidad .portada__promo > img { transform: scale(calc(1.1 - var(--item-p) * .1)) translate3d(calc((.5 - var(--info-p, 0)) * 10px), 0, 0); }
-.portada-motor .portada__info--eventos .portada__evento h3 {
-  transform: translate3d(calc((1 - var(--item-p)) * 20px + var(--vel, 0) * -4px), calc((1 - var(--item-p)) * 20px), 0);
-  clip-path: inset(0 0 calc((1 - var(--item-p)) * 100%) 0);
-}
-.portada-motor .portada__info--eventos .portada__evento p {
-  opacity: calc(.4 + var(--item-p) * .6);
-  transform: translate3d(calc((1 - var(--item-p)) * 16px), 0, 0);
-}
-.portada-motor .portada__info--eventos .portada__evento:nth-child(2) { transform: translate3d(calc(var(--vel, 0) * 5px), calc((1 - var(--item-p)) * 30px), 0) rotate(calc((1 - var(--item-p)) * 1.4deg)); }
-.portada-motor .portada__info--eventos .portada__evento:nth-child(3) { transform: translate3d(calc(var(--vel, 0) * 9px), calc((1 - var(--item-p)) * 30px), 0) rotate(calc((1 - var(--item-p)) * -1.4deg)); }
-.portada-motor .portada__info--pronto .portada__pronto-copy {
-  transform: translate3d(calc((1 - var(--info-p, 0)) * -32px), calc((1 - var(--info-p, 0)) * 20px), 0);
-  opacity: calc(.66 + var(--info-p, 0) * .34);
-}
-.portada-motor .portada__info--pronto .portada__pronto-visual { transform: translate3d(calc((.5 - var(--info-p, 0)) * 22px), calc((1 - var(--info-p, 0)) * 18px), 0); box-shadow: 0 18px 50px -34px rgba(147, 210, 65, .75); }
-.portada-motor .portada__info--pronto .portada__pronto-visual img { transform: scale(calc(1.18 - var(--info-p, 0) * .18)) translate3d(calc((.5 - var(--info-p, 0)) * -24px + var(--vel, 0) * 6px), 0, 0); }
-.portada-motor .portada__info--pronto .portada__pronto-visual::after { opacity: calc(.35 + var(--info-p, 0) * .45); }
-.portada-motor .portada__info--pronto > .boton { transform: translate3d(calc((1 - var(--info-p, 0)) * 26px), 0, 0); opacity: calc(.54 + var(--info-p, 0) * .46); }
-.portada-motor .portada__info--galeria figure { --figure-p: clamp(0, calc((var(--info-p, 0) - var(--figure-delay, 0)) * 2.4), 1); transform: translate3d(calc((.5 - var(--info-p, 0)) * var(--galeria-x, 0px) + var(--vel, 0) * var(--galeria-v, 0px)), calc((1 - var(--figure-p)) * 34px), 0) rotate(calc((1 - var(--figure-p)) * var(--galeria-rot, 0deg))); clip-path: inset(0 0 calc((1 - var(--figure-p)) * 16%) 0); will-change: transform, clip-path; }
-.portada-motor .portada__info--galeria figure:nth-child(1) { --galeria-x: -20px; }
-.portada-motor .portada__info--galeria figure:nth-child(2) { --galeria-x: 12px; --figure-delay: .08; --galeria-rot: 1.2deg; }
-.portada-motor .portada__info--galeria figure:nth-child(3) { --galeria-x: 28px; --figure-delay: .16; --galeria-rot: -1.2deg; }
-.portada-motor .portada__info--galeria img { transform: scale(calc(1.12 - var(--figure-p, 0) * .12)); filter: saturate(calc(.55 + var(--figure-p, 0) * .3)) contrast(1.08); transition: filter 240ms linear; }
-.portada-motor .portada__info--galeria .portada__galeria figcaption { opacity: calc(.45 + var(--figure-p) * .55); transform: translate3d(calc((1 - var(--figure-p)) * 12px), 0, 0); }
-.portada-motor .portada__info--comunidad .portada__promo { --hover-y: 0px; transform: translate3d(calc((1 - var(--item-p)) * 22px + var(--vel, 0) * var(--promo-v, 0px)), calc((1 - var(--item-p)) * 26px + var(--hover-y)), 0) scale(calc(.96 + var(--item-p) * .04)); transition: box-shadow 240ms ease, border-color 240ms ease; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(2) { --promo-v: 4px; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(3) { --promo-v: 7px; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(4) { --promo-v: 10px; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(5) { --promo-v: 13px; }
-.portada-motor .portada__info--comunidad .portada__promo > img { transform: scale(calc(1.16 - var(--item-p) * .16)) translate3d(calc((.5 - var(--info-p, 0)) * 14px + var(--vel, 0) * 6px), 0, 0); transition: filter 240ms linear; }
-.portada-motor .portada__info--comunidad .portada__promo > span,
-.portada-motor .portada__info--comunidad .portada__promo > strong,
-.portada-motor .portada__info--comunidad .portada__promo > em { transform: translate3d(calc((1 - var(--item-p)) * 14px), 0, 0); opacity: calc(.5 + var(--item-p) * .5); }
-.portada-motor .portada__info--comunidad .portada__promo::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0;
-  height: 2px;
-  background: var(--acento);
-  transform: scaleX(var(--item-p));
-  transform-origin: left center;
-}
-@media (hover: hover) {
-  .portada-motor a.portada__promo:hover { --hover-y: -7px; border-color: var(--acento); box-shadow: 0 20px 44px -30px rgba(147, 210, 65, .92); }
-  .portada-motor a.portada__promo:hover > img { filter: saturate(1) contrast(1.16); }
-}
-
-@media (max-width: 980px) {
-  .portada__disciplinas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .portada__spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .portada__galeria { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .portada__galeria-card--wide, .portada__galeria-card--tall { grid-column: span 1; }
-  .portada__promos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (max-width: 700px) {
-  .portada__info { padding-block: 68px; }
-  .portada__disciplinas, .portada__eventos-lista, .portada__galeria, .portada__promos { grid-template-columns: 1fr; }
-  .portada__disciplina { min-height: 214px; }
-  .portada__indice { margin-bottom: 22px; }
-  .portada__info--split, .portada__info--pronto { display: block; }
-  .portada__info--split .portada__info-cabeza, .portada__info--pronto .portada__pronto-copy { margin-bottom: 36px; }
-  .portada__spec-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .portada__spec { min-height: 132px; padding: 18px; }
-  .portada__spec--wide { grid-column: span 2; }
-  .portada__galeria-card--wide, .portada__galeria-card--tall { grid-column: span 1; }
-  .portada__galeria img, .portada__galeria-card--tall img { height: 65vw; max-height: 420px; }
-  .portada__info--pronto .boton { margin-top: 30px; }
-  .portada__pronto-visual { min-height: 180px; margin-bottom: 30px; }
-  .portada__pronto-visual img { min-height: 180px; }
-  .portada__evento { min-height: 204px; padding: 20px; }
-  .portada__evento h3 { padding-top: 30px; }
-  .portada__promo { min-height: 276px; padding: 20px; }
-  .portada__horario { gap: 10px; }
-  .portada__horario span, .portada__horario strong { min-width: 0; }
-  .portada__horario strong { font-size: .95rem; text-align: right; }
-  .portada-motor .portada__info--split .portada__horario { transform: translate3d(calc((1 - var(--row-p)) * 10px), 0, 0); }
-  .portada-motor .portada__info--split .portada__horario strong { transform: translate3d(calc((1 - var(--row-p)) * 6px), 0, 0); }
-  .portada__record-meta { align-items: flex-start; flex-direction: column; }
-  .portada__record-meta .boton { margin-left: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .portada__info .portada__info-cabeza,
-  .portada__info .portada__disciplina,
-  .portada__info .portada__spec,
-  .portada__info .portada__horario,
-  .portada__info .portada__record,
-  .portada__info .portada__evento,
-  .portada__info .portada__promo,
-  .portada__info .portada__galeria-card,
-  .portada__info .portada__pronto-visual { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .portada__info::before, .portada__info--datos .portada__spec::after, .portada__eventos-lista::before, .portada__evento::before, .portada__info--comunidad .portada__promo::after { transform: none !important; }
-  .portada__evento-fondo img, .portada__info--galeria figure, .portada__info--galeria img, .portada__pronto-visual img { transform: none !important; }
-  .portada__info::after,
-  .portada__info--complejo .portada__disciplina::after,
-  .portada__info--datos .portada__spec::after,
-  .portada__info--split .portada__horario::before,
-  .portada__info--records .portada__record::after,
-  .portada__info--comunidad .portada__promo::after { transform: none !important; }
-  .portada__info--pronto .portada__pronto-visual img,
-  .portada__info--datos .portada__spec strong,
-  .portada__info--split .portada__horario strong,
-  .portada__info--records .portada__record span,
-  .portada__info--records .portada__record strong,
-  .portada__info--records .portada__record b,
-  .portada__info--eventos .portada__evento h3,
-  .portada__info--eventos .portada__evento p,
-  .portada__info--galeria figcaption,
-  .portada__info--comunidad .portada__promo > img { transform: none !important; filter: none !important; clip-path: none !important; }
-}
-
-/* ==========================================================================
-   Acabado de competición: superficies, señales y micro-interacciones
-
-   Las escenas ya tienen movimiento ligado al scroll. Esta capa añade una
-   lectura más física a cada familia de contenido: tarjetas como paneles de
-   boxes, métricas como telemetría, eventos como una línea de salida y
-   productos como fichas de catálogo.
-   ========================================================================== */
-
-@keyframes portadaBarrido {
-  from { transform: translate3d(-120%, 0, 0) skewX(-18deg); }
-  to { transform: translate3d(120%, 0, 0) skewX(-18deg); }
-}
-
-@keyframes portadaPulsoVerde {
-  0%, 100% { opacity: .38; transform: scale(.82); }
-  50% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes portadaRaya {
-  from { background-position: 0 0; }
-  to { background-position: 160px 0; }
-}
-
-.portada__info {
   isolation: isolate;
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(180deg, var(--fondo) 0%, var(--fondo-2) 100%);
-  background-size: 42px 42px, 42px 42px, auto;
+  padding: clamp(96px, 12vw, 168px) var(--margen);
+  overflow: hidden;
+  border-top: 1px solid rgba(221, 231, 222, .08);
+  background: #070a09;
 }
-
+/* Capa de fondo propia de cada escena (foto o brillo); deriva con el scroll. */
 .portada__info::before {
+  content: '';
+  position: absolute;
+  inset: -6% 0;
+  z-index: -1;
+  pointer-events: none;
+  transform: translate3d(0, calc(var(--deriva) * -6%), 0);
+}
+/* Marca de salida sobre la línea superior, alineada con el contenido. */
+.portada__info::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: var(--margen);
+  width: 64px;
   height: 2px;
-  background: linear-gradient(90deg, var(--acento), rgba(147, 210, 65, .28) 32%, transparent 78%);
-  box-shadow: 0 0 18px rgba(147, 210, 65, .18);
+  background: var(--acento);
+  box-shadow: 0 0 16px rgba(147, 210, 65, .6);
 }
 
-.portada__info-cabeza { position: relative; }
+/* --- Cabecera de escena ---------------------------------------------------- */
+.portada__info-cabeza {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 32px;
+  align-items: center;
+  margin-bottom: clamp(48px, 6vw, 88px);
+}
+.portada__info-cabeza > * { grid-column: 1; }
 .portada__info-cabeza::after {
-  position: absolute;
-  top: 0;
-  right: 0;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  margin-top: 1px;
   color: var(--texto-3);
-  font: 600 .58rem/1 var(--mono);
+  font: 600 .62rem/1 var(--mono);
   letter-spacing: .18em;
-  opacity: .68;
+  white-space: nowrap;
 }
 .portada__info--complejo .portada__info-cabeza::after { content: '01 / FACILITIES'; }
 .portada__info--datos .portada__info-cabeza::after { content: '02 / TELEMETRY'; }
-.portada__info--split .portada__info-cabeza::after { content: '03 / PIT LANE'; }
 .portada__info--records .portada__info-cabeza::after { content: '04 / TIMING'; }
 .portada__info--eventos .portada__info-cabeza::after { content: '05 / CALENDAR'; }
-.portada__info--pronto .portada__pronto-copy::after { content: '06 / NEXT BUILD'; position: absolute; top: -24px; right: 0; color: var(--texto-3); font: 600 .58rem/1 var(--mono); letter-spacing: .18em; }
 .portada__info--galeria .portada__info-cabeza::after { content: '07 / VISUALS'; }
 .portada__info--comunidad .portada__info-cabeza::after { content: '08 / SUPPLY DEPOT'; }
-
-/* Complejo: módulos que se sienten como estaciones independientes. */
-.portada__info--complejo {
-  background-image:
-    radial-gradient(circle at 12% 22%, rgba(147, 210, 65, .08), transparent 24rem),
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    #080c0a;
-  background-size: auto, 42px 42px, 42px 42px, auto;
+.portada__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px !important;
+  color: var(--acento);
+  font: 650 .74rem/1 var(--mono);
+  letter-spacing: .24em;
+  text-transform: uppercase;
 }
+.portada__eyebrow::before { content: ''; flex: none; width: 48px; height: 1px; background: currentColor; }
+.portada__info h2 { max-width: 9.5em; font-size: clamp(2.8rem, 7vw, 7rem); line-height: .92; }
+.portada__info--datos h2 { max-width: 12em; font-size: clamp(2.8rem, 6.2vw, 6.2rem); }
+.portada__info-lead { max-width: 54ch; margin-top: 26px !important; color: #aebbb0; font-size: clamp(1.02rem, 1.4vw, 1.25rem); line-height: 1.6; }
+
+/* --- 01 Complejo: cinco estaciones ------------------------------------------ */
+.portada__info--complejo::before {
+  background:
+    radial-gradient(ellipse 50% 60% at calc(12% + var(--deriva) * 16%) 20%, rgba(147, 210, 65, .09), transparent 70%),
+    var(--velo),
+    url('../images/contenido/complejo-fondo.webp') center / cover no-repeat;
+}
+.portada__disciplinas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .portada__disciplina {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(145deg, rgba(21, 29, 24, .98), rgba(8, 12, 10, .98));
   --spot-x: 50%;
-  --spot-y: 50%;
+  --spot-y: 30%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: clamp(320px, 27vw, 380px);
+  padding: 28px 24px 32px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--panel-borde);
+  border-radius: var(--esquina);
+  background: linear-gradient(160deg, rgba(18, 26, 22, .9), rgba(9, 13, 11, .84)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
 }
 .portada__disciplina::before {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
-  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .17), transparent 42%);
-  opacity: .55;
-  transition: opacity 280ms ease;
+  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .14), transparent 52%);
 }
-.portada__disciplina .portada__indice,
-.portada__disciplina h3,
-.portada__disciplina p { position: relative; z-index: 1; }
-.portada__disciplina .portada__indice::before {
+.portada__disciplina::after {
   content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin-right: 8px;
-  border-radius: 50%;
+  position: absolute;
+  bottom: 0;
+  left: 24px;
+  width: 44px;
+  height: 3px;
+  border-radius: 99px 99px 0 0;
   background: var(--acento);
-  box-shadow: 0 0 12px rgba(147, 210, 65, .8);
-  vertical-align: 2px;
+  box-shadow: 0 0 18px rgba(147, 210, 65, .7);
 }
-/* Datos: cada cifra tiene un marco vivo y un barrido de telemetría. */
-.portada__info--datos .portada__spec {
-  position: relative;
+.portada__indice {
+  display: block;
+  margin-bottom: auto;
+  color: var(--acento);
+  font: 650 clamp(3.2rem, 4.6vw, 4.8rem)/.85 var(--display);
+  font-stretch: 125%;
+  font-variant-numeric: tabular-nums;
+}
+@supports (-webkit-text-stroke: 1px black) {
+  .portada__indice { color: transparent; -webkit-text-stroke: 1px rgba(147, 210, 65, .72); }
+}
+.portada__disciplina h3 { display: flex; align-items: flex-end; min-height: 2.08em; margin-top: 32px; font-size: clamp(1.12rem, 1.4vw, 1.36rem); line-height: 1.04; }
+.portada__disciplina p { min-height: 6.2em; margin-top: 14px; color: var(--texto-2); font-size: .92rem; line-height: 1.55; }
+
+/* --- 02 Datos: tablero de telemetría -------------------------------------- */
+.portada__info--datos { background: linear-gradient(180deg, #0e1512, #0a0e0c); }
+.portada__info--datos::before {
+  background:
+    radial-gradient(ellipse 40% 50% at calc(86% - var(--deriva) * 14%) 12%, rgba(147, 210, 65, .07), transparent 70%),
+    var(--velo),
+    url('../images/contenido/datos-fondo.webp') center / cover no-repeat;
+}
+.portada__spec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
   overflow: hidden;
+  border: 1px solid var(--panel-borde);
+  border-radius: var(--esquina);
+  background: rgba(221, 231, 222, .12);
+}
+.portada__spec {
   --spot-x: 50%;
   --spot-y: 50%;
-  background-image:
-    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 48%),
-    linear-gradient(145deg, rgba(14, 19, 17, .92), rgba(7, 11, 9, .72));
-  transition: border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  min-width: 0;
+  min-height: clamp(180px, 16vw, 220px);
+  padding: clamp(22px, 2.6vw, 36px);
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .08), transparent 55%),
+    linear-gradient(160deg, rgba(11, 16, 13, .92), rgba(11, 16, 13, .84)),
+    var(--card-fondo, none) var(--card-pos, center) / cover no-repeat,
+    #0b100d;
 }
 .portada__spec::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  width: 38px;
+  left: clamp(22px, 2.6vw, 36px);
+  width: 28px;
   height: 2px;
   background: var(--acento);
-  box-shadow: 0 0 16px rgba(147, 210, 65, .72);
+  box-shadow: 0 0 14px rgba(147, 210, 65, .7);
 }
-.portada__spec span::before {
-  content: '// ';
-  color: var(--acento);
-  opacity: .72;
-}
-/* Pit lane: guía lateral y estado luminoso por cada jornada. */
-.portada__info--split {
+.portada__spec--wide {
+  grid-column: span 2;
   background:
-    linear-gradient(90deg, rgba(10, 14, 12, .98) 0%, rgba(10, 14, 12, .9) 42%, rgba(10, 14, 12, .7) 100%),
-    linear-gradient(90deg, rgba(147, 210, 65, .025) 1px, transparent 1px),
-    linear-gradient(180deg, #0e1512, #0a0e0c),
-    url('../images/contenido/horarios-fondo.webp') center / cover;
-  background-size: auto, 54px 100%, auto, cover;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 220' fill='none'%3E%3Cpath d='M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z' stroke='%23f5f6f0' stroke-opacity='.08' stroke-width='16' stroke-linejoin='round'/%3E%3Cpath d='M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z' stroke='%2393d241' stroke-opacity='.7' stroke-width='1.5' stroke-dasharray='6 7'/%3E%3Cpath d='M128 174v24' stroke='%23f5f6f0' stroke-opacity='.8' stroke-width='3'/%3E%3Ccircle cx='236' cy='78' r='4' fill='%2393d241'/%3E%3C/svg%3E") right clamp(18px, 3vw, 40px) top clamp(22px, 2.6vw, 36px) / auto 56% no-repeat,
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%),
+    linear-gradient(120deg, rgba(147, 210, 65, .12), rgba(147, 210, 65, 0) 60%),
+    linear-gradient(160deg, rgba(11, 16, 13, .9), rgba(11, 16, 13, .82)),
+    var(--card-fondo, none) var(--card-pos, center) / cover no-repeat,
+    #0b100d;
 }
-.portada__horarios { position: relative; }
-.portada__horarios::before {
-  content: 'PIT LANE // OPEN SESSIONS';
+.portada__spec strong {
   display: block;
-  margin-bottom: 14px;
-  color: var(--acento);
-  font: 600 .58rem/1 var(--mono);
-  letter-spacing: .16em;
+  color: #f5f6f0;
+  font: 650 clamp(1.7rem, 3vw, 3rem)/1 var(--display);
+  font-stretch: 118%;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
 }
-.portada__horario { position: relative; padding-inline: 16px 0; transition: background-color 240ms ease, padding-left 240ms ease; }
+.portada__spec--wide strong { font-size: clamp(2.2rem, 4.4vw, 4.6rem); line-height: .92; white-space: nowrap; }
+.portada__spec span { display: block; color: #95a298; font: 600 .7rem/1.5 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.portada__spec span::before { content: '// '; color: var(--acento); }
+
+/* --- 03 Horarios: pit lane ---------------------------------------------- */
+.portada__info--split {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: clamp(40px, 7vw, 112px);
+  align-items: center;
+  background: #070a09;
+}
+.portada__info--split::before {
+  background:
+    var(--velo),
+    url('../images/contenido/horarios-fondo.webp') center / cover no-repeat;
+}
+.portada__info--split .portada__info-cabeza { margin-bottom: 0; }
+.portada__info--split h2 { font-size: clamp(2.8rem, 5.2vw, 4.8rem); }
+.portada__horarios {
+  position: relative;
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid rgba(221, 231, 222, .18);
+  border-radius: 2px 24px 2px 24px;
+  background: rgba(7, 10, 9, .74);
+  box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.portada__horarios::before {
+  content: '03 / PIT LANE // OPEN SESSIONS';
+  display: block;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(221, 231, 222, .18);
+  color: var(--acento);
+  font: 600 .62rem/1 var(--mono);
+  letter-spacing: .18em;
+}
+.portada__horario {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(24px, 1fr) auto;
+  align-items: center;
+  gap: clamp(14px, 2vw, 24px);
+  padding: clamp(18px, 2.2vw, 26px) 16px;
+  border-bottom: 1px solid rgba(221, 231, 222, .12);
+  background: linear-gradient(90deg, rgba(7, 10, 9, .95), rgba(7, 10, 9, .76)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat;
+}
+.portada__horario span {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #d3dad2;
+  font: 650 .76rem/1 var(--mono);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.portada__horario span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--acento); box-shadow: 0 0 12px rgba(147, 210, 65, .8); }
+/* Guía de puntos entre la jornada y la hora, como una tabla de tiempos. */
 .portada__horario::after {
   content: '';
-  position: absolute;
-  right: -4px;
-  width: 6px;
-  height: 6px;
-  border: 1px solid var(--acento);
-  border-radius: 50%;
-  background: var(--fondo-2);
-  box-shadow: 0 0 0 0 rgba(147, 210, 65, .45);
-  transition: box-shadow 240ms ease, background-color 240ms ease;
+  order: 1;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(221, 231, 222, .3) 0 3px, transparent 3px 9px);
 }
-/* Telemetría: la tabla gana ritmo de marcador y un primer puesto reconocible. */
-.portada__info--records {
+.portada__horario strong {
+  order: 2;
+  color: #f5f6f0;
+  font: 650 clamp(1.35rem, 2.3vw, 2.2rem)/1 var(--display);
+  font-stretch: 112%;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.portada__nota { margin-top: 20px !important; color: var(--texto-3); font-size: .82rem; line-height: 1.55; }
+
+/* --- 04 Récords: pantalla de cronometraje -------------------------------- */
+.portada__info--records::before {
   background:
-    linear-gradient(90deg, rgba(8, 12, 10, .98) 0%, rgba(8, 12, 10, .9) 40%, rgba(8, 12, 10, .68) 100%),
-    radial-gradient(circle at 84% 42%, rgba(147, 210, 65, .08), transparent 24rem),
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    url('../images/contenido/records-fondo.webp') center / cover;
-  background-size: auto, auto, 42px 42px, 42px 42px, cover;
+    var(--velo),
+    url('../images/contenido/records-fondo.webp') center / cover no-repeat;
 }
-.portada__record { position: relative; overflow: hidden; transition: background-color 220ms ease, padding-left 220ms ease; }
-.portada__record::before {
+.portada__records {
+  overflow: hidden;
+  border: 1px solid rgba(221, 231, 222, .16);
+  border-radius: var(--esquina);
+  background: rgba(7, 10, 9, .7);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.portada__records::before {
+  content: 'BEST LAP // LIVE TIMING';
+  display: block;
+  padding: 18px clamp(18px, 2.6vw, 32px);
+  border-bottom: 1px solid rgba(221, 231, 222, .14);
+  color: var(--acento);
+  font: 600 .62rem/1 var(--mono);
+  letter-spacing: .18em;
+}
+.portada__record {
+  position: relative;
+  display: grid;
+  grid-template-columns: clamp(52px, 7vw, 104px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  padding: clamp(18px, 2.2vw, 26px) clamp(18px, 2.6vw, 32px);
+  border-bottom: 1px solid rgba(221, 231, 222, .1);
+  background: linear-gradient(90deg, rgba(7, 10, 9, .95), rgba(7, 10, 9, .74)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat;
+}
+.portada__record:last-child { border-bottom: 0; }
+.portada__record span { color: rgba(245, 246, 240, .3); font: 650 clamp(1.5rem, 2.6vw, 2.5rem)/1 var(--display); font-stretch: 118%; font-variant-numeric: tabular-nums; }
+.portada__record strong { min-width: 0; color: #f5f6f0; font: 650 clamp(1.2rem, 2vw, 1.8rem)/1.05 var(--display); font-stretch: 116%; }
+.portada__record b { color: var(--acento); font: 650 clamp(1.35rem, 2.5vw, 2.3rem)/1 var(--mono); font-variant-numeric: tabular-nums; }
+.portada__record b::after { content: 's'; margin-left: .18em; color: var(--texto-3); font-size: .5em; }
+.portada__record--primero { background: linear-gradient(90deg, rgba(147, 210, 65, .18), rgba(147, 210, 65, .03) 58%, transparent), linear-gradient(90deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, .7)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat; }
+.portada__record--primero::before {
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
-  width: 2px;
+  width: 3px;
   background: var(--acento);
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 260ms ease;
+  box-shadow: 0 0 18px rgba(147, 210, 65, .8);
 }
-.portada__record--primero { background: linear-gradient(90deg, rgba(147, 210, 65, .09), transparent 48%); }
-.portada__record--primero::before { transform: scaleY(1); animation: portadaPulsoVerde 2.2s ease-in-out infinite; }
-/* Eventos: el calendario se lee como una línea de salida. */
-.portada__info--eventos {
-  background-image:
-    linear-gradient(135deg, rgba(17, 23, 19, .92), rgba(7, 9, 8, .97)),
-    url('../images/contenido/eventos-fondo.webp');
-  background-position: center;
-  background-size: cover;
+.portada__record--primero span { color: var(--acento); }
+.portada__record--primero b { text-shadow: 0 0 22px rgba(147, 210, 65, .55); }
+.portada__record-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 28px; color: var(--texto-2); font: 600 .68rem/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; }
+.portada__record-meta span { display: inline-flex; align-items: center; gap: 10px; }
+.portada__record-meta span::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--acento); box-shadow: 0 0 10px rgba(147, 210, 65, .8); }
+.portada__record-meta .boton { margin-left: auto; }
+
+/* --- 05 Eventos: parrilla de fechas ----------------------------------------- */
+.portada__evento-fondo {
+  position: absolute;
+  inset: -6% 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translate3d(0, calc(var(--deriva) * -6%), 0);
 }
-.portada__eventos-lista::before { top: 17px; opacity: .7; }
-.portada__evento { --spot-x: 50%; --spot-y: 50%; background-image: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .11), transparent 48%), linear-gradient(145deg, rgba(5, 7, 6, .78), rgba(5, 7, 6, .94)); transition: border-color 240ms ease, box-shadow 240ms ease, background-color 240ms ease; }
+.portada__evento-fondo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 54% 48%; filter: saturate(.75) contrast(1.08); }
+.portada__evento-fondo::after { content: ''; position: absolute; inset: 0; background: var(--velo); }
+.portada__eventos-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 36px; }
+.portada__evento {
+  --spot-x: 50%;
+  --spot-y: 30%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: clamp(340px, 30vw, 400px);
+  padding: clamp(24px, 2.6vw, 34px);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--panel-borde);
+  border-radius: var(--esquina);
+  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%), linear-gradient(165deg, rgba(18, 26, 22, .9), rgba(7, 10, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
+}
 .portada__evento::after {
   content: 'OPEN';
   position: absolute;
-  top: 17px;
-  right: 20px;
-  color: var(--texto-3);
-  font: 600 .54rem/1 var(--mono);
+  top: clamp(24px, 2.6vw, 34px);
+  right: clamp(24px, 2.6vw, 34px);
+  padding: 7px 10px;
+  border: 1px solid rgba(221, 231, 222, .22);
+  border-radius: 999px;
+  color: #d3dad2;
+  font: 650 .58rem/1 var(--mono);
   letter-spacing: .16em;
 }
 .portada__evento:nth-child(2)::after { content: 'NIGHT'; }
-.portada__evento:nth-child(3)::after { content: 'RACE'; color: var(--acento); }
-/* Próximo: fondo en movimiento muy lento, como una obra cubierta bajo lona. */
-.portada__info--pronto { background-size: 160px 160px, auto; animation: portadaRaya 16s linear infinite; }
-.portada__pronto-visual { --spot-x: 50%; --spot-y: 50%; }
+.portada__evento:nth-child(3)::after { content: 'RACE'; border-color: var(--acento); background: var(--acento); color: #04120a; }
+.portada__evento:nth-child(3) { border-color: var(--acento-borde); background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%), linear-gradient(165deg, rgba(26, 38, 24, .9), rgba(8, 12, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d; }
+.portada__evento-fecha { display: flex; align-items: baseline; gap: 12px; color: var(--acento); font: 650 .78rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; }
+.portada__evento-fecha b { color: #f5f6f0; font: 650 clamp(3.6rem, 5.4vw, 5.6rem)/.8 var(--display); font-stretch: 118%; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.portada__evento h3 { display: flex; align-items: flex-end; min-height: 2.04em; margin-top: auto; padding-top: 48px; box-sizing: content-box; font-size: clamp(1.3rem, 1.9vw, 1.8rem); line-height: 1.02; }
+.portada__evento h3 + p { min-height: 3.1em; margin-top: 14px; color: var(--texto-2); font-size: .92rem; line-height: 1.55; }
+
+/* --- 06 Muy pronto: obra bajo lona -------------------------------------- */
+.portada__info--pronto {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: clamp(40px, 7vw, 112px);
+  align-items: center;
+}
+.portada__info--pronto::before {
+  background:
+    radial-gradient(ellipse 50% 60% at 78% 55%, rgba(255, 111, 32, .1), transparent 70%),
+    var(--velo),
+    url('../images/contenido/pronto-fondo.webp') center / cover no-repeat;
+}
+.portada__info--pronto > * { min-width: 0; }
+.portada__pronto-copy { position: relative; grid-column: 1; grid-row: 1; max-width: 640px; }
+.portada__pronto-visual {
+  --spot-x: 50%;
+  --spot-y: 60%;
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  width: min(100%, 460px);
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 138, 61, .32);
+  border-radius: 2px 28px 2px 28px;
+  background: #000;
+  box-shadow: 0 50px 110px -56px rgba(255, 111, 32, .55), 0 0 0 1px rgba(0, 0, 0, .4);
+}
+.portada__pronto-visual img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; filter: grayscale(.3) contrast(1.1) brightness(.8); }
+/* Cinta de obra arriba y un foco cálido que sigue al puntero. */
 .portada__pronto-visual::before {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
-  background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 34%);
-  mix-blend-mode: screen;
-  opacity: .62;
-  transition: opacity 260ms ease;
+  background:
+    repeating-linear-gradient(-45deg, #ff6f20 0 14px, #0a0a0a 14px 28px) top / 100% 10px no-repeat,
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 40%);
 }
-.portada__pronto-visual::after { z-index: 2; }
+.portada__pronto-visual::after {
+  content: '06 / NEXT BUILD';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+  color: rgba(245, 246, 240, .78);
+  font: 600 .62rem/1 var(--mono);
+  letter-spacing: .18em;
+  pointer-events: none;
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, 0) 42%),
+    linear-gradient(160deg, rgba(255, 111, 32, .16), rgba(255, 111, 32, 0) 55%);
+}
+.portada__info--pronto h2 { color: #f5f6f0; font-size: clamp(2.8rem, 6.4vw, 6.4rem); }
+.portada__info--pronto h3 { max-width: 20ch; margin-top: 22px; color: #ffb27a; font-size: clamp(1.2rem, 2vw, 1.9rem); line-height: 1.04; }
+.portada__info--pronto .portada__info-lead { max-width: 40ch; }
+.portada__pronto-copy .boton { margin-top: 32px; }
 
-/* Galería: marcos de contacto y profundidad de lente. */
-.portada__galeria figure { position: relative; overflow: hidden; }
+/* --- 07 Galería: hoja de contactos ----------------------------------------- */
+.portada__info--galeria::before {
+  background:
+    var(--velo),
+    url('../images/contenido/galeria-fondo.webp') center / cover no-repeat;
+}
+.portada__galeria {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  counter-reset: galeria-frame;
+}
+.portada__galeria figure {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  grid-column: span 4;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--esquina);
+  background: #0b100d;
+  counter-increment: galeria-frame;
+}
+.portada__galeria figure:nth-child(1) { grid-column: span 6; }
+.portada__galeria figure:nth-child(2),
+.portada__galeria figure:nth-child(3),
+.portada__galeria figure:nth-child(6) { grid-column: span 3; }
+.portada__galeria figure:nth-child(4) { grid-column: span 5; }
+.portada__galeria-card { isolation: isolate; }
+/* Las fotos verticales encuadran el asfalto; las apaisadas, el hangar entero. */
+.portada__galeria-card--tall img { object-position: 50% 64%; }
+.portada__galeria-card--wide img { object-position: 50% 46%; }
+.portada__galeria img { display: block; flex: none; width: 100%; height: clamp(260px, 28vw, 420px); object-fit: cover; filter: saturate(.92) contrast(1.06); }
 .portada__galeria figure::before {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
-  border: 1px solid rgba(221, 231, 222, .18);
-  box-shadow: inset 0 0 0 1px rgba(5, 7, 6, .36);
+  border: 1px solid rgba(221, 231, 222, .16);
+  border-radius: inherit;
 }
 .portada__galeria figure::after {
   content: 'FRAME / 0' counter(galeria-frame);
   position: absolute;
-  top: 12px;
-  left: 14px;
+  top: 16px;
+  left: 16px;
   z-index: 2;
+  padding: 7px 10px;
+  border: 1px solid rgba(245, 246, 240, .22);
+  border-radius: 999px;
+  background: rgba(7, 10, 9, .62);
   color: #f5f6f0;
-  font: 600 .54rem/1 var(--mono);
-  letter-spacing: .14em;
-  text-shadow: 0 1px 8px #050706;
+  font: 650 .56rem/1 var(--mono);
+  letter-spacing: .16em;
 }
-.portada__galeria { counter-reset: galeria-frame; }
-.portada__galeria figure { counter-increment: galeria-frame; }
-.portada__galeria figure:nth-child(1)::after { content: 'FRAME / 01'; }
-.portada__galeria figure:nth-child(2)::after { content: 'FRAME / 02'; }
-.portada__galeria figure:nth-child(3)::after { content: 'FRAME / 03'; }
-.portada__galeria img { transition: transform 700ms var(--salida), filter 260ms ease; }
-/* Catálogo: halo de cursor, profundidad y etiqueta de producto. */
+/* Placa de pie: una textura de pista distinta bajo cada foto. */
+.portada__galeria figcaption {
+  --caption-fondo: url('../images/landing/miniapolis-track-atmosphere.webp');
+  position: relative;
+  flex: 1;
+  padding: 16px clamp(16px, 2vw, 22px) 18px;
+  border-top: 1px solid rgba(221, 231, 222, .14);
+  color: #d3dad2;
+  font-size: .88rem;
+  line-height: 1.45;
+  background: linear-gradient(135deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, .78)), var(--caption-fondo) center / cover no-repeat, #0b100d;
+}
+.portada__galeria figure:nth-child(2) figcaption { --caption-fondo: url('../images/landing/miniapolis-track-portrait.webp'); }
+.portada__galeria figure:nth-child(3) figcaption { --caption-fondo: url('../images/pista/miniapolis-track-wide.webp'); }
+.portada__galeria figcaption::before { content: ''; display: block; width: 28px; height: 2px; margin-bottom: 10px; background: var(--acento); box-shadow: 0 0 12px rgba(147, 210, 65, .7); }
+
+/* --- 08 Comunidad: catálogo -------------------------------------------------- */
+.portada__info--comunidad::before {
+  background:
+    radial-gradient(ellipse 45% 55% at calc(80% + var(--deriva) * 12%) 18%, rgba(147, 210, 65, .08), transparent 70%),
+    var(--velo),
+    url('../images/contenido/comunidad-fondo.webp') center / cover no-repeat;
+}
+.portada__promos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .portada__promo {
   --spot-x: 50%;
-  --spot-y: 50%;
-  transition: border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
+  --spot-y: 40%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: clamp(360px, 30vw, 430px);
+  padding: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--panel-borde);
+  border-radius: var(--esquina);
+  color: var(--texto);
+  background: var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
+  transition: border-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover), translate var(--t-hover) var(--curva-hover);
 }
+.portada__promo > img { position: absolute; inset: 0; z-index: -2; display: block; width: 100%; height: 100%; object-fit: cover; opacity: .88; filter: saturate(.9) contrast(1.06); transition: transform 900ms var(--salida), filter 260ms ease; }
 .portada__promo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .12), transparent 35%),
-    linear-gradient(180deg, rgba(5, 7, 6, .16), rgba(5, 7, 6, .94) 82%);
-  transition: background 260ms ease;
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .12), transparent 40%),
+    linear-gradient(180deg, rgba(7, 10, 9, .66) 0%, rgba(7, 10, 9, 0) 28%, rgba(7, 10, 9, .12) 50%, rgba(7, 10, 9, .96) 84%);
 }
-.portada__promo::after { height: 3px; box-shadow: 0 0 18px rgba(147, 210, 65, .62); }
-.portada__promo > img { transition: transform 900ms var(--salida), filter 260ms ease; }
+.portada__promo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 24px;
+  width: 36px;
+  height: 3px;
+  border-radius: 99px 99px 0 0;
+  background: var(--acento);
+  box-shadow: 0 0 18px rgba(147, 210, 65, .7);
+  transition: width 420ms var(--salida);
+}
+.portada__promo span { color: #d3dad2; font: 650 .6rem/1.5 var(--mono); letter-spacing: .16em; text-transform: uppercase; }
+.portada__promo strong { max-width: 18ch; margin-top: auto; overflow-wrap: break-word; hyphens: auto; font: 650 clamp(1.15rem, 1.4vw, 1.35rem)/1.06 var(--display); font-stretch: 118%; }
+.portada__promo em { margin-top: 16px; color: var(--acento); font: 650 .66rem/1 var(--mono); font-style: normal; letter-spacing: .16em; text-transform: uppercase; }
+.portada__promo--muted > img { filter: grayscale(.7) contrast(1.02); }
+.portada__promo--muted em { color: var(--texto-3); }
 @media (hover: hover) {
-  a.portada__promo:hover { border-color: var(--acento-borde); box-shadow: 0 24px 46px -34px rgba(147, 210, 65, .78); }
-  a.portada__promo:hover > img { transform: scale(1.14); }
+  a.portada__promo:hover { translate: 0 -6px; border-color: var(--acento-borde); box-shadow: 0 30px 60px -36px rgba(147, 210, 65, .75); }
+  a.portada__promo:hover > img { transform: scale(1.06); filter: saturate(1) contrast(1.1); }
+  a.portada__promo:hover::after { width: calc(100% - 48px); }
 }
+.portada__comunidad-cierre {
+  margin-top: clamp(80px, 11vw, 150px) !important;
+  color: #f5f6f0;
+  font: 650 clamp(2.4rem, 6.4vw, 6.8rem)/.9 var(--display);
+  font-stretch: 125%;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.portada__comunidad-cierre::before {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 20px;
+  margin-bottom: clamp(24px, 3vw, 36px);
+  background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 20px 20px;
+  transform: skewX(-16deg);
+}
+.portada__comunidad-cierre span { color: var(--acento); }
 
-@media (max-width: 700px) {
-  .portada__info-cabeza::after,
-  .portada__info--pronto .portada__pronto-copy::after { position: static; display: block; margin-top: 20px; }
-  .portada__horario { padding-inline: 0 12px; }
-  .portada__horario::after { right: 0; }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .portada__info--pronto { animation: none; }
-  .portada__record--primero::before { animation: none; }
-  .portada__galeria img,
-  .portada__promo > img { transition: none; }
-}
+/* --- Una escena por tarjeta ---------------------------------------------- */
+/* Cada caja tiene su propia foto de pista, siempre bajo el mismo velo: la
+   textura cambia, la lectura no. */
+.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); --card-pos: 72% center; }
+.portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); --card-pos: 38% center; }
+.portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); --card-pos: 68% center; }
+.portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); }
+.portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); --card-pos: 74% center; }
+.portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
+.portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); --card-pos: 70% center; }
+.portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); --card-pos: center 38%; }
+.portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); --card-pos: 58% center; }
+.portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); --card-pos: center 62%; }
+.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); }
+.portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
+.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); --card-pos: 32% center; }
+.portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
+.portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
+.portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
+.portada__record:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/record-danilo-fondo.webp'); --card-pos: 72% center; }
+.portada__record:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/record-stalin-fondo.webp'); --card-pos: 32% center; }
+.portada__record:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/record-marco-fondo.webp'); --card-pos: 62% center; }
+.portada__evento:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/evento-experiencia-fondo.webp'); --card-pos: 68% center; }
+.portada__evento:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/evento-drift-fondo.webp'); --card-pos: 32% center; }
+.portada__evento:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/evento-campeonato-fondo.webp'); --card-pos: 64% center; }
+.portada__promo:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); --card-pos: 68% center; }
+.portada__promo:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); --card-pos: 34% center; }
+.portada__promo:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/promo-llantas-fondo.webp'); --card-pos: 64% center; }
+.portada__promo:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/promo-motor-fondo.webp'); --card-pos: 42% center; }
+.portada__promo:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/promo-builder-fondo.webp'); --card-pos: 72% center; }
 
-/* Fondos editoriales: una escena distinta por bloque, con la misma rejilla
-   técnica, la misma densidad de negro y una capa de lectura consistente. */
-.portada__info.portada__info--complejo,
-.portada__info.portada__info--datos,
-.portada__info.portada__info--split,
-.portada__info.portada__info--records,
-.portada__info.portada__info--eventos,
-.portada__info.portada__info--pronto,
-.portada__info.portada__info--galeria,
-.portada__info.portada__info--comunidad {
-  background-repeat: repeat, repeat, no-repeat, no-repeat;
-  background-position: 0 0, 0 0, center, center;
-  background-size: 42px 42px, 42px 42px, cover, cover;
+.pagina-entrada .portada__recta-cabeza {
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid rgba(221, 231, 222, .16);
+  background: linear-gradient(135deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .62)), url('../images/contenido/tarjetas/recta-cabeza-fondo.webp') center / cover no-repeat;
 }
-.portada__info.portada__info--complejo {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .97) 0%, rgba(7, 10, 9, .9) 38%, rgba(7, 10, 9, .62) 78%, rgba(7, 10, 9, .76) 100%),
-    url('../images/contenido/complejo-fondo.webp');
-}
-.portada__info.portada__info--datos {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .92) 0%, rgba(7, 10, 9, .82) 48%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/datos-fondo.webp');
-}
-.portada__info.portada__info--split {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .97) 0%, rgba(7, 10, 9, .88) 34%, rgba(7, 10, 9, .54) 72%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/horarios-fondo.webp');
-}
-.portada__info.portada__info--records {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(8, 12, 10, .97) 0%, rgba(8, 12, 10, .9) 38%, rgba(8, 12, 10, .58) 76%, rgba(8, 12, 10, .74) 100%),
-    url('../images/contenido/records-fondo.webp');
-}
-.portada__info.portada__info--eventos {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .95) 0%, rgba(7, 10, 9, .84) 48%, rgba(7, 10, 9, .68) 100%),
-    url('../images/contenido/eventos-fondo.webp');
-}
-.portada__info.portada__info--pronto {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .96) 0%, rgba(7, 10, 9, .82) 44%, rgba(7, 10, 9, .6) 78%, rgba(7, 10, 9, .78) 100%),
-    url('../images/contenido/pronto-fondo.webp');
-  animation: none;
-}
-.portada__info.portada__info--galeria {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .95) 0%, rgba(7, 10, 9, .8) 54%, rgba(7, 10, 9, .72) 100%),
-    url('../images/contenido/galeria-fondo.webp');
-}
-.portada__info.portada__info--comunidad {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(5, 7, 6, .95) 0%, rgba(5, 7, 6, .82) 42%, rgba(5, 7, 6, .7) 100%),
-    url('../images/contenido/comunidad-fondo.webp');
-}
+.entrada__acceso-panel { background: linear-gradient(145deg, rgba(8, 12, 10, .94), rgba(8, 12, 10, .72)), url('../images/oficial/miniapolis-bandera-hero.webp') center / cover no-repeat, #101612; }
 
-/* El panel de la recta y el acceso también pertenecen a la misma familia. */
+/* --- La recta y el acceso comparten la familia fotográfica ------------------ */
 .portada__panel--texto {
   background:
     linear-gradient(135deg, rgba(8, 12, 10, .93), rgba(8, 12, 10, .72)),
@@ -1773,478 +1646,208 @@
 .portada__boxes::before { color: rgba(245, 246, 240, .48); }
 .portada__intro h2 { color: var(--texto); }
 .portada__intro .entrada__acceso-nota { color: var(--texto-2); }
-/* Cinematografía de boxes
+.entrada__acceso-panel { border-color: rgba(245, 246, 240, .16); box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95); }
 
-   Cada escena tiene tres tiempos: entrar, sostener la lectura y salir.
-   La salida no es un fade genérico: las cajas se separan, se inclinan y
-   dejan una estela distinta según la familia de contenido.
-   ========================================================================== */
-.portada-motor .portada__info {
-  --info-in: clamp(0, calc(var(--info-p, 0) * 2.5), 1);
-  --info-out: clamp(0, calc((var(--info-p, 0) - .68) * 3.125), 1);
-  isolation: isolate;
-}
-.portada-motor .portada__info::after {
-  opacity: calc(.08 + var(--info-in) * .1 + var(--info-out) * .16);
-  transform: translate3d(calc((.5 - var(--info-in)) * 18vw + var(--info-out) * 22vw + var(--vel, 0) * 14px), 0, 0) scaleX(calc(1 + var(--info-out) * .6));
-}
-.portada-motor .portada__info-cabeza {
-  --head-in: var(--info-in);
-  --head-out: var(--info-out);
-  opacity: clamp(.42, calc(.48 + var(--head-in) * .52 - var(--head-out) * .54), 1);
-  transform: translate3d(calc((1 - var(--head-in)) * -3vw + var(--head-out) * 6vw + var(--vel, 0) * 4px), calc((1 - var(--head-in)) * 30px - var(--head-out) * 22px), 0) skewX(calc((1 - var(--head-in)) * -2deg + var(--head-out) * 4deg));
-}
-.portada-motor .portada__info .portada__disciplina,
-.portada-motor .portada__info .portada__spec,
-.portada-motor .portada__info .portada__horario,
-.portada-motor .portada__info .portada__record,
-.portada-motor .portada__info .portada__evento,
-.portada-motor .portada__info .portada__promo {
-  --item-in: clamp(0, calc((var(--info-p, 0) - var(--item-delay, 0)) * 2.8), 1);
-  --item-out: clamp(0, calc((var(--info-p, 0) - (.7 + var(--item-delay, 0) * .2)) * 3.34), 1);
-  opacity: clamp(.24, calc(.42 + var(--item-in) * .58 - var(--item-out) * .55), 1);
-  transform: translate3d(calc((1 - var(--item-in)) * 34px + var(--item-out) * -58px + var(--vel, 0) * -5px), calc((1 - var(--item-in)) * 30px - var(--item-out) * 22px), 0) scale(calc(.94 + var(--item-in) * .06 - var(--item-out) * .06));
-}
-.portada-motor .portada__info--complejo .portada__disciplina {
-  clip-path: inset(0 calc((1 - var(--item-in)) * 100% + var(--item-out) * 88%) 0 0);
-  transform: translate3d(calc((1 - var(--item-in)) * -42px + var(--item-out) * 58px + var(--vel, 0) * -8px), calc((1 - var(--item-in)) * 26px - var(--item-out) * 22px), 0) skewX(calc((1 - var(--item-in)) * -3deg + var(--item-out) * 4deg));
-}
-.portada-motor .portada__info--complejo .portada__disciplina::after {
-  transform: scaleX(calc(var(--item-in) * (1 - var(--item-out))));
-  transform-origin: left center;
-}
-.portada-motor .portada__info--complejo .portada__indice { transform: translate3d(calc((1 - var(--item-in)) * -16px - var(--item-out) * 20px), 0, 0); }
-.portada-motor .portada__info--complejo .portada__disciplina h3,
-.portada-motor .portada__info--complejo .portada__disciplina p { transform: translate3d(calc((1 - var(--item-in)) * 12px + var(--item-out) * -16px), 0, 0); }
-.portada-motor .portada__info--datos .portada__spec {
-  transform: translate3d(calc((1 - var(--item-in)) * 26px + var(--item-out) * -42px), calc((1 - var(--item-in)) * 20px - var(--item-out) * 18px), 0) scale(calc(.92 + var(--item-in) * .08 - var(--item-out) * .05)) rotate(calc(var(--item-out) * -1deg));
-}
-.portada-motor .portada__info--datos .portada__spec strong {
-  transform: translate3d(calc((1 - var(--item-in)) * 18px + var(--item-out) * -24px), 0, 0) scale(calc(.84 + var(--item-in) * .16 - var(--item-out) * .08));
-}
-.portada-motor .portada__info--datos .portada__spec span { opacity: calc(.36 + var(--item-in) * .64 - var(--item-out) * .38); transform: translate3d(calc((1 - var(--item-in)) * 10px + var(--item-out) * -14px), 0, 0); }
-.portada-motor .portada__info--datos .portada__spec::after { transform: scaleX(calc(var(--item-in) * (1 - var(--item-out)))); transform-origin: left center; }
-.portada-motor .portada__info--split .portada__horario {
-  transform: translate3d(calc((1 - var(--item-in)) * 54px + var(--item-out) * -64px + var(--vel, 0) * 8px), 0, 0) skewX(calc(var(--item-out) * -2deg));
-}
-.portada-motor .portada__info--split .portada__horario::before { transform: scaleX(calc(var(--item-in) * (1 - var(--item-out)))); transform-origin: right center; }
-.portada-motor .portada__info--split .portada__horario strong { transform: translate3d(calc((1 - var(--item-in)) * 20px + var(--item-out) * -24px), 0, 0); }
-.portada-motor .portada__info--records .portada__record { transform: translate3d(calc((1 - var(--item-in)) * 52px + var(--item-out) * -72px + var(--vel, 0) * 9px), 0, 0); }
-.portada-motor .portada__info--records .portada__record span { transform: translate3d(calc((1 - var(--item-in)) * -18px + var(--item-out) * 24px), 0, 0); }
-.portada-motor .portada__info--records .portada__record strong { transform: translate3d(calc((1 - var(--item-in)) * 12px + var(--item-out) * -18px), 0, 0); }
-.portada-motor .portada__info--records .portada__record b { transform: translate3d(calc((1 - var(--item-in)) * 24px + var(--item-out) * -34px), 0, 0) skewY(calc((1 - var(--item-in)) * 5deg - var(--item-out) * 7deg)); text-shadow: 0 0 calc((var(--item-in) * (1 - var(--item-out))) * 18px) rgba(147, 210, 65, .75); }
-.portada-motor .portada__info--records .portada__record::after { transform: scaleX(calc(var(--item-in) * (1 - var(--item-out)))); }
-.portada-motor .portada__eventos-lista::before { transform: scaleX(calc(var(--info-in) * (1 - var(--info-out)))); transform-origin: left center; }
-.portada-motor .portada__info--eventos .portada__evento {
-  transform: translate3d(calc((1 - var(--item-in)) * 24px + var(--item-out) * -42px + var(--vel, 0) * 5px), calc((1 - var(--item-in)) * 30px - var(--item-out) * 22px), 0) rotate(calc((1 - var(--item-in)) * var(--evento-rot, 0deg) - var(--item-out) * var(--evento-rot, 0deg) * 1.8));
-}
-.portada-motor .portada__info--eventos .portada__evento:nth-child(2) { --evento-rot: 1.4deg; }
-.portada-motor .portada__info--eventos .portada__evento:nth-child(3) { --evento-rot: -1.4deg; }
-.portada-motor .portada__info--eventos .portada__evento::before { transform: rotate(45deg) scale(calc(var(--item-in) * (1 - var(--item-out)))); }
-.portada-motor .portada__info--eventos .portada__evento h3 { transform: translate3d(calc((1 - var(--item-in)) * 20px + var(--item-out) * -24px + var(--vel, 0) * -4px), calc((1 - var(--item-in)) * 20px - var(--item-out) * 16px), 0); clip-path: inset(0 0 calc((1 - var(--item-in)) * 100% + var(--item-out) * 100%) 0); }
-.portada-motor .portada__info--eventos .portada__evento p { opacity: calc(.34 + var(--item-in) * .66 - var(--item-out) * .42); transform: translate3d(calc((1 - var(--item-in)) * 16px + var(--item-out) * -20px), 0, 0); }
-.portada-motor .portada__info--pronto .portada__pronto-copy { transform: translate3d(calc((1 - var(--info-in)) * -32px + var(--info-out) * 48px), calc((1 - var(--info-in)) * 20px - var(--info-out) * 18px), 0) skewX(calc(var(--info-out) * 2deg)); opacity: clamp(.3, calc(.64 + var(--info-in) * .36 - var(--info-out) * .5), 1); }
-.portada-motor .portada__info--pronto .portada__pronto-visual { transform: translate3d(calc((.5 - var(--info-in)) * 22px - var(--info-out) * 42px), calc((1 - var(--info-in)) * 18px + var(--info-out) * 14px), 0) rotate(calc(var(--info-out) * 1.5deg)); }
-.portada-motor .portada__info--pronto .portada__pronto-visual img { transform: scale(calc(1.18 - var(--info-in) * .18 + var(--info-out) * .12)) translate3d(calc((.5 - var(--info-in)) * -24px + var(--info-out) * 28px + var(--vel, 0) * 6px), 0, 0); }
-.portada-motor .portada__info--pronto .portada__pronto-visual::after { opacity: calc(.35 + var(--info-in) * .45 + var(--info-out) * .18); }
-.portada-motor .portada__info--pronto > .boton { transform: translate3d(calc((1 - var(--info-in)) * 26px - var(--info-out) * 34px), 0, 0); opacity: clamp(.28, calc(.54 + var(--info-in) * .46 - var(--info-out) * .46), 1); }
-.portada-motor .portada__info--galeria figure {
-  --item-in: clamp(0, calc((var(--info-p, 0) - var(--figure-delay, 0)) * 2.4), 1);
-  --item-out: clamp(0, calc((var(--info-p, 0) - (.7 + var(--figure-delay, 0) * .2)) * 3.34), 1);
-  transform: translate3d(calc((.5 - var(--item-in)) * var(--galeria-x, 0px) + var(--item-out) * var(--galeria-x, 0px) * -1 + var(--vel, 0) * var(--galeria-v, 0px)), calc((1 - var(--item-in)) * 34px - var(--item-out) * 28px), 0) rotate(calc((1 - var(--item-in)) * var(--galeria-rot, 0deg) + var(--item-out) * var(--galeria-rot, 0deg) * -1.8));
-  clip-path: inset(0 0 calc((1 - var(--item-in)) * 16% + var(--item-out) * 18%) 0);
-}
-.portada-motor .portada__info--galeria img { transform: scale(calc(1.12 - var(--item-in) * .12 + var(--item-out) * .12)); filter: saturate(calc(.55 + var(--item-in) * .3 - var(--item-out) * .2)) contrast(1.08); }
-.portada-motor .portada__info--galeria figcaption { opacity: clamp(.26, calc(.42 + var(--item-in) * .58 - var(--item-out) * .5), 1); transform: translate3d(calc((1 - var(--item-in)) * 12px - var(--item-out) * 18px), 0, 0); }
-.portada-motor .portada__info--comunidad .portada__promo { transform: translate3d(calc((1 - var(--item-in)) * 22px + var(--item-out) * -46px + var(--vel, 0) * var(--promo-v, 0px)), calc((1 - var(--item-in)) * 26px - var(--item-out) * 22px + var(--hover-y)), 0) scale(calc(.94 + var(--item-in) * .06 - var(--item-out) * .07)) rotate(calc(var(--item-out) * var(--promo-rot, 0deg))); }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(2) { --promo-v: 4px; --promo-rot: 1deg; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(3) { --promo-v: 7px; --promo-rot: -1deg; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(4) { --promo-v: 10px; --promo-rot: 1.5deg; }
-.portada-motor .portada__info--comunidad .portada__promo:nth-child(5) { --promo-v: 13px; --promo-rot: -1.5deg; }
-.portada-motor .portada__info--comunidad .portada__promo > img { transform: scale(calc(1.16 - var(--item-in) * .16 + var(--item-out) * .14)) translate3d(calc((.5 - var(--info-in)) * 14px + var(--item-out) * 22px + var(--vel, 0) * 6px), 0, 0); filter: saturate(calc(.55 + var(--item-in) * .25 - var(--item-out) * .2)) contrast(1.1); }
-.portada-motor .portada__info--comunidad .portada__promo > span,
-.portada-motor .portada__info--comunidad .portada__promo > strong,
-.portada-motor .portada__info--comunidad .portada__promo > em { transform: translate3d(calc((1 - var(--item-in)) * 14px - var(--item-out) * 18px), 0, 0); opacity: clamp(.22, calc(.42 + var(--item-in) * .58 - var(--item-out) * .5), 1); }
-.portada-motor .portada__info--comunidad .portada__promo::after { transform: scaleX(calc(var(--item-in) * (1 - var(--item-out)))); transform-origin: left center; }
+/* --- Pie ------------------------------------------------------------------ */
+.entrada__pie-interior { flex-wrap: wrap; justify-content: space-between; gap: 10px 32px; padding-block: 28px; }
+.entrada__pie-copy { color: var(--texto-3); font: 600 .7rem/1.4 var(--mono); letter-spacing: .05em; }
 
-@media (prefers-reduced-motion: reduce) {
-  .portada-motor .portada__info { --info-in: 1 !important; --info-out: 0 !important; }
-  .portada-motor .portada__info .portada__disciplina,
-  .portada-motor .portada__info .portada__spec,
-  .portada-motor .portada__info .portada__horario,
-  .portada-motor .portada__info .portada__record,
-  .portada-motor .portada__info .portada__evento,
-  .portada-motor .portada__info .portada__promo,
-  .portada-motor .portada__info--galeria figure { --item-in: 1 !important; --item-out: 0 !important; }
-  .portada-motor .portada__info--complejo .portada__disciplina,
-  .portada-motor .portada__info--galeria figure { clip-path: none !important; }
+/* --- Adaptaciones --------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .portada__disciplinas, .portada__promos { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .portada__disciplina, .portada__promo { grid-column: span 2; }
+  .portada__disciplina:nth-child(n + 4), .portada__promo:nth-child(n + 4) { grid-column: span 3; }
+  .portada__info--split { grid-template-columns: 1fr; }
+  .portada__info--split .portada__info-cabeza { max-width: 720px; }
+}
+@media (max-width: 800px) {
+  .portada__eventos-lista { grid-template-columns: 1fr; }
+  .portada__evento { min-height: 280px; }
+  .portada__spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portada__spec:last-child { grid-column: span 2; }
+  .portada__spec--wide { padding-top: 150px; background-position: right 18px top 22px, 0 0, 0 0, 0 0, var(--card-pos, center), 0 0; background-size: auto 120px, auto, auto, auto, cover, auto; }
+}
+@media (max-width: 700px) {
+  .portada__info { padding-block: 88px; }
+  .portada__info-cabeza { grid-template-columns: minmax(0, 1fr); }
+  .portada__info .portada__info-cabeza::after { display: none; }
+  .portada__info h2 { font-size: clamp(2.5rem, 11.5vw, 4rem); }
+  .portada__disciplinas { grid-template-columns: 1fr; }
+  .portada__disciplina, .portada__disciplina:nth-child(n + 4) { grid-column: auto; min-height: 0; }
+  .portada__indice { margin-bottom: 0; font-size: 3rem; }
+  .portada__disciplina h3, .portada__disciplina p, .portada__evento h3, .portada__evento h3 + p { min-height: 0; }
+  .portada__spec { min-height: 150px; gap: 20px; }
+  .portada__spec strong { font-size: clamp(1.25rem, 5.8vw, 1.6rem); }
+  .portada__spec--wide strong { font-size: clamp(2rem, 9.4vw, 2.6rem); white-space: normal; }
+  .portada__horarios { padding: 20px; }
+  .portada__horario { grid-template-columns: minmax(0, 1fr) auto; }
+  .portada__horario::after { display: none; }
+  .portada__horario strong { font-size: 1.25rem; }
+  .portada__horario { gap: 10px; padding-inline: 12px; }
+  .portada__horario span { gap: 8px; font-size: .68rem; letter-spacing: .14em; }
+  .portada__record { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .portada__record-meta { align-items: flex-start; flex-direction: column; }
+  .portada__record-meta .boton { margin-left: 0; }
+  .portada__info--pronto { display: block; }
+  .portada__pronto-visual { width: 100%; aspect-ratio: 4 / 3; border-radius: 2px 20px 2px 20px; }
+  .portada__pronto-copy { max-width: none; padding-top: 36px; }
+  .portada__galeria { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .portada__galeria figure, .portada__galeria figure:nth-child(n) { grid-column: span 2; }
+  .portada__galeria figure:nth-child(2), .portada__galeria figure:nth-child(3) { grid-column: span 1; }
+  .portada__galeria img { height: 58vw; }
+  .portada__galeria figure:nth-child(2) img, .portada__galeria figure:nth-child(3) img { height: 78vw; }
+  .portada__galeria figure::after { top: 10px; left: 10px; }
+  .portada__promos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .portada__promo, .portada__promo:nth-child(n + 4) { grid-column: auto; min-height: 260px; padding: 18px; }
+  .portada__promo:first-child { grid-column: span 2; min-height: 340px; }
+  .portada__promo strong { font-size: 1.02rem; font-stretch: 100%; }
+  .portada__promo:first-child strong { font-size: 1.3rem; }
+  .portada__promo::after { left: 18px; }
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
 }
 
 /* ==========================================================================
-   Pase de calidad final
+   Movimiento del contenido
 
-   La interfaz gana cuando cada gesto tiene espacio. Esta capa final elimina
-   el ruido acumulado de las coreografías anteriores y deja una sola lectura:
-   entrada limpia, permanencia estable y salida ligera.
+   `--info-p` (0..1) es el paso de la escena por la pantalla y solo mueve su
+   fondo. Cada pieza recibe su propio reloj desde portada.js:
+     --item-in   0 → 1 al asomar por abajo
+     --item-out  0 → 1 al pasar bajo la cabecera
+   Entre ambos la pieza está quieta, opaca y nítida: nunca se lee a medias.
    ========================================================================== */
+.portada-motor .portada__info--complejo,
+.portada-motor .portada__info--datos,
+.portada-motor .portada__info--split,
+.portada-motor .portada__info--records,
+.portada-motor .portada__info--eventos,
+.portada-motor .portada__info--galeria,
+.portada-motor .portada__info--comunidad {
+  --info-in: clamp(0, calc(var(--info-p, .5) * 2.5), 1);
+  --info-out: clamp(0, calc((var(--info-p, .5) - .75) * 4), 1);
+  --deriva: calc(var(--info-p, .5) - .5);
+}
+.portada-motor .portada__info::before { will-change: transform; }
+.portada-motor .portada__info::after { transform: scaleX(var(--info-in)); transform-origin: left center; }
 
-.pagina-entrada .portada__info {
-  background: #080c0a;
-  background-image: radial-gradient(circle at 84% 16%, rgba(147, 210, 65, .055), transparent 28rem) !important;
-}
-.pagina-entrada .portada__info::after { content: none !important; display: none !important; background: none !important; }
-.pagina-entrada .portada__info-cabeza::after,
-.pagina-entrada .portada__info--pronto .portada__pronto-copy::after { content: none !important; display: none !important; }
-.pagina-entrada .portada__info h2 { max-width: 11ch; letter-spacing: 0; }
-.pagina-entrada .portada__info-lead { max-width: 52ch; color: #bfc8c0; }
-
-/* Complejo: cinco módulos legibles, sin recortes durante la entrada. */
-.pagina-entrada .portada__info--complejo {
-  background:
-    radial-gradient(circle at 14% 16%, rgba(147, 210, 65, .09), transparent 24rem),
-    #080c0a;
-}
-.pagina-entrada .portada__disciplinas {
-  gap: 0;
-  overflow: hidden;
-  border: 1px solid rgba(221, 231, 222, .2);
-  border-radius: 2px 22px 2px 22px;
-  background: rgba(221, 231, 222, .2);
-}
-.pagina-entrada .portada__disciplina {
-  min-height: 270px;
-  padding: 28px 24px 30px;
-  border-right: 1px solid rgba(221, 231, 222, .16);
-  background: linear-gradient(155deg, #141c17 0%, #0b100d 100%);
-  clip-path: none !important;
-  transition: background 300ms ease, border-color 300ms ease;
-}
-.pagina-entrada .portada__disciplina:last-child { border-right: 0; }
-.pagina-entrada .portada__disciplina::before { opacity: .28; }
-.pagina-entrada .portada__disciplina::after {
-  right: 24px;
-  bottom: 22px;
-  left: 24px;
-  height: 2px;
-  box-shadow: 0 0 14px rgba(147, 210, 65, .45);
-}
-.pagina-entrada .portada__disciplina h3 { max-width: 13ch; font-size: clamp(1.03rem, 1.4vw, 1.28rem); line-height: 1.02; }
-.pagina-entrada .portada__disciplina p { max-width: 23ch; color: #aeb9b0; }
-.pagina-entrada .portada__indice { letter-spacing: .14em; }
-/* Datos: precisión y respiración, sin prefijos que interfieran con las cifras. */
-.pagina-entrada .portada__info--datos {
-  background:
-    linear-gradient(115deg, rgba(147, 210, 65, .035), transparent 42%),
-    #070a09;
-}
-.pagina-entrada .portada__spec-grid { gap: 12px; }
-.pagina-entrada .portada__spec {
-  min-height: 156px;
-  padding: 24px;
-  border-color: rgba(221, 231, 222, .18);
-  background: linear-gradient(145deg, #111814, #0b100d);
-}
-.pagina-entrada .portada__spec--wide { background: linear-gradient(135deg, rgba(147, 210, 65, .14), #101711 68%); }
-.pagina-entrada .portada__spec span::before { content: none !important; display: none !important; }
-.pagina-entrada .portada__spec strong { letter-spacing: 0; }
-.pagina-entrada .portada__spec span { color: #aab5ac; }
-.pagina-entrada .portada__spec::before { width: 28px; }
-
-/* Horarios y records: el fondo acompaña, nunca compite con la información. */
-.pagina-entrada .portada__info--split {
-  background:
-    linear-gradient(90deg, rgba(7, 10, 9, .98) 0%, rgba(7, 10, 9, .91) 43%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/horarios-fondo.webp') center / cover;
-}
-.pagina-entrada .portada__info--records {
-  background:
-    linear-gradient(90deg, rgba(8, 12, 10, .98) 0%, rgba(8, 12, 10, .9) 48%, rgba(8, 12, 10, .68) 100%),
-    url('../images/contenido/records-fondo.webp') center / cover;
-}
-.pagina-entrada .portada__horarios::before { content: none !important; display: none !important; }
-.pagina-entrada .portada__horario { padding-block: 24px; }
-.pagina-entrada .portada__horario strong { font-size: clamp(1rem, 1.45vw, 1.2rem); letter-spacing: .02em; }
-.pagina-entrada .portada__record { padding-block: 23px; }
-.pagina-entrada .portada__record strong { font-size: clamp(1.05rem, 1.5vw, 1.3rem); }
-.pagina-entrada .portada__record b { font-size: clamp(1.2rem, 1.8vw, 1.5rem); }
-
-/* Eventos: tres tarjetas alineadas, con una sola señal de acento. */
-.pagina-entrada .portada__info--eventos {
-  background:
-    linear-gradient(135deg, rgba(11, 17, 13, .93), rgba(5, 7, 6, .97)),
-    url('../images/contenido/eventos-fondo.webp') center / cover;
-}
-.pagina-entrada .portada__eventos-lista { gap: 16px; }
-.pagina-entrada .portada__evento {
-  min-height: 248px;
-  padding: 26px;
-  border-color: rgba(221, 231, 222, .2);
-  border-radius: 2px 16px 2px 16px;
-  background: linear-gradient(145deg, rgba(14, 20, 16, .9), rgba(5, 7, 6, .91));
-}
-.pagina-entrada .portada__evento::after { content: none !important; display: none !important; }
-.pagina-entrada .portada__evento::before { top: 7px; left: 26px; width: 10px; height: 10px; }
-.pagina-entrada .portada__evento h3 { max-width: 16ch; font-size: clamp(1.2rem, 1.7vw, 1.55rem); }
-
-/* Próximo: la lona queda estática; la imagen hace el trabajo de profundidad. */
-.pagina-entrada .portada__info--pronto {
-  animation: none;
-  background:
-    repeating-linear-gradient(-45deg, rgba(147, 210, 65, .045) 0 12px, transparent 12px 24px),
-    #080c0a;
-}
-.pagina-entrada .portada__info--pronto h2 { font-size: clamp(3.2rem, 7vw, 7rem); }
-.pagina-entrada .portada__pronto-visual { border-radius: 2px 20px 2px 20px; }
-
-/* Galería y tienda: marcos claros, imágenes protagonistas y copy estable. */
-.pagina-entrada .portada__galeria figure::after { content: none !important; display: none !important; }
-.pagina-entrada .portada__galeria figure::before { border-color: rgba(221, 231, 222, .22); }
-.pagina-entrada .portada__galeria img { filter: saturate(.9) contrast(1.08); }
-.pagina-entrada .portada__promos { gap: 16px; }
-.pagina-entrada .portada__promo {
-  min-height: 344px;
-  padding: 26px;
-  border-radius: 2px 18px 2px 18px;
-  border-color: rgba(221, 231, 222, .2);
-  background: #0b100d;
-}
-.pagina-entrada .portada__promo::before { background: linear-gradient(180deg, rgba(5, 7, 6, .08), rgba(5, 7, 6, .96) 84%); }
-.pagina-entrada .portada__promo span { color: #c2cbc3; }
-.pagina-entrada .portada__promo strong { font-size: clamp(1.08rem, 1.45vw, 1.3rem); }
-
-/* Una única coreografía: entra con desplazamiento corto y sale sin deformarse. */
-.portada-motor .pagina-entrada .portada__info-cabeza,
-.pagina-motor .portada__info-cabeza { filter: none; }
-.portada-motor .portada__info-cabeza {
-  opacity: clamp(.76, calc(.76 + var(--info-in, 1) * .24 - var(--info-out, 0) * .16), 1);
-  transform: translate3d(calc((1 - var(--info-in, 1)) * -18px + var(--info-out, 0) * 24px), calc((1 - var(--info-in, 1)) * 22px - var(--info-out, 0) * 12px), 0);
-}
+/* Familia común: sube al entrar y se retira hacia arriba al salir. */
+.portada-motor .portada__info-cabeza,
 .portada-motor .portada__info .portada__disciplina,
 .portada-motor .portada__info .portada__spec,
-.portada-motor .portada__info .portada__horario,
-.portada-motor .portada__info .portada__record,
+.portada-motor .portada__info .portada__horarios,
+.portada-motor .portada__info .portada__record-meta,
 .portada-motor .portada__info .portada__evento,
-.portada-motor .portada__info .portada__promo {
-  opacity: clamp(.62, calc(.62 + var(--item-in, 1) * .38 - var(--item-out, 0) * .18), 1);
-  transform: translate3d(calc((1 - var(--item-in, 1)) * 18px + var(--item-out, 0) * -18px), calc((1 - var(--item-in, 1)) * 22px + var(--item-out, 0) * -10px), 0) scale(calc(.98 + var(--item-in, 1) * .02 - var(--item-out, 0) * .02));
-}
-.portada-motor .portada__info--complejo .portada__disciplina { clip-path: none !important; }
-.portada-motor .portada__info--eventos .portada__evento,
-.portada-motor .portada__info--comunidad .portada__promo { rotate: none; }
-.portada-motor .portada__info--galeria figure { clip-path: none; }
-
-@media (max-width: 980px) {
-  .pagina-entrada .portada__disciplina { min-height: 238px; }
-  .pagina-entrada .portada__promos { gap: 12px; }
+.portada-motor .portada__info .portada__pronto-copy,
+.portada-motor .portada__info .portada__promo,
+.portada-motor .portada__comunidad-cierre {
+  opacity: calc(var(--item-in, 1) - var(--item-out, 0) * .9);
+  transform: translate3d(0, calc((1 - var(--item-in, 1)) * 44px - var(--item-out, 0) * 32px), 0);
+  will-change: transform, opacity;
 }
 
-@media (max-width: 700px) {
-  .pagina-entrada .portada__info { padding-block: 78px; }
-  .pagina-entrada .portada__info h2 { max-width: 9ch; }
-  .pagina-entrada .portada__disciplina { min-height: 214px; border-right: 0; border-bottom: 1px solid rgba(221, 231, 222, .16); }
-  .pagina-entrada .portada__disciplina:last-child { border-bottom: 0; }
-  .pagina-entrada .portada__evento { min-height: 216px; }
-  .pagina-entrada .portada__promo { min-height: 286px; }
+/* Cabecera: la raya del rótulo se traza y el titular sube tras ella. */
+.portada-motor .portada__eyebrow::before { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
+.portada-motor .portada__info-cabeza h2 { transform-origin: 0 100%; transform: translate3d(0, calc((1 - var(--item-in, 1)) * 24px), 0) skewY(calc(var(--vel, 0) * -2deg)); }
+
+/* 01 Estaciones: cortina diagonal de izquierda a derecha. */
+.portada-motor .portada__info--complejo .portada__disciplina {
+  clip-path: inset(0 calc((1 - var(--item-in, 1)) * 100%) 0 0 round 2px 20px 2px 20px);
+  transform: translate3d(calc((1 - var(--item-in, 1)) * -28px), calc((1 - var(--item-in, 1)) * 24px - var(--item-out, 0) * 32px), 0);
 }
+.portada-motor .portada__info--complejo .portada__disciplina::after { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
+.portada-motor .portada__info--complejo .portada__indice { transform: translate3d(calc((1 - var(--item-in, 1)) * -24px), 0, 0); }
+
+/* 02 Telemetría: la cifra enfoca como una lectura que se estabiliza. */
+.portada-motor .portada__info--datos .portada__spec {
+  --lectura: clamp(0, calc(var(--item-in, 1) - var(--item-out, 0)), 1);
+  opacity: 1;
+  transform: none;
+}
+.portada-motor .portada__info--datos .portada__spec strong {
+  opacity: var(--lectura);
+  clip-path: inset(-.2em calc((1 - var(--item-in, 1)) * 100%) -.2em 0);
+  transform: translate3d(calc((1 - var(--item-in, 1)) * 18px), calc(var(--item-out, 0) * -16px), 0);
+}
+.portada-motor .portada__info--datos .portada__spec span { opacity: var(--lectura); transform: translate3d(calc((1 - var(--item-in, 1)) * 10px), 0, 0); }
+.portada-motor .portada__info--datos .portada__spec::before { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
+
+/* 03 Pit lane: cada jornada entra por la derecha y traza su guía. */
+.portada-motor .portada__info--split .portada__horario {
+  opacity: calc(var(--item-in, 1) - var(--item-out, 0) * .9);
+  transform: translate3d(calc((1 - var(--item-in, 1)) * 40px), 0, 0);
+}
+.portada-motor .portada__info--split .portada__horario::after { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
+.portada-motor .portada__info--split .portada__horario strong { transform: translate3d(calc((1 - var(--item-in, 1)) * 24px), 0, 0); }
+
+/* 04 Cronometraje: las filas entran como una tabla que se actualiza. */
+.portada-motor .portada__info--records .portada__record {
+  opacity: calc(var(--item-in, 1) - var(--item-out, 0) * .9);
+  transform: translate3d(calc((1 - var(--item-in, 1)) * -40px), 0, 0);
+}
+.portada-motor .portada__info--records .portada__record b { transform: translate3d(calc((1 - var(--item-in, 1)) * 28px), 0, 0); }
+
+/* 05 Calendario: las fechas llegan en parrilla, de izquierda a derecha. */
+.portada-motor .portada__info--eventos .portada__evento {
+  transform: translate3d(0, calc((1 - var(--item-in, 1)) * 52px - var(--item-out, 0) * 32px), 0) rotate(calc((1 - var(--item-in, 1)) * var(--evento-rot, 0deg)));
+}
+.portada-motor .portada__info--eventos .portada__evento:nth-child(1) { --evento-rot: -1.2deg; }
+.portada-motor .portada__info--eventos .portada__evento:nth-child(3) { --evento-rot: 1.2deg; }
+.portada-motor .portada__info--eventos .portada__evento h3 { transform: translate3d(0, calc((1 - var(--item-in, 1)) * 18px), 0); }
+.portada-motor .portada__info--eventos .portada__evento-fecha b { display: inline-block; transform: translate3d(calc((1 - var(--item-in, 1)) * -20px), 0, 0); }
+
+/* 06 Lona: el auto cubierto se acerca desde la oscuridad. */
+.portada-motor .portada__info--pronto .portada__pronto-visual {
+  opacity: calc(.2 + var(--item-in, 1) * .8 - var(--item-out, 0) * .8);
+  transform: translate3d(0, calc(var(--item-out, 0) * -32px), 0);
+}
+/* La foto se acerca al entrar y se desliza dentro del marco con el paso de la escena. */
+.portada-motor .portada__info--pronto .portada__pronto-visual img { transform: scale(calc(1.18 - var(--item-in, 1) * .1)) translate3d(0, calc((.5 - var(--info-p, .5)) * 6%), 0); transform-origin: 50% 60%; }
+
+/* 07 Contactos: cada foto se revela de abajo arriba. */
+.portada-motor .portada__info--galeria figure {
+  clip-path: inset(calc((1 - var(--item-in, 1)) * 30%) 0 0 0 round 2px 20px 2px 20px);
+  opacity: calc(1 - var(--item-out, 0) * .9);
+  transform: translate3d(0, calc((1 - var(--item-in, 1)) * 36px - var(--item-out, 0) * 32px), 0);
+  will-change: transform, clip-path;
+}
+/* Cada foto se asienta al entrar y flota dentro de su marco con el scroll. */
+.portada-motor .portada__info--galeria .portada__galeria-card img { transform: scale(calc(1.16 - var(--item-in, 1) * .08)) translate3d(0, calc((.5 - var(--info-p, .5)) * 5%), 0); }
+.portada-motor .portada__info--galeria .portada__galeria figcaption { opacity: var(--item-in, 1); transform: translate3d(0, calc((1 - var(--item-in, 1)) * 20px), 0); }
+
+/* 08 Catálogo: fichas que suben, foto que se asienta y rótulos que llegan. */
+.portada-motor .portada__info--comunidad .portada__promo { transform: translate3d(0, calc((1 - var(--item-in, 1)) * 48px - var(--item-out, 0) * 32px), 0); }
+.portada-motor .portada__info--comunidad .portada__promo > img { transform: scale(calc(1.12 - var(--item-in, 1) * .12)); }
+.portada-motor .portada__info--comunidad .portada__promo > span,
+.portada-motor .portada__info--comunidad .portada__promo > strong,
+.portada-motor .portada__info--comunidad .portada__promo > em { transform: translate3d(calc((1 - var(--item-in, 1)) * 16px), 0, 0); }
+@media (hover: hover) {
+  .portada-motor .portada__info--comunidad a.portada__promo:hover > img { transform: scale(1.06); }
+}
+
+/* El cronómetro está vivo: su señal late mientras hay movimiento. */
+@keyframes portadaPulsoVerde {
+  0%, 100% { opacity: .4; transform: scale(.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.portada-motor .portada__record-meta span:first-child::before { animation: portadaPulsoVerde 2.2s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .pagina-entrada .portada__info-cabeza,
-  .pagina-entrada .portada__info .portada__disciplina,
-  .pagina-entrada .portada__info .portada__spec,
-  .pagina-entrada .portada__info .portada__horario,
-  .pagina-entrada .portada__info .portada__record,
-  .pagina-entrada .portada__info .portada__evento,
-  .pagina-entrada .portada__info .portada__promo { opacity: 1 !important; transform: none !important; }
-}
-
-/* Fondos de lectura: última capa para que ninguna regla de acabado opaque
-   las escenas editoriales asignadas a cada caja de texto. */
-.pagina-entrada .portada__info.portada__info--complejo,
-.pagina-entrada .portada__info.portada__info--datos,
-.pagina-entrada .portada__info.portada__info--split,
-.pagina-entrada .portada__info.portada__info--records,
-.pagina-entrada .portada__info.portada__info--eventos,
-.pagina-entrada .portada__info.portada__info--pronto,
-.pagina-entrada .portada__info.portada__info--galeria,
-.pagina-entrada .portada__info.portada__info--comunidad {
-  background-repeat: repeat, repeat, no-repeat, no-repeat !important;
-  background-position: 0 0, 0 0, center, center !important;
-  background-size: 42px 42px, 42px 42px, cover, cover !important;
-}
-.pagina-entrada .portada__info.portada__info--complejo {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .97) 0%, rgba(7, 10, 9, .9) 38%, rgba(7, 10, 9, .62) 78%, rgba(7, 10, 9, .76) 100%),
-    url('../images/contenido/complejo-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--datos {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .92) 0%, rgba(7, 10, 9, .82) 48%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/datos-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--split {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .97) 0%, rgba(7, 10, 9, .88) 34%, rgba(7, 10, 9, .54) 72%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/horarios-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--records {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(8, 12, 10, .97) 0%, rgba(8, 12, 10, .9) 38%, rgba(8, 12, 10, .58) 76%, rgba(8, 12, 10, .74) 100%),
-    url('../images/contenido/records-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--eventos {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .95) 0%, rgba(7, 10, 9, .84) 48%, rgba(7, 10, 9, .68) 100%),
-    url('../images/contenido/eventos-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--pronto {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .96) 0%, rgba(7, 10, 9, .82) 44%, rgba(7, 10, 9, .6) 78%, rgba(7, 10, 9, .78) 100%),
-    url('../images/contenido/pronto-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--galeria {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 10, 9, .95) 0%, rgba(7, 10, 9, .8) 54%, rgba(7, 10, 9, .72) 100%),
-    url('../images/contenido/galeria-fondo.webp') !important;
-}
-.pagina-entrada .portada__info.portada__info--comunidad {
-  background-image:
-    linear-gradient(90deg, rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(rgba(147, 210, 65, .018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(5, 7, 6, .95) 0%, rgba(5, 7, 6, .82) 42%, rgba(5, 7, 6, .7) 100%),
-    url('../images/contenido/comunidad-fondo.webp') !important;
-}
-.pagina-entrada .portada__panel--texto {
-  background:
-    linear-gradient(135deg, rgba(8, 12, 10, .93), rgba(8, 12, 10, .72)),
-    url('../images/contenido/pista-texto-fondo.webp') center / cover !important;
-}
-.pagina-entrada .portada__boxes {
-  background:
-    radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .1), transparent 25rem),
-    linear-gradient(90deg, rgba(7, 10, 9, .94) 0%, rgba(7, 10, 9, .82) 50%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/acceso-fondo.webp') center / cover !important;
-  color: var(--texto);
-}
-.pagina-entrada .portada__boxes::before { color: rgba(245, 246, 240, .48); }
-.pagina-entrada .portada__intro h2 { color: var(--texto); }
-.pagina-entrada .portada__intro .entrada__acceso-nota { color: var(--texto-2); }
-
-/* Tarjetas editoriales: cada caja de contenido tiene su propia escena, pero
-   conserva la misma capa de contraste, borde y tratamiento tipográfico. */
-.pagina-entrada .portada__recta-cabeza {
-  padding: clamp(24px, 4vw, 48px);
-  border: 1px solid rgba(221, 231, 222, .16);
-  background-image:
-    linear-gradient(135deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .62)),
-    url('../images/contenido/tarjetas/recta-cabeza-fondo.webp') !important;
-  background-position: center !important;
-  background-size: cover !important;
-  background-repeat: no-repeat !important;
-}
-
-.pagina-entrada .portada__disciplina,
-.pagina-entrada .portada__spec,
-.pagina-entrada .portada__horario,
-.pagina-entrada .portada__record,
-.pagina-entrada .portada__evento,
-.pagina-entrada .portada__promo,
-.pagina-entrada .portada__galeria figcaption {
-  background-color: #080d0a !important;
-  background-repeat: no-repeat !important;
-  background-size: cover !important;
-}
-
-.pagina-entrada .portada__disciplina,
-.pagina-entrada .portada__spec,
-.pagina-entrada .portada__horario,
-.pagina-entrada .portada__record,
-.pagina-entrada .portada__evento,
-.pagina-entrada .portada__promo {
-  background-image:
-    linear-gradient(145deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .64) 55%, rgba(7, 10, 9, .88)),
-    var(--card-fondo) !important;
-  background-position: center !important;
-}
-
-.pagina-entrada .portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); background-position: 72% center !important; }
-.pagina-entrada .portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); background-position: 38% center !important; }
-.pagina-entrada .portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); background-position: 68% center !important; }
-.pagina-entrada .portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); background-position: center !important; }
-.pagina-entrada .portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); background-position: 74% center !important; }
-
-.pagina-entrada .portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); background-position: center !important; }
-.pagina-entrada .portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); background-position: 70% center !important; }
-.pagina-entrada .portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); background-position: center 38% !important; }
-.pagina-entrada .portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); background-position: 58% center !important; }
-.pagina-entrada .portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); background-position: center 62% !important; }
-.pagina-entrada .portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); background-position: center !important; }
-.pagina-entrada .portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); background-position: 68% center !important; }
-.pagina-entrada .portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); background-position: 32% center !important; }
-
-.pagina-entrada .portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); background-position: 68% center !important; }
-.pagina-entrada .portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); background-position: 30% center !important; }
-.pagina-entrada .portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); background-position: 64% center !important; }
-.pagina-entrada .portada__horario { padding-inline: 20px !important; border: 1px solid rgba(221, 231, 222, .14); margin-bottom: 8px; }
-
-.pagina-entrada .portada__record:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/record-danilo-fondo.webp'); background-position: 72% center !important; }
-.pagina-entrada .portada__record:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/record-stalin-fondo.webp'); background-position: 32% center !important; }
-.pagina-entrada .portada__record:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/record-marco-fondo.webp'); background-position: 62% center !important; }
-.pagina-entrada .portada__record { padding-inline: 20px !important; border: 1px solid rgba(221, 231, 222, .14); margin-bottom: 8px; }
-
-.pagina-entrada .portada__evento:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/evento-experiencia-fondo.webp'); background-position: 68% center !important; }
-.pagina-entrada .portada__evento:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/evento-drift-fondo.webp'); background-position: 32% center !important; }
-.pagina-entrada .portada__evento:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/evento-campeonato-fondo.webp'); background-position: 64% center !important; }
-
-.pagina-entrada .portada__galeria figcaption {
-  --caption-fondo: url('../images/landing/miniapolis-track-atmosphere.webp');
-  padding: 14px 16px;
-  border: 1px solid rgba(221, 231, 222, .16);
-  color: #c5cec6;
-  background-image:
-    linear-gradient(135deg, rgba(7, 10, 9, .84), rgba(7, 10, 9, .62)),
-    var(--caption-fondo) !important;
-  background-position: center !important;
-  background-size: cover !important;
-  background-repeat: no-repeat !important;
-}
-.pagina-entrada .portada__galeria figure:nth-child(2) figcaption { --caption-fondo: url('../images/landing/miniapolis-track-portrait.webp'); background-position: 62% center !important; }
-.pagina-entrada .portada__galeria figure:nth-child(3) figcaption { --caption-fondo: url('../images/pista/miniapolis-track-wide.webp'); background-position: 38% center !important; }
-
-.pagina-entrada .portada__promo:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); background-position: 68% center !important; }
-.pagina-entrada .portada__promo:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); background-position: 34% center !important; }
-.pagina-entrada .portada__promo:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/promo-llantas-fondo.webp'); background-position: 64% center !important; }
-.pagina-entrada .portada__promo:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/promo-motor-fondo.webp'); background-position: 42% center !important; }
-.pagina-entrada .portada__promo:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/promo-builder-fondo.webp'); background-position: 72% center !important; }
-.pagina-entrada .portada__promo::before { background: linear-gradient(180deg, rgba(5, 7, 6, .3), rgba(5, 7, 6, .9) 84%); }
-.pagina-entrada .portada__promo > img { opacity: .58; }
-
-.pagina-entrada .entrada__acceso-panel {
-  background-image:
-    linear-gradient(145deg, rgba(8, 12, 10, .94), rgba(8, 12, 10, .72)),
-    url('../images/oficial/miniapolis-bandera-hero.webp') !important;
-  background-position: center !important;
-  background-size: cover !important;
-  background-repeat: no-repeat !important;
-}
-
-@media (max-width: 700px) {
-  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
-  .pagina-entrada .portada__horario,
-  .pagina-entrada .portada__record { padding-inline: 14px !important; }
+  .portada-motor .portada__info { --info-in: 1 !important; --info-out: 0 !important; --deriva: 0 !important; }
+  .portada__info *,
+  .portada__info::before,
+  .portada__info::after { --item-in: 1 !important; --item-out: 0 !important; transition: none !important; }
+  .portada__info .portada__info-cabeza,
+  .portada__info .portada__disciplina,
+  .portada__info .portada__spec,
+  .portada__info .portada__horario,
+  .portada__info .portada__record,
+  .portada__info .portada__evento,
+  .portada__info .portada__promo,
+  .portada__info--galeria figure,
+  .portada__info--datos .portada__spec strong { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  .portada__record-meta span::before { animation: none !important; }
+  .portada__pronto-visual img,
+  .portada__evento-fondo,
+  .portada__info--galeria img { transform: none !important; }
 }
 
 /* ==========================================================================

@@ -7,7 +7,8 @@
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, digitosDe, easeOutCubic, entradaPanel, fase, lucesEncendidas, progresoCifra, progresoMaximo,
+  crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, lucesEncendidas, progresoCifra,
+  progresoMaximo, salidaPieza,
 } from './portada-motor.js';
 
 const raiz = document.documentElement;
@@ -285,6 +286,23 @@ function montarBoxes(motor) {
 // Información: la ficha entra como un tablero de boxes, bloque a bloque.
 // ---------------------------------------------------------------------------
 
+/** Piezas con reloj propio: entran al asomar, se leen quietas y salen bajo la cabecera. */
+const PIEZAS = [
+  '.portada__info-cabeza',
+  '.portada__disciplina',
+  '.portada__spec',
+  '.portada__horarios',
+  '.portada__horario',
+  '.portada__record',
+  '.portada__record-meta',
+  '.portada__evento',
+  '.portada__pronto-visual',
+  '.portada__pronto-copy',
+  '.portada__galeria figure',
+  '.portada__promo',
+  '.portada__comunidad-cierre',
+].join(', ');
+
 function montarInformacion(motor) {
   const escenas = ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad'];
   const secciones = escenas.flatMap((escena) => $$(`[data-escena="${escena}"]`));
@@ -296,6 +314,36 @@ function montarInformacion(motor) {
       alActualizar: (p) => seccion.style.setProperty('--info-p', fase(p, 0, 1).toFixed(3)),
     });
   });
+
+  // La columna y el techo se miden al montar y al cambiar el tamaño, nunca
+  // dentro del fotograma: leer el layout mientras se escriben variables lo
+  // forzaría una vez por pieza.
+  const cabecera = $('.entrada__barra');
+  let techo = 82;
+  const columnas = new Map();
+  const medirPiezas = () => {
+    techo = cabecera?.offsetHeight || 82;
+    for (const pieza of columnas.keys()) {
+      const padre = pieza.parentElement;
+      const ancho = padre?.clientWidth || 1;
+      const izquierda = pieza.getBoundingClientRect().left - (padre?.getBoundingClientRect().left ?? 0);
+      columnas.set(pieza, Math.max(0, Math.min(1, izquierda / ancho)));
+    }
+  };
+
+  $$(PIEZAS).forEach((pieza) => {
+    columnas.set(pieza, 0);
+    const escena = motor.registrar(pieza, {
+      modo: 'vista',
+      alActualizar: (p, { alto }) => {
+        const arriba = alto - p * (alto + escena.alto);
+        const retraso = columnas.get(pieza) * alto * 0.14;
+        pieza.style.setProperty('--item-in', entradaPieza(arriba, alto, retraso).toFixed(3));
+        pieza.style.setProperty('--item-out', salidaPieza(arriba, escena.alto, techo).toFixed(3));
+      },
+    });
+  });
+  motor.alMedir(medirPiezas);
 
   const observador = new IntersectionObserver((entradas) => {
     for (const entrada of entradas) {
