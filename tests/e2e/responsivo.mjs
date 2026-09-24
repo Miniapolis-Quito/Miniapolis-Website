@@ -252,8 +252,13 @@ for (const movimiento of ['no-preference', 'reduce']) {
       }
       scrollTo(0, fin);
     });
-    // El motor suaviza el recorrido: se le da tiempo a llegar al final.
-    await anon.waitForTimeout(2500);
+    // El motor suaviza el recorrido: se espera a que el panel deje de moverse
+    // (con la máquina cargada tarda más), no un tiempo fijo.
+    await anon.waitForFunction(() => new Promise((resolver) => {
+      const ultimo = [...document.querySelectorAll('.portada__riel .portada__panel')].at(-1);
+      const antes = ultimo.getBoundingClientRect().left;
+      setTimeout(() => resolver(Math.abs(ultimo.getBoundingClientRect().left - antes) < 0.5), 400);
+    }), null, { timeout: 15000, polling: 100 }).catch(() => {});
     const caja = await anon.evaluate(() => {
       const r = [...document.querySelectorAll('.portada__riel .portada__panel')].at(-1).getBoundingClientRect();
       return { izq: r.left, der: r.right, vw: document.documentElement.clientWidth };

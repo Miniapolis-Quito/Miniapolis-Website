@@ -1898,3 +1898,10 @@
 @media (max-height: 760px) {
   .portada-fija .portada__panel--texto { padding: clamp(16px, 3svh, 28px) clamp(20px, 3vw, 40px); }
 }
+
+/* Teléfonos de 320-380 px: la hora ocupa casi toda la fila y la jornada
+   quedaba en 58 px. Se apilan: jornada arriba, hora debajo. */
+@media (max-width: 380px) {
+  .portada__horario { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .portada__horario strong { justify-self: start; }
+}
