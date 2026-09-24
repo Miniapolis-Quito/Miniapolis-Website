@@ -10,6 +10,7 @@ import {
   crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, lucesEncendidas, progresoCifra,
   progresoMaximo, salidaPieza,
 } from './portada-motor.js';
+import { montarEfectos, montarHorarioVivo, montarVolverArriba } from './portada-efectos.js';
 
 const raiz = document.documentElement;
 const reducir = sinMovimiento();
@@ -80,11 +81,16 @@ function montarHalos() {
       const y = ((evento.clientY - rect.top) / rect.height) * 100;
       pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
       pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
+      // Profundidad: lo que va dentro de la ficha se desplaza un poco contra el puntero.
+      pieza.style.setProperty('--px', (x / 50 - 1).toFixed(3));
+      pieza.style.setProperty('--py', (y / 50 - 1).toFixed(3));
     };
     const limpiar = () => {
       rect = null;
       pieza.style.removeProperty('--spot-x');
       pieza.style.removeProperty('--spot-y');
+      pieza.style.removeProperty('--px');
+      pieza.style.removeProperty('--py');
     };
     pieza.addEventListener('pointerenter', medir, { passive: true });
     pieza.addEventListener('pointermove', actualizar, { passive: true });
@@ -360,6 +366,8 @@ function montarInformacion(motor) {
 
 montarMira();
 montarHalos();
+montarHorarioVivo();
+montarVolverArriba();
 
 if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
   montarProgresoSimple();
@@ -372,6 +380,7 @@ if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserv
   montarRecta(motor);
   montarInformacion(motor);
   montarBoxes(motor);
+  montarEfectos(motor);
   motor.iniciar();
   arrancarSalida();
 }
