@@ -642,6 +642,13 @@
   .portada__salida-copy { max-width: min(56vw, 600px); }
 }
 
+/* En una pantalla horizontal baja la cabecera de la recta comparte el plano
+   con la primera foto: súbela un poco para que el título nunca la muerda. */
+@media (min-width: 900px) and (max-height: 650px) and (orientation: landscape) {
+  .portada-fija .portada__recta-cabeza { top: calc(var(--altura-cabecera) + 1.5svh); }
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .portada__panel img { filter: none; }
 }
@@ -668,28 +675,18 @@
   will-change: transform, opacity;
 }
 
-/* Luces fuera: el titular entra de golpe, letra por letra, desde su máscara.
-   Con el scroll, cada letra sale por arriba a su propio ritmo. */
+/* Luces fuera: el titular entra letra a letra (portada-efectos.css). Con el
+   scroll, cada letra sale volando hacia arriba a su propio ritmo. */
 .portada__linea:nth-child(2) { --i: 1; }
-.portada__letras { display: inline-block; white-space: nowrap; }
-.portada__letra { display: inline-block; }
-.portada-motor .portada__letra {
-  opacity: 0;
-  transform: translate3d(0, 118%, 0) rotate(14deg);
-  transform-origin: 0 100%;
+.portada-motor .portada__linea .letra {
   translate: 0 calc(max(0, var(--p, 0) - .05) * var(--dy, 80%) * -1.5);
-  rotate: calc(max(0, var(--p, 0) - .05) * var(--giro, 0deg) * 2.2);
+  rotate: calc(max(0, var(--p, 0) - .05) * var(--giro-letra, 0deg) * 2.2);
 }
-/* Terminada la entrada, la máscara se suelta: al hacer scroll las letras
-   vuelan enteras, nunca cortadas a medias. */
+/* Terminada la entrada, la máscara se suelta: las letras vuelan enteras,
+   nunca cortadas a medias. La línea verde conserva su respiración. */
 .portada-listos .portada__linea { animation: linea-libre 1ms linear calc(var(--espera, 1250ms) + 1500ms) forwards; }
+.portada-listos .portada__linea.portada__linea--acento { animation: linea-libre 1ms linear calc(var(--espera, 1250ms) + 1500ms) forwards, respiraVerde 3.6s ease-in-out 2.4s infinite; }
 @keyframes linea-libre { to { overflow: visible; } }
-.portada-listos .portada__letra {
-  opacity: 1;
-  transform: none;
-  transition: transform 1100ms var(--salida), opacity 500ms linear;
-  transition-delay: calc(var(--espera, 1250ms) + var(--c, 0) * 42ms);
-}
 .portada-rapido { --espera: 0ms; }
 
 .portada-motor .portada__kicker,
@@ -1650,25 +1647,26 @@
   background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 20px 20px;
   transform: skewX(-16deg);
 }
-.portada__comunidad-cierre > span:not(.portada__luz-palabra) { color: var(--acento); }
+/* Solo el tramo final va en verde: las palabras sueltas del resto de la frase no. */
+.portada__comunidad-cierre > span:not(.palabra) { color: var(--acento); }
 
 
 /* --- Una escena por tarjeta ---------------------------------------------- */
 /* Cada caja tiene su propia foto de pista, siempre bajo el mismo velo: la
    textura cambia, la lectura no. */
-.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); --card-pos: 72% center; }
+.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista-real/pista-amplia.jpeg'); --card-pos: 54% center; }
 .portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); --card-pos: 38% center; }
 .portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); --card-pos: 68% center; }
 .portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); }
 .portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); --card-pos: 74% center; }
-.portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
-.portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); --card-pos: 70% center; }
-.portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); --card-pos: center 38%; }
-.portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); --card-pos: 58% center; }
-.portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); --card-pos: center 62%; }
-.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); }
+.portada__spec:nth-child(1) { --card-fondo: url('../images/pista-real/hangar-recta.jpeg'); --card-pos: 60% center; }
+.portada__spec:nth-child(2) { --card-fondo: url('../images/pista-real/pista-baja.jpeg'); --card-pos: 52% center; }
+.portada__spec:nth-child(3) { --card-fondo: url('../images/pista-real/recta-pilotos.jpeg'); --card-pos: 44% center; }
+.portada__spec:nth-child(4) { --card-fondo: url('../images/pista-real/coche-salida.jpeg'); --card-pos: 56% center; }
+.portada__spec:nth-child(5) { --card-fondo: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 58% center; }
+.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 50% center; }
 .portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
-.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); --card-pos: 32% center; }
+.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-hangar-vertical.webp'); --card-pos: 42% center; }
 .portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
 .portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
 .portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
@@ -1921,15 +1919,97 @@
   .portada__info--galeria img { transform: none !important; }
 }
 
+/* ========================================================================== 
+   Dirección de arte final: una escena distinta por caja, misma lectura
+   ========================================================================== */
+
+/* El fondo debe reconocerse: el velo sigue protegiendo el texto, pero deja
+   respirar la textura y el color propios de cada fotografía. */
+.pagina-entrada .portada__disciplina {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .58), rgba(7, 10, 9, .34) 55%, rgba(7, 10, 9, .78)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__spec:not(.portada__spec--wide) {
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .08), transparent 55%),
+    linear-gradient(145deg, rgba(11, 16, 13, .72), rgba(11, 16, 13, .56)),
+    var(--card-fondo, none);
+  background-position: center, center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__horario {
+  background-image:
+    linear-gradient(90deg, rgba(7, 10, 9, .82), rgba(7, 10, 9, .58)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__record {
+  background-image:
+    linear-gradient(90deg, rgba(7, 10, 9, .82), rgba(7, 10, 9, .56)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__record--primero {
+  background-image:
+    linear-gradient(90deg, rgba(147, 210, 65, .16), rgba(147, 210, 65, .03) 58%, transparent),
+    linear-gradient(90deg, rgba(7, 10, 9, .78), rgba(7, 10, 9, .5)),
+    var(--card-fondo, none);
+}
+.pagina-entrada .portada__evento {
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%),
+    linear-gradient(165deg, rgba(18, 26, 22, .68), rgba(7, 10, 9, .58)),
+    var(--card-fondo, none);
+  background-position: center, center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__evento:nth-child(3) {
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%),
+    linear-gradient(165deg, rgba(26, 38, 24, .68), rgba(8, 12, 9, .56)),
+    var(--card-fondo, none);
+}
+.pagina-entrada .portada__promo {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .58), rgba(7, 10, 9, .3) 52%, rgba(7, 10, 9, .72)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+  box-shadow: inset 0 1px 0 rgba(245, 246, 240, .14);
+}
+.pagina-entrada .portada__promo > img { opacity: .72; filter: saturate(.92) contrast(1.06); }
+.pagina-entrada .portada__promo::before {
+  background: linear-gradient(180deg, rgba(5, 7, 6, .06), rgba(5, 7, 6, .72) 84%);
+}
+
+.portada__galeria figure:nth-child(4) figcaption { --caption-fondo: url('../images/oficial/pista-senna-wide.webp'); }
+.portada__galeria figure:nth-child(5) figcaption { --caption-fondo: url('../images/oficial/pista-senna-vertical.webp'); }
+.portada__galeria figure:nth-child(6) figcaption { --caption-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
+
+/* Tres acentos para las fechas: verde de pista, ámbar de noche, blanco de
+   campeonato. Es la misma retícula, pero cada tarjeta tiene su propia voz. */
+.pagina-entrada .portada__evento:nth-child(1) { border-top: 2px solid rgba(147, 210, 65, .72); }
+.pagina-entrada .portada__evento:nth-child(2) { border-top: 2px solid rgba(240, 182, 75, .72); }
+.pagina-entrada .portada__evento:nth-child(3) { border-top: 2px solid rgba(190, 218, 207, .66); }
+
+@media (min-width: 900px) and (max-height: 650px) and (orientation: landscape) {
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
+}
+
 
 /* ==========================================================================
    Espectáculo
 
-   La última capa de movimiento: el telón de salida, tipografía que entra y
-   sale letra a letra, cintas que corren con la velocidad del scroll, una
-   vuelta al circuito en la cabecera y escenas que se abren en diagonal.
-   Todo cuelga de `.portada-motor`: sin motor la página queda estática y
-   completa. Nada se desenfoca: solo se desplaza, gira o se recorta.
+   Capa sobre portada-efectos.css: el telón de salida, letras que salen
+   volando con el scroll, una vuelta al circuito en la cabecera, la recta en
+   3D y escenas que se abren en diagonal. Todo cuelga de `.portada-motor`:
+   sin motor la página queda estática y completa. Nada se desenfoca: solo se
+   desplaza, gira o se recorta.
    ========================================================================== */
 
 @property --revela { syntax: '<number>'; inherits: true; initial-value: 1; }
@@ -1938,14 +2018,6 @@
 .portada-motor .portada__cielo { animation: cielo-entra 2.6s var(--salida) 1.02s both; }
 .portada-rapido .portada__cielo { animation-duration: 1.6s; animation-delay: 0s; }
 @keyframes cielo-entra { from { scale: 1.32; } to { scale: 1; } }
-
-/* El acento del titular brilla al asentarse. */
-.portada-listos .portada__linea--acento .portada__letra { animation: letra-destello 1.4s ease-out both; animation-delay: calc(var(--espera, 1250ms) + 700ms + var(--c, 0) * 42ms); }
-@keyframes letra-destello {
-  0% { text-shadow: 0 0 0 rgba(147, 210, 65, 0); }
-  35% { text-shadow: 0 0 34px rgba(147, 210, 65, .85); }
-  100% { text-shadow: 0 0 18px rgba(147, 210, 65, .18); }
-}
 
 /* Rótulo gigante: cruza la foto en hueco y se llena de verde con el scroll. */
 .portada__gigante {
@@ -1978,111 +2050,16 @@
   transition: opacity 1.4s ease calc(var(--espera, 1250ms) + 200ms), translate 2.2s var(--salida) calc(var(--espera, 1250ms) + 100ms);
 }
 
-/* Aviso de scroll: una gota verde que baja por la línea. */
-.portada__desliza { display: none; }
-.portada-motor .portada__desliza {
-  position: absolute;
-  bottom: clamp(18px, 3.4svh, 34px);
-  left: 50%;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  translate: -50% 0;
-  opacity: clamp(0, calc(1 - var(--p, 0) * 7), 1);
-  color: rgba(245, 246, 240, .66);
-  font: 650 .58rem/1 var(--mono);
-  letter-spacing: .34em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-.portada-motor .portada__desliza::after {
-  content: '';
-  width: 1px;
-  height: clamp(34px, 6svh, 56px);
-  background: linear-gradient(var(--acento), var(--acento)) 0 -40% / 100% 36% no-repeat, rgba(245, 246, 240, .2);
-  box-shadow: 0 0 10px rgba(147, 210, 65, .45);
-}
-.portada-motor .portada__desliza > span,
-.portada-motor .portada__desliza::after { opacity: 0; }
-.portada-listos .portada__desliza > span { animation: desliza-entra 900ms var(--salida) calc(var(--espera, 1250ms) + 1100ms) both; }
-.portada-listos .portada__desliza::after { animation: desliza-entra 900ms var(--salida) calc(var(--espera, 1250ms) + 1200ms) both, desliza-gota 1.9s cubic-bezier(.6, 0, .3, 1) calc(var(--espera, 1250ms) + 1800ms) infinite; }
-@keyframes desliza-entra { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
-@keyframes desliza-gota { from { background-position: 0 -40%, 0 0; } to { background-position: 0 140%, 0 0; } }
-@media (max-width: 899px), (max-height: 640px) { .portada-motor .portada__desliza { display: none; } }
-
-/* --- Cintas: dos bandas que se cruzan como la meta de una recta ------------ */
-.portada__cintas {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  padding-block: clamp(52px, 7vw, 104px);
-  overflow: hidden;
-  background: #070a09;
-}
-.portada__cinta {
-  grid-area: 1 / 1;
-  align-self: center;
-  width: 112%;
-  margin-left: -6%;
-  padding-block: clamp(14px, 1.5vw, 22px);
-  overflow: hidden;
-  background: var(--acento);
-  color: #06110a;
-  box-shadow: 0 24px 60px -28px rgba(147, 210, 65, .65);
-  transform: translate3d(0, calc((var(--p, .5) - .5) * -36px), 0) rotate(-3.4deg) skewX(calc(var(--vel, 0) * -12deg));
-}
-.portada__cinta--inversa {
-  z-index: -1;
-  border-block: 1px solid rgba(245, 246, 240, .16);
-  background: #101713;
-  color: #f5f6f0;
-  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, .9);
-  transform: translate3d(0, calc((var(--p, .5) - .5) * 36px), 0) rotate(2.6deg) skewX(calc(var(--vel, 0) * 12deg));
-}
-.portada__cinta-pista {
-  display: flex;
-  width: max-content;
-  margin: 0;
-  transform: translate3d(var(--cinta-x, 0px), 0, 0);
-  will-change: transform;
-}
-.portada__cinta-pista span {
-  display: inline-flex;
-  align-items: center;
-  gap: clamp(18px, 2.2vw, 34px);
-  padding-right: clamp(18px, 2.2vw, 34px);
-  font: 700 clamp(1.5rem, 3.8vw, 4.2rem)/1 var(--display);
-  font-stretch: 125%;
-  letter-spacing: .02em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-/* Entre palabra y palabra, una bandera a cuadros. */
-.portada__cinta-pista span::after {
-  content: '';
-  flex: none;
-  width: .62em;
-  height: .62em;
-  background: conic-gradient(currentColor 25%, transparent 0 50%, currentColor 0 75%, transparent 0) 0 0 / 50% 50%;
-  transform: skewX(-14deg);
-}
-.portada__cinta--inversa .portada__cinta-pista span:nth-child(odd) { color: transparent; -webkit-text-stroke: 1px rgba(245, 246, 240, .78); }
-.portada__cinta--inversa .portada__cinta-pista span:nth-child(odd)::after { background-image: conic-gradient(#f5f6f0 25%, transparent 0 50%, #f5f6f0 0 75%, transparent 0); }
-
 /* --- Vuelta al circuito en la cabecera ------------------------------------ */
+/* El capítulo va al centro; la vuelta se arrima a «Entrar». */
 .entrada__vuelta { display: none; }
-@media (min-width: 980px) {
+@media (min-width: 1100px) {
   .portada-motor .entrada__vuelta {
-    position: absolute;
-    top: 50%;
-    left: 50%;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 6px 16px 6px 10px;
-    translate: -50% -50%;
+    gap: 12px;
+    margin: 0 18px 0 auto;
+    padding: 6px 14px 6px 10px;
     border: 1px solid rgba(245, 246, 240, .14);
     border-radius: 999px;
     background: rgba(245, 246, 240, .035);
@@ -2099,9 +2076,7 @@
 .entrada__vuelta-base { stroke: rgba(245, 246, 240, .16); }
 .entrada__vuelta-traza { stroke: var(--acento); stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(147, 210, 65, .7)); }
 .entrada__vuelta-auto { fill: #f5f6f0; stroke: var(--acento); stroke-width: 6; filter: drop-shadow(0 0 8px rgba(147, 210, 65, .9)); }
-.entrada__vuelta-rotulo { display: inline-flex; align-items: baseline; gap: 10px; min-width: 14ch; overflow: hidden; }
-.entrada__vuelta-rotulo b { color: var(--acento); font-weight: 700; }
-.entrada__vuelta-avance { min-width: 4ch; padding-left: 14px; border-left: 1px solid rgba(245, 246, 240, .16); color: #f5f6f0; font-variant-numeric: tabular-nums; }
+.entrada__vuelta-avance { min-width: 4ch; color: #f5f6f0; font-variant-numeric: tabular-nums; }
 
 /* --- Recta: marcador, rótulo de fondo y pantallas bajas --------------------- */
 .portada__recta-hud { display: none; }
@@ -2145,19 +2120,17 @@
   pointer-events: none;
   will-change: transform;
 }
+/* El rótulo de la recta se levanta palabra a palabra al asomar la escena. */
+.portada-motor .portada__recta-cabeza { --revela: 0; transition: --revela 1.5s var(--salida) .1s; }
+.portada-motor .portada__recta-cabeza.revelado { --revela: 1; }
+.portada-motor .portada__recta-cabeza .con-palabras .palabra { --k: clamp(0, calc(var(--revela, 1) * 2.2 - var(--w, 0) * .6), 1); }
+.portada-motor .portada__recta-cabeza p {
+  opacity: var(--revela, 1);
+  transform: translate3d(0, calc((1 - var(--revela, 1)) * 18px), 0);
+}
 /* Fija, el rótulo flota sobre el escenario: sin caja que las fotos pisen. */
 .portada-fija .pagina-entrada .portada__recta-cabeza { border-color: transparent; background: none; }
 .portada-fija .portada__recta-cabeza h2 { text-shadow: 0 10px 40px rgba(0, 0, 0, .6); }
-
-/* Ventanas apaisadas bajas (netbook): el rótulo se compacta y las fotos bajan
-   un poco para que el título nunca las pise. */
-@media (min-width: 900px) and (max-height: 700px) {
-  .portada-fija .portada__riel { --alto-panel: min(50svh, 900px, 50vw); }
-  .portada-fija .portada__recta-cabeza { top: calc(var(--altura-cabecera) + 1.5svh); }
-  .portada-fija .pagina-entrada .portada__recta-cabeza { padding-block: 14px; }
-  .portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.2rem, min(6vw, 10svh), 9rem); }
-  .portada-fija .portada__recta-cabeza p { margin-top: 8px; }
-}
 
 /* --- Escenas: se abren en diagonal y su fondo se asienta ------------------- */
 .portada-motor .portada__info {
@@ -2168,63 +2141,10 @@
 }
 .portada-motor .portada__evento-fondo img { transform: scale(calc(1.16 - var(--info-in, 1) * .16)); }
 
-/* Rótulos: cada palabra sube desde su máscara con el reloj de su pieza. */
-.portada__palabra,
-.portada__luz-palabra { display: inline-block; }
-.portada-motor .portada__palabra {
-  --wp: clamp(0, calc(var(--item-in, var(--revela, 1)) * (1 + (var(--nw, 1) - 1) * .26) - var(--w, 0) * .26), 1);
-  clip-path: inset(-.4em -.6em -.18em -.6em);
-}
-.portada-motor .portada__palabra > span {
-  display: inline-block;
-  transform: translate3d(0, calc((1 - var(--wp)) * 135%), 0) rotate(calc((1 - var(--wp)) * 8deg));
-  transform-origin: 0 100%;
-}
-.portada-motor .portada__recta-cabeza,
-.portada-motor .portada__intro { --revela: 0; transition: --revela 1.5s var(--salida) .1s; }
-.portada-motor .portada__recta-cabeza.revelado,
-.portada-motor .portada__intro.revelado { --revela: 1; }
-.portada-motor .portada__recta-cabeza p,
-.portada-motor .portada__intro .entrada__acceso-nota {
-  opacity: var(--revela, 1);
-  transform: translate3d(0, calc((1 - var(--revela, 1)) * 18px), 0);
-}
-
-/* Cierre: la frase se enciende palabra a palabra al subir por la pantalla. */
-.portada-motor .portada__comunidad-cierre { --lee: clamp(0, calc((var(--p, 1) - .1) / .36), 1); }
-.portada-motor .portada__luz-palabra > span {
-  --luz: clamp(0, calc(var(--lee) * (var(--nw, 1) + 1.4) - var(--w, 0)), 1);
-  display: inline-block;
-  opacity: calc(.12 + var(--luz) * .88);
-  transform: translate3d(0, calc((1 - var(--luz)) * .22em), 0);
-}
-
-/* Telemetría y tiempos: la cifra corre como una lectura en vivo. */
-.portada__conteo { font-style: normal; }
-.portada__record::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: calc(var(--ritmo, 1) * 100%);
-  height: 2px;
-  background: linear-gradient(90deg, rgba(147, 210, 65, 0), var(--acento));
-  box-shadow: 0 0 12px rgba(147, 210, 65, .5);
-  transform: scaleX(var(--item-in, 1));
-  transform-origin: left center;
-}
-.portada__record:nth-child(2) { --ritmo: .969; }
-.portada__record:nth-child(3) { --ritmo: .955; }
-.portada__record:nth-child(n + 2)::after { opacity: .55; }
-
-/* Galería: las columnas flotan a distinta velocidad, como capas de un travelling. */
-.portada-motor .portada__info--galeria .portada__galeria { row-gap: 30px; }
-.portada-motor .portada__info--galeria .portada__galeria figure { translate: 0 calc((var(--info-p, .5) - .5) * var(--para, 0px) * -1); }
-.portada__galeria figure:nth-child(2) { --para: 90px; }
-.portada__galeria figure:nth-child(3) { --para: 40px; }
-.portada__galeria figure:nth-child(4) { --para: 30px; }
-.portada__galeria figure:nth-child(5) { --para: 56px; }
-.portada__galeria figure:nth-child(6) { --para: 84px; }
+/* Telemetría: la cifra corre como una lectura en vivo. */
+.portada-motor .portada__spec strong { position: relative; }
+.portada__conteo-molde { color: transparent; }
+.portada__conteo { position: absolute; inset: 0; font-style: normal; }
 
 /* Muy pronto: la cinta de obra corre sin parar. */
 .portada-motor .portada__pronto-visual::before {
@@ -2240,11 +2160,7 @@
 
 /* --- Formatos ------------------------------------------------------------- */
 @media (max-width: 700px) {
-  .portada__cintas { padding-block: 44px; }
-  .portada__cinta-pista span { font-size: clamp(1.25rem, 7vw, 1.8rem); }
   .portada-motor .portada__info { clip-path: polygon(0 calc((1 - var(--info-in, 1)) * 16vw), 100% 0, 100% 100%, 0 100%); }
-  .portada-motor .portada__info--galeria .portada__galeria { row-gap: 10px; }
-  .portada__galeria figure:nth-child(n) { --para: 0px; }
   /* En el teléfono el rótulo va en hueco y sin relleno: la foto manda. */
   .portada__gigante { top: auto; bottom: 42%; font-size: 30vw; background: none; -webkit-text-stroke-color: rgba(245, 246, 240, .14); }
 }
@@ -2255,11 +2171,4 @@
 @media (min-width: 3000px) {
   .portada-motor .entrada__vuelta { zoom: 1.8; }
   .portada-fija .portada__recta-hud { zoom: 1.9; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .portada__cinta,
-  .portada__cinta--inversa,
-  .portada__cinta-pista { transform: none; }
-  .portada__cinta { rotate: -2deg; }
-  .portada__cinta--inversa { rotate: 2deg; }
 }

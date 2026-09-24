@@ -112,33 +112,6 @@ export function interpolarCifras(texto, t, { rellenar = false } = {}) {
   });
 }
 
-/**
- * Progreso de la palabra `indice` de un titular de `total` palabras cuando el
- * titular entero va por `p`: se escalonan con `solape` (fracción de una
- * palabra) y la última termina justo al llegar p a 1.
- */
-export function progresoPalabra(p, indice, total, solape = 0.3) {
-  if (total <= 1) return limitar(p);
-  return limitar(p * (1 + (total - 1) * solape) - indice * solape);
-}
-
-/**
- * Qué sector de la vuelta se está recorriendo: el último cuyo inicio ya quedó
- * por encima de la línea de lectura. `inicios` va ordenado de menor a mayor.
- */
-export function sectorActual(lectura, inicios) {
-  let sector = 0;
-  for (let i = 0; i < inicios.length; i++) if (lectura >= inicios[i]) sector = i;
-  return sector;
-}
-
-/** Desplazamiento de una cinta sin fin: siempre dentro de (-periodo, 0]. */
-export function desfaseCinta(recorrido, periodo) {
-  if (periodo <= 0) return 0;
-  const r = recorrido % periodo;
-  return r > 0 ? r - periodo : r + 0;
-}
-
 // ---------------------------------------------------------------------------
 // Motor (DOM)
 // ---------------------------------------------------------------------------
@@ -216,7 +189,7 @@ export function crearMotor() {
       raiz.style.setProperty('--scroll-px', sPxStr);
     }
     pintar();
-    for (const fn of alPintar) fn({ scroll: suave, fraccion: limitar(suave / limiteScroll), velocidad, alto, ancho });
+    for (const fn of alCuadro) fn({ velocidad, suave, dt, fraccion: limitar(suave / limiteScroll) });
 
     if (quieto) { corriendo = false; return; }
     requestAnimationFrame(cuadro);
@@ -246,7 +219,7 @@ export function crearMotor() {
   }
 
   const alMedir = [];
-  const alPintar = [];
+  const alCuadro = [];
 
   const medirEnFotograma = () => {
     if (midiendo) return;
@@ -274,13 +247,13 @@ export function crearMotor() {
       alMedir.push(fn);
       fn();
     },
-    /** Ejecuta `fn` en cada fotograma en que el scroll suavizado se mueve. */
-    alPintar(fn) {
-      alPintar.push(fn);
-      fn({ scroll: suave, fraccion: limitar(suave / limiteScroll), velocidad, alto, ancho });
+    /**
+     * Ejecuta `fn` en cada fotograma mientras la página se mueve, y una última
+     * vez ya en reposo (velocidad 0) para que lo animado vuelva a su ritmo base.
+     */
+    alCuadro(fn) {
+      alCuadro.push(fn);
     },
-    /** Lectura instantánea para quien anima por su cuenta (las cintas). */
-    estado: () => ({ scroll: suave, velocidad, alto, ancho }),
     medir,
   };
 }

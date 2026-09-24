@@ -7,9 +7,10 @@
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, desfaseCinta, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, interpolarCifras,
-  lucesEncendidas, progresoCifra, progresoMaximo, salidaPieza, sectorActual,
+  crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, interpolarCifras, lucesEncendidas,
+  progresoCifra, progresoMaximo, salidaPieza,
 } from './portada-motor.js';
+import { montarEfectos, montarHorarioVivo, montarVolverArriba } from './portada-efectos.js';
 
 const raiz = document.documentElement;
 const reducir = sinMovimiento();
@@ -81,11 +82,16 @@ function montarHalos() {
       const y = ((evento.clientY - rect.top) / rect.height) * 100;
       pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
       pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
+      // Profundidad: lo que va dentro de la ficha se desplaza un poco contra el puntero.
+      pieza.style.setProperty('--px', (x / 50 - 1).toFixed(3));
+      pieza.style.setProperty('--py', (y / 50 - 1).toFixed(3));
     };
     const limpiar = () => {
       rect = null;
       pieza.style.removeProperty('--spot-x');
       pieza.style.removeProperty('--spot-y');
+      pieza.style.removeProperty('--px');
+      pieza.style.removeProperty('--py');
     };
     pieza.addEventListener('pointerenter', medir, { passive: true });
     pieza.addEventListener('pointermove', actualizar, { passive: true });
@@ -264,8 +270,11 @@ function montarRecta(motor) {
       if (!fija.matches) return;
       const x = p * recorrido;
       let dentro = 0;
+      // Una foto más ancha que media pantalla no llegaría nunca a entrar del
+      // todo: al final del riel todas quedan asentadas, rectas y enteras.
+      const cierre = fase(p, 0.8, 0.96);
       paneles.forEach((panel, i) => {
-        const q = entradaPanel(izquierdas[i] - x, ancho);
+        const q = Math.max(entradaPanel(izquierdas[i] - x, ancho), cierre);
         panel.style.setProperty('--q', q.toFixed(3));
         if (panel.tagName === 'FIGURE' && q > 0.5) dentro += 1;
       });
@@ -342,23 +351,27 @@ const PIEZAS = [
 ].join(', ');
 
 /**
- * Las cifras de telemetría y los tiempos se cuentan al entrar, como una
- * lectura que se estabiliza. El valor final queda siempre en una copia para
- * lectores de pantalla; la cifra que corre es solo visual.
+ * Las cifras de telemetría se cuentan al entrar, como una lectura que se
+ * estabiliza. El valor final queda siempre en una copia para lectores de
+ * pantalla; la cifra que corre es solo visual. (Los tiempos de los récords
+ * los cuenta su propio cronómetro, en portada-efectos.js.)
  */
 function prepararConteos() {
   const conteos = new Map();
   const preparar = (pieza, el, opciones) => {
     const final = el.textContent.trim();
     if (!/\d/.test(final)) return;
-    const lectura = document.createElement('span');
-    lectura.className = 'portada__lectura';
-    lectura.textContent = final;
+    // El texto final sostiene el hueco (y es lo que leen los lectores de
+    // pantalla); la cifra que corre va encima. Así contar nunca cambia el
+    // ancho ni el salto de línea, y la página no se mueve bajo el dedo.
+    const molde = document.createElement('span');
+    molde.className = 'portada__conteo-molde';
+    molde.textContent = final;
     const visible = document.createElement('i');
     visible.className = 'portada__conteo';
     visible.setAttribute('aria-hidden', 'true');
     visible.textContent = final;
-    el.replaceChildren(lectura, visible);
+    el.replaceChildren(molde, visible);
     let ultimo = final;
     conteos.set(pieza, (t) => {
       const texto = interpolarCifras(final, t > 0.995 ? 1 : t, opciones);
@@ -368,7 +381,6 @@ function prepararConteos() {
     });
   };
   $$('.portada__spec').forEach((spec) => { const el = $('strong', spec); if (el) preparar(spec, el, {}); });
-  $$('.portada__record').forEach((fila) => { const el = $('b', fila); if (el) preparar(fila, el, { rellenar: true }); });
   return conteos;
 }
 
@@ -430,133 +442,42 @@ function montarInformacion(motor) {
 }
 
 // ---------------------------------------------------------------------------
-// Tipografía en movimiento: letras del titular y palabras de cada rótulo
+// Rótulos sin reloj propio: se levantan al asomar
 // ---------------------------------------------------------------------------
 
 /**
- * Parte el titular de la salida en letras. El `h1` conserva su nombre accesible
- * entero y las letras quedan ocultas a los lectores de pantalla.
+ * Los titulares de escena ya van palabra a palabra con su pieza
+ * (portada-efectos.js). La recta no tiene reloj por pieza: su rótulo se parte
+ * igual y se levanta con `--revela` cuando la escena asoma.
  */
-function partirTitular() {
-  const h1 = $('#titulo-entrada');
-  if (!h1) return;
-  h1.setAttribute('aria-label', h1.textContent.replace(/\s+/g, ' ').trim());
-  let c = 0;
-  $$('.portada__linea > span', h1).forEach((linea) => {
-    const nodos = [];
-    for (const parte of linea.textContent.split(/(\s+)/)) {
-      if (!parte) continue;
-      if (/^\s+$/.test(parte)) { nodos.push(document.createTextNode(' ')); continue; }
+function montarRotuloDeLaRecta() {
+  const cabeza = $('.portada__recta-cabeza');
+  const h2 = cabeza && $('h2', cabeza);
+  if (!h2) return;
+  let indice = 0;
+  for (const nodo of [...h2.childNodes]) {
+    if (nodo.nodeType !== Node.TEXT_NODE) continue;
+    const trozos = nodo.textContent.split(/(\s+)/).filter(Boolean).map((parte) => {
+      if (/^\s+$/.test(parte)) return document.createTextNode(parte);
       const palabra = document.createElement('span');
-      palabra.className = 'portada__letras';
-      for (const caracter of parte) {
-        const letra = document.createElement('span');
-        letra.className = 'portada__letra';
-        letra.textContent = caracter;
-        letra.style.setProperty('--c', String(c));
-        // Cada letra sale a su ritmo: una lluvia ordenada, nunca aleatoria.
-        letra.style.setProperty('--dy', `${45 + ((c * 53) % 110)}%`);
-        letra.style.setProperty('--giro', `${((c * 7) % 5) * 5 - 10}deg`);
-        palabra.append(letra);
-        c += 1;
-      }
-      nodos.push(palabra);
-    }
-    linea.setAttribute('aria-hidden', 'true');
-    linea.replaceChildren(...nodos);
-  });
-}
-
-/**
- * Envuelve cada palabra de un rótulo en una máscara. El CSS las levanta una a
- * una con el reloj de su pieza (`--item-in`) o, en las escenas que no tienen
- * reloj propio, con `--revela`.
- */
-function partirPalabras(elemento, clase = 'portada__palabra') {
-  if (!elemento) return [];
-  const palabras = [];
-  const recorrer = (nodo) => {
-    for (const hijo of [...nodo.childNodes]) {
-      if (hijo.nodeType === Node.ELEMENT_NODE) { recorrer(hijo); continue; }
-      if (hijo.nodeType !== Node.TEXT_NODE || !hijo.textContent.trim()) continue;
-      const trozos = hijo.textContent.split(/(\s+)/).filter(Boolean).map((parte) => {
-        if (/^\s+$/.test(parte)) return document.createTextNode(' ');
-        const mascara = document.createElement('span');
-        mascara.className = clase;
-        const interior = document.createElement('span');
-        interior.textContent = parte;
-        mascara.append(interior);
-        palabras.push(mascara);
-        return mascara;
-      });
-      hijo.replaceWith(...trozos);
-    }
-  };
-  recorrer(elemento);
-  palabras.forEach((palabra, i) => palabra.style.setProperty('--w', String(i)));
-  elemento.style.setProperty('--nw', String(palabras.length));
-  elemento.classList.add('portada__rotulo');
-  return palabras;
-}
-
-function montarRotulos() {
-  $$('.portada__info-cabeza h2, .portada__pronto-copy h2').forEach((h2) => partirPalabras(h2));
-  partirPalabras($('.portada__comunidad-cierre'), 'portada__luz-palabra');
-
-  // La recta y los boxes no tienen reloj por pieza: sus rótulos se levantan al asomar.
-  const sueltos = $$('.portada__recta-cabeza, .portada__intro');
-  sueltos.forEach((bloque) => partirPalabras($('h2', bloque)));
-  const observador = new IntersectionObserver((entradas) => {
-    for (const entrada of entradas) {
-      if (!entrada.isIntersecting) continue;
-      entrada.target.classList.add('revelado');
-      observador.unobserve(entrada.target);
-    }
+      palabra.className = 'palabra';
+      palabra.style.setProperty('--w', String(indice++));
+      const interior = document.createElement('span');
+      interior.className = 'palabra__i';
+      interior.textContent = parte;
+      palabra.append(interior);
+      return palabra;
+    });
+    nodo.replaceWith(...trozos);
+  }
+  h2.classList.add('con-palabras');
+  const observador = new IntersectionObserver(([entrada]) => {
+    if (!entrada.isIntersecting) return;
+    cabeza.classList.add('revelado');
+    observador.disconnect();
   }, { rootMargin: '0px 0px -15% 0px', threshold: 0.2 });
-  sueltos.forEach((bloque) => observador.observe(bloque));
-  setTimeout(() => sueltos.forEach((bloque) => bloque.classList.add('revelado')), 9000);
-}
-
-// ---------------------------------------------------------------------------
-// Cintas: dos bandas que cruzan la pista y corren con la velocidad del scroll
-// ---------------------------------------------------------------------------
-
-function montarCintas(motor) {
-  const zona = $('[data-escena="cintas"]');
-  if (!zona) return;
-  const cintas = $$('.portada__cinta-pista', zona).map((pista, i) => {
-    // Dos copias seguidas: al envolver el desfase nunca asoma un hueco.
-    pista.append(...[...pista.children].map((nodo) => nodo.cloneNode(true)));
-    return { pista, sentido: i % 2 ? 1 : -1, periodo: 0, x: 0 };
-  });
-  motor.alMedir(() => cintas.forEach((cinta) => { cinta.periodo = cinta.pista.scrollWidth / 2; }));
-  motor.registrar(zona, { modo: 'vista' });
-
-  let visible = false;
-  let pedido = 0;
-  let ultimo = 0;
-  let rumbo = 1;
-  const cuadro = (ahora) => {
-    const dt = Math.min(0.05, Math.max(0, (ahora - ultimo) / 1000));
-    ultimo = ahora;
-    const { velocidad } = motor.estado();
-    // Al subir, las cintas invierten el sentido; al bajar vuelven. El empujón
-    // del scroll se suma a una marcha lenta que nunca se detiene.
-    if (Math.abs(velocidad) > 0.015) rumbo = Math.sign(velocidad);
-    const rapidez = 48 + Math.abs(velocidad) * 1600;
-    for (const cinta of cintas) {
-      cinta.x += cinta.sentido * rumbo * rapidez * dt;
-      cinta.pista.style.setProperty('--cinta-x', `${desfaseCinta(cinta.x, cinta.periodo).toFixed(1)}px`);
-    }
-    pedido = visible ? requestAnimationFrame(cuadro) : 0;
-  };
-  new IntersectionObserver(([entrada]) => {
-    visible = entrada.isIntersecting;
-    if (visible && !pedido) {
-      ultimo = performance.now();
-      pedido = requestAnimationFrame(cuadro);
-    }
-  }, { rootMargin: '120px 0px' }).observe(zona);
+  observador.observe(cabeza);
+  setTimeout(() => cabeza.classList.add('revelado'), 9000);
 }
 
 // ---------------------------------------------------------------------------
@@ -564,16 +485,11 @@ function montarCintas(motor) {
 // ---------------------------------------------------------------------------
 
 const TRAZADO = 'M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z';
-const NOMBRES_SECTOR = {
-  salida: 'Salida', tablero: 'Tablero', pista: 'La pista', complejo: 'Complejo', 'pista-datos': 'Telemetría',
-  horarios: 'Horarios', records: 'Tiempos', eventos: 'Eventos', 'muy-pronto': 'Muy pronto', galeria: 'Galería',
-  comunidad: 'Comunidad', acceso: 'Tu pase',
-};
 
 function montarVuelta(motor) {
   const interior = $('.entrada__barra-interior');
-  const secciones = $$('main > section');
-  if (!interior || !secciones.length) return;
+  const accion = interior && $('.entrada__accion', interior);
+  if (!accion) return;
 
   // El analizador de HTML ya coloca el <svg> en su espacio de nombres.
   const plantilla = document.createElement('template');
@@ -583,104 +499,43 @@ function montarVuelta(motor) {
       <path class="entrada__vuelta-traza" d="${TRAZADO}" pathLength="1"/>
       <circle class="entrada__vuelta-auto" r="12"/>
     </svg>
-    <span class="entrada__vuelta-rotulo"><b></b><span></span></span>
     <span class="entrada__vuelta-avance"></span>
   </div>`;
   const vuelta = plantilla.content.firstElementChild;
   const base = $('.entrada__vuelta-base', vuelta);
   const traza = $('.entrada__vuelta-traza', vuelta);
   const auto = $('.entrada__vuelta-auto', vuelta);
-  const rotulo = $('.entrada__vuelta-rotulo', vuelta);
-  const numero = $('b', rotulo);
-  const nombre = $('span', rotulo);
   const avance = $('.entrada__vuelta-avance', vuelta);
-  interior.insertBefore(vuelta, $('.entrada__accion', interior));
+  interior.insertBefore(vuelta, accion);
 
-  const nombres = secciones.map((s) => NOMBRES_SECTOR[s.id] ?? NOMBRES_SECTOR[s.dataset.escena] ?? '');
   let largo = 0;
   let visible = false;
-  let inicios = [];
-  let sector = -1;
-  let ultimoAvance = '';
-  motor.alMedir(() => {
-    // En pantallas estrechas la vuelta no se pinta: tampoco se calcula.
-    visible = vuelta.getClientRects().length > 0;
-    if (visible && !largo) largo = base.getTotalLength();
-    if (!visible) sector = -1;
-    inicios = secciones.map((s) => s.getBoundingClientRect().top + window.scrollY);
-  });
-  motor.alPintar(({ scroll, fraccion, alto }) => {
+  let ultimo = '';
+  const pintar = (fraccion) => {
     if (!visible) return;
     const punto = base.getPointAtLength(fraccion * largo);
     auto.setAttribute('cx', punto.x.toFixed(1));
     auto.setAttribute('cy', punto.y.toFixed(1));
     traza.style.setProperty('stroke-dashoffset', (1 - fraccion).toFixed(4));
     const texto = `${String(Math.round(fraccion * 100)).padStart(3, '0')}%`;
-    if (texto !== ultimoAvance) { avance.textContent = texto; ultimoAvance = texto; }
-    const nuevo = sectorActual(scroll + alto * 0.45, inicios);
-    if (nuevo === sector) return;
-    const sube = nuevo > sector;
-    sector = nuevo;
-    numero.textContent = `S${String(nuevo + 1).padStart(2, '0')}`;
-    nombre.textContent = nombres[nuevo];
-    rotulo.animate?.([
-      { transform: `translate3d(0, ${sube ? 80 : -80}%, 0)`, opacity: 0 },
-      { transform: 'none', opacity: 1 },
-    ], { duration: 460, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+    if (texto !== ultimo) { avance.textContent = texto; ultimo = texto; }
+  };
+  const fraccionActual = () => Math.min(1, window.scrollY / Math.max(1, raiz.scrollHeight - window.innerHeight));
+  motor.alMedir(() => {
+    // En pantallas estrechas la vuelta no se pinta: tampoco se calcula.
+    visible = vuelta.getClientRects().length > 0;
+    if (visible && !largo) largo = base.getTotalLength();
+    pintar(fraccionActual());
   });
+  motor.alCuadro(({ fraccion }) => pintar(fraccion));
 }
 
 // ---------------------------------------------------------------------------
-// Imanes y fichas inclinables: solo lo que se puede pulsar responde al puntero
+// Fichas de tienda: se inclinan hacia el puntero (son enlaces: se pueden pulsar)
 // ---------------------------------------------------------------------------
 
-function montarImanes() {
+function montarFichasInclinables() {
   if (!punteroFino()) return;
-  // Los botones ya tienen sus transiciones: el imán se suaviza aquí y escribe
-  // solo `translate`, que no pisa ninguna de ellas.
-  const activos = new Set();
-  let pedido = 0;
-  const paso = () => {
-    for (const iman of activos) {
-      iman.x += (iman.objetivoX - iman.x) * 0.2;
-      iman.y += (iman.objetivoY - iman.y) * 0.2;
-      if (!iman.dentro && Math.abs(iman.x) < 0.05 && Math.abs(iman.y) < 0.05) {
-        iman.el.style.removeProperty('translate');
-        activos.delete(iman);
-        continue;
-      }
-      iman.el.style.setProperty('translate', `${iman.x.toFixed(2)}px ${iman.y.toFixed(2)}px`);
-    }
-    pedido = activos.size ? requestAnimationFrame(paso) : 0;
-  };
-  const despertar = (iman) => {
-    activos.add(iman);
-    if (!pedido) pedido = requestAnimationFrame(paso);
-  };
-
-  const selector = '.portada__acciones .boton, .portada__enlace, .entrada__accion, .portada__info .boton';
-  $$(selector).forEach((el) => {
-    const iman = { el, x: 0, y: 0, objetivoX: 0, objetivoY: 0, dentro: false, rect: null };
-    el.addEventListener('pointerenter', () => {
-      iman.rect = el.getBoundingClientRect();
-      iman.dentro = true;
-    }, { passive: true });
-    el.addEventListener('pointermove', (evento) => {
-      if (!iman.rect) iman.rect = el.getBoundingClientRect();
-      const { left, top, width, height } = iman.rect;
-      iman.objetivoX = (evento.clientX - (left + width / 2)) * 0.26;
-      iman.objetivoY = (evento.clientY - (top + height / 2)) * 0.36;
-      despertar(iman);
-    }, { passive: true });
-    el.addEventListener('pointerleave', () => {
-      iman.rect = null;
-      iman.dentro = false;
-      iman.objetivoX = 0;
-      iman.objetivoY = 0;
-      despertar(iman);
-    }, { passive: true });
-  });
-
   $$('a.portada__promo').forEach((ficha) => {
     let rect = null;
     ficha.addEventListener('pointerenter', () => { rect = ficha.getBoundingClientRect(); }, { passive: true });
@@ -705,23 +560,24 @@ function montarImanes() {
 
 montarMira();
 montarHalos();
+montarHorarioVivo();
+montarVolverArriba();
 
 if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
   montarProgresoSimple();
 } else {
   raiz.classList.add('portada-motor');
-  partirTitular();
-  montarRotulos();
   const motor = crearMotor();
   const salida = $('[data-escena="salida"]');
   if (salida) motor.registrar(salida, { modo: 'fija' });
-  montarCintas(motor);
   montarTablero(motor);
   montarRecta(motor);
+  montarRotuloDeLaRecta();
   montarInformacion(motor);
-  montarBoxes(motor);
   montarVuelta(motor);
-  montarImanes();
+  montarFichasInclinables();
+  montarBoxes(motor);
+  montarEfectos(motor);
   motor.iniciar();
   arrancarSalida();
 }

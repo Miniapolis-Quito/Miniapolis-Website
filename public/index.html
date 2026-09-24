@@ -8,6 +8,7 @@
   <title>Miniápolis #3 — Entra a rodar</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/portada.css">
+  <link rel="stylesheet" href="/css/portada-efectos.css">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.png" type="image/png">
   <link rel="preload" href="./images/oficial/pista-circuito-panorama.webp" as="image" fetchpriority="high">
@@ -19,18 +20,21 @@
       <a class="entrada__marca subrayado-no" href="./index.html" aria-label="Miniápolis #3 — inicio">
         <span class="entrada__marca-sello" aria-hidden="true"><img src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="Miniápolis #3"></span>
       </a>
+      <p class="entrada__capitulo" aria-hidden="true"><b class="entrada__capitulo-num">00</b><span class="entrada__capitulo-nombre">Salida</span></p>
       <a class="entrada__accion" href="#acceso">Entrar</a>
     </div>
-    <div class="entrada__progreso" aria-hidden="true"><span></span></div>
+    <div class="entrada__progreso" aria-hidden="true"><span></span><i></i></div>
   </header>
 
   <main>
-    <section class="portada__salida" data-escena="salida" aria-labelledby="titulo-entrada">
+    <section id="inicio" class="portada__salida" data-escena="salida" data-capitulo="Salida" aria-labelledby="titulo-entrada">
       <div class="portada__salida-marco">
         <div class="portada__cielo" aria-hidden="true">
           <img src="./images/oficial/pista-circuito-panorama.webp" width="3840" height="2160" alt="" fetchpriority="high" decoding="async">
         </div>
         <p class="portada__gigante" aria-hidden="true">Miniápolis</p>
+        <canvas class="portada__chispas" aria-hidden="true"></canvas>
+        <span class="portada__foco" aria-hidden="true"></span>
         <div class="portada__semaforo" aria-hidden="true">
           <div class="portada__semaforo-caja">
             <span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span>
@@ -57,20 +61,11 @@
                  sizes="(max-width: 700px) 46vw, 28vw" decoding="async">
           </picture>
         </figure>
-        <div class="portada__desliza" aria-hidden="true"><span>Desliza</span></div>
+        <span class="portada__desliza" aria-hidden="true"><span>Desliza</span><i></i></span>
       </div>
     </section>
 
-    <div class="portada__cintas" data-escena="cintas" aria-hidden="true">
-      <div class="portada__cinta">
-        <p class="portada__cinta-pista"><span>Asfalto real</span><span>Curvas</span><span>Control</span><span>Velocidad</span><span>Comunidad</span><span>RC indoor</span><span>Asfalto real</span><span>Curvas</span><span>Control</span><span>Velocidad</span><span>Comunidad</span><span>RC indoor</span></p>
-      </div>
-      <div class="portada__cinta portada__cinta--inversa">
-        <p class="portada__cinta-pista"><span>Entra a rodar</span><span>Miniápolis #3</span><span>Racing Hobbies</span><span>Pista indoor</span><span>Entra a rodar</span><span>Miniápolis #3</span><span>Racing Hobbies</span><span>Pista indoor</span></p>
-      </div>
-    </div>
-
-    <section class="portada__tablero" data-escena="tablero" aria-label="La pista en datos">
+    <section class="portada__tablero" data-escena="tablero" data-capitulo="En cifras" aria-label="La pista en datos">
       <div class="portada__luces" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
@@ -90,7 +85,11 @@
       </ul>
     </section>
 
-    <section id="pista" class="portada__recta" data-escena="recta" aria-labelledby="titulo-pista">
+    <div class="portada__cinta" aria-hidden="true">
+      <div class="portada__cinta-pista"><span>Asfalto</span><span>Curvas</span><span>Control</span><span>Velocidad</span><span>Comunidad</span></div>
+    </div>
+
+    <section id="pista" class="portada__recta" data-escena="recta" data-capitulo="La pista" aria-labelledby="titulo-pista">
       <div class="portada__recta-marco">
         <header class="portada__recta-cabeza">
           <h2 id="titulo-pista">La pista.</h2>
@@ -137,7 +136,8 @@
       </div>
     </section>
 
-    <section id="complejo" class="portada__info portada__info--complejo" data-escena="detalle" aria-labelledby="titulo-complejo">
+    <section id="complejo" class="portada__info portada__info--complejo" data-escena="detalle" data-capitulo="Complejo" aria-labelledby="titulo-complejo">
+      <span class="portada__fantasma" aria-hidden="true">Pistas</span>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">Miniápolis #3 / Racing Hobbies</p>
         <h2 id="titulo-complejo">Complejo de radio control indoor.</h2>
@@ -172,7 +172,8 @@
       </div>
     </section>
 
-    <section id="pista-datos" class="portada__info portada__info--datos" data-escena="detalle" aria-labelledby="titulo-pista-datos">
+    <section id="pista-datos" class="portada__info portada__info--datos" data-escena="detalle" data-capitulo="Telemetría" aria-labelledby="titulo-pista-datos">
+      <span class="portada__fantasma" aria-hidden="true">Datos</span>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">El circuito, por dentro</p>
         <h2 id="titulo-pista-datos">Todo listo para tu próxima vuelta.</h2>
@@ -189,7 +190,8 @@
       </div>
     </section>
 
-    <section id="horarios" class="portada__info portada__info--split" data-escena="horario" aria-labelledby="titulo-horarios">
+    <section id="horarios" class="portada__info portada__info--split" data-escena="horario" data-capitulo="Horarios" aria-labelledby="titulo-horarios">
+      <span class="portada__fantasma" aria-hidden="true">Boxes</span>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">Pasa por boxes</p>
         <h2 id="titulo-horarios">Horarios.</h2>
@@ -203,7 +205,8 @@
       </div>
     </section>
 
-    <section id="records" class="portada__info portada__info--records" data-escena="records" aria-labelledby="titulo-records">
+    <section id="records" class="portada__info portada__info--records" data-escena="records" data-capitulo="Récords" aria-labelledby="titulo-records">
+      <span class="portada__fantasma" aria-hidden="true">Tiempos</span>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">Telemetría de pista</p>
         <h2 id="titulo-records">Mejores tiempos.</h2>
@@ -217,7 +220,8 @@
       <div class="portada__record-meta"><span>Cuenta vueltas electrónico</span><span>Resultados en tiempo real</span><a class="boton boton--fantasma boton--chico" href="./posiciones.html">Records por circuito</a></div>
     </section>
 
-    <section id="eventos" class="portada__info portada__info--eventos" data-escena="eventos" aria-labelledby="titulo-eventos">
+    <section id="eventos" class="portada__info portada__info--eventos" data-escena="eventos" data-capitulo="Eventos" aria-labelledby="titulo-eventos">
+      <span class="portada__fantasma" aria-hidden="true">Carrera</span>
       <div class="portada__evento-fondo" aria-hidden="true"><img src="./images/pista-real/recta-pilotos.jpeg" width="665" height="1182" alt="" loading="lazy" decoding="async"></div>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">Calendario de pista</p>
@@ -232,7 +236,7 @@
       <a class="boton boton--principal boton--chico" href="#acceso">Entérate de nuestros eventos</a>
     </section>
 
-    <section id="muy-pronto" class="portada__info portada__info--pronto" data-escena="eventos" aria-labelledby="titulo-pronto">
+    <section id="muy-pronto" class="portada__info portada__info--pronto" data-escena="eventos" data-capitulo="Muy pronto" aria-labelledby="titulo-pronto">
       <figure class="portada__pronto-visual"><img src="./images/pista-real/pista-baja.jpeg" width="360" height="640" alt="Vista baja del asfalto y la estructura del circuito de Miniápolis" loading="lazy" decoding="async"></figure>
       <div class="portada__pronto-copy">
         <p class="portada__eyebrow">En construcción</p>
@@ -243,7 +247,12 @@
       </div>
     </section>
 
-    <section id="galeria" class="portada__info portada__info--galeria" data-escena="galeria" aria-labelledby="titulo-galeria">
+    <div class="portada__cinta portada__cinta--inversa" aria-hidden="true">
+      <div class="portada__cinta-pista"><span>Racing Hobbies</span><span>Miniápolis #3</span><span>Rodar</span><span>Competir</span><span>Aprender</span></div>
+    </div>
+
+    <section id="galeria" class="portada__info portada__info--galeria" data-escena="galeria" data-capitulo="Galería" aria-labelledby="titulo-galeria">
+      <span class="portada__fantasma" aria-hidden="true">Cuadros</span>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">Una mirada al circuito</p>
         <h2 id="titulo-galeria">Más que una pista.</h2>
@@ -258,7 +267,8 @@
       </div>
     </section>
 
-    <section id="comunidad" class="portada__info portada__info--comunidad" data-escena="comunidad" aria-labelledby="titulo-comunidad">
+    <section id="comunidad" class="portada__info portada__info--comunidad" data-escena="comunidad" data-capitulo="Comunidad" aria-labelledby="titulo-comunidad">
+      <span class="portada__fantasma" aria-hidden="true">Equipo</span>
       <div class="portada__info-cabeza">
         <p class="portada__eyebrow">Racing Hobbies</p>
         <h2 id="titulo-comunidad">Tu pasión, tu mejor equipo.</h2>
@@ -274,7 +284,7 @@
       <p class="portada__comunidad-cierre">Más que una pista, <span>una comunidad.</span></p>
     </section>
 
-    <section id="acceso" class="portada__boxes" data-escena="boxes" aria-labelledby="titulo-acceso">
+    <section id="acceso" class="portada__boxes" data-escena="boxes" data-capitulo="Tu pase" aria-labelledby="titulo-acceso">
       <div class="portada__bandera" aria-hidden="true"></div>
       <div class="portada__intro">
         <h2 id="titulo-acceso">Tu pase.</h2>
@@ -375,9 +385,11 @@
   </main>
 
   <footer class="entrada__pie">
+    <p class="entrada__pie-gigante" aria-hidden="true"><span>Miniápolis</span></p>
     <div class="entrada__pie-interior contenedor contenedor--portada">
       <p class="entrada__pie-marca">Miniápolis&nbsp;#3 — Racing Hobbies</p>
       <p class="entrada__pie-copy">© 2026 — Más que una pista, una comunidad.</p>
+      <a class="entrada__arriba" href="#inicio">Volver arriba <span aria-hidden="true">↑</span></a>
     </div>
   </footer>
 
