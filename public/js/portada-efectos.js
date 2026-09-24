@@ -129,6 +129,9 @@ function partirLetras() {
       const letra = document.createElement('span');
       letra.className = 'letra';
       letra.setAttribute('aria-hidden', 'true');
+      // Al hacer scroll cada letra sale volando a su ritmo: una lluvia ordenada, nunca aleatoria.
+      letra.style.setProperty('--dy', `${45 + ((indice * 53) % 110)}%`);
+      letra.style.setProperty('--giro-letra', `${((indice * 7) % 5) * 5 - 10}deg`);
       letra.style.setProperty('--l', String(indice++));
       letra.textContent = caracter;
       linea.append(letra);

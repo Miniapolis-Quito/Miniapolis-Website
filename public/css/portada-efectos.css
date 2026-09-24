@@ -180,7 +180,8 @@
 
 /* --- Titulares de escena: palabra a palabra ----------------------------------------- */
 .portada-motor .con-palabras .palabra {
-  --k: clamp(0, calc(var(--item-in, 1) * 2.6 - var(--w, 0) * .34), 1);
+  /* Escalonadas, pero la última palabra siempre termina de subir, sea cual sea el largo del titular. */
+  --k: clamp(0, calc(var(--item-in, 1) * (1.6 + (var(--n, 1) - 1) * .34) - var(--w, 0) * .34), 1);
   display: inline-block;
   padding: .24em .06em .14em;
   margin: -.24em -.06em -.14em;
