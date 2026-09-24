@@ -1,0 +1,378 @@
+/* ==========================================================================
+   Portada: efectos
+
+   Capa encima de portada.css. Mismas reglas de la casa:
+     - por defecto la página es estática y completa;
+     - todo lo que se mueve o se oculta para animarse cuelga de `.portada-motor`;
+     - solo lo clicable tiene :hover (lo demás responde por variables que
+       escribe portada.js con eventos de puntero).
+   ========================================================================== */
+
+/* --- Cabecera: capítulo actual y cometa de progreso ------------------------- */
+.entrada__capitulo { display: none; }
+.portada-motor .entrada__capitulo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  overflow: hidden;
+  color: var(--texto-2);
+  font: 650 .66rem/1 var(--mono);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.entrada__capitulo-num { color: var(--acento); font-variant-numeric: tabular-nums; }
+.entrada__capitulo-num::after { content: ' /'; color: var(--texto-3); }
+.portada-motor .entrada__capitulo.cambia .entrada__capitulo-num,
+.portada-motor .entrada__capitulo.cambia .entrada__capitulo-nombre { animation: capituloEntra 620ms var(--salida) both; }
+.portada-motor .entrada__capitulo.cambia .entrada__capitulo-nombre { animation-delay: 70ms; }
+@keyframes capituloEntra { from { opacity: 0; transform: translate3d(0, 130%, 0); } to { opacity: 1; transform: none; } }
+@media (max-width: 820px) { .portada-motor .entrada__capitulo { display: none; } }
+
+.entrada__progreso i {
+  position: absolute;
+  top: 0;
+  left: calc(var(--scroll, 0) * 100% - 90px);
+  width: 90px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #f4ffd9);
+  box-shadow: 0 0 14px 2px rgba(191, 255, 90, .75);
+  opacity: calc(var(--vel-abs, 0) * 1.4 + .35);
+  pointer-events: none;
+}
+
+/* --- Hero: letras, foco de luz, chispas, inclinación --------------------------- */
+.portada__chispas,
+.portada__foco,
+.portada__desliza { display: none; }
+
+.portada-motor .portada__linea > span.con-letras { transform: skewX(-8deg); transition: none; }
+.portada__linea > span .letra { display: inline-block; transform-origin: 0 100%; }
+.portada-motor .portada__linea .letra { transform: translate3d(0, 118%, 0) rotate(9deg); }
+.portada-listos .portada__linea .letra {
+  transform: none;
+  transition: transform 900ms var(--salida);
+  transition-delay: calc(var(--espera, 1250ms) + var(--l, 0) * 42ms);
+}
+/* «rodar.» respira: un resplandor lento detrás de la línea verde. */
+@keyframes respiraVerde { 0%, 100% { filter: drop-shadow(0 0 0 rgba(147, 210, 65, 0)); } 50% { filter: drop-shadow(0 0 26px rgba(147, 210, 65, .42)); } }
+.portada-listos .portada__linea--acento { animation: respiraVerde 3.6s ease-in-out 2.4s infinite; }
+
+.portada-motor .portada__chispas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.portada-motor .portada__foco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+  background: radial-gradient(circle 420px at var(--foco-x, 72%) var(--foco-y, 40%), rgba(147, 210, 65, .17), transparent 70%);
+  mix-blend-mode: screen;
+  opacity: var(--foco-on, 0);
+  transition: opacity 700ms var(--salida);
+}
+
+/* El auto se inclina hacia el puntero; su salida por scroll va en translate/rotate. */
+.portada-motor .portada__auto {
+  transform: perspective(900px) rotateX(var(--inclina-x, 0deg)) rotateY(var(--inclina-y, 0deg));
+  translate: calc(var(--p, 0) * 22vw) calc(var(--p, 0) * -14vh);
+  rotate: calc(2deg + var(--p, 0) * 5deg);
+  transition: transform 500ms var(--salida);
+}
+
+/* Indicador de scroll. */
+.portada-motor .portada__desliza {
+  position: absolute;
+  bottom: clamp(20px, 4vh, 40px);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: rgba(245, 246, 240, .62);
+  font: 650 .58rem/1 var(--mono);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  translate: -50% 0;
+  opacity: calc(1 - var(--p, 0) * 7);
+  pointer-events: none;
+}
+.portada-motor .portada__desliza i {
+  position: relative;
+  width: 1px;
+  height: 46px;
+  overflow: hidden;
+  background: rgba(245, 246, 240, .22);
+}
+.portada-motor .portada__desliza i::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 16px;
+  background: var(--acento);
+  box-shadow: 0 0 10px var(--acento);
+  animation: caeGota 1.9s cubic-bezier(.6, 0, .3, 1) infinite;
+}
+@keyframes caeGota { from { transform: translate3d(0, -100%, 0); } to { transform: translate3d(0, 300%, 0); } }
+@media (max-width: 700px), (max-height: 640px) { .portada-motor .portada__desliza { display: none; } }
+
+/* --- Cintas: texto gigante que corre con el scroll --------------------------------- */
+.portada__cinta {
+  position: relative;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  border-block: 1px solid rgba(221, 231, 222, .12);
+  background: #070a09;
+}
+.portada__cinta-pista {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  padding-block: clamp(14px, 2vw, 28px);
+  will-change: transform;
+}
+.portada__cinta-pista > span {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding-right: clamp(28px, 4vw, 64px);
+  color: transparent;
+  font: 650 clamp(2.6rem, 8.4vw, 8.4rem)/1 var(--display);
+  font-stretch: 125%;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  -webkit-text-stroke: 1.5px rgba(221, 231, 222, .42);
+}
+/* Un rombo de meta entre palabra y palabra; la palabra impar se rellena de verde. */
+.portada__cinta-pista > span::after {
+  content: '';
+  flex: none;
+  width: .34em;
+  height: .34em;
+  margin-left: clamp(28px, 4vw, 64px);
+  background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 50% 50%;
+  outline: 1px solid rgba(221, 231, 222, .4);
+  transform: skewX(-16deg);
+}
+.portada__cinta-pista > span:nth-child(odd) { color: var(--acento); -webkit-text-stroke: 0; }
+.portada__cinta--inversa { border-color: transparent; background: var(--acento); }
+.portada__cinta--inversa .portada__cinta-pista > span { color: transparent; -webkit-text-stroke: 1.5px rgba(5, 9, 10, .7); }
+.portada__cinta--inversa .portada__cinta-pista > span:nth-child(odd) { color: #05090a; -webkit-text-stroke: 0; }
+.portada__cinta--inversa .portada__cinta-pista > span::after { background: conic-gradient(#05090a 25%, var(--acento) 0 50%, #05090a 0 75%, var(--acento) 0) 0 0 / 50% 50%; outline-color: rgba(5, 9, 10, .55); }
+.portada-motor .portada__cinta { transform: skewY(calc(var(--vel, 0) * -1.6deg)); will-change: transform; }
+
+/* --- Titulares de escena: palabra a palabra ----------------------------------------- */
+.portada-motor .con-palabras .palabra {
+  --k: clamp(0, calc(var(--item-in, 1) * 2.6 - var(--w, 0) * .34), 1);
+  display: inline-block;
+  padding: .24em .06em .14em;
+  margin: -.24em -.06em -.14em;
+  overflow: hidden;
+  vertical-align: top;
+}
+.portada-motor .con-palabras .palabra__i {
+  display: inline-block;
+  transform: translate3d(0, calc((1 - var(--k)) * 112%), 0) rotate(calc((1 - var(--k)) * 4deg));
+  transform-origin: 0 100%;
+  will-change: transform;
+}
+.portada-motor .portada__intro .con-palabras .palabra { --k: clamp(0, calc(var(--entra, 1) * 2.4 - var(--w, 0) * .55), 1); }
+
+/* Cierre: la frase se ilumina palabra por palabra, al ritmo del scroll. */
+.portada-motor .portada__comunidad-cierre.con-palabras .palabra {
+  --lleno: clamp(0, calc((var(--p, 1) - .1) * 3.4 * (var(--n, 8) + 2) - var(--w, 0)), 1);
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+}
+.portada-motor .portada__comunidad-cierre.con-palabras .palabra__i {
+  opacity: calc(.14 + var(--lleno) * .86);
+  transform: translate3d(0, calc((1 - var(--lleno)) * 14px), 0);
+}
+
+/* --- Letras fantasma: tipografía gigante que deriva detrás de cada escena --------- */
+.portada__fantasma {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: -1;
+  color: transparent;
+  font: 650 clamp(8rem, 24vw, 24rem)/.8 var(--display);
+  font-stretch: 125%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  -webkit-text-stroke: 1px rgba(221, 231, 222, .1);
+  translate: 2vw -50%;
+  pointer-events: none;
+  user-select: none;
+}
+.portada__info--datos .portada__fantasma,
+.portada__info--records .portada__fantasma,
+.portada__info--galeria .portada__fantasma { left: auto; right: 0; translate: -2vw -50%; }
+.portada-motor .portada__fantasma { translate: calc(2vw + (var(--info-p, .5) - .5) * -34vw) -50%; will-change: transform; }
+.portada-motor .portada__info--datos .portada__fantasma,
+.portada-motor .portada__info--records .portada__fantasma,
+.portada-motor .portada__info--galeria .portada__fantasma { translate: calc(-2vw + (var(--info-p, .5) - .5) * 34vw) -50%; }
+
+/* --- Profundidad: cada ficha desplaza su contenido contra el puntero ------------------- */
+.portada__indice,
+.portada__disciplina h3,
+.portada__spec strong,
+.portada__evento-fecha b,
+.portada__promo strong { transition: translate 260ms var(--salida); }
+.portada__indice { translate: calc(var(--px, 0) * -10px) calc(var(--py, 0) * -6px); }
+.portada__disciplina h3 { translate: calc(var(--px, 0) * 5px) calc(var(--py, 0) * 3px); }
+.portada__spec strong { translate: calc(var(--px, 0) * 6px) calc(var(--py, 0) * 4px); }
+.portada__evento-fecha b { translate: calc(var(--px, 0) * -8px) calc(var(--py, 0) * -5px); }
+.portada__promo strong { translate: calc(var(--px, 0) * 5px) calc(var(--py, 0) * 3px); }
+
+/* Fichas en escalera: cada columna deriva a su ritmo mientras pasa la escena. */
+@media (min-width: 1101px) {
+  .portada-motor .portada__info--complejo .portada__disciplina:nth-child(odd) { translate: 0 calc((.5 - var(--info-p, .5)) * 46px); }
+  .portada-motor .portada__info--complejo .portada__disciplina:nth-child(even) { translate: 0 calc((.5 - var(--info-p, .5)) * -46px); }
+  .portada-motor .portada__info--comunidad .portada__promo:nth-child(odd) { translate: 0 calc((.5 - var(--info-p, .5)) * 40px); }
+  .portada-motor .portada__info--comunidad .portada__promo:nth-child(even) { translate: 0 calc((.5 - var(--info-p, .5)) * -40px); }
+}
+@media (min-width: 701px) {
+  .portada-motor .portada__info--galeria figure:nth-child(3n + 1) { translate: 0 calc((.5 - var(--info-p, .5)) * 48px); }
+  .portada-motor .portada__info--galeria figure:nth-child(3n) { translate: 0 calc((.5 - var(--info-p, .5)) * -48px); }
+}
+
+/* --- Horarios: la jornada de hoy se enciende ------------------------------------------- */
+.portada__horario[data-estado] { box-shadow: inset 3px 0 0 var(--acento), inset 0 0 60px -30px rgba(147, 210, 65, .55); }
+.portada__horario[data-estado] span::after {
+  content: 'Hoy';
+  padding: 5px 8px;
+  border: 1px solid var(--acento-borde);
+  border-radius: 999px;
+  color: var(--acento);
+  font-size: .56rem;
+  line-height: 1;
+  letter-spacing: .18em;
+  white-space: nowrap;
+}
+.portada__horario[data-estado="abierto"] span::after { content: 'Abierto ahora'; background: var(--acento); color: #04120a; }
+.portada-motor .portada__horario[data-estado="abierto"] span::before { animation: portadaPulsoVerde 1.4s ease-in-out infinite; }
+
+/* --- Récords: barra de ritmo respecto al líder -------------------------------------------- */
+.portada__record { --ritmo: 1; }
+.portada__record:nth-child(2) { --ritmo: .969; }
+.portada__record:nth-child(3) { --ritmo: .955; }
+.portada__record::after {
+  content: '';
+  position: absolute;
+  inset: auto auto 0 0;
+  width: calc(var(--ritmo) * 100%);
+  height: 2px;
+  background: linear-gradient(90deg, var(--acento), rgba(147, 210, 65, 0));
+  opacity: .55;
+  transform-origin: left center;
+}
+.portada-motor .portada__info--records .portada__record::after { transform: scaleX(clamp(0, calc(var(--item-in, 1) * 1.4 - .4), 1)); }
+.portada__record--primero::after { opacity: 1; box-shadow: 0 0 14px rgba(147, 210, 65, .8); }
+
+/* --- Tarjeta de acceso: un destello recorre el borde ------------------------------------------ */
+@property --giro { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes giraBorde { to { --giro: 360deg; } }
+.portada-motor .entrada__acceso-panel { position: relative; }
+.portada-motor .entrada__acceso-panel::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--giro), transparent 0 68%, rgba(147, 210, 65, .95) 86%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: giraBorde 5.5s linear infinite;
+  pointer-events: none;
+}
+.entrada__acceso-panel .campo label { transition: color var(--t-hover) var(--curva-hover); }
+.entrada__acceso-panel .campo:focus-within label { color: var(--acento); }
+
+/* --- Mira: anillo al pulsar ----------------------------------------------------------------------- */
+@keyframes miraPulsa { 0% { box-shadow: 0 0 0 0 rgba(147, 210, 65, .75); } 100% { box-shadow: 0 0 0 26px rgba(147, 210, 65, 0); } }
+.entrada__mira.pulsa .entrada__mira-centro { animation: miraPulsa 520ms var(--salida); }
+
+/* --- Pie: el nombre se llena de verde ------------------------------------------------------------------- */
+.entrada__pie { position: relative; overflow: hidden; }
+.entrada__pie-gigante {
+  /* Asoma solo la parte alta de las letras, como un nombre que sale del suelo. */
+  height: clamp(80px, 9.6vw, 210px);
+  margin: 0;
+  padding: 0 var(--gutter);
+  overflow: hidden;
+  text-align: center;
+  font: 650 clamp(2.6rem, 12.6vw, 22rem)/.8 var(--display);
+  font-stretch: 125%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(221, 231, 222, .2);
+  user-select: none;
+}
+.entrada__pie-gigante span {
+  display: inline-block;
+  padding-top: .26em;
+  background: linear-gradient(90deg, var(--acento) calc(var(--llena, 0) * 100%), rgba(221, 231, 222, 0) calc(var(--llena, 0) * 100% + .5%));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+/* La escena de acceso cede al pie lo mismo que este ocupa: el formulario sigue entero al llegar abajo. */
+.pagina-entrada .portada__boxes { padding-bottom: clamp(40px, 4vw, 64px); }
+@media (max-width: 700px) {
+  .entrada__pie-gigante { height: auto; padding-top: 26px; }
+  .entrada__pie-gigante span { padding-top: 0; }
+}
+.entrada__arriba {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--texto-2);
+  font: 650 .68rem/1 var(--mono);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  transition: color var(--t-hover) var(--curva-hover);
+}
+.entrada__arriba span { color: var(--acento); transition: transform var(--t-hover) var(--curva-hover); }
+@media (hover: hover) {
+  .entrada__arriba:hover { color: var(--acento); }
+  .entrada__arriba:hover span { transform: translateY(-4px); }
+}
+
+/* --- Pantallas bajas: la cabecera de la recta se compacta para no tapar las fotos ------ */
+@media (min-width: 900px) and (max-height: 700px) {
+  .portada-fija .pagina-entrada .portada__recta-cabeza { padding: 12px clamp(18px, 4vw, 48px); }
+  .portada-fija .portada__recta-cabeza h2 { font-size: clamp(2rem, min(6.4vw, 9svh), 9rem); }
+  .portada-fija .portada__recta-cabeza p { display: none; }
+}
+
+/* --- Sin movimiento: quieto y completo ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .portada__cinta-pista { animation: none !important; transform: none !important; }
+  .portada__fantasma { translate: 2vw -50% !important; }
+  .portada__record::after { transform: none !important; }
+  .portada__horario span::before { animation: none !important; }
+  .entrada__acceso-panel::before { animation: none !important; }
+}

@@ -170,6 +170,7 @@ export function crearMotor() {
       raiz.style.setProperty('--scroll-px', sPxStr);
     }
     pintar();
+    for (const fn of alCuadro) fn({ velocidad, suave, dt });
 
     if (quieto) { corriendo = false; return; }
     requestAnimationFrame(cuadro);
@@ -199,6 +200,7 @@ export function crearMotor() {
   }
 
   const alMedir = [];
+  const alCuadro = [];
 
   const medirEnFotograma = () => {
     if (midiendo) return;
@@ -225,6 +227,13 @@ export function crearMotor() {
     alMedir(fn) {
       alMedir.push(fn);
       fn();
+    },
+    /**
+     * Ejecuta `fn` en cada fotograma mientras la página se mueve, y una última
+     * vez ya en reposo (velocidad 0) para que lo animado vuelva a su ritmo base.
+     */
+    alCuadro(fn) {
+      alCuadro.push(fn);
     },
     medir,
   };
