@@ -115,3 +115,41 @@ test('salidaPieza no toca lo que se lee y solo actúa bajo la cabecera', () => {
   assert.equal(salidaPieza(-400, 300, 82), 1, 'ya pasó entera');
   assert.equal(salidaPieza(0, 0, 82), 1, 'una pieza sin alto no divide por cero');
 });
+
+test('interpolarCifras cuenta cada número del texto y deja el resto intacto', async () => {
+  const { interpolarCifras } = await import('../public/js/portada-motor.js');
+  assert.equal(interpolarCifras('44 m × 22,5 m', 1), '44 m × 22,5 m');
+  assert.equal(interpolarCifras('44 m × 22,5 m', 0), '0 m × 0,0 m');
+  assert.equal(interpolarCifras('44 m × 22,5 m', 0.5), '22 m × 11,3 m');
+  assert.equal(interpolarCifras('AMB / MyLaps', 0.3), 'AMB / MyLaps');
+  assert.equal(interpolarCifras('12.46', 0.5, { rellenar: true }), '06.23');
+  assert.equal(interpolarCifras('12.46', 0, { rellenar: true }), '00.00');
+  assert.equal(interpolarCifras('200 vehículos', 2), '200 vehículos', 't se recorta a 1');
+});
+
+test('progresoPalabra escalona las palabras y todas terminan a la vez con p = 1', async () => {
+  const { progresoPalabra } = await import('../public/js/portada-motor.js');
+  for (let i = 0; i < 4; i++) assert.equal(progresoPalabra(1, i, 4), 1);
+  for (let i = 0; i < 4; i++) assert.equal(progresoPalabra(0, i, 4), 0);
+  assert.ok(progresoPalabra(0.4, 0, 4) > progresoPalabra(0.4, 3, 4), 'la primera palabra va por delante');
+  assert.equal(progresoPalabra(0.5, 0, 1), 0.5);
+});
+
+test('sectorActual devuelve el último sector que ya empezó', async () => {
+  const { sectorActual } = await import('../public/js/portada-motor.js');
+  const inicios = [0, 800, 1600, 2400];
+  assert.equal(sectorActual(-10, inicios), 0);
+  assert.equal(sectorActual(799, inicios), 0);
+  assert.equal(sectorActual(800, inicios), 1);
+  assert.equal(sectorActual(99999, inicios), 3);
+});
+
+test('desfaseCinta envuelve cualquier recorrido dentro de un periodo', async () => {
+  const { desfaseCinta } = await import('../public/js/portada-motor.js');
+  assert.equal(desfaseCinta(0, 100), 0);
+  assert.equal(desfaseCinta(-30, 100), -30);
+  assert.equal(desfaseCinta(-130, 100), -30);
+  assert.equal(desfaseCinta(30, 100), -70);
+  assert.equal(desfaseCinta(250, 100), -50);
+  assert.equal(desfaseCinta(50, 0), 0);
+});

@@ -668,13 +668,27 @@
   will-change: transform, opacity;
 }
 
-/* Luces fuera: el titular entra de golpe, línea por línea, con máscara. */
-.portada-motor .portada__linea > span { transform: translate3d(0, 112%, 0) skewX(-8deg); }
+/* Luces fuera: el titular entra de golpe, letra por letra, desde su máscara.
+   Con el scroll, cada letra sale por arriba a su propio ritmo. */
 .portada__linea:nth-child(2) { --i: 1; }
-.portada-listos .portada__linea > span {
-  transform: translate3d(0, 0, 0) skewX(-8deg);
-  transition: transform 900ms var(--salida);
-  transition-delay: calc(var(--espera, 1250ms) + var(--i, 0) * 110ms);
+.portada__letras { display: inline-block; white-space: nowrap; }
+.portada__letra { display: inline-block; }
+.portada-motor .portada__letra {
+  opacity: 0;
+  transform: translate3d(0, 118%, 0) rotate(14deg);
+  transform-origin: 0 100%;
+  translate: 0 calc(max(0, var(--p, 0) - .05) * var(--dy, 80%) * -1.5);
+  rotate: calc(max(0, var(--p, 0) - .05) * var(--giro, 0deg) * 2.2);
+}
+/* Terminada la entrada, la máscara se suelta: al hacer scroll las letras
+   vuelan enteras, nunca cortadas a medias. */
+.portada-listos .portada__linea { animation: linea-libre 1ms linear calc(var(--espera, 1250ms) + 1500ms) forwards; }
+@keyframes linea-libre { to { overflow: visible; } }
+.portada-listos .portada__letra {
+  opacity: 1;
+  transform: none;
+  transition: transform 1100ms var(--salida), opacity 500ms linear;
+  transition-delay: calc(var(--espera, 1250ms) + var(--c, 0) * 42ms);
 }
 .portada-rapido { --espera: 0ms; }
 
@@ -704,38 +718,66 @@
   transition: transform 1000ms var(--salida) calc(var(--espera, 1250ms) + 150ms);
 }
 
-/* Semáforo de salida: cinco luces rojas, todas fuera a la vez. */
+/* Semáforo de salida: un telón a pantalla completa. Cinco luces rojas se
+   encienden una a una, se apagan a la vez y el telón se abre en diagonal. */
+.portada__semaforo-caja,
+.portada__semaforo-texto { display: none; }
 .portada-motor .portada__semaforo {
   position: absolute;
-  top: calc(var(--altura-cabecera) + 5svh);
-  left: 50%;
-  z-index: 3;
+  inset: 0;
+  z-index: 6;
   display: flex;
-  gap: clamp(10px, 1.6vw, 22px);
-  padding: 12px 20px;
-  translate: -50% 0;
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: rgba(5, 7, 6, .72);
-  opacity: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(22px, 4svh, 40px);
+  background:
+    radial-gradient(ellipse 60% 44% at 50% 50%, rgba(255, 91, 71, .1), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(245, 246, 240, .025) 0 1px, transparent 1px 88px),
+    #050706;
   pointer-events: none;
+  animation: telon 1.62s cubic-bezier(.7, 0, .2, 1) forwards;
+}
+.portada-motor .portada__semaforo-caja {
+  display: flex;
+  gap: clamp(12px, 2.2vw, 30px);
+  padding: clamp(14px, 2vw, 24px) clamp(20px, 3vw, 36px);
+  border: 1px solid rgba(245, 246, 240, .12);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #121614, #070908);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.portada-motor .portada__semaforo-texto {
+  display: block;
+  color: rgba(245, 246, 240, .5);
+  font: 650 .68rem/1 var(--mono);
+  letter-spacing: .32em;
+  text-transform: uppercase;
 }
 .portada-motor .portada__luz {
-  width: clamp(16px, 2.3vw, 30px);
+  width: clamp(30px, 5.4vw, 74px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #1a0d0c;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .06);
+  background: radial-gradient(circle at 38% 34%, #2a1413, #120807 70%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .05), inset 0 -6px 12px rgba(0, 0, 0, .6);
+  animation: luz-roja calc(950ms - var(--i, 0) * 170ms) linear calc(150ms + var(--i, 0) * 170ms) forwards;
 }
 .portada__luz:nth-child(2) { --i: 1; }
 .portada__luz:nth-child(3) { --i: 2; }
 .portada__luz:nth-child(4) { --i: 3; }
 .portada__luz:nth-child(5) { --i: 4; }
-.portada-listos .portada__semaforo { animation: semaforo 1.45s linear forwards; }
-.portada-listos .portada__luz { animation: luz-roja .01s linear forwards; animation-delay: calc(var(--i, 0) * 160ms + 120ms); }
 .portada-rapido .portada__semaforo { display: none; }
-@keyframes semaforo { 0% { opacity: 0; } 8%, 84% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes luz-roja { to { background: var(--rojo); box-shadow: 0 0 22px 4px rgba(226, 58, 50, .7); } }
+@keyframes luz-roja {
+  0%, 99.9% {
+    background: radial-gradient(circle at 38% 34%, #ffd3c9, var(--rojo) 42%, #a3160f 100%);
+    box-shadow: 0 0 34px 8px rgba(255, 91, 71, .55), 0 0 90px 10px rgba(255, 91, 71, .25), inset 0 0 0 2px rgba(255, 255, 255, .2);
+  }
+  100% { background: radial-gradient(circle at 38% 34%, #2a1413, #120807 70%); }
+}
+@keyframes telon {
+  0%, 68% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); visibility: visible; }
+  100% { clip-path: polygon(0 0, 100% 0, 100% 0, 0 -22%); visibility: hidden; }
+}
 
 /* Estela: rayas en los bordes, visibles solo cuando el scroll va rápido. */
 .portada__estela { display: none; }
@@ -801,7 +843,8 @@
   align-items: flex-end;
   gap: clamp(28px, 3vw, 56px);
   width: max-content;
-  transform: translate3d(calc(var(--p, 0) * var(--recorrido, 0) * -1px), 0, 0);
+  transform: translate3d(calc(var(--p, 0) * var(--recorrido, 0) * -1px), 0, 0) skewX(calc(var(--vel, 0) * -6deg));
+  transform-origin: 50% 100%;
   will-change: transform;
 }
 .portada-fija .portada__panel {
@@ -811,7 +854,10 @@
   height: var(--alto-panel);
   /* Corte diagonal de chicane: el panel se descubre según cuánto ha entrado. */
   clip-path: polygon(calc((1 - var(--q, 1)) * 100%) 0, 100% 0, 100% 100%, calc((1 - var(--q, 1)) * 100% - 14%) 100%);
-  will-change: clip-path;
+  /* Y además gira hacia la cámara, como una curva que se abre al llegar. */
+  transform: perspective(calc(var(--alto-panel, 540px) * 3.2)) rotateY(calc((1 - var(--q, 1)) * -24deg)) translate3d(0, calc((1 - var(--q, 1)) * 6svh), 0);
+  transform-origin: 0 50%;
+  will-change: clip-path, transform;
 }
 .portada-fija .portada__panel img {
   width: auto;
@@ -829,6 +875,7 @@
   height: auto;
   clip-path: none;
   opacity: calc(.2 + var(--q, 1) * .8);
+  transform: translate3d(calc((1 - var(--q, 1)) * 18vw), 0, 0);
 }
 
 /* Bordillo rojo y blanco pegado al suelo: corre al ritmo del riel. */
@@ -842,9 +889,23 @@
   will-change: transform;
 }
 
-/* Apilado (pantallas pequeñas): cada foto se descubre al llegar. */
-.portada-motor:not(.portada-fija) .portada__panel:not(.visto) { clip-path: inset(0 0 100% 0); }
-.portada-motor:not(.portada-fija) .portada__panel.visto { clip-path: inset(0); transition: clip-path 900ms var(--salida); }
+/* Apilado (pantallas pequeñas): una cortina del color del fondo se retira y
+   descubre cada foto, que se asienta detrás. El panel no se recorta: Chromium
+   no da por visible a un elemento recortado entero, y el observador que
+   dispara el revelado no llegaría a verlo nunca. */
+.portada-motor:not(.portada-fija) .portada__panel::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 3;
+  background: #070a09;
+  transform-origin: 50% 100%;
+  transition: transform 1000ms var(--salida);
+  pointer-events: none;
+}
+.portada-motor:not(.portada-fija) .portada__panel.visto::after { transform: scaleY(0); }
+.portada-motor:not(.portada-fija) .portada__panel img { transform: scale(1.14); transition: transform 1500ms var(--salida); }
+.portada-motor:not(.portada-fija) .portada__panel.visto img { transform: none; }
 
 
 /* ==========================================================================
@@ -1202,8 +1263,8 @@
   overflow-wrap: break-word;
 }
 .portada__spec--wide strong { font-size: clamp(2.2rem, 4.4vw, 4.6rem); line-height: .92; white-space: nowrap; }
-.portada__spec span { display: block; color: #95a298; font: 600 .7rem/1.5 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
-.portada__spec span::before { content: '// '; color: var(--acento); }
+.portada__spec > span { display: block; color: #95a298; font: 600 .7rem/1.5 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.portada__spec > span::before { content: '// '; color: var(--acento); }
 
 /* --- 03 Horarios: pit lane ---------------------------------------------- */
 .portada__info--split {
@@ -1310,7 +1371,7 @@
   background: linear-gradient(90deg, rgba(7, 10, 9, .95), rgba(7, 10, 9, .74)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat;
 }
 .portada__record:last-child { border-bottom: 0; }
-.portada__record span { color: rgba(245, 246, 240, .3); font: 650 clamp(1.5rem, 2.6vw, 2.5rem)/1 var(--display); font-stretch: 118%; font-variant-numeric: tabular-nums; }
+.portada__record > span { color: rgba(245, 246, 240, .3); font: 650 clamp(1.5rem, 2.6vw, 2.5rem)/1 var(--display); font-stretch: 118%; font-variant-numeric: tabular-nums; }
 .portada__record strong { min-width: 0; color: #f5f6f0; font: 650 clamp(1.2rem, 2vw, 1.8rem)/1.05 var(--display); font-stretch: 116%; }
 .portada__record b { color: var(--acento); font: 650 clamp(1.35rem, 2.5vw, 2.3rem)/1 var(--mono); font-variant-numeric: tabular-nums; }
 .portada__record b::after { content: 's'; margin-left: .18em; color: var(--texto-3); font-size: .5em; }
@@ -1323,7 +1384,7 @@
   background: var(--acento);
   box-shadow: 0 0 18px rgba(147, 210, 65, .8);
 }
-.portada__record--primero span { color: var(--acento); }
+.portada__record--primero > span { color: var(--acento); }
 .portada__record--primero b { text-shadow: 0 0 22px rgba(147, 210, 65, .55); }
 .portada__record-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: 28px; color: var(--texto-2); font: 600 .68rem/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; }
 .portada__record-meta span { display: inline-flex; align-items: center; gap: 10px; }
@@ -1589,7 +1650,7 @@
   background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 20px 20px;
   transform: skewX(-16deg);
 }
-.portada__comunidad-cierre span { color: var(--acento); }
+.portada__comunidad-cierre > span:not(.portada__luz-palabra) { color: var(--acento); }
 
 
 /* --- Una escena por tarjeta ---------------------------------------------- */
@@ -1721,6 +1782,7 @@
 .portada-motor .portada__info--records,
 .portada-motor .portada__info--eventos,
 .portada-motor .portada__info--galeria,
+.portada-motor .portada__info--pronto,
 .portada-motor .portada__info--comunidad {
   --info-in: clamp(0, calc(var(--info-p, .5) * 2.5), 1);
   --info-out: clamp(0, calc((var(--info-p, .5) - .75) * 4), 1);
@@ -1767,7 +1829,7 @@
   clip-path: inset(-.2em calc((1 - var(--item-in, 1)) * 100%) -.2em 0);
   transform: translate3d(calc((1 - var(--item-in, 1)) * 18px), calc(var(--item-out, 0) * -16px), 0);
 }
-.portada-motor .portada__info--datos .portada__spec span { opacity: var(--lectura); transform: translate3d(calc((1 - var(--item-in, 1)) * 10px), 0, 0); }
+.portada-motor .portada__info--datos .portada__spec > span { opacity: var(--lectura); transform: translate3d(calc((1 - var(--item-in, 1)) * 10px), 0, 0); }
 .portada-motor .portada__info--datos .portada__spec::before { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
 
 /* 03 Pit lane: cada jornada entra por la derecha y traza su guía. */
@@ -1814,7 +1876,16 @@
 .portada-motor .portada__info--galeria .portada__galeria figcaption { opacity: var(--item-in, 1); transform: translate3d(0, calc((1 - var(--item-in, 1)) * 20px), 0); }
 
 /* 08 Catálogo: fichas que suben, foto que se asienta y rótulos que llegan. */
-.portada-motor .portada__info--comunidad .portada__promo { transform: translate3d(0, calc((1 - var(--item-in, 1)) * 48px - var(--item-out, 0) * 32px), 0); }
+/* Las fichas suben girando sobre su base y, bajo el puntero, se inclinan hacia él. */
+.portada-motor .portada__info--comunidad .portada__promo {
+  transform:
+    perspective(1100px)
+    translate3d(0, calc((1 - var(--item-in, 1)) * 64px - var(--item-out, 0) * 32px), 0)
+    rotateX(calc((1 - var(--item-in, 1)) * 22deg + var(--incl-x, 0deg)))
+    rotateY(var(--incl-y, 0deg));
+  transform-origin: 50% 100%;
+  transition: transform 160ms linear, border-color var(--t-hover) var(--curva-hover), box-shadow var(--t-hover) var(--curva-hover), translate var(--t-hover) var(--curva-hover);
+}
 .portada-motor .portada__info--comunidad .portada__promo > img { transform: scale(calc(1.12 - var(--item-in, 1) * .12)); }
 .portada-motor .portada__info--comunidad .portada__promo > span,
 .portada-motor .portada__info--comunidad .portada__promo > strong,
@@ -1848,4 +1919,347 @@
   .portada__pronto-visual img,
   .portada__evento-fondo,
   .portada__info--galeria img { transform: none !important; }
+}
+
+
+/* ==========================================================================
+   Espectáculo
+
+   La última capa de movimiento: el telón de salida, tipografía que entra y
+   sale letra a letra, cintas que corren con la velocidad del scroll, una
+   vuelta al circuito en la cabecera y escenas que se abren en diagonal.
+   Todo cuelga de `.portada-motor`: sin motor la página queda estática y
+   completa. Nada se desenfoca: solo se desplaza, gira o se recorta.
+   ========================================================================== */
+
+@property --revela { syntax: '<number>'; inherits: true; initial-value: 1; }
+
+/* --- Salida: foto que se asienta tras el telón ----------------------------- */
+.portada-motor .portada__cielo { animation: cielo-entra 2.6s var(--salida) 1.02s both; }
+.portada-rapido .portada__cielo { animation-duration: 1.6s; animation-delay: 0s; }
+@keyframes cielo-entra { from { scale: 1.32; } to { scale: 1; } }
+
+/* El acento del titular brilla al asentarse. */
+.portada-listos .portada__linea--acento .portada__letra { animation: letra-destello 1.4s ease-out both; animation-delay: calc(var(--espera, 1250ms) + 700ms + var(--c, 0) * 42ms); }
+@keyframes letra-destello {
+  0% { text-shadow: 0 0 0 rgba(147, 210, 65, 0); }
+  35% { text-shadow: 0 0 34px rgba(147, 210, 65, .85); }
+  100% { text-shadow: 0 0 18px rgba(147, 210, 65, .18); }
+}
+
+/* Rótulo gigante: cruza la foto en hueco y se llena de verde con el scroll. */
+.portada__gigante {
+  position: absolute;
+  top: calc(var(--altura-cabecera) + 1.5svh);
+  left: 0;
+  z-index: -1;
+  margin: 0;
+  color: transparent;
+  font: 800 clamp(6rem, 21vw, 30rem)/.82 var(--display);
+  font-stretch: 125%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  -webkit-text-stroke: 1px rgba(245, 246, 240, .17);
+  background: linear-gradient(90deg, rgba(147, 210, 65, calc(var(--p, 0) * .2)), rgba(147, 210, 65, calc(var(--p, 0) * .05)) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+  user-select: none;
+}
+.portada-motor .portada__gigante {
+  opacity: 0;
+  transform: translate3d(calc(4vw - var(--p, 0) * 46vw), 0, 0);
+  translate: 24vw 0;
+  will-change: transform;
+}
+.portada-listos .portada__gigante {
+  opacity: 1;
+  translate: 0 0;
+  transition: opacity 1.4s ease calc(var(--espera, 1250ms) + 200ms), translate 2.2s var(--salida) calc(var(--espera, 1250ms) + 100ms);
+}
+
+/* Aviso de scroll: una gota verde que baja por la línea. */
+.portada__desliza { display: none; }
+.portada-motor .portada__desliza {
+  position: absolute;
+  bottom: clamp(18px, 3.4svh, 34px);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  translate: -50% 0;
+  opacity: clamp(0, calc(1 - var(--p, 0) * 7), 1);
+  color: rgba(245, 246, 240, .66);
+  font: 650 .58rem/1 var(--mono);
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.portada-motor .portada__desliza::after {
+  content: '';
+  width: 1px;
+  height: clamp(34px, 6svh, 56px);
+  background: linear-gradient(var(--acento), var(--acento)) 0 -40% / 100% 36% no-repeat, rgba(245, 246, 240, .2);
+  box-shadow: 0 0 10px rgba(147, 210, 65, .45);
+}
+.portada-motor .portada__desliza > span,
+.portada-motor .portada__desliza::after { opacity: 0; }
+.portada-listos .portada__desliza > span { animation: desliza-entra 900ms var(--salida) calc(var(--espera, 1250ms) + 1100ms) both; }
+.portada-listos .portada__desliza::after { animation: desliza-entra 900ms var(--salida) calc(var(--espera, 1250ms) + 1200ms) both, desliza-gota 1.9s cubic-bezier(.6, 0, .3, 1) calc(var(--espera, 1250ms) + 1800ms) infinite; }
+@keyframes desliza-entra { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+@keyframes desliza-gota { from { background-position: 0 -40%, 0 0; } to { background-position: 0 140%, 0 0; } }
+@media (max-width: 899px), (max-height: 640px) { .portada-motor .portada__desliza { display: none; } }
+
+/* --- Cintas: dos bandas que se cruzan como la meta de una recta ------------ */
+.portada__cintas {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  padding-block: clamp(52px, 7vw, 104px);
+  overflow: hidden;
+  background: #070a09;
+}
+.portada__cinta {
+  grid-area: 1 / 1;
+  align-self: center;
+  width: 112%;
+  margin-left: -6%;
+  padding-block: clamp(14px, 1.5vw, 22px);
+  overflow: hidden;
+  background: var(--acento);
+  color: #06110a;
+  box-shadow: 0 24px 60px -28px rgba(147, 210, 65, .65);
+  transform: translate3d(0, calc((var(--p, .5) - .5) * -36px), 0) rotate(-3.4deg) skewX(calc(var(--vel, 0) * -12deg));
+}
+.portada__cinta--inversa {
+  z-index: -1;
+  border-block: 1px solid rgba(245, 246, 240, .16);
+  background: #101713;
+  color: #f5f6f0;
+  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, .9);
+  transform: translate3d(0, calc((var(--p, .5) - .5) * 36px), 0) rotate(2.6deg) skewX(calc(var(--vel, 0) * 12deg));
+}
+.portada__cinta-pista {
+  display: flex;
+  width: max-content;
+  margin: 0;
+  transform: translate3d(var(--cinta-x, 0px), 0, 0);
+  will-change: transform;
+}
+.portada__cinta-pista span {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(18px, 2.2vw, 34px);
+  padding-right: clamp(18px, 2.2vw, 34px);
+  font: 700 clamp(1.5rem, 3.8vw, 4.2rem)/1 var(--display);
+  font-stretch: 125%;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* Entre palabra y palabra, una bandera a cuadros. */
+.portada__cinta-pista span::after {
+  content: '';
+  flex: none;
+  width: .62em;
+  height: .62em;
+  background: conic-gradient(currentColor 25%, transparent 0 50%, currentColor 0 75%, transparent 0) 0 0 / 50% 50%;
+  transform: skewX(-14deg);
+}
+.portada__cinta--inversa .portada__cinta-pista span:nth-child(odd) { color: transparent; -webkit-text-stroke: 1px rgba(245, 246, 240, .78); }
+.portada__cinta--inversa .portada__cinta-pista span:nth-child(odd)::after { background-image: conic-gradient(#f5f6f0 25%, transparent 0 50%, #f5f6f0 0 75%, transparent 0); }
+
+/* --- Vuelta al circuito en la cabecera ------------------------------------ */
+.entrada__vuelta { display: none; }
+@media (min-width: 980px) {
+  .portada-motor .entrada__vuelta {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 16px 6px 10px;
+    translate: -50% -50%;
+    border: 1px solid rgba(245, 246, 240, .14);
+    border-radius: 999px;
+    background: rgba(245, 246, 240, .035);
+    color: rgba(245, 246, 240, .62);
+    font: 650 .6rem/1 var(--mono);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+}
+.entrada__vuelta-mapa { display: block; width: 56px; height: 30px; overflow: visible; }
+.entrada__vuelta-base,
+.entrada__vuelta-traza { fill: none; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+.entrada__vuelta-base { stroke: rgba(245, 246, 240, .16); }
+.entrada__vuelta-traza { stroke: var(--acento); stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(147, 210, 65, .7)); }
+.entrada__vuelta-auto { fill: #f5f6f0; stroke: var(--acento); stroke-width: 6; filter: drop-shadow(0 0 8px rgba(147, 210, 65, .9)); }
+.entrada__vuelta-rotulo { display: inline-flex; align-items: baseline; gap: 10px; min-width: 14ch; overflow: hidden; }
+.entrada__vuelta-rotulo b { color: var(--acento); font-weight: 700; }
+.entrada__vuelta-avance { min-width: 4ch; padding-left: 14px; border-left: 1px solid rgba(245, 246, 240, .16); color: #f5f6f0; font-variant-numeric: tabular-nums; }
+
+/* --- Recta: marcador, rótulo de fondo y pantallas bajas --------------------- */
+.portada__recta-hud { display: none; }
+.portada-fija .portada__recta-hud {
+  position: absolute;
+  right: var(--gutter);
+  bottom: 20px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: rgba(245, 246, 240, .6);
+  font: 650 .64rem/1 var(--mono);
+  letter-spacing: .2em;
+  font-variant-numeric: tabular-nums;
+}
+.portada-fija .portada__recta-hud b { color: var(--acento); font-weight: 700; }
+.portada__recta-barra { position: relative; width: clamp(90px, 12vw, 200px); height: 2px; overflow: hidden; background: rgba(245, 246, 240, .16); }
+.portada__recta-barra::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--acento);
+  box-shadow: 0 0 12px rgba(147, 210, 65, .8);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left center;
+}
+.portada-fija .portada__recta-marco::before {
+  content: 'Asfalto  Curvas  Control  Asfalto  Curvas  Control';
+  position: absolute;
+  top: 44%;
+  left: 0;
+  z-index: -1;
+  color: transparent;
+  font: 800 clamp(7rem, 30svh, 22rem)/1 var(--display);
+  font-stretch: 125%;
+  text-transform: uppercase;
+  white-space: pre;
+  -webkit-text-stroke: 1px rgba(245, 246, 240, .1);
+  transform: translate3d(calc(8vw - var(--p, 0) * 60vw), -50%, 0);
+  pointer-events: none;
+  will-change: transform;
+}
+/* Fija, el rótulo flota sobre el escenario: sin caja que las fotos pisen. */
+.portada-fija .pagina-entrada .portada__recta-cabeza { border-color: transparent; background: none; }
+.portada-fija .portada__recta-cabeza h2 { text-shadow: 0 10px 40px rgba(0, 0, 0, .6); }
+
+/* Ventanas apaisadas bajas (netbook): el rótulo se compacta y las fotos bajan
+   un poco para que el título nunca las pise. */
+@media (min-width: 900px) and (max-height: 700px) {
+  .portada-fija .portada__riel { --alto-panel: min(50svh, 900px, 50vw); }
+  .portada-fija .portada__recta-cabeza { top: calc(var(--altura-cabecera) + 1.5svh); }
+  .portada-fija .pagina-entrada .portada__recta-cabeza { padding-block: 14px; }
+  .portada-fija .portada__recta-cabeza h2 { font-size: clamp(2.2rem, min(6vw, 10svh), 9rem); }
+  .portada-fija .portada__recta-cabeza p { margin-top: 8px; }
+}
+
+/* --- Escenas: se abren en diagonal y su fondo se asienta ------------------- */
+.portada-motor .portada__info {
+  clip-path: polygon(0 calc((1 - var(--info-in, 1)) * 10vw), 100% 0, 100% 100%, 0 100%);
+}
+.portada-motor .portada__info::before {
+  transform: translate3d(0, calc(var(--deriva) * -6%), 0) scale(calc(1.16 - var(--info-in, 1) * .16));
+}
+.portada-motor .portada__evento-fondo img { transform: scale(calc(1.16 - var(--info-in, 1) * .16)); }
+
+/* Rótulos: cada palabra sube desde su máscara con el reloj de su pieza. */
+.portada__palabra,
+.portada__luz-palabra { display: inline-block; }
+.portada-motor .portada__palabra {
+  --wp: clamp(0, calc(var(--item-in, var(--revela, 1)) * (1 + (var(--nw, 1) - 1) * .26) - var(--w, 0) * .26), 1);
+  clip-path: inset(-.4em -.6em -.18em -.6em);
+}
+.portada-motor .portada__palabra > span {
+  display: inline-block;
+  transform: translate3d(0, calc((1 - var(--wp)) * 135%), 0) rotate(calc((1 - var(--wp)) * 8deg));
+  transform-origin: 0 100%;
+}
+.portada-motor .portada__recta-cabeza,
+.portada-motor .portada__intro { --revela: 0; transition: --revela 1.5s var(--salida) .1s; }
+.portada-motor .portada__recta-cabeza.revelado,
+.portada-motor .portada__intro.revelado { --revela: 1; }
+.portada-motor .portada__recta-cabeza p,
+.portada-motor .portada__intro .entrada__acceso-nota {
+  opacity: var(--revela, 1);
+  transform: translate3d(0, calc((1 - var(--revela, 1)) * 18px), 0);
+}
+
+/* Cierre: la frase se enciende palabra a palabra al subir por la pantalla. */
+.portada-motor .portada__comunidad-cierre { --lee: clamp(0, calc((var(--p, 1) - .1) / .36), 1); }
+.portada-motor .portada__luz-palabra > span {
+  --luz: clamp(0, calc(var(--lee) * (var(--nw, 1) + 1.4) - var(--w, 0)), 1);
+  display: inline-block;
+  opacity: calc(.12 + var(--luz) * .88);
+  transform: translate3d(0, calc((1 - var(--luz)) * .22em), 0);
+}
+
+/* Telemetría y tiempos: la cifra corre como una lectura en vivo. */
+.portada__conteo { font-style: normal; }
+.portada__record::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--ritmo, 1) * 100%);
+  height: 2px;
+  background: linear-gradient(90deg, rgba(147, 210, 65, 0), var(--acento));
+  box-shadow: 0 0 12px rgba(147, 210, 65, .5);
+  transform: scaleX(var(--item-in, 1));
+  transform-origin: left center;
+}
+.portada__record:nth-child(2) { --ritmo: .969; }
+.portada__record:nth-child(3) { --ritmo: .955; }
+.portada__record:nth-child(n + 2)::after { opacity: .55; }
+
+/* Galería: las columnas flotan a distinta velocidad, como capas de un travelling. */
+.portada-motor .portada__info--galeria .portada__galeria { row-gap: 30px; }
+.portada-motor .portada__info--galeria .portada__galeria figure { translate: 0 calc((var(--info-p, .5) - .5) * var(--para, 0px) * -1); }
+.portada__galeria figure:nth-child(2) { --para: 90px; }
+.portada__galeria figure:nth-child(3) { --para: 40px; }
+.portada__galeria figure:nth-child(4) { --para: 30px; }
+.portada__galeria figure:nth-child(5) { --para: 56px; }
+.portada__galeria figure:nth-child(6) { --para: 84px; }
+
+/* Muy pronto: la cinta de obra corre sin parar. */
+.portada-motor .portada__pronto-visual::before {
+  background:
+    repeating-linear-gradient(-45deg, #ff6f20 0 14px, #0a0a0a 14px 28px) 0 0 / 39.6px 10px repeat-x,
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 40%);
+  animation: cinta-obra 1.1s linear infinite;
+}
+@keyframes cinta-obra { to { background-position: 39.6px 0, 0 0; } }
+
+/* Catálogo: la rejilla da profundidad a las fichas inclinables. */
+.portada-motor .portada__promos { perspective: 1400px; }
+
+/* --- Formatos ------------------------------------------------------------- */
+@media (max-width: 700px) {
+  .portada__cintas { padding-block: 44px; }
+  .portada__cinta-pista span { font-size: clamp(1.25rem, 7vw, 1.8rem); }
+  .portada-motor .portada__info { clip-path: polygon(0 calc((1 - var(--info-in, 1)) * 16vw), 100% 0, 100% 100%, 0 100%); }
+  .portada-motor .portada__info--galeria .portada__galeria { row-gap: 10px; }
+  .portada__galeria figure:nth-child(n) { --para: 0px; }
+  /* En el teléfono el rótulo va en hueco y sin relleno: la foto manda. */
+  .portada__gigante { top: auto; bottom: 42%; font-size: 30vw; background: none; -webkit-text-stroke-color: rgba(245, 246, 240, .14); }
+}
+@media (min-width: 1800px) {
+  .portada-motor .entrada__vuelta { zoom: 1.3; }
+  .portada-fija .portada__recta-hud { zoom: 1.35; }
+}
+@media (min-width: 3000px) {
+  .portada-motor .entrada__vuelta { zoom: 1.8; }
+  .portada-fija .portada__recta-hud { zoom: 1.9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portada__cinta,
+  .portada__cinta--inversa,
+  .portada__cinta-pista { transform: none; }
+  .portada__cinta { rotate: -2deg; }
+  .portada__cinta--inversa { rotate: 2deg; }
 }

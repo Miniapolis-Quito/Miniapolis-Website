@@ -93,6 +93,52 @@ export function salidaPieza(arriba, altoPieza, techo) {
   return t * t;
 }
 
+/**
+ * Cifras que se cuentan como una lectura de telemetría: cada número del texto
+ * sube de 0 a su valor con `t` (0..1) y el resto se deja intacto. Conserva el
+ * separador decimal original y, con `rellenar`, los ceros a la izquierda para
+ * que un cronómetro no cambie de ancho mientras corre.
+ */
+export function interpolarCifras(texto, t, { rellenar = false } = {}) {
+  const q = limitar(t);
+  return String(texto).replace(/\d+(?:[.,]\d+)?/g, (numero) => {
+    const separador = numero.match(/[.,]/)?.[0] ?? '';
+    const [entera, decimal = ''] = separador ? numero.split(separador) : [numero];
+    const final = Number(`${entera}.${decimal || 0}`);
+    const valor = q >= 1 ? final : final * q;
+    let [e, d = ''] = valor.toFixed(decimal.length).split('.');
+    if (rellenar) e = e.padStart(entera.length, '0');
+    return separador ? `${e}${separador}${d}` : e;
+  });
+}
+
+/**
+ * Progreso de la palabra `indice` de un titular de `total` palabras cuando el
+ * titular entero va por `p`: se escalonan con `solape` (fracción de una
+ * palabra) y la última termina justo al llegar p a 1.
+ */
+export function progresoPalabra(p, indice, total, solape = 0.3) {
+  if (total <= 1) return limitar(p);
+  return limitar(p * (1 + (total - 1) * solape) - indice * solape);
+}
+
+/**
+ * Qué sector de la vuelta se está recorriendo: el último cuyo inicio ya quedó
+ * por encima de la línea de lectura. `inicios` va ordenado de menor a mayor.
+ */
+export function sectorActual(lectura, inicios) {
+  let sector = 0;
+  for (let i = 0; i < inicios.length; i++) if (lectura >= inicios[i]) sector = i;
+  return sector;
+}
+
+/** Desplazamiento de una cinta sin fin: siempre dentro de (-periodo, 0]. */
+export function desfaseCinta(recorrido, periodo) {
+  if (periodo <= 0) return 0;
+  const r = recorrido % periodo;
+  return r > 0 ? r - periodo : r + 0;
+}
+
 // ---------------------------------------------------------------------------
 // Motor (DOM)
 // ---------------------------------------------------------------------------
@@ -170,6 +216,7 @@ export function crearMotor() {
       raiz.style.setProperty('--scroll-px', sPxStr);
     }
     pintar();
+    for (const fn of alPintar) fn({ scroll: suave, fraccion: limitar(suave / limiteScroll), velocidad, alto, ancho });
 
     if (quieto) { corriendo = false; return; }
     requestAnimationFrame(cuadro);
@@ -199,6 +246,7 @@ export function crearMotor() {
   }
 
   const alMedir = [];
+  const alPintar = [];
 
   const medirEnFotograma = () => {
     if (midiendo) return;
@@ -226,6 +274,13 @@ export function crearMotor() {
       alMedir.push(fn);
       fn();
     },
+    /** Ejecuta `fn` en cada fotograma en que el scroll suavizado se mueve. */
+    alPintar(fn) {
+      alPintar.push(fn);
+      fn({ scroll: suave, fraccion: limitar(suave / limiteScroll), velocidad, alto, ancho });
+    },
+    /** Lectura instantánea para quien anima por su cuenta (las cintas). */
+    estado: () => ({ scroll: suave, velocidad, alto, ancho }),
     medir,
   };
 }
