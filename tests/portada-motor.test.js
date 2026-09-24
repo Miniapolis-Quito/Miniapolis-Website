@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   limitar, suavizar, progresoFijo, progresoVista, normalizarVelocidad,
   fase, easeOutCubic, lucesEncendidas, digitosDe, entradaPanel, progresoMaximo, progresoCifra,
+  entradaPieza, salidaPieza,
 } from '../public/js/portada-motor.js';
 
 const cerca = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} no está a ${eps} de ${b}`);
@@ -97,4 +98,20 @@ test('progresoMaximo dice hasta dónde llega p al llegar al final de la página'
   cerca(progresoMaximo(800, 0, 800), 0.5);
   // Nunca negativo ni mayor que 1.
   assert.equal(progresoMaximo(800, -50, 800), 0.5);
+});
+
+test('entradaPieza espera bajo la ventana, escalona por columna y termina nítida', () => {
+  assert.equal(entradaPieza(1000, 1000), 0, 'aún no asoma');
+  assert.equal(entradaPieza(700, 1000), 1, 'ya subió un 30 % de la ventana');
+  assert.equal(entradaPieza(-400, 1000), 1, 'por encima sigue entera');
+  assert.ok(entradaPieza(850, 1000, 120) < entradaPieza(850, 1000), 'la columna de la derecha llega después');
+  assert.equal(entradaPieza(500, 0), 1);
+});
+
+test('salidaPieza no toca lo que se lee y solo actúa bajo la cabecera', () => {
+  assert.equal(salidaPieza(400, 300, 82), 0, 'en plena lectura no sale');
+  assert.equal(salidaPieza(82, 300, 82), 0, 'justo en la cabecera aún no sale');
+  cerca(salidaPieza(-68, 300, 82), 0.25);
+  assert.equal(salidaPieza(-400, 300, 82), 1, 'ya pasó entera');
+  assert.equal(salidaPieza(0, 0, 82), 1, 'una pieza sin alto no divide por cero');
 });
