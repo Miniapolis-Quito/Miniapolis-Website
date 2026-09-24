@@ -2175,25 +2175,25 @@
 .pagina-entrada .portada__evento,
 .pagina-entrada .portada__promo {
   background-image:
-    linear-gradient(145deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .64) 55%, rgba(7, 10, 9, .88)),
+    linear-gradient(145deg, rgba(7, 10, 9, .68), rgba(7, 10, 9, .42) 55%, rgba(7, 10, 9, .82)),
     var(--card-fondo) !important;
   background-position: center !important;
 }
 
-.pagina-entrada .portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); background-position: 72% center !important; }
+.pagina-entrada .portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista-real/pista-amplia.jpeg'); background-position: 58% center !important; }
 .pagina-entrada .portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); background-position: 38% center !important; }
 .pagina-entrada .portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); background-position: 68% center !important; }
 .pagina-entrada .portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); background-position: center !important; }
 .pagina-entrada .portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); background-position: 74% center !important; }
 
-.pagina-entrada .portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); background-position: center !important; }
-.pagina-entrada .portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); background-position: 70% center !important; }
-.pagina-entrada .portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); background-position: center 38% !important; }
-.pagina-entrada .portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); background-position: 58% center !important; }
-.pagina-entrada .portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); background-position: center 62% !important; }
-.pagina-entrada .portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); background-position: center !important; }
+.pagina-entrada .portada__spec:nth-child(1) { --card-fondo: url('../images/pista-real/hangar-recta.jpeg'); background-position: center !important; }
+.pagina-entrada .portada__spec:nth-child(2) { --card-fondo: url('../images/pista-real/pista-baja.jpeg'); background-position: 64% center !important; }
+.pagina-entrada .portada__spec:nth-child(3) { --card-fondo: url('../images/pista-real/recta-pilotos.jpeg'); background-position: 38% center !important; }
+.pagina-entrada .portada__spec:nth-child(4) { --card-fondo: url('../images/pista-real/coche-salida.jpeg'); background-position: 62% center !important; }
+.pagina-entrada .portada__spec:nth-child(5) { --card-fondo: url('../images/landing/miniapolis-car-detail.webp'); background-position: center !important; }
+.pagina-entrada .portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); background-position: 58% center !important; }
 .pagina-entrada .portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); background-position: 68% center !important; }
-.pagina-entrada .portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); background-position: 32% center !important; }
+.pagina-entrada .portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-hangar-vertical.webp'); background-position: 42% center !important; }
 
 .pagina-entrada .portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); background-position: 68% center !important; }
 .pagina-entrada .portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); background-position: 30% center !important; }
@@ -2223,6 +2223,9 @@
 }
 .pagina-entrada .portada__galeria figure:nth-child(2) figcaption { --caption-fondo: url('../images/landing/miniapolis-track-portrait.webp'); background-position: 62% center !important; }
 .pagina-entrada .portada__galeria figure:nth-child(3) figcaption { --caption-fondo: url('../images/pista/miniapolis-track-wide.webp'); background-position: 38% center !important; }
+.pagina-entrada .portada__galeria figure:nth-child(4) figcaption { --caption-fondo: url('../images/oficial/pista-senna-wide.webp'); background-position: 62% center !important; }
+.pagina-entrada .portada__galeria figure:nth-child(5) figcaption { --caption-fondo: url('../images/oficial/pista-senna-vertical.webp'); background-position: 36% center !important; }
+.pagina-entrada .portada__galeria figure:nth-child(6) figcaption { --caption-fondo: url('../images/oficial/pista-circuito-panorama.webp'); background-position: center !important; }
 
 .pagina-entrada .portada__promo:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); background-position: 68% center !important; }
 .pagina-entrada .portada__promo:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); background-position: 34% center !important; }
@@ -2240,6 +2243,38 @@
   background-size: cover !important;
   background-repeat: no-repeat !important;
 }
+
+/* Corrección de composición: la foto editorial de eventos debe vivir detrás
+   del contenido, no ocupar una fila propia cuando el motor añade z-index. */
+.pagina-entrada .portada__info--eventos > .portada__evento-fondo {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  height: auto !important;
+}
+
+/* Las tarjetas de disciplinas usan escenas muy distintas; dejamos respirar
+   sus texturas para que la diferencia se lea sin perder contraste. */
+.pagina-entrada .portada__disciplina {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .58), rgba(7, 10, 9, .34) 55%, rgba(7, 10, 9, .78)),
+    var(--card-fondo) !important;
+}
+
+/* Comunidad: el producto es el protagonista y el escenario funciona como
+   contexto visible, no como una superficie negra repetida. */
+.pagina-entrada .portada__promo {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .58), rgba(7, 10, 9, .3) 52%, rgba(7, 10, 9, .72)),
+    var(--card-fondo) !important;
+  box-shadow: inset 0 1px 0 rgba(245, 246, 240, .14);
+}
+.pagina-entrada .portada__promo::before { background: linear-gradient(180deg, rgba(5, 7, 6, .06), rgba(5, 7, 6, .72) 84%); }
+.pagina-entrada .portada__promo > img { opacity: .72; filter: saturate(.92) contrast(1.06); }
+
+.pagina-entrada .portada__evento:nth-child(1) { border-top: 2px solid rgba(147, 210, 65, .72); }
+.pagina-entrada .portada__evento:nth-child(2) { border-top: 2px solid rgba(240, 182, 75, .72); }
+.pagina-entrada .portada__evento:nth-child(3) { border-top: 2px solid rgba(190, 218, 207, .66); }
 
 @media (max-width: 700px) {
   .pagina-entrada .portada__recta-cabeza { padding: 24px; }
