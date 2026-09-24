@@ -642,6 +642,13 @@
   .portada__salida-copy { max-width: min(56vw, 600px); }
 }
 
+/* En una pantalla horizontal baja la cabecera de la recta comparte el plano
+   con la primera foto: súbela un poco para que el título nunca la muerda. */
+@media (min-width: 900px) and (max-height: 650px) and (orientation: landscape) {
+  .portada-fija .portada__recta-cabeza { top: calc(var(--altura-cabecera) + 1.5svh); }
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .portada__panel img { filter: none; }
 }
@@ -1595,19 +1602,19 @@
 /* --- Una escena por tarjeta ---------------------------------------------- */
 /* Cada caja tiene su propia foto de pista, siempre bajo el mismo velo: la
    textura cambia, la lectura no. */
-.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista/miniapolis-track-vertical.webp'); --card-pos: 72% center; }
+.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista-real/pista-amplia.jpeg'); --card-pos: 54% center; }
 .portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); --card-pos: 38% center; }
 .portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); --card-pos: 68% center; }
 .portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); }
 .portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); --card-pos: 74% center; }
-.portada__spec:nth-child(1) { --card-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
-.portada__spec:nth-child(2) { --card-fondo: url('../images/oficial/pista-hangar-curva.webp'); --card-pos: 70% center; }
-.portada__spec:nth-child(3) { --card-fondo: url('../images/oficial/pista-hangar-vertical.webp'); --card-pos: center 38%; }
-.portada__spec:nth-child(4) { --card-fondo: url('../images/oficial/pista-senna-wide.webp'); --card-pos: 58% center; }
-.portada__spec:nth-child(5) { --card-fondo: url('../images/oficial/pista-senna-vertical.webp'); --card-pos: center 62%; }
-.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); }
+.portada__spec:nth-child(1) { --card-fondo: url('../images/pista-real/hangar-recta.jpeg'); --card-pos: 60% center; }
+.portada__spec:nth-child(2) { --card-fondo: url('../images/pista-real/pista-baja.jpeg'); --card-pos: 52% center; }
+.portada__spec:nth-child(3) { --card-fondo: url('../images/pista-real/recta-pilotos.jpeg'); --card-pos: 44% center; }
+.portada__spec:nth-child(4) { --card-fondo: url('../images/pista-real/coche-salida.jpeg'); --card-pos: 56% center; }
+.portada__spec:nth-child(5) { --card-fondo: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 58% center; }
+.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 50% center; }
 .portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
-.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-track-corner-wide.webp'); --card-pos: 32% center; }
+.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-hangar-vertical.webp'); --card-pos: 42% center; }
 .portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
 .portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
 .portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
@@ -1848,6 +1855,88 @@
   .portada__pronto-visual img,
   .portada__evento-fondo,
   .portada__info--galeria img { transform: none !important; }
+}
+
+/* ========================================================================== 
+   Dirección de arte final: una escena distinta por caja, misma lectura
+   ========================================================================== */
+
+/* El fondo debe reconocerse: el velo sigue protegiendo el texto, pero deja
+   respirar la textura y el color propios de cada fotografía. */
+.pagina-entrada .portada__disciplina {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .58), rgba(7, 10, 9, .34) 55%, rgba(7, 10, 9, .78)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__spec:not(.portada__spec--wide) {
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .08), transparent 55%),
+    linear-gradient(145deg, rgba(11, 16, 13, .72), rgba(11, 16, 13, .56)),
+    var(--card-fondo, none);
+  background-position: center, center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__horario {
+  background-image:
+    linear-gradient(90deg, rgba(7, 10, 9, .82), rgba(7, 10, 9, .58)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__record {
+  background-image:
+    linear-gradient(90deg, rgba(7, 10, 9, .82), rgba(7, 10, 9, .56)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__record--primero {
+  background-image:
+    linear-gradient(90deg, rgba(147, 210, 65, .16), rgba(147, 210, 65, .03) 58%, transparent),
+    linear-gradient(90deg, rgba(7, 10, 9, .78), rgba(7, 10, 9, .5)),
+    var(--card-fondo, none);
+}
+.pagina-entrada .portada__evento {
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%),
+    linear-gradient(165deg, rgba(18, 26, 22, .68), rgba(7, 10, 9, .58)),
+    var(--card-fondo, none);
+  background-position: center, center, var(--card-pos, center);
+  background-size: cover;
+}
+.pagina-entrada .portada__evento:nth-child(3) {
+  background-image:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%),
+    linear-gradient(165deg, rgba(26, 38, 24, .68), rgba(8, 12, 9, .56)),
+    var(--card-fondo, none);
+}
+.pagina-entrada .portada__promo {
+  background-image:
+    linear-gradient(145deg, rgba(7, 10, 9, .58), rgba(7, 10, 9, .3) 52%, rgba(7, 10, 9, .72)),
+    var(--card-fondo, none);
+  background-position: center, var(--card-pos, center);
+  background-size: cover;
+  box-shadow: inset 0 1px 0 rgba(245, 246, 240, .14);
+}
+.pagina-entrada .portada__promo > img { opacity: .72; filter: saturate(.92) contrast(1.06); }
+.pagina-entrada .portada__promo::before {
+  background: linear-gradient(180deg, rgba(5, 7, 6, .06), rgba(5, 7, 6, .72) 84%);
+}
+
+.portada__galeria figure:nth-child(4) figcaption { --caption-fondo: url('../images/oficial/pista-senna-wide.webp'); }
+.portada__galeria figure:nth-child(5) figcaption { --caption-fondo: url('../images/oficial/pista-senna-vertical.webp'); }
+.portada__galeria figure:nth-child(6) figcaption { --caption-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
+
+/* Tres acentos para las fechas: verde de pista, ámbar de noche, blanco de
+   campeonato. Es la misma retícula, pero cada tarjeta tiene su propia voz. */
+.pagina-entrada .portada__evento:nth-child(1) { border-top: 2px solid rgba(147, 210, 65, .72); }
+.pagina-entrada .portada__evento:nth-child(2) { border-top: 2px solid rgba(240, 182, 75, .72); }
+.pagina-entrada .portada__evento:nth-child(3) { border-top: 2px solid rgba(190, 218, 207, .66); }
+
+@media (min-width: 900px) and (max-height: 650px) and (orientation: landscape) {
+  .pagina-entrada .portada__recta-cabeza { padding: 24px; }
 }
 
 /* ==========================================================================

@@ -238,6 +238,9 @@ for (const movimiento of ['no-preference', 'reduce']) {
 
   // El riel de la portada se recorre de lado con el scroll: al final de su
   // tramo, el último panel tiene que haber entrado entero en la pantalla.
+  // Con otras pestañas abiertas, Chromium frena las animaciones de la que no
+  // está al frente: el motor no avanzaría y se mediría el riel sin mover.
+  await anon.bringToFront();
   for (const [ancho, alto] of ANCHOS) {
     await anon.setViewportSize({ width: ancho, height: alto });
     await anon.goto(`${B}/`, { waitUntil: 'load' });
