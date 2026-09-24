@@ -1589,7 +1589,7 @@
   background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 20px 20px;
   transform: skewX(-16deg);
 }
-.portada__comunidad-cierre span { color: var(--acento); }
+.portada__comunidad-cierre > span { color: var(--acento); }
 
 
 /* --- Una escena por tarjeta ---------------------------------------------- */
