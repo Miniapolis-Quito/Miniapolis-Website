@@ -238,15 +238,15 @@ for (const movimiento of ['no-preference', 'reduce']) {
 
   // El riel de la portada se recorre de lado con el scroll: al final de su
   // tramo, el último panel tiene que haber entrado entero en la pantalla.
-  // Con otras pestañas abiertas, Chromium frena las animaciones de la que no
-  // está al frente: el motor no avanzaría y se mediría el riel sin mover.
-  await anon.bringToFront();
+  // En una pestaña recién abierta: la que ya recorrió las demás páginas
+  // dejaba el motor sin avanzar y se medía el riel sin mover.
+  const riel = await pestana('riel');
   for (const [ancho, alto] of ANCHOS) {
-    await anon.setViewportSize({ width: ancho, height: alto });
-    await anon.goto(`${B}/`, { waitUntil: 'load' });
-    const hayRiel = await anon.evaluate(() => document.documentElement.classList.contains('portada-fija'));
+    await riel.setViewportSize({ width: ancho, height: alto });
+    await riel.goto(`${B}/`, { waitUntil: 'load' });
+    const hayRiel = await riel.evaluate(() => document.documentElement.classList.contains('portada-fija'));
     if (!hayRiel) continue;
-    await anon.evaluate(async () => {
+    await riel.evaluate(async () => {
       const recta = document.querySelector('.portada__recta');
       const fin = recta.getBoundingClientRect().bottom + scrollY - innerHeight - 2;
       for (let y = scrollY; y < fin; y += 150) {
@@ -257,12 +257,15 @@ for (const movimiento of ['no-preference', 'reduce']) {
     });
     // El motor suaviza el recorrido: se espera a que el panel deje de moverse
     // (con la máquina cargada tarda más), no un tiempo fijo.
-    await anon.waitForFunction(() => new Promise((resolver) => {
-      const ultimo = [...document.querySelectorAll('.portada__riel .portada__panel')].at(-1);
-      const antes = ultimo.getBoundingClientRect().left;
-      setTimeout(() => resolver(Math.abs(ultimo.getBoundingClientRect().left - antes) < 0.5), 400);
-    }), null, { timeout: 15000, polling: 100 }).catch(() => {});
-    const caja = await anon.evaluate(() => {
+    const izquierda = () => riel.evaluate(() => [...document.querySelectorAll('.portada__riel .portada__panel')].at(-1).getBoundingClientRect().left);
+    await riel.waitForTimeout(800);
+    for (let previa = await izquierda(), intentos = 0; intentos < 30; intentos += 1) {
+      await riel.waitForTimeout(400);
+      const actual = await izquierda();
+      if (Math.abs(actual - previa) < 0.5) break;
+      previa = actual;
+    }
+    const caja = await riel.evaluate(() => {
       const r = [...document.querySelectorAll('.portada__riel .portada__panel')].at(-1).getBoundingClientRect();
       return { izq: r.left, der: r.right, vw: document.documentElement.clientWidth };
     });
