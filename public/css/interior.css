@@ -46,6 +46,8 @@
   width: min(var(--interior-max), 100%);
   padding-inline: var(--interior-gutter);
 }
+/* Las páginas sueltas (restablecer, avisos, cartera) son un aviso corto: ancho de lectura, no de panel. */
+.pagina-interior .contenedor--angosto { width: min(560px, 100%); }
 
 .pagina-interior main {
   position: relative;
@@ -53,13 +55,16 @@
 }
 
 /* Un único motivo de pista acompaña el encabezado, sin convertir cada página
-   en otra portada llena de imágenes. */
+   en otra portada llena de imágenes. Va a sangre: atado al ancho del `main`
+   se veía como una franja con bordes en las páginas estrechas. */
+.pagina-interior { overflow-x: clip; }
 .pagina-interior main::before {
   position: absolute;
   top: 0;
-  right: 0;
-  left: 0;
+  left: 50%;
   z-index: -1;
+  width: 100vw;
+  translate: -50% 0;
   height: 280px;
   content: '';
   pointer-events: none;
@@ -312,8 +317,6 @@
   background: rgba(13, 18, 20, .78);
 }
 
-.pagina-interior .pack:hover,
-.pagina-interior .mini-pack:hover,
 .pagina-interior .opcion-pack:hover {
   border-color: var(--acento-borde);
 }
@@ -708,7 +711,7 @@
     left: 24px;
     width: 132px;
     height: 1px;
-    content: 'LIVE / PIT PASS';
+    content: 'PASE EN VIVO';
     color: var(--acento);
     font-size: .6rem;
     letter-spacing: .17em;
@@ -843,4 +846,115 @@
   .pagina-interior--cliente .encabezado-pista::after,
   .pagina-interior--cliente .saldo::after,
   .pagina-interior--cliente #contenido > * { animation: none !important; }
+}
+
+/* --------------------------------------------------------------------------
+   Pulido: barra, métricas y titulares
+
+   Tres detalles que se veían en cada pantalla con sesión: la barra del
+   máster partida en dos filas, las métricas enmarcadas dos veces y con la
+   cifra a distinta altura según su rótulo, y un titular que en el teléfono
+   se partía a mitad de palabra («ADMINISTRACI / ÓN»).
+   -------------------------------------------------------------------------- */
+
+/* Barra: una sola fila en escritorio. Los ajustes van en icono (ver shell.js). */
+.barra__accion .icono { display: none; }
+.pagina-interior .barra .barra__accion--icono,
+.pagina-interior .barra .barra__accion { flex: none; white-space: nowrap; }
+.pagina-interior .barra .barra__accion--icono {
+  justify-content: center;
+  width: 42px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0;
+}
+.barra__accion--icono .icono { display: block; width: 18px; height: 18px; }
+.barra__accion--icono .barra__accion-texto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (min-width: 901px) {
+  .pagina-interior .barra__interior { flex-wrap: nowrap; }
+  .pagina-interior .barra__nav { flex-wrap: nowrap; }
+  .pagina-interior .barra__nav .boton { white-space: nowrap; }
+}
+/* Entre tableta y portátil el logotipo ya dice el nombre y el punto dice el
+   estado: los dos textos ceden su sitio (siguen para el lector de pantalla). */
+@media (min-width: 901px) and (max-width: 1099px) {
+  .pagina-interior .barra__marca span:last-child,
+  .pagina-interior .estado-conexion span:not(.punto) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+/* La navegación que se desplaza de lado avisa de que sigue: se funde en el borde. */
+@media (max-width: 900px) {
+  .pagina-interior:not(.pagina-interior--cliente) .barra__nav {
+    padding-right: 32px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+  }
+}
+/* En el teléfono «Salir» también queda en icono: marca y acciones en una línea. */
+@media (max-width: 560px) {
+  .pagina-interior .barra .barra__accion {
+    justify-content: center;
+    width: 42px;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0;
+  }
+  .pagina-interior .barra__accion .icono { display: block; width: 18px; height: 18px; }
+  .pagina-interior .barra__accion-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Métricas: el marco es la tarjeta; la métrica no dibuja otro dentro. Todo
+   se alinea arriba, así la cifra queda a la misma altura en toda la fila
+   aunque un rótulo ocupe una línea y el vecino dos. */
+@media (min-width: 621px) {
+  .rejilla--metricas { grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); }
+}
+.pagina-interior .rejilla--metricas .tarjeta { align-content: stretch; }
+.tarjeta > .metrica {
+  min-height: 0;
+  align-content: start;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.tarjeta > .metrica::before { display: none; }
+
+/* Los dos botones del pase miden lo mismo aunque uno necesite dos líneas. */
+#seccion-qr .fila.centro-flex { align-items: stretch; }
+
+@media (max-width: 620px) {
+  /* El titular cabe entero: se ajusta al ancho antes que partir la palabra. */
+  .pagina-interior .encabezado-pista h1 {
+    font-size: clamp(1.9rem, 9.4vw, 3.35rem);
+    overflow-wrap: normal;
+  }
+}
+
+/* Resumen: la gráfica crece hasta la altura del estado del sistema, en vez de
+   dejar media tarjeta vacía debajo. */
+@media (min-width: 861px) {
+  .pagina-interior--admin .rejilla--resumen { align-items: stretch; }
+  .pagina-interior--admin .rejilla--resumen > .tarjeta:first-child { display: flex; flex-direction: column; }
+  .pagina-interior--admin .rejilla--resumen .grafico { flex: 1 1 auto; height: auto; min-height: 104px; }
 }

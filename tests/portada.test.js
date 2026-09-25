@@ -92,8 +92,8 @@ test('la mira conserva su apariencia y reacciona solo a lo clicable', () => {
   assert.ok(clicables.includes('a,') && clicables.includes('button'), 'la lista de objetivos debe incluir enlaces y botones');
   assert.doesNotMatch(clicables, /figure|img|foto|picture/, 'la mira no debe reaccionar a fotos');
   const alMover = JS.match(/'pointermove',\s*\(evento\) => \{[\s\S]*?\n  \}, \{ passive: true \}\)/)?.[0] ?? '';
-  assert.match(alMover, /setProperty\('--puntero-x'/, 'la mira sigue al puntero directamente');
-  assert.doesNotMatch(alMover, /requestAnimationFrame/, 'la posición no debe esperar a otro fotograma');
+  assert.match(JS, /mira\.style\.setProperty\('--puntero-x'/, 'la mira publica la posición del puntero');
+  assert.match(alMover, /requestAnimationFrame/, 'la posición se agrupa en el fotograma de pintura');
   assert.doesNotMatch(CSS, /\.entrada__mira\s*\{[^}]*transition:\s*[^;}]*\btransform\b/s, 'la mira no debe interpolar su posición');
 });
 
@@ -113,8 +113,17 @@ test('la cabecera permanece negra desde el primer render y no anima su entrada',
 });
 
 test('la portada mantiene un copy breve, natural y sin ruido', () => {
-  for (const frase of ['Ven a', 'rodar.', 'Asfalto, curvas y control.', 'Pista indoor', 'La pista.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'Tu pase.', 'Entra y guarda tu pase.']) {
+  for (const frase of ['Ven a', 'rodar.', 'Pista indoor', 'La pista', 'Especificaciones del circuito', 'Horarios', 'Mejores tiempos', 'Tu pase.', 'Entra y guarda tu pase.']) {
     assert.ok(HTML.includes(frase), `falta «${frase}»`);
+  }
+  for (const frase of ['Asfalto, curvas y control.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'READY TO RACE', 'FRAME / 01']) {
+    assert.ok(!HTML.includes(frase) && !CSS.includes(frase), `sigue presente el texto decorativo «${frase}»`);
+  }
+  for (const clase of ['entrada__capitulo', 'portada__gigante', 'portada__desliza', 'portada__cinta', 'portada__fantasma', 'entrada__pie-gigante']) {
+    assert.doesNotMatch(HTML, new RegExp(`class="[^"]*${clase}`), `sigue presente el elemento decorativo .${clase}`);
+  }
+  for (const rotulo of ['LISTO PARA CORRER', '11 / ACCESO', 'INSTALACIONES', 'FICHA TÉCNICA', 'CRONOMETRAJE', 'CALENDARIO', 'BOXES // SESIONES ABIERTAS', 'MEJOR VUELTA // CRONO EN VIVO', 'ABIERTO', 'NOCTURNA', 'CARRERA', 'PRÓXIMA OBRA', 'CUADRO /']) {
+    assert.doesNotMatch(CSS, new RegExp(rotulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `sigue presente el rótulo decorativo «${rotulo}»`);
   }
   assert.doesNotMatch(HTML, /·/, 'sin puntos medios como separadores');
   assert.doesNotMatch(HTML, /Track\s+\d+/i, 'sin identificadores artificiales de pista');
@@ -129,7 +138,7 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
     assert.match(etiqueta, /\sheight="\d+"/, `sin height: ${etiqueta.slice(0, 80)}`);
     assert.match(etiqueta, /\salt="/, `sin alt: ${etiqueta.slice(0, 80)}`);
   }
-  assert.match(HTML, /<img[^>]*pista-circuito-panorama\.webp[^>]*fetchpriority="high"/, 'el panorama es lo primero que se pide');
+  assert.match(HTML, /<img[^>]*miniapolis-track-wide\.webp[^>]*fetchpriority="high"/, 'el hero limpio es lo primero que se pide');
   const rutas = new Set();
   for (const m of HTML.matchAll(/\b(?:src|href)="(\.[^"]*\/images\/[^"]+)"/g)) rutas.add(m[1]);
   for (const m of HTML.matchAll(/\bsrcset="([^"]+)"/g)) {
@@ -185,4 +194,41 @@ test('cada pieza de contenido tiene su propio reloj: se lee quieta entre la entr
   assert.match(JS, /setProperty\('--item-in'/);
   assert.match(JS, /setProperty\('--item-out'/);
   assert.doesNotMatch(CSS, /\.portada__info\s*\{[^}]*width:\s*min\(1400px/, 'las escenas van a sangre como la salida y la recta');
+});
+
+test('el telón baja antes del primer fotograma y se retira solo si el motor no llega', () => {
+  const ARRANQUE = leer('public/js/portada-arranque.js');
+  const cabeza = HTML.slice(0, HTML.indexOf('</head>'));
+  assert.match(cabeza, /<script src="\/js\/portada-arranque\.js"><\/script>/, 'script clásico en el <head>, no módulo diferido');
+  assert.match(ARRANQUE, /prefers-reduced-motion: reduce/, 'sin movimiento no hay telón');
+  assert.match(ARRANQUE, /classList\.add\('portada-telon'\)/);
+  assert.doesNotMatch(ARRANQUE, /classList\.add\('portada-motor'\)/, 'el motor solo lo monta portada.js');
+  assert.match(ARRANQUE, /setTimeout\([\s\S]*classList\.remove\('portada-telon'\)/, 'si el motor falla, la página queda estática y completa');
+  assert.match(CSS, /\.portada-telon \.portada__semaforo,\s*\.portada-motor \.portada__semaforo\s*\{/);
+  assert.match(CSS, /\.portada-motor \.portada__semaforo\s*\{\s*animation:\s*telon/, 'el telón solo se abre con el motor');
+});
+
+test('los rótulos de la portada están en español', () => {
+  const rotulos = [...sinComentarios(CSS).matchAll(/content:\s*'([^']*[A-Za-z][^']*)'/g)].map((m) => m[1]);
+  for (const ingles of ['READY', 'ACCESS', 'FACILITIES', 'TELEMETRY', 'TIMING', 'CALENDAR', 'VISUALS', 'SUPPLY', 'PIT LANE', 'BEST LAP', 'OPEN', 'NIGHT', 'RACE', 'NEXT BUILD', 'FRAME']) {
+    assert.ok(!rotulos.some((r) => new RegExp(`\\b${ingles}\\b`).test(r)), `rótulo en inglés: ${ingles}`);
+  }
+});
+
+test('fluidez: ninguna variable por fotograma se escribe en un contenedor grande', () => {
+  assert.doesNotMatch(MOTOR, /querySelector\('main'\)/, '--vel en <main> recalcula los estilos de toda la página en cada fotograma');
+  assert.match(MOTOR, /SELECTOR_VELOCIDAD/, '--vel se escribe solo en quien la lee');
+  for (const selector of MOTOR.match(/SELECTOR_VELOCIDAD = \[([\s\S]*?)\]/)[1].match(/'[^']+'/g)) {
+    const hojas = CSS + leer('public/css/portada-efectos.css');
+    assert.ok(hojas.includes(selector.slice(1, -1).split(' ').at(-1)), `${selector} no existe en las hojas de la portada`);
+  }
+  assert.match(MOTOR, /if \(e\.publicar\) e\.el\.style\.setProperty\('--p'/, 'las escenas que no leen --p no lo reciben');
+  assert.match(JS, /publicar: false/);
+});
+
+test('fluidez: la posición sigue al scroll real y nada desenfoca lo que se mueve', () => {
+  assert.match(MOTOR, /suave = objetivo;/, 'suavizar la posición hace que todo lo atado al scroll llegue tarde');
+  assert.doesNotMatch(sinComentarios(CSS), /backdrop-filter:\s*blur/, 'un desenfoque sobre un fondo que se mueve se recalcula en cada fotograma');
+  assert.match(CSS, /\.portada-motor \.portada__info\.en-escena::before/, 'el fondo de la escena cercana va en su propia capa');
+  assert.match(JS, /classList\.toggle\('en-escena'/);
 });

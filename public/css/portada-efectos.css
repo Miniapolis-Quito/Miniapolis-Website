@@ -18,6 +18,8 @@
   display: flex;
   align-items: baseline;
   gap: 12px;
+  /* La máscara deja aire arriba: no le corta la tilde a «Telemetría» ni a «Récords». */
+  padding-block: .4em;
   overflow: hidden;
   color: var(--texto-2);
   font: 650 .66rem/1 var(--mono);
@@ -376,4 +378,15 @@
   .portada__record::after { transform: none !important; }
   .portada__horario span::before { animation: none !important; }
   .entrada__acceso-panel::before { animation: none !important; }
+}
+
+/* --- Formatos: teléfono ----------------------------------------------------------------------------- */
+@media (max-width: 700px) {
+  /* La bandera cruza por encima del rótulo, nunca sobre el titular. */
+  .portada-motor .portada__bandera { top: 20px; height: 64px; }
+  .portada-motor .portada__bandera::before { background-size: 64px 64px; }
+  .portada-motor .portada__boxes { padding-top: 128px; }
+  .portada-motor .portada__boxes::before { top: 100px; }
+  /* Rótulos de la ficha técnica: dos líneas como mucho en una columna estrecha. */
+  .portada__spec > span { font-size: .62rem; letter-spacing: .08em; }
 }

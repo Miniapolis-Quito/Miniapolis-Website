@@ -107,7 +107,7 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
     // Un párrafo o el kicker ocupan todo el ancho de su caja: se mide el texto, no la caja.
     const texto = (sel) => [...document.querySelectorAll(sel)].map((e) => { const rango = document.createRange(); rango.selectNodeContents(e); return rango.getBoundingClientRect(); }).filter((r) => r.width > 0);
     const textos = [
-      ...rects('.portada__linea > span'), ...texto('.portada__lema'), ...texto('.portada__kicker'),
+      ...rects('.portada__linea > span'), ...texto('.portada__kicker'),
       ...rects('.portada__acciones .boton'), ...rects('.portada__enlace'),
     ];
     const auto = document.querySelector('.portada__auto').getBoundingClientRect();
@@ -122,7 +122,7 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       textoTapado: textos.some(tapa),
       pequenos,
       motor: document.documentElement.classList.contains('portada-motor'),
-      visible: ['#titulo-entrada', '.portada__lema', '.portada__auto img', '.entrada__acceso-panel'].every((s) => {
+      visible: ['#titulo-entrada', '.portada__auto img', '.entrada__acceso-panel'].every((s) => {
         const e = document.querySelector(s);
         const c = getComputedStyle(e);
         return e.getBoundingClientRect().width > 0 && c.opacity === '1' && c.visibility === 'visible';

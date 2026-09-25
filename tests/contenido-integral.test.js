@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -17,7 +18,7 @@ test('la portada contiene el contenido público completo de Miniápolis', () => 
     ['horarios', 'MIÉRCOLES'],
     ['records', 'DANILO M.'],
     ['eventos', 'Torneo del Recuerdo'],
-    ['galeria', 'Más que una pista'],
+    ['galeria', 'Galería del circuito'],
   ]) {
     assert.match(portada, new RegExp(`id="${ancla}"`), `falta el ancla #${ancla}`);
     assert.match(portada, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `falta el contenido ${copy}`);
@@ -27,7 +28,7 @@ test('la portada contiene el contenido público completo de Miniápolis', () => 
     'Circuito para drones',
     'Boxes para 60 pilotos',
     'AMB / MyLaps',
-    'ALGO GRANDE SE ESTÁ CONSTRUYENDO PARA TI',
+    'En construcción',
     'Racing Hobbies',
     'Lancia Delta Integrale',
   ]) assert.match(portada, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `falta ${copy}`);
@@ -89,12 +90,20 @@ test('los nuevos bloques tienen sistema visual, responsive y salida accesible', 
 
 test('cada tarjeta editorial tiene un fondo distinto y local', () => {
   const fondos = [
-    ...portadaCss.matchAll(/--card-fondo:\s*url\('([^']+)'\)/g),
-    ...portadaCss.matchAll(/--caption-fondo:\s*url\('([^']+)'\)/g),
+    ...portadaCss.matchAll(/--card-fondo-src:\s*url\('([^']+)'\)/g),
+    ...portadaCss.matchAll(/--caption-fondo-src:\s*url\('([^']+)'\)/g),
   ].map((match) => match[1]);
   assert.equal(fondos.length, 33);
   assert.equal(new Set(fondos).size, fondos.length);
   for (const fondo of fondos) assert.ok(fs.existsSync(path.resolve('public/css', fondo)), `falta ${fondo}`);
+});
+
+test('los fondos fotográficos usados por la portada no repiten bytes', () => {
+  const rutas = [
+    ...portadaCss.matchAll(/--(?:scene|card|caption|local)-fondo-src:\s*url\('([^']+)'\)/g),
+  ].map(([, ruta]) => path.resolve('public/css', ruta));
+  const hashes = rutas.map((ruta) => crypto.createHash('sha256').update(fs.readFileSync(ruta)).digest('hex'));
+  assert.equal(new Set(hashes).size, hashes.length, 'cada fondo fotográfico debe ser un archivo visual distinto');
 });
 
 test('el motor de portada monta las escenas informativas y conserva el fallback', () => {
@@ -121,7 +130,7 @@ test('las secciones nuevas tienen una coreografía propia de pista', () => {
     ['.portada-motor .portada__info--eventos .portada__evento h3', 'transform'],
     ['.portada-motor .portada__info--pronto .portada__pronto-visual img', 'transform'],
     ['.portada-motor .portada__info--galeria .portada__galeria figcaption', 'transform'],
-    ['.portada-motor .portada__info--comunidad .portada__promo > span', 'transform'],
+    ['.portada-motor .portada__info--comunidad .portada__promo > strong', 'transform'],
   ]) {
     const bloque = new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*${propiedad}`);
     assert.match(portadaCss, bloque, `falta ${propiedad} específico en ${selector}`);
@@ -170,27 +179,27 @@ test('los titulares largos y las tarjetas con imagen conservan el texto dentro d
 
 test('las secciones nuevas usan fotos reales distintas y animan sus visuales con el scroll', () => {
   const fotos = [
-    'pista-amplia.jpeg',
-    'curva-ventanas.jpeg',
-    'hangar-ancho.jpeg',
-    'pista-lateral.jpeg',
-    'boxes-curva.jpeg',
-    'hangar-recta.jpeg',
+    'miniapolis-track-side-wide.webp',
+    'miniapolis-gallery-curb-vertical.webp',
+    'miniapolis-pit-corner-vertical.webp',
+    'miniapolis-gallery-wide.webp',
+    'miniapolis-gallery-curb-wide.webp',
+    'miniapolis-gallery-car-vertical.webp',
   ];
   const galeria = portada.match(/<section id="galeria"[\s\S]*?<\/section>/)?.[0] ?? '';
-  const fotosGaleria = [...galeria.matchAll(/src="\.\/images\/pista-real\/([^"]+)"/g)].map(([, archivo]) => archivo);
+  const fotosGaleria = [...galeria.matchAll(/src="\.\/images\/pista\/([^"]+)"/g)].map(([, archivo]) => archivo);
 
   assert.equal(
     new Set(fotosGaleria).size,
     fotos.length,
     'la galería debe mostrar seis fotos reales sin repetir encuadres',
   );
-  assert.doesNotMatch(galeria, /coche-salida\.jpeg/, 'la galería no debe repetir el coche como protagonista');
+  assert.doesNotMatch(galeria, /pista-real|track-portrait|action/, 'la galería no debe volver a cargar fuentes descartadas');
   for (const foto of fotos) {
-    assert.match(galeria, new RegExp(`pista-real/${foto}`), `falta la foto ${foto} en la galería`);
-    assert.ok(fs.existsSync(path.join('public/images/pista-real', foto)), `falta el archivo ${foto}`);
+    assert.match(galeria, new RegExp(`pista/${foto}`), `falta la foto ${foto} en la galería`);
+    assert.ok(fs.existsSync(path.join('public/images/pista', foto)), `falta el archivo ${foto}`);
   }
-  assert.match(portada, /pista-real\/pista-baja\.jpeg/);
+  assert.match(portada, /pista\/miniapolis-asphalt-detail\.webp/);
   assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__pronto-visual img[\s\S]*var\(--info-p/);
   assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__info--galeria \.portada__galeria-card[\s\S]*var\(--info-p/);
   assert.match(portadaCss, /prefers-reduced-motion[\s\S]*\.portada__pronto-visual img[\s\S]*\.portada__info--galeria img/);

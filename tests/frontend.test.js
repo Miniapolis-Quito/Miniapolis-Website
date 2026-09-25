@@ -278,6 +278,15 @@ test('las referencias visuales de la portada apuntan a archivos existentes', () 
   assert.deepEqual(faltantes, []);
 });
 
+test('la portada no conserva capturas antiguas ni encuadres descartados', () => {
+  const html = leer(PORTADA);
+  const css = leer('public/css/portada.css');
+  const fuentes = `${html}\n${css}`;
+  assert.doesNotMatch(fuentes, /pista-real\//, 'la portada no debe volver a cargar el set de baja resolución');
+  assert.doesNotMatch(fuentes, /miniapolis-(?:action|track-portrait)/, 'la portada no debe cargar fuentes visuales descartadas');
+  assert.doesNotMatch(fuentes, /(?:-draft|-upscale)\.(?:webp|jpeg|jpg|png)/, 'la portada no debe cargar derivados de revisión');
+});
+
 test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--fondo:\s*#000000/);
@@ -315,14 +324,15 @@ test('los botones tienen hover de pista (chasis inclinado con estelas) y los com
   assert.equal(aperturas, cierres, 'hay un comentario sin abrir o sin cerrar en la hoja');
 });
 
-test('el sistema de interacción cubre hovers, pulsación y superficies con una salida accesible', () => {
+test('el sistema de interacción reserva el hover para controles y opciones seleccionables', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--t-hover:/, 'la interacción debe tener un ritmo propio');
   assert.match(css, /@media\s*\(hover:\s*hover\)/, 'los efectos intensos deben reservarse a dispositivos con hover real');
   assert.match(css, /\.boton:hover:not\(:disabled\)[\s\S]*transform:\s*translateY\(-2px\)/);
   assert.match(css, /\.boton:active:not\(:disabled\)[\s\S]*transform:\s*translateY\(1px\)/);
-  assert.match(css, /\.pack:hover[\s\S]*transform:\s*translateY\(-4px\)/);
+  assert.doesNotMatch(css, /(?:^|[,{\s])(?:\.tarjeta|\.pack|\.mini-pack|tbody tr|\.lista__item|\.grafico__barra):hover/);
   assert.match(css, /\.opcion-pack:hover[\s\S]*box-shadow:/);
+  assert.match(css, /\.opcion-lista:hover[\s\S]*box-shadow:/);
   assert.match(css, /\.pestana:hover[\s\S]*color:/);
   assert.match(css, /input:hover:not\(:disabled\)[\s\S]*box-shadow:/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*transition-duration:\s*\.01ms/);

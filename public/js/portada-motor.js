@@ -125,8 +125,19 @@ export function interpolarCifras(texto, t, { rellenar = false } = {}) {
  * `IntersectionObserver` puede dejar una escena dormida al invertir el scroll
  * justo en los límites de la página.
  */
+/** Lo que se inclina con la velocidad del scroll (lee `--vel`). */
+export const SELECTOR_VELOCIDAD = [
+  '.portada__salida-copy', '.portada__cinta', '.portada__recta-cabeza h2', '.cifra__num',
+  '.portada__riel', '.portada__intro h2', '.portada__info-cabeza h2',
+].join(', ');
+
 export function crearMotor() {
   const raiz = document.documentElement;
+  // Solo estos elementos leen la velocidad. Escribirla en <main> obligaba a
+  // recalcular los estilos de toda la página en cada fotograma del scroll.
+  const conVelocidad = [...document.querySelectorAll(SELECTOR_VELOCIDAD)];
+  const progreso = document.querySelector('.entrada__progreso span');
+  const estela = document.querySelector('.portada__estela');
   const escenas = [];
   let alto = window.innerHeight;
   let ancho = window.innerWidth;
@@ -153,7 +164,11 @@ export function crearMotor() {
       const p = calcular(e);
       if (Math.abs(p - e.p) < 0.0004) continue;
       e.p = p;
-      e.el.style.setProperty('--p', p.toFixed(4));
+      // Las piezas lejanas no pueden verse todavía. Dejamos que su progreso
+      // avance, pero aplazamos sus escrituras CSS hasta que se acerquen a la
+      // ventana; así el scroll no recalcula toda la portada en cada fotograma.
+      if (e.modo !== 'fija' && (e.top > suave + alto * 1.5 || e.top + e.alto < suave - alto * .75)) continue;
+      if (e.publicar) e.el.style.setProperty('--p', p.toFixed(4));
       e.alActualizar?.(p, { velocidad, ancho, alto });
     }
   }
@@ -163,30 +178,34 @@ export function crearMotor() {
     ultimo = ahora;
     const objetivo = window.scrollY;
     const previo = suave;
-    suave = suavizar(suave, objetivo, 9, dt);
+    // La posición sigue al scroll real: suavizada, todo lo atado al scroll
+    // llegaba ~0,1 s tarde y la recta fija flotaba detrás del dedo. Solo la
+    // velocidad (las inclinaciones) se suaviza.
+    suave = objetivo;
     velocidad = suavizar(velocidad, normalizarVelocidad((suave - previo) / dt), 10, dt);
     const quieto = Math.abs(objetivo - suave) < 0.1 && Math.abs(velocidad) < 0.003;
     if (quieto) { suave = objetivo; velocidad = 0; }
 
-    const vStr = velocidad.toFixed(3);
+    // En pasos de 0,02: la inclinación no se distingue más fina y se escribe menos.
+    const vStr = (Math.round(velocidad * 50) / 50).toFixed(2);
     if (vStr !== ultVel) {
       ultVel = vStr;
-      raiz.style.setProperty('--vel', vStr);
+      for (const nodo of conVelocidad) nodo.style.setProperty('--vel', vStr);
     }
-    const vAbsStr = Math.abs(velocidad).toFixed(3);
+    const vAbsStr = Math.abs(velocidad).toFixed(2);
     if (vAbsStr !== ultVelAbs) {
       ultVelAbs = vAbsStr;
-      raiz.style.setProperty('--vel-abs', vAbsStr);
+      estela?.style.setProperty('--vel-abs', vAbsStr);
     }
-    const sStr = limitar(suave / limiteScroll).toFixed(4);
+    const sStr = limitar(suave / limiteScroll).toFixed(3);
     if (sStr !== ultScroll) {
       ultScroll = sStr;
-      raiz.style.setProperty('--scroll', sStr);
+      (progreso || raiz).style.setProperty('--scroll', sStr);
     }
-    const sPxStr = suave.toFixed(1);
+    const sPxStr = suave.toFixed(0);
     if (sPxStr !== ultScrollPx) {
       ultScrollPx = sPxStr;
-      raiz.style.setProperty('--scroll-px', sPxStr);
+      estela?.style.setProperty('--scroll-px', sPxStr);
     }
     pintar();
     for (const fn of alCuadro) fn({ velocidad, suave, dt, fraccion: limitar(suave / limiteScroll) });
@@ -228,10 +247,11 @@ export function crearMotor() {
   };
 
   return {
-    registrar(el, { modo = 'vista', alActualizar } = {}) {
-      const escena = { el, modo, alActualizar, top: 0, alto: 0, p: -1 };
+    /** `publicar: false` no escribe `--p`: cada escritura invalida los estilos
+     *  de todo el subárbol, y muchas escenas solo usan su `alActualizar`. */
+    registrar(el, { modo = 'vista', alActualizar, publicar = true } = {}) {
+      const escena = { el, modo, alActualizar, publicar, top: 0, alto: 0, p: -1 };
       escenas.push(escena);
-      medir();
       return escena;
     },
     iniciar() {

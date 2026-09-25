@@ -9,9 +9,10 @@
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/portada.css">
   <link rel="stylesheet" href="/css/portada-efectos.css">
+  <script src="/js/portada-arranque.js"></script>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="preload" href="./images/oficial/pista-circuito-panorama.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="./images/pista/miniapolis-track-wide.webp" as="image" fetchpriority="high">
   <link rel="preload" href="./fonts/saira-var.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body class="pagina-entrada">
@@ -20,7 +21,6 @@
       <a class="entrada__marca subrayado-no" href="./index.html" aria-label="Miniápolis #3 — inicio">
         <span class="entrada__marca-sello" aria-hidden="true"><img src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="Miniápolis #3"></span>
       </a>
-      <p class="entrada__capitulo" aria-hidden="true"><b class="entrada__capitulo-num">00</b><span class="entrada__capitulo-nombre">Salida</span></p>
       <a class="entrada__accion" href="#acceso">Entrar</a>
     </div>
     <div class="entrada__progreso" aria-hidden="true"><span></span><i></i></div>
@@ -30,16 +30,16 @@
     <section id="inicio" class="portada__salida" data-escena="salida" data-capitulo="Salida" aria-labelledby="titulo-entrada">
       <div class="portada__salida-marco">
         <div class="portada__cielo" aria-hidden="true">
-          <img src="./images/oficial/pista-circuito-panorama.webp" width="3840" height="2160" alt="" fetchpriority="high" decoding="async">
+          <img src="./images/pista/miniapolis-track-wide.webp" width="1675" height="939" alt="" fetchpriority="high" decoding="async"
+               srcset="./images/pista/miniapolis-track-wide-960.webp 960w, ./images/pista/miniapolis-track-wide-1440.webp 1440w, ./images/pista/miniapolis-track-wide.webp 1675w"
+               sizes="100vw">
         </div>
-        <p class="portada__gigante" aria-hidden="true">Miniápolis</p>
         <canvas class="portada__chispas" aria-hidden="true"></canvas>
         <span class="portada__foco" aria-hidden="true"></span>
         <div class="portada__semaforo" aria-hidden="true">
           <div class="portada__semaforo-caja">
             <span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span><span class="portada__luz"></span>
           </div>
-          <p class="portada__semaforo-texto">Miniápolis #3 / Salida</p>
         </div>
         <div class="portada__salida-copy">
           <div class="portada__logo" aria-hidden="true">
@@ -47,7 +47,6 @@
           </div>
           <p class="portada__kicker">Pista indoor</p>
           <h1 id="titulo-entrada"><span class="portada__linea"><span>Ven a</span></span><span class="portada__linea portada__linea--acento"><span>rodar.</span></span></h1>
-          <p class="portada__lema">Asfalto, curvas y control.</p>
           <div class="portada__acciones">
             <a class="boton boton--principal boton--grande" href="#acceso">Entrar</a>
             <a class="portada__enlace" href="#pista">Ver la pista</a>
@@ -61,7 +60,6 @@
                  sizes="(max-width: 700px) 46vw, 28vw" decoding="async">
           </picture>
         </figure>
-        <span class="portada__desliza" aria-hidden="true"><span>Desliza</span><i></i></span>
       </div>
     </section>
 
@@ -85,15 +83,10 @@
       </ul>
     </section>
 
-    <div class="portada__cinta" aria-hidden="true">
-      <div class="portada__cinta-pista"><span>Asfalto</span><span>Curvas</span><span>Control</span><span>Velocidad</span><span>Comunidad</span></div>
-    </div>
-
     <section id="pista" class="portada__recta" data-escena="recta" data-capitulo="La pista" aria-labelledby="titulo-pista">
       <div class="portada__recta-marco">
         <header class="portada__recta-cabeza">
-          <h2 id="titulo-pista">La pista.</h2>
-          <p>Rectas, curvas y asfalto.</p>
+          <h2 id="titulo-pista">La pista</h2>
         </header>
         <div class="portada__riel">
           <figure class="portada__panel portada__panel--ancho">
@@ -103,8 +96,6 @@
                  sizes="(max-width: 899px) 100vw, 60vw" loading="lazy" decoding="async">
           </figure>
           <article class="portada__panel portada__panel--texto">
-            <h3>A tu ritmo.</h3>
-            <p>Una pista para sentir cada vuelta.</p>
             <ul class="portada__datos">
               <li><span>Superficie</span><span>Asfalto real</span></li>
               <li><span>Recorrido</span><span>Rectas y curvas</span></li>
@@ -137,35 +128,28 @@
     </section>
 
     <section id="complejo" class="portada__info portada__info--complejo" data-escena="detalle" data-capitulo="Complejo" aria-labelledby="titulo-complejo">
-      <span class="portada__fantasma" aria-hidden="true">Pistas</span>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">Miniápolis #3 / Racing Hobbies</p>
-        <h2 id="titulo-complejo">Complejo de radio control indoor.</h2>
+        <h2 id="titulo-complejo">Complejo de radio control indoor</h2>
         <p class="portada__info-lead">Pista de asfalto de 1.000 m², iluminación nocturna, boxes para 60 pilotos y un ecosistema completo para rodar, competir y aprender.</p>
       </div>
       <div class="portada__disciplinas" aria-label="Disciplinas disponibles">
         <article class="portada__disciplina">
-          <span class="portada__indice">01</span>
           <h3>Pista de asfalto</h3>
           <p>Curvas, rectas y siete trazados modulares para buscar tu mejor vuelta.</p>
         </article>
         <article class="portada__disciplina">
-          <span class="portada__indice">02</span>
           <h3>Pista de Crawling</h3>
           <p>Circuito de obstáculos y rocas para avanzar con precisión y control.</p>
         </article>
         <article class="portada__disciplina">
-          <span class="portada__indice">03</span>
           <h3>Pista de rally</h3>
           <p>Superficie mixta de asfalto y tierra para cambiar de ritmo en cada tramo.</p>
         </article>
         <article class="portada__disciplina">
-          <span class="portada__indice">04</span>
           <h3>Circuito para drones</h3>
           <p>Obstáculos y gates modulares para volar bajo presión y encontrar la línea.</p>
         </article>
         <article class="portada__disciplina">
-          <span class="portada__indice">05</span>
           <h3>Simuladores FPV</h3>
           <p>Simuladores de carreras y manejo en primera persona para entrenar todo el año.</p>
         </article>
@@ -173,10 +157,8 @@
     </section>
 
     <section id="pista-datos" class="portada__info portada__info--datos" data-escena="detalle" data-capitulo="Telemetría" aria-labelledby="titulo-pista-datos">
-      <span class="portada__fantasma" aria-hidden="true">Datos</span>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">El circuito, por dentro</p>
-        <h2 id="titulo-pista-datos">Todo listo para tu próxima vuelta.</h2>
+        <h2 id="titulo-pista-datos">Especificaciones del circuito</h2>
       </div>
       <div class="portada__spec-grid">
         <div class="portada__spec portada__spec--wide"><strong>44 m × 22,5 m</strong><span>1.000 m² de asfalto iluminado</span></div>
@@ -191,10 +173,8 @@
     </section>
 
     <section id="horarios" class="portada__info portada__info--split" data-escena="horario" data-capitulo="Horarios" aria-labelledby="titulo-horarios">
-      <span class="portada__fantasma" aria-hidden="true">Boxes</span>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">Pasa por boxes</p>
-        <h2 id="titulo-horarios">Horarios.</h2>
+        <h2 id="titulo-horarios">Horarios</h2>
         <p class="portada__info-lead">Consulta disponibilidad según el cronograma antes de preparar el auto.</p>
       </div>
       <div class="portada__horarios" aria-label="Horarios de apertura">
@@ -206,27 +186,21 @@
     </section>
 
     <section id="records" class="portada__info portada__info--records" data-escena="records" data-capitulo="Récords" aria-labelledby="titulo-records">
-      <span class="portada__fantasma" aria-hidden="true">Tiempos</span>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">Telemetría de pista</p>
-        <h2 id="titulo-records">Mejores tiempos.</h2>
-        <p class="portada__info-lead">La vuelta perfecta se mide en tiempo real y queda en la memoria del circuito.</p>
+        <h2 id="titulo-records">Mejores tiempos</h2>
       </div>
       <div class="portada__records">
         <div class="portada__record portada__record--primero"><span>01</span><strong>Danilo M.</strong><b>12.46</b></div>
         <div class="portada__record"><span>02</span><strong>Stalin G.</strong><b>12.86</b></div>
         <div class="portada__record"><span>03</span><strong>Marco A.</strong><b>13.04</b></div>
       </div>
-      <div class="portada__record-meta"><span>Cuenta vueltas electrónico</span><span>Resultados en tiempo real</span><a class="boton boton--fantasma boton--chico" href="./posiciones.html">Records por circuito</a></div>
+      <div class="portada__record-meta"><span>Cuenta vueltas electrónico</span><span>Resultados en tiempo real</span><a class="boton boton--fantasma boton--chico" href="./posiciones.html">Récords por circuito</a></div>
     </section>
 
     <section id="eventos" class="portada__info portada__info--eventos" data-escena="eventos" data-capitulo="Eventos" aria-labelledby="titulo-eventos">
-      <span class="portada__fantasma" aria-hidden="true">Carrera</span>
-      <div class="portada__evento-fondo" aria-hidden="true"><img src="./images/pista-real/recta-pilotos.jpeg" width="665" height="1182" alt="" loading="lazy" decoding="async"></div>
+      <div class="portada__evento-fondo" aria-hidden="true"><img src="./images/pista/miniapolis-track-vertical.webp" width="941" height="1670" alt="" loading="lazy" decoding="async"></div>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">Calendario de pista</p>
-        <h2 id="titulo-eventos">Próximos eventos.</h2>
-        <p class="portada__info-lead">Corre por la experiencia completa: comunidad, competencia y noches que se quedan contigo.</p>
+        <h2 id="titulo-eventos">Próximos eventos</h2>
       </div>
       <div class="portada__eventos-lista">
         <article class="portada__evento"><p class="portada__evento-fecha"><b>25</b> <span>May</span></p><h3>Torneo del Recuerdo</h3><p>Una fecha para volver a lo esencial: manejar, compartir y competir.</p></article>
@@ -237,51 +211,41 @@
     </section>
 
     <section id="muy-pronto" class="portada__info portada__info--pronto" data-escena="eventos" data-capitulo="Muy pronto" aria-labelledby="titulo-pronto">
-      <figure class="portada__pronto-visual"><img src="./images/pista-real/pista-baja.jpeg" width="360" height="640" alt="Vista baja del asfalto y la estructura del circuito de Miniápolis" loading="lazy" decoding="async"></figure>
+      <figure class="portada__pronto-visual"><img src="./images/pista/miniapolis-asphalt-detail.webp" width="941" height="1672" alt="Vista baja del asfalto y la estructura del circuito de Miniápolis" loading="lazy" decoding="async"></figure>
       <div class="portada__pronto-copy">
         <p class="portada__eyebrow">En construcción</p>
-        <h2 id="titulo-pronto">Muy pronto.</h2>
-        <h3>Algo grande se está construyendo para ti.</h3>
+        <h2 id="titulo-pronto">Muy pronto</h2>
         <p class="portada__info-lead">La próxima experiencia de Miniápolis está tomando forma. Quédate cerca de la bandera.</p>
         <a class="boton boton--fantasma boton--chico" href="#acceso">Entérate pronto</a>
       </div>
     </section>
 
-    <div class="portada__cinta portada__cinta--inversa" aria-hidden="true">
-      <div class="portada__cinta-pista"><span>Racing Hobbies</span><span>Miniápolis #3</span><span>Rodar</span><span>Competir</span><span>Aprender</span></div>
-    </div>
-
     <section id="galeria" class="portada__info portada__info--galeria" data-escena="galeria" data-capitulo="Galería" aria-labelledby="titulo-galeria">
-      <span class="portada__fantasma" aria-hidden="true">Cuadros</span>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">Una mirada al circuito</p>
-        <h2 id="titulo-galeria">Más que una pista.</h2>
+        <h2 id="titulo-galeria">Galería del circuito</h2>
       </div>
       <div class="portada__galeria">
-        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista-real/pista-amplia.jpeg" width="640" height="359" alt="Vista amplia del asfalto y las curvas de Miniápolis" loading="lazy" decoding="async"><figcaption>La línea ideal aparece cuando el ritmo se encuentra con el asfalto.</figcaption></figure>
-        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista-real/curva-ventanas.jpeg" width="665" height="1182" alt="Curva iluminada por las ventanas del hangar" loading="lazy" decoding="async"><figcaption>Luz natural, asfalto real y espacio para encontrar tu trazada.</figcaption></figure>
-        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista-real/hangar-recta.jpeg" width="360" height="638" alt="Recta interior del hangar con luz natural y bordillos" loading="lazy" decoding="async"><figcaption>La luz del hangar dibuja otra forma de correr.</figcaption></figure>
-        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista-real/hangar-ancho.jpeg" width="640" height="359" alt="Vista panorámica del hangar y el circuito" loading="lazy" decoding="async"><figcaption>Un hangar entero para vivir la carrera desde cualquier ángulo.</figcaption></figure>
-        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista-real/pista-lateral.jpeg" width="480" height="360" alt="Vista lateral de una recta y una curva del circuito" loading="lazy" decoding="async"><figcaption>Rectas para acelerar y bordillos para afinar la vuelta.</figcaption></figure>
-        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista-real/boxes-curva.jpeg" width="360" height="640" alt="Curva del circuito junto a la zona de boxes" loading="lazy" decoding="async"><figcaption>Boxes cerca, comunidad alrededor y la próxima vuelta esperando.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista/miniapolis-track-side-wide.webp" width="1675" height="939" alt="Vista lateral del circuito y sus ventanas" loading="lazy" decoding="async"><figcaption>La línea ideal aparece cuando el ritmo se encuentra con el asfalto.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista/miniapolis-gallery-curb-vertical.webp" width="941" height="1671" alt="Curva roja y blanca iluminada por las ventanas del hangar" loading="lazy" decoding="async"><figcaption>Luz natural, asfalto real y espacio para encontrar tu trazada.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista/miniapolis-pit-corner-vertical.webp" width="941" height="1671" alt="Recta interior del hangar con luz natural y bordillos" loading="lazy" decoding="async"><figcaption>La luz del hangar dibuja otra forma de correr.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista/miniapolis-gallery-wide.webp" width="1675" height="939" alt="Vista panorámica limpia del hangar y el circuito" loading="lazy" decoding="async"><figcaption>Un hangar entero para vivir la carrera desde cualquier ángulo.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--wide"><img src="./images/pista/miniapolis-gallery-curb-wide.webp" width="1675" height="939" alt="Bordillo de competición y línea de carrera sobre el asfalto" loading="lazy" decoding="async"><figcaption>Rectas para acelerar y bordillos para afinar la vuelta.</figcaption></figure>
+        <figure class="portada__galeria-card portada__galeria-card--tall"><img src="./images/pista/miniapolis-gallery-car-vertical.webp" width="941" height="1671" alt="Auto de radiocontrol listo para correr en la pista" loading="lazy" decoding="async"><figcaption>Boxes cerca, comunidad alrededor y la próxima vuelta esperando.</figcaption></figure>
       </div>
     </section>
 
     <section id="comunidad" class="portada__info portada__info--comunidad" data-escena="comunidad" data-capitulo="Comunidad" aria-labelledby="titulo-comunidad">
-      <span class="portada__fantasma" aria-hidden="true">Equipo</span>
       <div class="portada__info-cabeza">
-        <p class="portada__eyebrow">Racing Hobbies</p>
-        <h2 id="titulo-comunidad">Tu pasión, tu mejor equipo.</h2>
+        <h2 id="titulo-comunidad">Equipamiento para tu próxima carrera</h2>
         <p class="portada__info-lead">Máximo control, máxima velocidad. Encuentra llantas, motores, amortiguadores y autos para llevar tu próxima carrera más lejos.</p>
       </div>
       <div class="portada__promos">
-        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/lancia-delta-integrale.png" width="1024" height="1536" alt="Lancia Delta Integrale de competición" loading="lazy" decoding="async"><span>Tu pasión, tu mejor equipo</span><strong>Lancia Delta Integrale</strong><em>Ver en tienda ↗</em></a>
-        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/amortiguadores.png" width="1536" height="1024" alt="Amortiguadores de alto rendimiento" loading="lazy" decoding="async"><span>Precisión en cada detalle</span><strong>Amortiguadores de alto rendimiento</strong><em>Ver en tienda ↗</em></a>
-        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/llantas.png" width="550" height="862" alt="Llantas de competición" loading="lazy" decoding="async"><span>Máximo control, máxima velocidad</span><strong>Llantas de competición</strong><em>Ver en tienda ↗</em></a>
-        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/motor-competicion.png" width="790" height="640" alt="Motor de competición" loading="lazy" decoding="async"><span>Fuerza que te lleva más lejos</span><strong>Motores de competición</strong><em>Ver en tienda ↗</em></a>
-        <a class="portada__promo portada__promo--muted" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/rc-builder.png" width="337" height="407" alt="Kit de RC Builder" loading="lazy" decoding="async"><span>Racing Hobbies</span><strong>RC Builder</strong><em>Próximamente ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/lancia-delta-integrale.png" width="1024" height="1536" alt="Lancia Delta Integrale de competición" loading="lazy" decoding="async"><strong>Lancia Delta Integrale</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/amortiguadores.png" width="1536" height="1024" alt="Amortiguadores de alto rendimiento" loading="lazy" decoding="async"><strong>Amortiguadores de alto rendimiento</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/llantas.png" width="550" height="862" alt="Llantas de competición" loading="lazy" decoding="async"><strong>Llantas de competición</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/motor-competicion.png" width="790" height="640" alt="Motor de competición" loading="lazy" decoding="async"><strong>Motores de competición</strong><em>Ver en tienda ↗</em></a>
+        <a class="portada__promo portada__promo--muted" href="https://racinghobbiesec.com" target="_blank" rel="noreferrer"><img src="./images/contenido/rc-builder.png" width="337" height="407" alt="Kit de RC Builder" loading="lazy" decoding="async"><strong>RC Builder</strong><em>Próximamente ↗</em></a>
       </div>
-      <p class="portada__comunidad-cierre">Más que una pista, <span>una comunidad.</span></p>
     </section>
 
     <section id="acceso" class="portada__boxes" data-escena="boxes" data-capitulo="Tu pase" aria-labelledby="titulo-acceso">
@@ -385,10 +349,9 @@
   </main>
 
   <footer class="entrada__pie">
-    <p class="entrada__pie-gigante" aria-hidden="true"><span>Miniápolis</span></p>
     <div class="entrada__pie-interior contenedor contenedor--portada">
       <p class="entrada__pie-marca">Miniápolis&nbsp;#3 — Racing Hobbies</p>
-      <p class="entrada__pie-copy">© 2026 — Más que una pista, una comunidad.</p>
+      <p class="entrada__pie-copy">© 2026</p>
       <a class="entrada__arriba" href="#inicio">Volver arriba <span aria-hidden="true">↑</span></a>
     </div>
   </footer>
