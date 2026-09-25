@@ -117,6 +117,12 @@ test('la portada mantiene un copy breve, natural y sin ruido', () => {
   for (const frase of ['Asfalto, curvas y control.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'READY TO RACE', 'FRAME / 01']) {
     assert.ok(!HTML.includes(frase) && !CSS.includes(frase), `sigue presente el texto decorativo «${frase}»`);
   }
+  for (const clase of ['entrada__capitulo', 'portada__gigante', 'portada__desliza', 'portada__cinta', 'portada__fantasma', 'entrada__pie-gigante']) {
+    assert.doesNotMatch(HTML, new RegExp(`class="[^"]*${clase}`), `sigue presente el elemento decorativo .${clase}`);
+  }
+  for (const rotulo of ['LISTO PARA CORRER', '11 / ACCESO', 'INSTALACIONES', 'FICHA TÉCNICA', 'CRONOMETRAJE', 'CALENDARIO', 'BOXES // SESIONES ABIERTAS', 'MEJOR VUELTA // CRONO EN VIVO', 'ABIERTO', 'NOCTURNA', 'CARRERA', 'PRÓXIMA OBRA', 'CUADRO /']) {
+    assert.doesNotMatch(CSS, new RegExp(rotulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `sigue presente el rótulo decorativo «${rotulo}»`);
+  }
   assert.doesNotMatch(HTML, /·/, 'sin puntos medios como separadores');
   assert.doesNotMatch(HTML, /Track\s+\d+/i, 'sin identificadores artificiales de pista');
   assert.doesNotMatch(HTML, /0°\d+|\d+°\d+['’]/, 'sin coordenadas decorativas');

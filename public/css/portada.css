@@ -496,20 +496,6 @@
   clip-path: none;
   transform: rotate(2deg);
 }
-.portada__auto::before {
-  content: 'LISTO PARA CORRER';
-  position: absolute;
-  top: 16px;
-  left: 18px;
-  z-index: 2;
-  padding: 7px 9px;
-  border: 1px solid rgba(245, 246, 240, .22);
-  border-radius: 999px;
-  background: rgba(7, 10, 9, .62);
-  color: #f5f6f0;
-  font: 650 .55rem/1 var(--mono);
-  letter-spacing: .16em;
-}
 .portada__auto::after {
   right: 8%;
   left: 8%;
@@ -551,15 +537,6 @@
     radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .11), transparent 25rem),
     #e7e8df;
   color: #101612;
-}
-.portada__boxes::before {
-  content: '11 / ACCESO';
-  position: absolute;
-  top: clamp(34px, 5vw, 66px);
-  left: var(--gutter);
-  color: rgba(16, 22, 18, .48);
-  font: 650 .65rem/1 var(--mono);
-  letter-spacing: .2em;
 }
 .portada__intro h2 { color: #101612; }
 .portada__intro .entrada__acceso-nota { color: #5b665e; max-width: 24ch; }
@@ -696,8 +673,7 @@
    encienden una a una, se apagan a la vez y el telón se abre en diagonal.
    `.portada-telon` (portada-arranque.js) lo baja apagado desde el primer
    fotograma; `.portada-motor` lo enciende y lo abre. */
-.portada__semaforo-caja,
-.portada__semaforo-texto { display: none; }
+.portada__semaforo-caja { display: none; }
 .portada-telon .portada__semaforo,
 .portada-motor .portada__semaforo {
   position: absolute;
@@ -724,14 +700,6 @@
   border-radius: 999px;
   background: linear-gradient(180deg, #121614, #070908);
   box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .06);
-}
-.portada-telon .portada__semaforo-texto,
-.portada-motor .portada__semaforo-texto {
-  display: block;
-  color: rgba(245, 246, 240, .5);
-  font: 650 .68rem/1 var(--mono);
-  letter-spacing: .32em;
-  text-transform: uppercase;
 }
 .portada-telon .portada__luz,
 .portada-motor .portada__luz {
@@ -1090,22 +1058,6 @@
   margin-bottom: clamp(48px, 6vw, 88px);
 }
 .portada__info-cabeza > * { grid-column: 1; }
-.portada__info-cabeza::after {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: start;
-  margin-top: 1px;
-  color: var(--texto-3);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
-  white-space: nowrap;
-}
-.portada__info--complejo .portada__info-cabeza::after { content: '03 / INSTALACIONES'; }
-.portada__info--datos .portada__info-cabeza::after { content: '04 / FICHA TÉCNICA'; }
-.portada__info--records .portada__info-cabeza::after { content: '06 / CRONOMETRAJE'; }
-.portada__info--eventos .portada__info-cabeza::after { content: '07 / CALENDARIO'; }
-.portada__info--galeria .portada__info-cabeza::after { content: '09 / CUADROS'; }
-.portada__info--comunidad .portada__info-cabeza::after { content: '10 / TIENDA'; }
 .portada__eyebrow {
   display: flex;
   align-items: center;
@@ -1231,7 +1183,6 @@
 }
 .portada__spec--wide strong { font-size: clamp(2.2rem, 4.4vw, 4.6rem); line-height: .92; white-space: nowrap; }
 .portada__spec > span { display: block; color: #95a298; font: 600 .7rem/1.5 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
-.portada__spec > span::before { content: '// '; color: var(--acento); }
 
 /* --- 03 Horarios: pit lane ---------------------------------------------- */
 .portada__info--split {
@@ -1258,15 +1209,6 @@
   box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
-}
-.portada__horarios::before {
-  content: '05 / BOXES // SESIONES ABIERTAS';
-  display: block;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(221, 231, 222, .18);
-  color: var(--acento);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
 }
 .portada__horario {
   position: relative;
@@ -1319,15 +1261,6 @@
   background: rgba(7, 10, 9, .7);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-}
-.portada__records::before {
-  content: 'MEJOR VUELTA // CRONO EN VIVO';
-  display: block;
-  padding: 18px clamp(18px, 2.6vw, 32px);
-  border-bottom: 1px solid rgba(221, 231, 222, .14);
-  color: var(--acento);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
 }
 .portada__record {
   position: relative;
@@ -1387,20 +1320,6 @@
   border-radius: var(--esquina);
   background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%), linear-gradient(165deg, rgba(18, 26, 22, .9), rgba(7, 10, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
 }
-.portada__evento::after {
-  content: 'ABIERTO';
-  position: absolute;
-  top: clamp(24px, 2.6vw, 34px);
-  right: clamp(24px, 2.6vw, 34px);
-  padding: 7px 10px;
-  border: 1px solid rgba(221, 231, 222, .22);
-  border-radius: 999px;
-  color: #d3dad2;
-  font: 650 .58rem/1 var(--mono);
-  letter-spacing: .16em;
-}
-.portada__evento:nth-child(2)::after { content: 'NOCTURNA'; }
-.portada__evento:nth-child(3)::after { content: 'CARRERA'; border-color: var(--acento); background: var(--acento); color: #04120a; }
 .portada__evento:nth-child(3) { border-color: var(--acento-borde); background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%), linear-gradient(165deg, rgba(26, 38, 24, .9), rgba(8, 12, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d; }
 .portada__evento-fecha { display: flex; align-items: baseline; gap: 12px; color: var(--acento); font: 650 .78rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; }
 .portada__evento-fecha b { color: #f5f6f0; font: 650 clamp(3.6rem, 5.4vw, 5.6rem)/.8 var(--display); font-stretch: 118%; letter-spacing: 0; font-variant-numeric: tabular-nums; }
@@ -1452,7 +1371,7 @@
     radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 40%);
 }
 .portada__pronto-visual::after {
-  content: '08 / PRÓXIMA OBRA';
+  content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -1506,20 +1425,6 @@
   pointer-events: none;
   border: 1px solid rgba(221, 231, 222, .16);
   border-radius: inherit;
-}
-.portada__galeria figure::after {
-  content: 'CUADRO / 0' counter(galeria-frame);
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 2;
-  padding: 7px 10px;
-  border: 1px solid rgba(245, 246, 240, .22);
-  border-radius: 999px;
-  background: rgba(7, 10, 9, .62);
-  color: #f5f6f0;
-  font: 650 .56rem/1 var(--mono);
-  letter-spacing: .16em;
 }
 /* Placa de pie: una textura de pista distinta bajo cada foto. */
 .portada__galeria figcaption {
@@ -1595,27 +1500,6 @@
   a.portada__promo:hover > img { transform: scale(1.06); filter: saturate(1) contrast(1.1); }
   a.portada__promo:hover::after { width: calc(100% - 48px); }
 }
-.portada__comunidad-cierre {
-  margin-top: clamp(80px, 11vw, 150px) !important;
-  color: #f5f6f0;
-  font: 650 clamp(2.4rem, 6.4vw, 6.8rem)/.9 var(--display);
-  font-stretch: 125%;
-  text-transform: uppercase;
-  text-wrap: balance;
-}
-.portada__comunidad-cierre::before {
-  content: '';
-  display: block;
-  width: 120px;
-  height: 20px;
-  margin-bottom: clamp(24px, 3vw, 36px);
-  background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 20px 20px;
-  transform: skewX(-16deg);
-}
-/* Solo el tramo final va en verde: las palabras sueltas del resto de la frase no. */
-.portada__comunidad-cierre > span:not(.palabra) { color: var(--acento); }
-
-
 /* --- Una escena por tarjeta ---------------------------------------------- */
 /* Cada caja tiene su propia foto de pista, siempre bajo el mismo velo: la
    textura cambia, la lectura no. */
@@ -1977,37 +1861,6 @@
 .portada-rapido .portada__cielo { animation-duration: 1.6s; animation-delay: 0s; }
 @keyframes cielo-entra { from { scale: 1.32; } to { scale: 1; } }
 
-/* Rótulo gigante: cruza la foto en hueco y se llena de verde con el scroll. */
-.portada__gigante {
-  position: absolute;
-  top: calc(var(--altura-cabecera) + 1.5svh);
-  left: 0;
-  z-index: -1;
-  margin: 0;
-  color: transparent;
-  font: 800 clamp(6rem, 21vw, 30rem)/.82 var(--display);
-  font-stretch: 125%;
-  text-transform: uppercase;
-  white-space: nowrap;
-  -webkit-text-stroke: 1px rgba(245, 246, 240, .17);
-  background: linear-gradient(90deg, rgba(147, 210, 65, calc(var(--p, 0) * .2)), rgba(147, 210, 65, calc(var(--p, 0) * .05)) 70%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  pointer-events: none;
-  user-select: none;
-}
-.portada-motor .portada__gigante {
-  opacity: 0;
-  transform: translate3d(calc(4vw - var(--p, 0) * 46vw), 0, 0);
-  translate: 24vw 0;
-  will-change: transform;
-}
-.portada-listos .portada__gigante {
-  opacity: 1;
-  translate: 0 0;
-  transition: opacity 1.4s ease calc(var(--espera, 1250ms) + 200ms), translate 2.2s var(--salida) calc(var(--espera, 1250ms) + 100ms);
-}
-
 /* --- Vuelta al circuito en la cabecera ------------------------------------ */
 /* El capítulo va al centro; la vuelta se arrima a «Entrar». */
 .entrada__vuelta { display: none; }
@@ -2062,22 +1915,6 @@
   transform: scaleX(var(--p, 0));
   transform-origin: left center;
 }
-.portada-fija .portada__recta-marco::before {
-  content: 'Asfalto  Curvas  Control  Asfalto  Curvas  Control';
-  position: absolute;
-  top: 44%;
-  left: 0;
-  z-index: -1;
-  color: transparent;
-  font: 800 clamp(7rem, 30svh, 22rem)/1 var(--display);
-  font-stretch: 125%;
-  text-transform: uppercase;
-  white-space: pre;
-  -webkit-text-stroke: 1px rgba(245, 246, 240, .1);
-  transform: translate3d(calc(8vw - var(--p, 0) * 60vw), -50%, 0);
-  pointer-events: none;
-  will-change: transform;
-}
 /* El rótulo de la recta se levanta palabra a palabra al asomar la escena. */
 .portada-motor .portada__recta-cabeza { --revela: 0; transition: --revela 1.5s var(--salida) .1s; }
 .portada-motor .portada__recta-cabeza.revelado { --revela: 1; }
@@ -2119,8 +1956,6 @@
 /* --- Formatos ------------------------------------------------------------- */
 @media (max-width: 700px) {
   .portada-motor .portada__info { clip-path: polygon(0 calc((1 - var(--info-in, 1)) * 16vw), 100% 0, 100% 100%, 0 100%); }
-  /* En el teléfono el rótulo va en hueco y sin relleno: la foto manda. */
-  .portada__gigante { top: auto; bottom: 42%; font-size: 30vw; background: none; -webkit-text-stroke-color: rgba(245, 246, 240, .14); }
 }
 @media (min-width: 1800px) {
   .portada-motor .entrada__vuelta { zoom: 1.3; }
