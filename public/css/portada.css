@@ -2025,6 +2025,4 @@
   .portada__promo, .portada__promo:nth-child(n + 4) { padding: 14px; }
   .portada__promo::after { left: 14px; }
   .portada__promo em { font-size: .62rem; letter-spacing: .06em; }
-  /* «Comunidad.» en una línea: la letra sigue al ancho y no al mínimo fijo. */
-  .portada__comunidad-cierre { font-size: 11.5vw; }
 }
