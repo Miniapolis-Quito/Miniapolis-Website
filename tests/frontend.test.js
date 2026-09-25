@@ -278,6 +278,15 @@ test('las referencias visuales de la portada apuntan a archivos existentes', () 
   assert.deepEqual(faltantes, []);
 });
 
+test('la portada no conserva capturas antiguas ni encuadres descartados', () => {
+  const html = leer(PORTADA);
+  const css = leer('public/css/portada.css');
+  const fuentes = `${html}\n${css}`;
+  assert.doesNotMatch(fuentes, /pista-real\//, 'la portada no debe volver a cargar el set de baja resolución');
+  assert.doesNotMatch(fuentes, /miniapolis-(?:action|track-portrait)/, 'la portada no debe cargar fuentes visuales descartadas');
+  assert.doesNotMatch(fuentes, /(?:-draft|-upscale)\.(?:webp|jpeg|jpg|png)/, 'la portada no debe cargar derivados de revisión');
+});
+
 test('el sistema visual comparte tokens y usa la capa operativa oscura', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--fondo:\s*#000000/);

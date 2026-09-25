@@ -92,7 +92,7 @@ test('cada tarjeta editorial tiene un fondo distinto y local', () => {
     ...portadaCss.matchAll(/--card-fondo-src:\s*url\('([^']+)'\)/g),
     ...portadaCss.matchAll(/--caption-fondo-src:\s*url\('([^']+)'\)/g),
   ].map((match) => match[1]);
-  assert.equal(fondos.length, 30);
+  assert.equal(fondos.length, 33);
   assert.equal(new Set(fondos).size, fondos.length);
   for (const fondo of fondos) assert.ok(fs.existsSync(path.resolve('public/css', fondo)), `falta ${fondo}`);
 });

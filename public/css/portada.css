@@ -1462,10 +1462,10 @@
 .portada__spec:nth-child(2) { --card-fondo-src: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 52% center; }
 .portada__spec:nth-child(3) { --card-fondo-src: url('../images/pista/miniapolis-track-vertical.webp'); --card-pos: 44% center; }
 .portada__spec:nth-child(4) { --card-fondo-src: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 56% center; }
-.portada__spec:nth-child(5) { --card-fondo-src: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 58% center; }
-.portada__spec:nth-child(6) { --card-fondo-src: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 50% center; }
-.portada__spec:nth-child(7) { --card-fondo-src: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
-.portada__spec:nth-child(8) { --card-fondo-src: url('../images/pista/miniapolis-hangar-vertical.webp'); --card-pos: 42% center; }
+.portada__spec:nth-child(5) { --card-fondo-src: url('../images/landing/miniapolis-car-detail-900.webp'); --card-pos: 58% center; }
+.portada__spec:nth-child(6) { --card-fondo-src: url('../images/pista/miniapolis-curb-detail-vertical-640.webp'); --card-pos: 50% center; }
+.portada__spec:nth-child(7) { --card-fondo-src: url('../images/pista/miniapolis-track-corner-wide-960.webp'); --card-pos: 68% center; }
+.portada__spec:nth-child(8) { --card-fondo-src: url('../images/pista/miniapolis-pit-corner-vertical-640.webp'); --card-pos: 42% center; }
 .portada__horario:nth-child(1) { --card-fondo-src: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
 .portada__horario:nth-child(2) { --card-fondo-src: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
 .portada__horario:nth-child(3) { --card-fondo-src: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
