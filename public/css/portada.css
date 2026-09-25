@@ -244,7 +244,6 @@
 .portada__linea { display: block; overflow: hidden; padding: .05em .25em .08em 0; }
 .portada__linea > span { display: inline-block; transform: skewX(-8deg); transform-origin: 0 100%; }
 .portada__linea--acento { color: var(--acento); }
-.portada__lema { max-width: 32ch; margin-top: 26px; color: var(--texto-2); font-size: clamp(1.05rem, 1.7vw, 1.4rem); }
 .portada__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 34px; }
 .portada__auto {
   position: absolute;
@@ -297,7 +296,6 @@
 .portada__recta { padding: clamp(72px, 11vw, 150px) 0; }
 .portada__recta-cabeza { padding-inline: var(--gutter); margin-bottom: clamp(28px, 4vw, 56px); }
 .portada__recta-cabeza h2 { font-size: clamp(2.6rem, 7vw, 10rem); line-height: .95; }
-.portada__recta-cabeza p { margin-top: 14px; color: var(--texto-2); font-size: clamp(1rem, 1.5vw, 1.25rem); }
 .portada__riel { display: grid; gap: clamp(20px, 3vw, 40px); padding-inline: var(--gutter); }
 .portada__panel { position: relative; margin: 0; overflow: hidden; }
 .portada__panel img { display: block; width: 100%; height: auto; max-height: 84svh; object-fit: cover; }
@@ -306,8 +304,6 @@
 .portada__panel--alto { width: 100%; max-width: min(100%, 520px); }
 .portada__panel--alto img { aspect-ratio: 4 / 5; object-fit: cover; }
 .portada__panel--texto { align-self: center; max-width: 46ch; overflow: visible; }
-.portada__panel--texto h3 { font-size: clamp(1.7rem, 2.6vw, 2.4rem); }
-.portada__panel--texto > p { margin: 12px 0 22px; color: var(--texto-2); }
 .portada__datos { display: grid; margin: 0; padding: 0; list-style: none; }
 .portada__datos li { display: flex; justify-content: space-between; gap: 18px; padding: 13px 0; border-top: 1px solid var(--borde); color: var(--texto-2); }
 .portada__datos li span:first-child { color: var(--acento); font: 650 .72rem/1.6 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
@@ -463,17 +459,6 @@
   border-bottom: 1px solid rgba(221, 231, 222, .12);
 }
 
-.portada__salida-marco::after {
-  content: 'MINIÁPOLIS / CIRCUITO RC';
-  position: absolute;
-  right: var(--gutter);
-  bottom: 28px;
-  z-index: 2;
-  color: rgba(245, 246, 240, .55);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
-}
-
 .portada__cielo img {
   object-position: 58% 46%;
   filter: saturate(.82) contrast(1.08);
@@ -497,7 +482,6 @@
 }
 .portada__linea { padding-right: .16em; }
 .portada__linea--acento { color: var(--acento); }
-.portada__lema { max-width: 28ch; margin-top: 30px; font-size: clamp(1.05rem, 1.5vw, 1.3rem); color: #d3dad2; }
 .portada__acciones { gap: 12px; margin-top: 32px; }
 .portada__enlace { border-radius: 0; min-height: 50px; }
 
@@ -511,20 +495,6 @@
   box-shadow: 0 34px 80px -34px rgba(0, 0, 0, .92), 0 0 0 1px rgba(147, 210, 65, .12);
   clip-path: none;
   transform: rotate(2deg);
-}
-.portada__auto::before {
-  content: 'READY TO RACE';
-  position: absolute;
-  top: 16px;
-  left: 18px;
-  z-index: 2;
-  padding: 7px 9px;
-  border: 1px solid rgba(245, 246, 240, .22);
-  border-radius: 999px;
-  background: rgba(7, 10, 9, .62);
-  color: #f5f6f0;
-  font: 650 .55rem/1 var(--mono);
-  letter-spacing: .16em;
 }
 .portada__auto::after {
   right: 8%;
@@ -549,7 +519,6 @@
 .portada__recta { padding-block: clamp(88px, 12vw, 168px); background: #070a09; }
 .portada__recta-cabeza h2,
 .portada__intro h2 { letter-spacing: 0; }
-.portada__recta-cabeza p { color: #aebbb0; }
 .portada__panel { border-radius: 2px 20px 2px 20px; }
 .portada__panel img { filter: saturate(.88) contrast(1.05); }
 .portada__panel--texto {
@@ -568,15 +537,6 @@
     radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .11), transparent 25rem),
     #e7e8df;
   color: #101612;
-}
-.portada__boxes::before {
-  content: 'ACCESS';
-  position: absolute;
-  top: clamp(34px, 5vw, 66px);
-  left: var(--gutter);
-  color: rgba(16, 22, 18, .48);
-  font: 650 .65rem/1 var(--mono);
-  letter-spacing: .2em;
 }
 .portada__intro h2 { color: #101612; }
 .portada__intro .entrada__acceso-nota { color: #5b665e; max-width: 24ch; }
@@ -613,12 +573,9 @@
   .pagina-entrada { --altura-cabecera: 72px; }
   .entrada__marca-sello img { height: 32px; }
   .portada__salida-marco { min-height: 760px; padding-top: calc(var(--altura-cabecera) + 38px); }
-  .portada__salida-marco::after { right: var(--gutter); bottom: 18px; font-size: .52rem; }
   .portada__salida-copy { max-width: 100%; }
   .portada__salida h1 { max-width: 6ch; font-size: clamp(3.8rem, 18vw, 6.4rem); }
-  .portada__lema { max-width: 21ch; }
   .portada__auto { top: calc(var(--altura-cabecera) + 18px); right: var(--gutter); bottom: auto; width: min(45vw, 230px); max-width: none; }
-  .portada__auto::before { top: 10px; left: 10px; padding: 5px 7px; font-size: .42rem; }
   .portada__salida-marco::before {
     background:
       linear-gradient(180deg, rgba(7, 10, 9, .5) 0, rgba(7, 10, 9, .72) 52%, rgba(7, 10, 9, .98) 100%),
@@ -626,7 +583,6 @@
   }
   .portada__cielo img { object-position: 64% 50%; }
   .portada__boxes { padding-top: 112px; }
-  .portada__boxes::before { top: 48px; }
   .entrada__acceso-panel { border-radius: 2px 18px 2px 18px; }
 }
 
@@ -687,11 +643,9 @@
 
 .portada-motor .portada__kicker,
 .portada-motor .portada__logo,
-.portada-motor .portada__lema,
 .portada-motor .portada__acciones { opacity: 0; transform: translate3d(0, 18px, 0); }
 .portada-listos .portada__kicker,
 .portada-listos .portada__logo,
-.portada-listos .portada__lema,
 .portada-listos .portada__acciones {
   opacity: 1;
   transform: none;
@@ -899,7 +853,6 @@
 /* Pantallas cortas: el bloque de texto se compacta para no chocar con el auto. */
 @media (max-height: 640px) {
   .portada__kicker { margin-bottom: 12px; }
-  .portada__lema { margin-top: 14px; }
   .portada__acciones { margin-top: 22px; }
 }
 @media (max-width: 700px) and (max-height: 640px) {
@@ -936,9 +889,7 @@
   .entrada__marca-sello img { height: 46px; }
   .entrada__accion { padding: 14px 24px; font-size: .95rem; }
   .portada__kicker { font-size: 1rem; }
-  .portada__lema { max-width: 40ch; font-size: 1.9rem; }
   .portada__acciones { zoom: 1.35; }
-  .portada__recta-cabeza p { font-size: 1.6rem; }
   .portada__panel--texto { zoom: 1.35; }
   .cifra__texto { font-size: 1rem; }
   .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 680px); }
@@ -960,9 +911,7 @@
   .entrada__marca-sello img { height: 62px; }
   .entrada__accion { padding: 18px 32px; font-size: 1.25rem; }
   .portada__kicker { font-size: 1.4rem; }
-  .portada__lema { font-size: 2.7rem; }
   .portada__acciones { zoom: 1.9; }
-  .portada__recta-cabeza p { font-size: 2.2rem; }
   .portada__panel--texto { zoom: 1.9; }
   .cifra__texto { font-size: 1.4rem; }
   .portada__boxes { grid-template-columns: minmax(0, 1fr) minmax(0, 900px); }
@@ -1053,28 +1002,11 @@
 .portada__info-cabeza {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 32px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   margin-bottom: clamp(48px, 6vw, 88px);
 }
 .portada__info-cabeza > * { grid-column: 1; }
-.portada__info-cabeza::after {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: start;
-  margin-top: 1px;
-  color: var(--texto-3);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
-  white-space: nowrap;
-}
-.portada__info--complejo .portada__info-cabeza::after { content: '01 / FACILITIES'; }
-.portada__info--datos .portada__info-cabeza::after { content: '02 / TELEMETRY'; }
-.portada__info--records .portada__info-cabeza::after { content: '04 / TIMING'; }
-.portada__info--eventos .portada__info-cabeza::after { content: '05 / CALENDAR'; }
-.portada__info--galeria .portada__info-cabeza::after { content: '07 / VISUALS'; }
-.portada__info--comunidad .portada__info-cabeza::after { content: '08 / SUPPLY DEPOT'; }
 .portada__eyebrow {
   display: flex;
   align-items: center;
@@ -1085,17 +1017,17 @@
   letter-spacing: .24em;
   text-transform: uppercase;
 }
-.portada__eyebrow::before { content: ''; flex: none; width: 48px; height: 1px; background: currentColor; }
 .portada__info h2 { max-width: 9.5em; font-size: clamp(2.8rem, 7vw, 7rem); line-height: .92; }
 .portada__info--datos h2 { max-width: 12em; font-size: clamp(2.8rem, 6.2vw, 6.2rem); }
 .portada__info-lead { max-width: 54ch; margin-top: 26px !important; color: #aebbb0; font-size: clamp(1.02rem, 1.4vw, 1.25rem); line-height: 1.6; }
 
 /* --- 01 Complejo: cinco estaciones ------------------------------------------ */
 .portada__info--complejo::before {
+  --scene-fondo-src: url('../images/contenido/complejo-fondo.webp');
   background:
     radial-gradient(ellipse 50% 60% at calc(12% + var(--deriva) * 16%) 20%, rgba(147, 210, 65, .09), transparent 70%),
     var(--velo),
-    url('../images/contenido/complejo-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__disciplinas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .portada__disciplina {
@@ -1132,27 +1064,17 @@
   background: var(--acento);
   box-shadow: 0 0 18px rgba(147, 210, 65, .7);
 }
-.portada__indice {
-  display: block;
-  margin-bottom: auto;
-  color: var(--acento);
-  font: 650 clamp(3.2rem, 4.6vw, 4.8rem)/.85 var(--display);
-  font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
-}
-@supports (-webkit-text-stroke: 1px black) {
-  .portada__indice { color: transparent; -webkit-text-stroke: 1px rgba(147, 210, 65, .72); }
-}
-.portada__disciplina h3 { display: flex; align-items: flex-end; min-height: 2.08em; margin-top: 32px; font-size: clamp(1.12rem, 1.4vw, 1.36rem); line-height: 1.04; }
+.portada__disciplina h3 { display: flex; align-items: flex-end; min-height: 2.08em; margin-top: auto; font-size: clamp(1.12rem, 1.4vw, 1.36rem); line-height: 1.04; }
 .portada__disciplina p { min-height: 6.2em; margin-top: 14px; color: var(--texto-2); font-size: .92rem; line-height: 1.55; }
 
 /* --- 02 Datos: tablero de telemetría -------------------------------------- */
 .portada__info--datos { background: linear-gradient(180deg, #0e1512, #0a0e0c); }
 .portada__info--datos::before {
+  --scene-fondo-src: url('../images/contenido/datos-fondo.webp');
   background:
     radial-gradient(ellipse 40% 50% at calc(86% - var(--deriva) * 14%) 12%, rgba(147, 210, 65, .07), transparent 70%),
     var(--velo),
-    url('../images/contenido/datos-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__spec-grid {
   display: grid;
@@ -1221,9 +1143,10 @@
   background: #070a09;
 }
 .portada__info--split::before {
+  --scene-fondo-src: url('../images/contenido/horarios-fondo.webp');
   background:
     var(--velo),
-    url('../images/contenido/horarios-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__info--split .portada__info-cabeza { margin-bottom: 0; }
 .portada__info--split h2 { font-size: clamp(2.8rem, 5.2vw, 4.8rem); }
@@ -1236,15 +1159,6 @@
   box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
-}
-.portada__horarios::before {
-  content: '03 / PIT LANE // OPEN SESSIONS';
-  display: block;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(221, 231, 222, .18);
-  color: var(--acento);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
 }
 .portada__horario {
   position: relative;
@@ -1285,9 +1199,10 @@
 
 /* --- 04 Récords: pantalla de cronometraje -------------------------------- */
 .portada__info--records::before {
+  --scene-fondo-src: url('../images/contenido/records-fondo.webp');
   background:
     var(--velo),
-    url('../images/contenido/records-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__records {
   overflow: hidden;
@@ -1296,15 +1211,6 @@
   background: rgba(7, 10, 9, .7);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-}
-.portada__records::before {
-  content: 'BEST LAP // LIVE TIMING';
-  display: block;
-  padding: 18px clamp(18px, 2.6vw, 32px);
-  border-bottom: 1px solid rgba(221, 231, 222, .14);
-  color: var(--acento);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
 }
 .portada__record {
   position: relative;
@@ -1364,20 +1270,6 @@
   border-radius: var(--esquina);
   background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .1), transparent 55%), linear-gradient(165deg, rgba(18, 26, 22, .9), rgba(7, 10, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d;
 }
-.portada__evento::after {
-  content: 'OPEN';
-  position: absolute;
-  top: clamp(24px, 2.6vw, 34px);
-  right: clamp(24px, 2.6vw, 34px);
-  padding: 7px 10px;
-  border: 1px solid rgba(221, 231, 222, .22);
-  border-radius: 999px;
-  color: #d3dad2;
-  font: 650 .58rem/1 var(--mono);
-  letter-spacing: .16em;
-}
-.portada__evento:nth-child(2)::after { content: 'NIGHT'; }
-.portada__evento:nth-child(3)::after { content: 'RACE'; border-color: var(--acento); background: var(--acento); color: #04120a; }
 .portada__evento:nth-child(3) { border-color: var(--acento-borde); background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(147, 210, 65, .16), transparent 55%), linear-gradient(165deg, rgba(26, 38, 24, .9), rgba(8, 12, 9, .86)), var(--card-fondo, none) var(--card-pos, center) / cover no-repeat, #0b100d; }
 .portada__evento-fecha { display: flex; align-items: baseline; gap: 12px; color: var(--acento); font: 650 .78rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; }
 .portada__evento-fecha b { color: #f5f6f0; font: 650 clamp(3.6rem, 5.4vw, 5.6rem)/.8 var(--display); font-stretch: 118%; letter-spacing: 0; font-variant-numeric: tabular-nums; }
@@ -1392,10 +1284,11 @@
   align-items: center;
 }
 .portada__info--pronto::before {
+  --scene-fondo-src: url('../images/contenido/pronto-fondo.webp');
   background:
     radial-gradient(ellipse 50% 60% at 78% 55%, rgba(255, 111, 32, .1), transparent 70%),
     var(--velo),
-    url('../images/contenido/pronto-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__info--pronto > * { min-width: 0; }
 .portada__pronto-copy { position: relative; grid-column: 1; grid-row: 1; max-width: 640px; }
@@ -1428,37 +1321,30 @@
     radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(255, 111, 32, .22), transparent 40%);
 }
 .portada__pronto-visual::after {
-  content: '06 / NEXT BUILD';
+  content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
-  display: flex;
-  align-items: flex-end;
-  padding: 24px;
-  color: rgba(245, 246, 240, .78);
-  font: 600 .62rem/1 var(--mono);
-  letter-spacing: .18em;
   pointer-events: none;
   background:
     linear-gradient(0deg, rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, 0) 42%),
     linear-gradient(160deg, rgba(255, 111, 32, .16), rgba(255, 111, 32, 0) 55%);
 }
 .portada__info--pronto h2 { color: #f5f6f0; font-size: clamp(2.8rem, 6.4vw, 6.4rem); }
-.portada__info--pronto h3 { max-width: 20ch; margin-top: 22px; color: #ffb27a; font-size: clamp(1.2rem, 2vw, 1.9rem); line-height: 1.04; }
 .portada__info--pronto .portada__info-lead { max-width: 40ch; }
 .portada__pronto-copy .boton { margin-top: 32px; }
 
 /* --- 07 Galería: hoja de contactos ----------------------------------------- */
 .portada__info--galeria::before {
+  --scene-fondo-src: url('../images/contenido/galeria-fondo.webp');
   background:
     var(--velo),
-    url('../images/contenido/galeria-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__galeria {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
-  counter-reset: galeria-frame;
 }
 .portada__galeria figure {
   position: relative;
@@ -1470,7 +1356,6 @@
   overflow: hidden;
   border-radius: var(--esquina);
   background: #0b100d;
-  counter-increment: galeria-frame;
 }
 .portada__galeria figure:nth-child(1) { grid-column: span 6; }
 .portada__galeria figure:nth-child(2),
@@ -1491,23 +1376,9 @@
   border: 1px solid rgba(221, 231, 222, .16);
   border-radius: inherit;
 }
-.portada__galeria figure::after {
-  content: 'FRAME / 0' counter(galeria-frame);
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 2;
-  padding: 7px 10px;
-  border: 1px solid rgba(245, 246, 240, .22);
-  border-radius: 999px;
-  background: rgba(7, 10, 9, .62);
-  color: #f5f6f0;
-  font: 650 .56rem/1 var(--mono);
-  letter-spacing: .16em;
-}
 /* Placa de pie: una textura de pista distinta bajo cada foto. */
 .portada__galeria figcaption {
-  --caption-fondo: url('../images/landing/miniapolis-track-atmosphere.webp');
+  --caption-fondo-src: url('../images/landing/miniapolis-track-atmosphere.webp');
   position: relative;
   flex: 1;
   padding: 16px clamp(16px, 2vw, 22px) 18px;
@@ -1515,18 +1386,19 @@
   color: #d3dad2;
   font-size: .88rem;
   line-height: 1.45;
-  background: linear-gradient(135deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, .78)), var(--caption-fondo) center / cover no-repeat, #0b100d;
+  background: linear-gradient(135deg, rgba(7, 10, 9, .92), rgba(7, 10, 9, .78)), var(--caption-fondo, none) center / cover no-repeat, #0b100d;
 }
-.portada__galeria figure:nth-child(2) figcaption { --caption-fondo: url('../images/landing/miniapolis-track-portrait.webp'); }
-.portada__galeria figure:nth-child(3) figcaption { --caption-fondo: url('../images/pista/miniapolis-track-wide.webp'); }
+.portada__galeria figure:nth-child(2) figcaption { --caption-fondo-src: url('../images/pista/miniapolis-gallery-curb-vertical.webp'); }
+.portada__galeria figure:nth-child(3) figcaption { --caption-fondo-src: url('../images/pista/miniapolis-track-wide.webp'); }
 .portada__galeria figcaption::before { content: ''; display: block; width: 28px; height: 2px; margin-bottom: 10px; background: var(--acento); box-shadow: 0 0 12px rgba(147, 210, 65, .7); }
 
 /* --- 08 Comunidad: catálogo -------------------------------------------------- */
 .portada__info--comunidad::before {
+  --scene-fondo-src: url('../images/contenido/comunidad-fondo.webp');
   background:
     radial-gradient(ellipse 45% 55% at calc(80% + var(--deriva) * 12%) 18%, rgba(147, 210, 65, .08), transparent 70%),
     var(--velo),
-    url('../images/contenido/comunidad-fondo.webp') center / cover no-repeat;
+    var(--scene-fondo, none) center / cover no-repeat;
 }
 .portada__promos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .portada__promo {
@@ -1569,7 +1441,6 @@
   box-shadow: 0 0 18px rgba(147, 210, 65, .7);
   transition: width 420ms var(--salida);
 }
-.portada__promo span { color: #d3dad2; font: 650 .6rem/1.5 var(--mono); letter-spacing: .16em; text-transform: uppercase; }
 .portada__promo strong { max-width: 18ch; margin-top: auto; overflow-wrap: break-word; hyphens: auto; font: 650 clamp(1.15rem, 1.4vw, 1.35rem)/1.06 var(--display); font-stretch: 118%; }
 .portada__promo em { margin-top: 16px; color: var(--acento); font: 650 .66rem/1 var(--mono); font-style: normal; letter-spacing: .16em; text-transform: uppercase; }
 .portada__promo--muted > img { filter: grayscale(.7) contrast(1.02); }
@@ -1579,78 +1450,60 @@
   a.portada__promo:hover > img { transform: scale(1.06); filter: saturate(1) contrast(1.1); }
   a.portada__promo:hover::after { width: calc(100% - 48px); }
 }
-.portada__comunidad-cierre {
-  margin-top: clamp(80px, 11vw, 150px) !important;
-  color: #f5f6f0;
-  font: 650 clamp(2.4rem, 6.4vw, 6.8rem)/.9 var(--display);
-  font-stretch: 125%;
-  text-transform: uppercase;
-  text-wrap: balance;
-}
-.portada__comunidad-cierre::before {
-  content: '';
-  display: block;
-  width: 120px;
-  height: 20px;
-  margin-bottom: clamp(24px, 3vw, 36px);
-  background: conic-gradient(#f5f6f0 25%, #070a09 0 50%, #f5f6f0 0 75%, #070a09 0) 0 0 / 20px 20px;
-  transform: skewX(-16deg);
-}
-.portada__comunidad-cierre span { color: var(--acento); }
-
-
 /* --- Una escena por tarjeta ---------------------------------------------- */
 /* Cada caja tiene su propia foto de pista, siempre bajo el mismo velo: la
    textura cambia, la lectura no. */
-.portada__disciplina:nth-child(1) { --card-fondo: url('../images/pista-real/pista-amplia.jpeg'); --card-pos: 54% center; }
-.portada__disciplina:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); --card-pos: 38% center; }
-.portada__disciplina:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); --card-pos: 68% center; }
-.portada__disciplina:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); }
-.portada__disciplina:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); --card-pos: 74% center; }
-.portada__spec:nth-child(1) { --card-fondo: url('../images/pista-real/hangar-recta.jpeg'); --card-pos: 60% center; }
-.portada__spec:nth-child(2) { --card-fondo: url('../images/pista-real/pista-baja.jpeg'); --card-pos: 52% center; }
-.portada__spec:nth-child(3) { --card-fondo: url('../images/pista-real/recta-pilotos.jpeg'); --card-pos: 44% center; }
-.portada__spec:nth-child(4) { --card-fondo: url('../images/pista-real/coche-salida.jpeg'); --card-pos: 56% center; }
-.portada__spec:nth-child(5) { --card-fondo: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 58% center; }
-.portada__spec:nth-child(6) { --card-fondo: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 50% center; }
-.portada__spec:nth-child(7) { --card-fondo: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
-.portada__spec:nth-child(8) { --card-fondo: url('../images/pista/miniapolis-hangar-vertical.webp'); --card-pos: 42% center; }
-.portada__horario:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
-.portada__horario:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
-.portada__horario:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
-.portada__record:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/record-danilo-fondo.webp'); --card-pos: 72% center; }
-.portada__record:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/record-stalin-fondo.webp'); --card-pos: 32% center; }
-.portada__record:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/record-marco-fondo.webp'); --card-pos: 62% center; }
-.portada__evento:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/evento-experiencia-fondo.webp'); --card-pos: 68% center; }
-.portada__evento:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/evento-drift-fondo.webp'); --card-pos: 32% center; }
-.portada__evento:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/evento-campeonato-fondo.webp'); --card-pos: 64% center; }
-.portada__promo:nth-child(1) { --card-fondo: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); --card-pos: 68% center; }
-.portada__promo:nth-child(2) { --card-fondo: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); --card-pos: 34% center; }
-.portada__promo:nth-child(3) { --card-fondo: url('../images/contenido/tarjetas/promo-llantas-fondo.webp'); --card-pos: 64% center; }
-.portada__promo:nth-child(4) { --card-fondo: url('../images/contenido/tarjetas/promo-motor-fondo.webp'); --card-pos: 42% center; }
-.portada__promo:nth-child(5) { --card-fondo: url('../images/contenido/tarjetas/promo-builder-fondo.webp'); --card-pos: 72% center; }
+.portada__disciplina:nth-child(1) { --card-fondo-src: url('../images/pista/miniapolis-track-side-wide.webp'); --card-pos: 54% center; }
+.portada__disciplina:nth-child(2) { --card-fondo-src: url('../images/contenido/tarjetas/disciplina-crawling-fondo.webp'); --card-pos: 38% center; }
+.portada__disciplina:nth-child(3) { --card-fondo-src: url('../images/contenido/tarjetas/disciplina-rally-fondo.webp'); --card-pos: 68% center; }
+.portada__disciplina:nth-child(4) { --card-fondo-src: url('../images/contenido/tarjetas/disciplina-drones-fondo.webp'); }
+.portada__disciplina:nth-child(5) { --card-fondo-src: url('../images/contenido/tarjetas/disciplina-fpv-fondo.webp'); --card-pos: 74% center; }
+.portada__spec:nth-child(1) { --card-fondo-src: url('../images/pista/miniapolis-hangar-vertical.webp'); --card-pos: 60% center; }
+.portada__spec:nth-child(2) { --card-fondo-src: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 52% center; }
+.portada__spec:nth-child(3) { --card-fondo-src: url('../images/pista/miniapolis-track-vertical.webp'); --card-pos: 44% center; }
+.portada__spec:nth-child(4) { --card-fondo-src: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 56% center; }
+.portada__spec:nth-child(5) { --card-fondo-src: url('../images/landing/miniapolis-car-detail.webp'); --card-pos: 58% center; }
+.portada__spec:nth-child(6) { --card-fondo-src: url('../images/pista/miniapolis-asphalt-detail.webp'); --card-pos: 50% center; }
+.portada__spec:nth-child(7) { --card-fondo-src: url('../images/pista/miniapolis-curb-detail-vertical.webp'); --card-pos: 68% center; }
+.portada__spec:nth-child(8) { --card-fondo-src: url('../images/pista/miniapolis-hangar-vertical.webp'); --card-pos: 42% center; }
+.portada__horario:nth-child(1) { --card-fondo-src: url('../images/contenido/tarjetas/horario-miercoles-fondo.webp'); --card-pos: 68% center; }
+.portada__horario:nth-child(2) { --card-fondo-src: url('../images/contenido/tarjetas/horario-sabado-fondo.webp'); --card-pos: 30% center; }
+.portada__horario:nth-child(3) { --card-fondo-src: url('../images/contenido/tarjetas/horario-domingo-fondo.webp'); --card-pos: 64% center; }
+.portada__record:nth-child(1) { --card-fondo-src: url('../images/contenido/tarjetas/record-danilo-fondo.webp'); --card-pos: 72% center; }
+.portada__record:nth-child(2) { --card-fondo-src: url('../images/contenido/tarjetas/record-stalin-fondo.webp'); --card-pos: 32% center; }
+.portada__record:nth-child(3) { --card-fondo-src: url('../images/contenido/tarjetas/record-marco-fondo.webp'); --card-pos: 62% center; }
+.portada__evento:nth-child(1) { --card-fondo-src: url('../images/contenido/tarjetas/evento-experiencia-fondo.webp'); --card-pos: 68% center; }
+.portada__evento:nth-child(2) { --card-fondo-src: url('../images/contenido/tarjetas/evento-drift-fondo.webp'); --card-pos: 32% center; }
+.portada__evento:nth-child(3) { --card-fondo-src: url('../images/contenido/tarjetas/evento-campeonato-fondo.webp'); --card-pos: 64% center; }
+.portada__promo:nth-child(1) { --card-fondo-src: url('../images/contenido/tarjetas/promo-lancia-fondo.webp'); --card-pos: 68% center; }
+.portada__promo:nth-child(2) { --card-fondo-src: url('../images/contenido/tarjetas/promo-amortiguadores-fondo.webp'); --card-pos: 34% center; }
+.portada__promo:nth-child(3) { --card-fondo-src: url('../images/contenido/tarjetas/promo-llantas-fondo.webp'); --card-pos: 64% center; }
+.portada__promo:nth-child(4) { --card-fondo-src: url('../images/contenido/tarjetas/promo-motor-fondo.webp'); --card-pos: 42% center; }
+.portada__promo:nth-child(5) { --card-fondo-src: url('../images/contenido/tarjetas/promo-builder-fondo.webp'); --card-pos: 72% center; }
 
 .pagina-entrada .portada__recta-cabeza {
+  --local-fondo-src: url('../images/contenido/tarjetas/recta-cabeza-fondo.webp');
   padding: clamp(24px, 4vw, 48px);
   border: 1px solid rgba(221, 231, 222, .16);
-  background: linear-gradient(135deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .62)), url('../images/contenido/tarjetas/recta-cabeza-fondo.webp') center / cover no-repeat;
+  background: linear-gradient(135deg, rgba(7, 10, 9, .9), rgba(7, 10, 9, .62)), var(--local-fondo, none) center / cover no-repeat;
 }
-.entrada__acceso-panel { background: linear-gradient(145deg, rgba(8, 12, 10, .94), rgba(8, 12, 10, .72)), url('../images/oficial/miniapolis-bandera-hero.webp') center / cover no-repeat, #101612; }
+.entrada__acceso-panel { --local-fondo-src: url('../images/oficial/miniapolis-bandera-hero.webp'); background: linear-gradient(145deg, rgba(8, 12, 10, .94), rgba(8, 12, 10, .72)), var(--local-fondo, none) center / cover no-repeat, #101612; }
 
 /* --- La recta y el acceso comparten la familia fotográfica ------------------ */
 .portada__panel--texto {
+  --local-fondo-src: url('../images/contenido/pista-texto-fondo.webp');
   background:
     linear-gradient(135deg, rgba(8, 12, 10, .93), rgba(8, 12, 10, .72)),
-    url('../images/contenido/pista-texto-fondo.webp') center / cover;
+    var(--local-fondo, none) center / cover;
 }
 .portada__boxes {
+  --local-fondo-src: url('../images/contenido/acceso-fondo.webp');
   background:
     radial-gradient(circle at 15% 20%, rgba(147, 210, 65, .1), transparent 25rem),
     linear-gradient(90deg, rgba(7, 10, 9, .94) 0%, rgba(7, 10, 9, .82) 50%, rgba(7, 10, 9, .7) 100%),
-    url('../images/contenido/acceso-fondo.webp') center / cover;
+    var(--local-fondo, none) center / cover;
   color: var(--texto);
 }
-.portada__boxes::before { color: rgba(245, 246, 240, .48); }
 .portada__intro h2 { color: var(--texto); }
 .portada__intro .entrada__acceso-nota { color: var(--texto-2); }
 .entrada__acceso-panel { border-color: rgba(245, 246, 240, .16); box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95); }
@@ -1681,7 +1534,6 @@
   .portada__info h2 { font-size: clamp(2.5rem, 11.5vw, 4rem); }
   .portada__disciplinas { grid-template-columns: 1fr; }
   .portada__disciplina, .portada__disciplina:nth-child(n + 4) { grid-column: auto; min-height: 0; }
-  .portada__indice { margin-bottom: 0; font-size: 3rem; }
   .portada__disciplina h3, .portada__disciplina p, .portada__evento h3, .portada__evento h3 + p { min-height: 0; }
   .portada__spec { min-height: 150px; gap: 20px; }
   .portada__spec strong { font-size: clamp(1.25rem, 5.8vw, 1.6rem); }
@@ -1703,7 +1555,6 @@
   .portada__galeria figure:nth-child(2), .portada__galeria figure:nth-child(3) { grid-column: span 1; }
   .portada__galeria img { height: 58vw; }
   .portada__galeria figure:nth-child(2) img, .portada__galeria figure:nth-child(3) img { height: 78vw; }
-  .portada__galeria figure::after { top: 10px; left: 10px; }
   .portada__promos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .portada__promo, .portada__promo:nth-child(n + 4) { grid-column: auto; min-height: 260px; padding: 18px; }
   .portada__promo:first-child { grid-column: span 2; min-height: 340px; }
@@ -1733,7 +1584,6 @@
   --info-out: clamp(0, calc((var(--info-p, .5) - .75) * 4), 1);
   --deriva: calc(var(--info-p, .5) - .5);
 }
-.portada-motor .portada__info::before { will-change: transform; }
 .portada-motor .portada__info::after { transform: scaleX(var(--info-in)); transform-origin: left center; }
 
 /* Familia común: sube al entrar y se retira hacia arriba al salir. */
@@ -1744,15 +1594,12 @@
 .portada-motor .portada__info .portada__record-meta,
 .portada-motor .portada__info .portada__evento,
 .portada-motor .portada__info .portada__pronto-copy,
-.portada-motor .portada__info .portada__promo,
-.portada-motor .portada__comunidad-cierre {
+.portada-motor .portada__info .portada__promo {
   opacity: calc(var(--item-in, 1) - var(--item-out, 0) * .9);
   transform: translate3d(0, calc((1 - var(--item-in, 1)) * 44px - var(--item-out, 0) * 32px), 0);
-  will-change: transform, opacity;
 }
 
-/* Cabecera: la raya del rótulo se traza y el titular sube tras ella. */
-.portada-motor .portada__eyebrow::before { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
+/* Cabecera: el titular sube al entrar y acompaña la velocidad del scroll. */
 .portada-motor .portada__info-cabeza h2 { transform-origin: 0 100%; transform: translate3d(0, calc((1 - var(--item-in, 1)) * 24px), 0) skewY(calc(var(--vel, 0) * -2deg)); }
 
 /* 01 Estaciones: cortina diagonal de izquierda a derecha. */
@@ -1761,7 +1608,6 @@
   transform: translate3d(calc((1 - var(--item-in, 1)) * -28px), calc((1 - var(--item-in, 1)) * 24px - var(--item-out, 0) * 32px), 0);
 }
 .portada-motor .portada__info--complejo .portada__disciplina::after { transform: scaleX(var(--item-in, 1)); transform-origin: left center; }
-.portada-motor .portada__info--complejo .portada__indice { transform: translate3d(calc((1 - var(--item-in, 1)) * -24px), 0, 0); }
 
 /* 02 Telemetría: la cifra enfoca como una lectura que se estabiliza. */
 .portada-motor .portada__info--datos .portada__spec {
@@ -1814,7 +1660,6 @@
   clip-path: inset(calc((1 - var(--item-in, 1)) * 30%) 0 0 0 round 2px 20px 2px 20px);
   opacity: calc(1 - var(--item-out, 0) * .9);
   transform: translate3d(0, calc((1 - var(--item-in, 1)) * 36px - var(--item-out, 0) * 32px), 0);
-  will-change: transform, clip-path;
 }
 /* Cada foto se asienta al entrar y flota dentro de su marco con el scroll. */
 .portada-motor .portada__info--galeria .portada__galeria-card img { transform: scale(calc(1.16 - var(--item-in, 1) * .08)) translate3d(0, calc((.5 - var(--info-p, .5)) * 5%), 0); }
@@ -1823,7 +1668,6 @@
 /* 08 Catálogo: fichas que suben, foto que se asienta y rótulos que llegan. */
 .portada-motor .portada__info--comunidad .portada__promo { transform: translate3d(0, calc((1 - var(--item-in, 1)) * 48px - var(--item-out, 0) * 32px), 0); }
 .portada-motor .portada__info--comunidad .portada__promo > img { transform: scale(calc(1.12 - var(--item-in, 1) * .12)); }
-.portada-motor .portada__info--comunidad .portada__promo > span,
 .portada-motor .portada__info--comunidad .portada__promo > strong,
 .portada-motor .portada__info--comunidad .portada__promo > em { transform: translate3d(calc((1 - var(--item-in, 1)) * 16px), 0, 0); }
 @media (hover: hover) {
@@ -1925,9 +1769,9 @@
   background: linear-gradient(180deg, rgba(5, 7, 6, .06), rgba(5, 7, 6, .72) 84%);
 }
 
-.portada__galeria figure:nth-child(4) figcaption { --caption-fondo: url('../images/oficial/pista-senna-wide.webp'); }
-.portada__galeria figure:nth-child(5) figcaption { --caption-fondo: url('../images/oficial/pista-senna-vertical.webp'); }
-.portada__galeria figure:nth-child(6) figcaption { --caption-fondo: url('../images/oficial/pista-circuito-panorama.webp'); }
+.portada__galeria figure:nth-child(4) figcaption { --caption-fondo-src: url('../images/pista/miniapolis-gallery-wide.webp'); }
+.portada__galeria figure:nth-child(5) figcaption { --caption-fondo-src: url('../images/pista/miniapolis-gallery-curb-wide.webp'); }
+.portada__galeria figure:nth-child(6) figcaption { --caption-fondo-src: url('../images/pista/miniapolis-gallery-car-vertical.webp'); }
 
 /* Tres acentos para las fechas: verde de pista, ámbar de noche, blanco de
    campeonato. Es la misma retícula, pero cada tarjeta tiene su propia voz. */
