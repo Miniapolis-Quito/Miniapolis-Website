@@ -184,3 +184,22 @@ test('cada pieza de contenido tiene su propio reloj: se lee quieta entre la entr
   assert.match(JS, /setProperty\('--item-out'/);
   assert.doesNotMatch(CSS, /\.portada__info\s*\{[^}]*width:\s*min\(1400px/, 'las escenas van a sangre como la salida y la recta');
 });
+
+test('el telón baja antes del primer fotograma y se retira solo si el motor no llega', () => {
+  const ARRANQUE = leer('public/js/portada-arranque.js');
+  const cabeza = HTML.slice(0, HTML.indexOf('</head>'));
+  assert.match(cabeza, /<script src="\/js\/portada-arranque\.js"><\/script>/, 'script clásico en el <head>, no módulo diferido');
+  assert.match(ARRANQUE, /prefers-reduced-motion: reduce/, 'sin movimiento no hay telón');
+  assert.match(ARRANQUE, /classList\.add\('portada-telon'\)/);
+  assert.doesNotMatch(ARRANQUE, /classList\.add\('portada-motor'\)/, 'el motor solo lo monta portada.js');
+  assert.match(ARRANQUE, /setTimeout\([\s\S]*classList\.remove\('portada-telon'\)/, 'si el motor falla, la página queda estática y completa');
+  assert.match(CSS, /\.portada-telon \.portada__semaforo,\s*\.portada-motor \.portada__semaforo\s*\{/);
+  assert.match(CSS, /\.portada-motor \.portada__semaforo\s*\{\s*animation:\s*telon/, 'el telón solo se abre con el motor');
+});
+
+test('los rótulos de la portada están en español', () => {
+  const rotulos = [...sinComentarios(CSS).matchAll(/content:\s*'([^']*[A-Za-z][^']*)'/g)].map((m) => m[1]);
+  for (const ingles of ['READY', 'ACCESS', 'FACILITIES', 'TELEMETRY', 'TIMING', 'CALENDAR', 'VISUALS', 'SUPPLY', 'PIT LANE', 'BEST LAP', 'OPEN', 'NIGHT', 'RACE', 'NEXT BUILD', 'FRAME']) {
+    assert.ok(!rotulos.some((r) => new RegExp(`\\b${ingles}\\b`).test(r)), `rótulo en inglés: ${ingles}`);
+  }
+});
