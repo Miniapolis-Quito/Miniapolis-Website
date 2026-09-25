@@ -115,3 +115,14 @@ test('salidaPieza no toca lo que se lee y solo actúa bajo la cabecera', () => {
   assert.equal(salidaPieza(-400, 300, 82), 1, 'ya pasó entera');
   assert.equal(salidaPieza(0, 0, 82), 1, 'una pieza sin alto no divide por cero');
 });
+
+test('interpolarCifras cuenta cada número del texto y deja el resto intacto', async () => {
+  const { interpolarCifras } = await import('../public/js/portada-motor.js');
+  assert.equal(interpolarCifras('44 m × 22,5 m', 1), '44 m × 22,5 m');
+  assert.equal(interpolarCifras('44 m × 22,5 m', 0), '0 m × 0,0 m');
+  assert.equal(interpolarCifras('44 m × 22,5 m', 0.5), '22 m × 11,3 m');
+  assert.equal(interpolarCifras('AMB / MyLaps', 0.3), 'AMB / MyLaps');
+  assert.equal(interpolarCifras('12.46', 0.5, { rellenar: true }), '06.23');
+  assert.equal(interpolarCifras('12.46', 0, { rellenar: true }), '00.00');
+  assert.equal(interpolarCifras('200 vehículos', 2), '200 vehículos', 't se recorta a 1');
+});

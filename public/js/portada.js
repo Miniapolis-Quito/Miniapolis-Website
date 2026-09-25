@@ -7,12 +7,14 @@
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, lucesEncendidas, progresoCifra,
-  progresoMaximo, salidaPieza,
+  crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, interpolarCifras, lucesEncendidas,
+  progresoCifra, progresoMaximo, salidaPieza,
 } from './portada-motor.js';
+import { montarEfectos, montarHorarioVivo, montarVolverArriba } from './portada-efectos.js';
 
 const raiz = document.documentElement;
 const reducir = sinMovimiento();
+const punteroFino = () => Boolean(window.matchMedia?.('(hover: hover) and (pointer: fine)').matches);
 const $ = (selector, base = document) => base.querySelector(selector);
 const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
 
@@ -95,6 +97,9 @@ function montarHalos() {
       const y = ((punteroY - rect.top) / rect.height) * 100;
       pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
       pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
+      // Profundidad: lo que va dentro de la ficha se desplaza un poco contra el puntero.
+      pieza.style.setProperty('--px', (x / 50 - 1).toFixed(3));
+      pieza.style.setProperty('--py', (y / 50 - 1).toFixed(3));
     };
     const actualizar = (evento) => {
       punteroX = evento.clientX;
@@ -108,6 +113,8 @@ function montarHalos() {
       pendiente = false;
       pieza.style.removeProperty('--spot-x');
       pieza.style.removeProperty('--spot-y');
+      pieza.style.removeProperty('--px');
+      pieza.style.removeProperty('--py');
     };
     pieza.addEventListener('pointerenter', medir, { passive: true });
     pieza.addEventListener('pointermove', actualizar, { passive: true });
@@ -198,7 +205,11 @@ function montarProgresoSimple() {
 // Salida: semáforo y titular
 // ---------------------------------------------------------------------------
 
+/** El semáforo apaga sus luces a los 1,1 s: el titular arranca justo detrás. */
+const LUCES_FUERA_MS = 1150;
+
 function arrancarSalida() {
+  const inicio = performance.now();
   let repetida = false;
   try {
     repetida = sessionStorage.getItem('portada-salida') === '1';
@@ -206,7 +217,13 @@ function arrancarSalida() {
   } catch { /* sin almacenamiento: la salida se ve completa */ }
   if (repetida) raiz.classList.add('portada-rapido');
 
-  const listo = () => raiz.classList.add('portada-listos');
+  const listo = () => {
+    // El semáforo corre desde que se monta el motor: si la foto tardó, el
+    // titular no vuelve a esperar la secuencia entera.
+    const espera = repetida ? 0 : Math.max(0, LUCES_FUERA_MS - (performance.now() - inicio));
+    raiz.style.setProperty('--espera', `${Math.round(espera)}ms`);
+    raiz.classList.add('portada-listos');
+  };
   const imagen = $('.portada__cielo img');
   const esperas = [document.fonts?.ready, imagen?.decode?.()].filter(Boolean);
   // Red de seguridad: el titular nunca se queda esperando a un recurso.
@@ -299,7 +316,22 @@ function montarRecta(motor) {
   if (document.readyState === 'complete') cargarRiel();
   else window.addEventListener('load', cargarRiel, { once: true });
 
-  const ajustar = () => {
+  // Marcador de fotos: «02 / 05» y una barra que se llena con el recorrido.
+  const fotos = paneles.filter((panel) => panel.tagName === 'FIGURE');
+  const hud = document.createElement('div');
+  hud.className = 'portada__recta-hud';
+  hud.setAttribute('aria-hidden', 'true');
+  const actual = document.createElement('b');
+  const barra = document.createElement('span');
+  barra.className = 'portada__recta-barra';
+  const total = document.createElement('span');
+  total.textContent = String(fotos.length).padStart(2, '0');
+  hud.append(actual, barra, total);
+  $('.portada__recta-marco', seccion)?.append(hud);
+  let vistas = -1;
+
+  /** Solo escribe variables: medir aquí dentro volvería a llamar a este mismo ajuste. */
+  const calcular = () => {
     raiz.classList.toggle('portada-fija', fija.matches);
     if (fija.matches) {
       recorrido = Math.max(0, riel.scrollWidth - window.innerWidth);
@@ -310,6 +342,9 @@ function montarRecta(motor) {
       seccion.style.removeProperty('--recorrido');
       seccion.style.removeProperty('--alto-recta');
     }
+  };
+  const ajustar = () => {
+    calcular();
     motor.medir();
   };
 
@@ -318,13 +353,27 @@ function montarRecta(motor) {
     alActualizar: (p, { ancho }) => {
       if (!fija.matches) return;
       const x = p * recorrido;
+      let dentro = 0;
+      // Una foto más ancha que media pantalla no llegaría nunca a entrar del
+      // todo: al final del riel todas quedan asentadas, rectas y enteras.
+      const cierre = fase(p, 0.8, 0.96);
       paneles.forEach((panel, i) => {
-        panel.style.setProperty('--q', entradaPanel(izquierdas[i] - x, ancho).toFixed(3));
+        const q = Math.max(entradaPanel(izquierdas[i] - x, ancho), cierre);
+        panel.style.setProperty('--q', q.toFixed(3));
+        if (panel.tagName === 'FIGURE' && q > 0.5) dentro += 1;
       });
+      const n = Math.max(1, dentro);
+      if (n !== vistas) {
+        vistas = n;
+        actual.textContent = String(n).padStart(2, '0');
+      }
     },
   });
   fija.addEventListener('change', ajustar);
   new ResizeObserver(ajustar).observe(riel);
+  // Con la página ya medida (fuentes, fotos, cambios de tamaño) el recorrido se
+  // recalcula: un riel medido antes de hora dejaba la recta sin desplazamiento.
+  motor.alMedir(calcular);
   ajustar();
 
   // Apilado: cada foto se descubre al llegar.
@@ -384,6 +433,40 @@ const PIEZAS = [
   '.portada__promo',
 ].join(', ');
 
+/**
+ * Las cifras de telemetría se cuentan al entrar, como una lectura que se
+ * estabiliza. El valor final queda siempre en una copia para lectores de
+ * pantalla; la cifra que corre es solo visual. (Los tiempos de los récords
+ * los cuenta su propio cronómetro, en portada-efectos.js.)
+ */
+function prepararConteos() {
+  const conteos = new Map();
+  const preparar = (pieza, el, opciones) => {
+    const final = el.textContent.trim();
+    if (!/\d/.test(final)) return;
+    // El texto final sostiene el hueco (y es lo que leen los lectores de
+    // pantalla); la cifra que corre va encima. Así contar nunca cambia el
+    // ancho ni el salto de línea, y la página no se mueve bajo el dedo.
+    const molde = document.createElement('span');
+    molde.className = 'portada__conteo-molde';
+    molde.textContent = final;
+    const visible = document.createElement('i');
+    visible.className = 'portada__conteo';
+    visible.setAttribute('aria-hidden', 'true');
+    visible.textContent = final;
+    el.replaceChildren(molde, visible);
+    let ultimo = final;
+    conteos.set(pieza, (t) => {
+      const texto = interpolarCifras(final, t > 0.995 ? 1 : t, opciones);
+      if (texto === ultimo) return;
+      ultimo = texto;
+      visible.textContent = texto;
+    });
+  };
+  $$('.portada__spec').forEach((spec) => { const el = $('strong', spec); if (el) preparar(spec, el, {}); });
+  return conteos;
+}
+
 function montarInformacion(motor) {
   const escenas = ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad'];
   const secciones = escenas.flatMap((escena) => $$(`[data-escena="${escena}"]`));
@@ -412,15 +495,19 @@ function montarInformacion(motor) {
     }
   };
 
+  const conteos = prepararConteos();
   $$(PIEZAS).forEach((pieza) => {
     columnas.set(pieza, 0);
+    const conteo = conteos.get(pieza);
     const escena = motor.registrar(pieza, {
       modo: 'vista',
       alActualizar: (p, { alto }) => {
         const arriba = alto - p * (alto + escena.alto);
         const retraso = columnas.get(pieza) * alto * 0.14;
-        pieza.style.setProperty('--item-in', entradaPieza(arriba, alto, retraso).toFixed(3));
+        const entrada = entradaPieza(arriba, alto, retraso);
+        pieza.style.setProperty('--item-in', entrada.toFixed(3));
         pieza.style.setProperty('--item-out', salidaPieza(arriba, escena.alto, techo).toFixed(3));
+        conteo?.(entrada);
       },
     });
   });
@@ -438,12 +525,127 @@ function montarInformacion(motor) {
 }
 
 // ---------------------------------------------------------------------------
+// Rótulos sin reloj propio: se levantan al asomar
+// ---------------------------------------------------------------------------
+
+/**
+ * Los titulares de escena ya van palabra a palabra con su pieza
+ * (portada-efectos.js). La recta no tiene reloj por pieza: su rótulo se parte
+ * igual y se levanta con `--revela` cuando la escena asoma.
+ */
+function montarRotuloDeLaRecta() {
+  const cabeza = $('.portada__recta-cabeza');
+  const h2 = cabeza && $('h2', cabeza);
+  if (!h2) return;
+  let indice = 0;
+  for (const nodo of [...h2.childNodes]) {
+    if (nodo.nodeType !== Node.TEXT_NODE) continue;
+    const trozos = nodo.textContent.split(/(\s+)/).filter(Boolean).map((parte) => {
+      if (/^\s+$/.test(parte)) return document.createTextNode(parte);
+      const palabra = document.createElement('span');
+      palabra.className = 'palabra';
+      palabra.style.setProperty('--w', String(indice++));
+      const interior = document.createElement('span');
+      interior.className = 'palabra__i';
+      interior.textContent = parte;
+      palabra.append(interior);
+      return palabra;
+    });
+    nodo.replaceWith(...trozos);
+  }
+  h2.classList.add('con-palabras');
+  const observador = new IntersectionObserver(([entrada]) => {
+    if (!entrada.isIntersecting) return;
+    cabeza.classList.add('revelado');
+    observador.disconnect();
+  }, { rootMargin: '0px 0px -15% 0px', threshold: 0.2 });
+  observador.observe(cabeza);
+  setTimeout(() => cabeza.classList.add('revelado'), 9000);
+}
+
+// ---------------------------------------------------------------------------
+// Vuelta en la cabecera: un minimapa del circuito que se recorre con el scroll
+// ---------------------------------------------------------------------------
+
+const TRAZADO = 'M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z';
+
+function montarVuelta(motor) {
+  const interior = $('.entrada__barra-interior');
+  const accion = interior && $('.entrada__accion', interior);
+  if (!accion) return;
+
+  // El analizador de HTML ya coloca el <svg> en su espacio de nombres.
+  const plantilla = document.createElement('template');
+  plantilla.innerHTML = `<div class="entrada__vuelta" aria-hidden="true">
+    <svg class="entrada__vuelta-mapa" viewBox="28 14 350 188">
+      <path class="entrada__vuelta-base" d="${TRAZADO}"/>
+      <path class="entrada__vuelta-traza" d="${TRAZADO}" pathLength="1"/>
+      <circle class="entrada__vuelta-auto" r="12"/>
+    </svg>
+    <span class="entrada__vuelta-avance"></span>
+  </div>`;
+  const vuelta = plantilla.content.firstElementChild;
+  const base = $('.entrada__vuelta-base', vuelta);
+  const traza = $('.entrada__vuelta-traza', vuelta);
+  const auto = $('.entrada__vuelta-auto', vuelta);
+  const avance = $('.entrada__vuelta-avance', vuelta);
+  interior.insertBefore(vuelta, accion);
+
+  let largo = 0;
+  let visible = false;
+  let ultimo = '';
+  const pintar = (fraccion) => {
+    if (!visible) return;
+    const punto = base.getPointAtLength(fraccion * largo);
+    auto.setAttribute('cx', punto.x.toFixed(1));
+    auto.setAttribute('cy', punto.y.toFixed(1));
+    traza.style.setProperty('stroke-dashoffset', (1 - fraccion).toFixed(4));
+    const texto = `${String(Math.round(fraccion * 100)).padStart(3, '0')}%`;
+    if (texto !== ultimo) { avance.textContent = texto; ultimo = texto; }
+  };
+  const fraccionActual = () => Math.min(1, window.scrollY / Math.max(1, raiz.scrollHeight - window.innerHeight));
+  motor.alMedir(() => {
+    // En pantallas estrechas la vuelta no se pinta: tampoco se calcula.
+    visible = vuelta.getClientRects().length > 0;
+    if (visible && !largo) largo = base.getTotalLength();
+    pintar(fraccionActual());
+  });
+  motor.alCuadro(({ fraccion }) => pintar(fraccion));
+}
+
+// ---------------------------------------------------------------------------
+// Fichas de tienda: se inclinan hacia el puntero (son enlaces: se pueden pulsar)
+// ---------------------------------------------------------------------------
+
+function montarFichasInclinables() {
+  if (!punteroFino()) return;
+  $$('a.portada__promo').forEach((ficha) => {
+    let rect = null;
+    ficha.addEventListener('pointerenter', () => { rect = ficha.getBoundingClientRect(); }, { passive: true });
+    ficha.addEventListener('pointermove', (evento) => {
+      if (!rect) rect = ficha.getBoundingClientRect();
+      const x = (evento.clientX - rect.left) / rect.width - 0.5;
+      const y = (evento.clientY - rect.top) / rect.height - 0.5;
+      ficha.style.setProperty('--incl-x', `${(-y * 14).toFixed(2)}deg`);
+      ficha.style.setProperty('--incl-y', `${(x * 16).toFixed(2)}deg`);
+    }, { passive: true });
+    ficha.addEventListener('pointerleave', () => {
+      rect = null;
+      ficha.style.removeProperty('--incl-x');
+      ficha.style.removeProperty('--incl-y');
+    }, { passive: true });
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Montaje
 // ---------------------------------------------------------------------------
 
 montarMira();
 montarHalos();
 montarFondosDiferidos();
+montarHorarioVivo();
+montarVolverArriba();
 
 if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
   montarProgresoSimple();
@@ -454,8 +656,12 @@ if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserv
   if (salida) motor.registrar(salida, { modo: 'fija' });
   montarTablero(motor);
   montarRecta(motor);
+  montarRotuloDeLaRecta();
   montarInformacion(motor);
+  montarVuelta(motor);
+  montarFichasInclinables();
   montarBoxes(motor);
+  montarEfectos(motor);
   motor.iniciar();
   arrancarSalida();
 }
