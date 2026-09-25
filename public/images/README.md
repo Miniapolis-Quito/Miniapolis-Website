@@ -71,6 +71,15 @@ personas, camiones, autos de fondo y objetos accidentales sin añadir geometría
 decoración nueva. Las variantes responsive deben compartir el encuadre de su
 master y declarar en HTML sus dimensiones reales.
 
+### Fondos editoriales y tarjetas
+
+Los fondos de `contenido/` y `contenido/tarjetas/` también parten únicamente
+del material de `oficial/`. Cada bloque usa un encuadre, recorte o tratamiento
+fotográfico distinto para evitar repeticiones visuales; no se añaden edificios,
+vehículos, personas, luces ni señalética que no estén en la pista documentada.
+Los productos de tienda conservan sus PNG reales y los recursos de marca,
+Wallet, PWA y escaneo quedan fuera de esta colección fotográfica.
+
 Los archivos de `landing/` se reservan para composiciones editoriales: `miniapolis-car-detail`
 usa el auto RC como sujeto único y `miniapolis-track-atmosphere` muestra solo el
 ambiente real del circuito. `miniapolis-action`, `miniapolis-track-portrait` y el

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -95,6 +96,14 @@ test('cada tarjeta editorial tiene un fondo distinto y local', () => {
   assert.equal(fondos.length, 33);
   assert.equal(new Set(fondos).size, fondos.length);
   for (const fondo of fondos) assert.ok(fs.existsSync(path.resolve('public/css', fondo)), `falta ${fondo}`);
+});
+
+test('los fondos fotográficos usados por la portada no repiten bytes', () => {
+  const rutas = [
+    ...portadaCss.matchAll(/--(?:scene|card|caption|local)-fondo-src:\s*url\('([^']+)'\)/g),
+  ].map(([, ruta]) => path.resolve('public/css', ruta));
+  const hashes = rutas.map((ruta) => crypto.createHash('sha256').update(fs.readFileSync(ruta)).digest('hex'));
+  assert.equal(new Set(hashes).size, hashes.length, 'cada fondo fotográfico debe ser un archivo visual distinto');
 });
 
 test('el motor de portada monta las escenas informativas y conserva el fallback', () => {
