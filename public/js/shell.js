@@ -1,5 +1,5 @@
 /** Cabecera común: marca, navegación por rol, estado en vivo y cierre de sesión. */
-import { el, render, $, configurarFormato } from './ui.js';
+import { el, render, $, configurarFormato, icono } from './ui.js';
 import { montarMovimiento } from './movimiento.js';
 import { cerrarSesion, getUsuario, puedeEscanear } from './api.js';
 import { textoEstado } from './realtime.js';
@@ -30,6 +30,21 @@ const NAV_POR_ROL = {
 function enlacesPara(usuario) {
   const autorizado = puedeEscanear(usuario);
   return (NAV_POR_ROL[usuario?.role] || []).filter((entrada) => !entrada.soloConEscaner || autorizado);
+}
+
+/**
+ * Botón de la barra. Los ajustes (contraseña, seguridad) van siempre en icono
+ * y «Salir» solo en el teléfono: el nombre sigue ahí para el lector de
+ * pantalla y el `title`, y la barra del máster cabe en una sola línea.
+ */
+function accionDeBarra(texto, nombreIcono, onClick, { soloIcono = false } = {}) {
+  const clase = `boton boton--fantasma boton--chico barra__accion${soloIcono ? ' barra__accion--icono' : ''}`;
+  return el(
+    'button',
+    { class: clase, type: 'button', title: texto, 'aria-label': texto, onClick },
+    icono(nombreIcono),
+    el('span', { class: 'barra__accion-texto' }, texto),
+  );
 }
 
 export function montarCabecera(contenedor, { marca = MARCA_CORTA_POR_DEFECTO } = {}) {
@@ -89,33 +104,13 @@ export function montarCabecera(contenedor, { marca = MARCA_CORTA_POR_DEFECTO } =
         el('span', { class: 'estado-conexion', title: 'Estado de la conexión en vivo' }, indicador, textoIndicador),
         // Los clientes cambian su contraseña y configuran el segundo factor en
         // «Mi cuenta»; el personal y el máster, desde aquí.
-        usuario && usuario.role !== 'customer'
-          ? el(
-              'button',
-              { class: 'boton boton--fantasma boton--chico', type: 'button', onClick: () => abrirCambioPassword() },
-              'Contraseña',
-            )
-          : null,
-        usuario && usuario.role !== 'customer'
-          ? el(
-              'button',
-              { class: 'boton boton--fantasma boton--chico', type: 'button', onClick: () => abrirSeguridad() },
-              'Seguridad',
-            )
-          : null,
+        usuario && usuario.role !== 'customer' ? accionDeBarra('Contraseña', 'llave', () => abrirCambioPassword(), { soloIcono: true }) : null,
+        usuario && usuario.role !== 'customer' ? accionDeBarra('Seguridad', 'candado', () => abrirSeguridad(), { soloIcono: true }) : null,
         usuario
-          ? el(
-              'button',
-              {
-                class: 'boton boton--fantasma boton--chico',
-                type: 'button',
-                onClick: async () => {
-                  await cerrarSesion();
-                  window.location.replace('/');
-                },
-              },
-              'Salir',
-            )
+          ? accionDeBarra('Salir', 'puerta', async () => {
+              await cerrarSesion();
+              window.location.replace('/');
+            })
           : null,
       ),
     ),

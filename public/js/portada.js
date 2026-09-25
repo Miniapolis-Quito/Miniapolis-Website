@@ -279,6 +279,7 @@ function montarTablero(motor) {
   let encendidas = -1;
   motor.registrar(seccion, {
     modo: 'vista',
+    publicar: false,
     alActualizar: (p) => {
       // La barra debe completar su secuencia mientras el tablero sigue visible,
       // no esperar a que la sección ya esté terminando de salir de pantalla.
@@ -401,6 +402,7 @@ function montarBoxes(motor) {
   let maximo = 1;
   const escena = motor.registrar(seccion, {
     modo: 'vista',
+    publicar: false,
     alActualizar: (p) => {
       const q = p / maximo;
       seccion.style.setProperty('--cruce', fase(q, 0.05, 0.55).toFixed(3));
@@ -472,9 +474,19 @@ function montarInformacion(motor) {
   const secciones = escenas.flatMap((escena) => $$(`[data-escena="${escena}"]`));
   if (!secciones.length) return;
 
+  // Solo las escenas cerca de la pantalla suben fondo y piezas a su propia capa
+  // (ver `.en-escena` en portada.css): moverlas es componer, no repintar, y las
+  // lejanas no ocupan memoria de vídeo.
+  const cercania = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) entrada.target.classList.toggle('en-escena', entrada.isIntersecting);
+  }, { rootMargin: '60% 0px' });
+  secciones.forEach((seccion) => cercania.observe(seccion));
+
   secciones.forEach((seccion) => {
     motor.registrar(seccion, {
       modo: 'vista',
+      // Solo el cierre de comunidad lee `--p` de su escena (se ilumina palabra a palabra).
+      publicar: seccion.dataset.escena === 'comunidad',
       alActualizar: (p) => seccion.style.setProperty('--info-p', fase(p, 0, 1).toFixed(3)),
     });
   });
@@ -501,6 +513,7 @@ function montarInformacion(motor) {
     const conteo = conteos.get(pieza);
     const escena = motor.registrar(pieza, {
       modo: 'vista',
+      publicar: false,
       alActualizar: (p, { alto }) => {
         const arriba = alto - p * (alto + escena.alto);
         const retraso = columnas.get(pieza) * alto * 0.14;

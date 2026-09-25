@@ -1767,7 +1767,7 @@ main { padding-block: clamp(20px, 4vw, 42px) clamp(82px, 12vh, 140px); }
   position: absolute;
   top: 26px;
   left: clamp(30px, 6vw, 64px);
-  content: 'LIVE / PIT PASS';
+  content: 'PASE EN VIVO';
   color: var(--acento);
   font-family: var(--mono);
   font-size: .64rem;
