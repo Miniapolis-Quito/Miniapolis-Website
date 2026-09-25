@@ -324,14 +324,15 @@ test('los botones tienen hover de pista (chasis inclinado con estelas) y los com
   assert.equal(aperturas, cierres, 'hay un comentario sin abrir o sin cerrar en la hoja');
 });
 
-test('el sistema de interacción cubre hovers, pulsación y superficies con una salida accesible', () => {
+test('el sistema de interacción reserva el hover para controles y opciones seleccionables', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /--t-hover:/, 'la interacción debe tener un ritmo propio');
   assert.match(css, /@media\s*\(hover:\s*hover\)/, 'los efectos intensos deben reservarse a dispositivos con hover real');
   assert.match(css, /\.boton:hover:not\(:disabled\)[\s\S]*transform:\s*translateY\(-2px\)/);
   assert.match(css, /\.boton:active:not\(:disabled\)[\s\S]*transform:\s*translateY\(1px\)/);
-  assert.match(css, /\.pack:hover[\s\S]*transform:\s*translateY\(-4px\)/);
+  assert.doesNotMatch(css, /(?:^|[,{\s])(?:\.tarjeta|\.pack|\.mini-pack|tbody tr|\.lista__item|\.grafico__barra):hover/);
   assert.match(css, /\.opcion-pack:hover[\s\S]*box-shadow:/);
+  assert.match(css, /\.opcion-lista:hover[\s\S]*box-shadow:/);
   assert.match(css, /\.pestana:hover[\s\S]*color:/);
   assert.match(css, /input:hover:not\(:disabled\)[\s\S]*box-shadow:/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*transition-duration:\s*\.01ms/);

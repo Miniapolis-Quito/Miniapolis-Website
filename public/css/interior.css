@@ -313,8 +313,6 @@
   background: rgba(13, 18, 20, .78);
 }
 
-.pagina-interior .pack:hover,
-.pagina-interior .mini-pack:hover,
 .pagina-interior .opcion-pack:hover {
   border-color: var(--acento-borde);
 }
