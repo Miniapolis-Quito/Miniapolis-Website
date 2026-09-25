@@ -42,16 +42,22 @@ reales del recinto:
 | `pista-hangar-curva.webp` | Curva con bordillo rojo y blanco sobre el asfalto |
 | `pista-circuito-panorama.webp` | Panorámica del circuito completo |
 
-### Set optimizado de la portada
+### Set premium optimizado de la portada
 
 | Archivo | Escena |
 | --- | --- |
 | `pista/miniapolis-track-wide.webp` | Hero limpio del circuito indoor de asfalto, 1675 × 939 |
 | `pista/miniapolis-track-corner-wide.webp` | Vista baja limpia de una curva, 1675 × 939 |
+| `pista/miniapolis-track-side-wide.webp` | Vista lateral de las rectas y ventanas, 1675 × 939 |
+| `pista/miniapolis-gallery-wide.webp` | Vista centrada del hangar y el trazado, 1675 × 939 |
+| `pista/miniapolis-gallery-curb-wide.webp` | Bordillo y línea de carrera en primer plano, 1675 × 939 |
 | `pista/miniapolis-hangar-vertical.webp` | Arcos y ventanas del hangar sobre el circuito, 941 × 1671 |
 | `pista/miniapolis-curb-detail-vertical.webp` | Detalle vertical limpio del bordillo rojo y blanco, 941 × 1672 |
 | `pista/miniapolis-asphalt-detail.webp` | Textura vertical limpia del asfalto y línea de carrera, 941 × 1672 |
 | `pista/miniapolis-track-vertical.webp` | Reserva optimizada del trazado vertical real, 941 × 1670 |
+| `pista/miniapolis-pit-corner-vertical.webp` | Esquina limpia junto al área de boxes, 941 × 1671 |
+| `pista/miniapolis-gallery-curb-vertical.webp` | Curva vertical con bordillo y arquitectura real, 941 × 1671 |
+| `pista/miniapolis-gallery-car-vertical.webp` | Auto RC único en la pista, 941 × 1671 |
 
 Cada bloque visual de la portada usa un encuadre distinto. Las variantes `-640`,
 `-960` y `-1440` son únicamente alternativas responsive del mismo encuadre, no
@@ -67,12 +73,13 @@ master y declarar en HTML sus dimensiones reales.
 
 Los archivos de `landing/` se reservan para composiciones editoriales: `miniapolis-car-detail`
 usa el auto RC como sujeto único y `miniapolis-track-atmosphere` muestra solo el
-ambiente real del circuito. `miniapolis-action` y `miniapolis-track-portrait` no
-son fuentes permitidas para la portada.
+ambiente real del circuito. `miniapolis-action`, `miniapolis-track-portrait` y el
+directorio `pista-real/` no son fuentes permitidas para la portada.
 
 `miniapolis-track-atmosphere` se sirve en 1675 × 939 con variantes 1440/960;
-`miniapolis-car-detail` se sirve en 1221 × 1289 con variantes 900/640. La
-panorámica oficial que consume la salida de carrera se sirve en 3840 × 2160.
+`miniapolis-car-detail` se sirve en 1221 × 1289 con variantes 900/640. El hero
+usa `pista/miniapolis-track-wide` y sus variantes 1440/960; la panorámica oficial
+queda como material de origen y no se carga en la portada.
 
 Los logotipos, iconos PWA, recursos de Wallet y la vista de cámara del escáner no
 se editan con ImageGen ni forman parte de esta colección fotográfica.

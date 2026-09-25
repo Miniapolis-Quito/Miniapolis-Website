@@ -90,8 +90,8 @@ test('la mira conserva su apariencia y reacciona solo a lo clicable', () => {
   assert.ok(clicables.includes('a,') && clicables.includes('button'), 'la lista de objetivos debe incluir enlaces y botones');
   assert.doesNotMatch(clicables, /figure|img|foto|picture/, 'la mira no debe reaccionar a fotos');
   const alMover = JS.match(/'pointermove',\s*\(evento\) => \{[\s\S]*?\n  \}, \{ passive: true \}\)/)?.[0] ?? '';
-  assert.match(alMover, /setProperty\('--puntero-x'/, 'la mira sigue al puntero directamente');
-  assert.doesNotMatch(alMover, /requestAnimationFrame/, 'la posición no debe esperar a otro fotograma');
+  assert.match(JS, /mira\.style\.setProperty\('--puntero-x'/, 'la mira publica la posición del puntero');
+  assert.match(alMover, /requestAnimationFrame/, 'la posición se agrupa en el fotograma de pintura');
   assert.doesNotMatch(CSS, /\.entrada__mira\s*\{[^}]*transition:\s*[^;}]*\btransform\b/s, 'la mira no debe interpolar su posición');
 });
 
@@ -111,8 +111,17 @@ test('la cabecera permanece negra desde el primer render y no anima su entrada',
 });
 
 test('la portada mantiene un copy breve, natural y sin ruido', () => {
-  for (const frase of ['Ven a', 'rodar.', 'Asfalto, curvas y control.', 'Pista indoor', 'La pista.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'Tu pase.', 'Entra y guarda tu pase.']) {
+  for (const frase of ['Ven a', 'rodar.', 'Pista indoor', 'La pista', 'Especificaciones del circuito', 'Horarios', 'Mejores tiempos', 'Tu pase.', 'Entra y guarda tu pase.']) {
     assert.ok(HTML.includes(frase), `falta «${frase}»`);
+  }
+  for (const frase of ['Asfalto, curvas y control.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'READY TO RACE', 'FRAME / 01']) {
+    assert.ok(!HTML.includes(frase) && !CSS.includes(frase), `sigue presente el texto decorativo «${frase}»`);
+  }
+  for (const clase of ['entrada__capitulo', 'portada__gigante', 'portada__desliza', 'portada__cinta', 'portada__fantasma', 'entrada__pie-gigante']) {
+    assert.doesNotMatch(HTML, new RegExp(`class="[^"]*${clase}`), `sigue presente el elemento decorativo .${clase}`);
+  }
+  for (const rotulo of ['LISTO PARA CORRER', '11 / ACCESO', 'INSTALACIONES', 'FICHA TÉCNICA', 'CRONOMETRAJE', 'CALENDARIO', 'BOXES // SESIONES ABIERTAS', 'MEJOR VUELTA // CRONO EN VIVO', 'ABIERTO', 'NOCTURNA', 'CARRERA', 'PRÓXIMA OBRA', 'CUADRO /']) {
+    assert.doesNotMatch(CSS, new RegExp(rotulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `sigue presente el rótulo decorativo «${rotulo}»`);
   }
   assert.doesNotMatch(HTML, /·/, 'sin puntos medios como separadores');
   assert.doesNotMatch(HTML, /Track\s+\d+/i, 'sin identificadores artificiales de pista');
@@ -127,7 +136,7 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
     assert.match(etiqueta, /\sheight="\d+"/, `sin height: ${etiqueta.slice(0, 80)}`);
     assert.match(etiqueta, /\salt="/, `sin alt: ${etiqueta.slice(0, 80)}`);
   }
-  assert.match(HTML, /<img[^>]*pista-circuito-panorama\.webp[^>]*fetchpriority="high"/, 'el panorama es lo primero que se pide');
+  assert.match(HTML, /<img[^>]*miniapolis-track-wide\.webp[^>]*fetchpriority="high"/, 'el hero limpio es lo primero que se pide');
   const rutas = new Set();
   for (const m of HTML.matchAll(/\b(?:src|href)="(\.[^"]*\/images\/[^"]+)"/g)) rutas.add(m[1]);
   for (const m of HTML.matchAll(/\bsrcset="([^"]+)"/g)) {

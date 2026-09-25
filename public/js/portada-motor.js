@@ -127,6 +127,9 @@ export function interpolarCifras(texto, t, { rellenar = false } = {}) {
  */
 export function crearMotor() {
   const raiz = document.documentElement;
+  const contenido = document.querySelector('main') || raiz;
+  const progreso = document.querySelector('.entrada__progreso span');
+  const estela = document.querySelector('.portada__estela');
   const escenas = [];
   let alto = window.innerHeight;
   let ancho = window.innerWidth;
@@ -153,6 +156,10 @@ export function crearMotor() {
       const p = calcular(e);
       if (Math.abs(p - e.p) < 0.0004) continue;
       e.p = p;
+      // Las piezas lejanas no pueden verse todavía. Dejamos que su progreso
+      // avance, pero aplazamos sus escrituras CSS hasta que se acerquen a la
+      // ventana; así el scroll no recalcula toda la portada en cada fotograma.
+      if (e.modo !== 'fija' && (e.top > suave + alto * 1.5 || e.top + e.alto < suave - alto * .75)) continue;
       e.el.style.setProperty('--p', p.toFixed(4));
       e.alActualizar?.(p, { velocidad, ancho, alto });
     }
@@ -168,25 +175,25 @@ export function crearMotor() {
     const quieto = Math.abs(objetivo - suave) < 0.1 && Math.abs(velocidad) < 0.003;
     if (quieto) { suave = objetivo; velocidad = 0; }
 
-    const vStr = velocidad.toFixed(3);
+    const vStr = velocidad.toFixed(2);
     if (vStr !== ultVel) {
       ultVel = vStr;
-      raiz.style.setProperty('--vel', vStr);
+      contenido.style.setProperty('--vel', vStr);
     }
-    const vAbsStr = Math.abs(velocidad).toFixed(3);
+    const vAbsStr = Math.abs(velocidad).toFixed(2);
     if (vAbsStr !== ultVelAbs) {
       ultVelAbs = vAbsStr;
-      raiz.style.setProperty('--vel-abs', vAbsStr);
+      estela?.style.setProperty('--vel-abs', vAbsStr);
     }
-    const sStr = limitar(suave / limiteScroll).toFixed(4);
+    const sStr = limitar(suave / limiteScroll).toFixed(3);
     if (sStr !== ultScroll) {
       ultScroll = sStr;
-      raiz.style.setProperty('--scroll', sStr);
+      (progreso || raiz).style.setProperty('--scroll', sStr);
     }
-    const sPxStr = suave.toFixed(1);
+    const sPxStr = suave.toFixed(0);
     if (sPxStr !== ultScrollPx) {
       ultScrollPx = sPxStr;
-      raiz.style.setProperty('--scroll-px', sPxStr);
+      estela?.style.setProperty('--scroll-px', sPxStr);
     }
     pintar();
     for (const fn of alCuadro) fn({ velocidad, suave, dt, fraccion: limitar(suave / limiteScroll) });
@@ -231,7 +238,6 @@ export function crearMotor() {
     registrar(el, { modo = 'vista', alActualizar } = {}) {
       const escena = { el, modo, alActualizar, top: 0, alto: 0, p: -1 };
       escenas.push(escena);
-      medir();
       return escena;
     },
     iniciar() {

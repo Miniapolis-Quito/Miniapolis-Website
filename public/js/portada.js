@@ -40,9 +40,20 @@ function montarMira() {
   document.body.append(mira);
 
   const esObjetivo = (nodo) => nodo?.closest?.(CLICABLES);
+  let pendiente = false;
+  let punteroX = -100;
+  let punteroY = -100;
+  const pintar = () => {
+    pendiente = false;
+    mira.style.setProperty('--puntero-x', `${punteroX}px`);
+    mira.style.setProperty('--puntero-y', `${punteroY}px`);
+  };
   window.addEventListener('pointermove', (evento) => {
-    mira.style.setProperty('--puntero-x', `${evento.clientX}px`);
-    mira.style.setProperty('--puntero-y', `${evento.clientY}px`);
+    punteroX = evento.clientX;
+    punteroY = evento.clientY;
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(pintar);
   }, { passive: true });
   window.addEventListener('pointerover', (evento) => {
     raiz.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
@@ -74,20 +85,32 @@ function montarHalos() {
 
   $$(selectores.join(',')).forEach((pieza) => {
     let rect = null;
+    let pendiente = false;
+    let punteroX = 0;
+    let punteroY = 0;
     const medir = () => { rect = pieza.getBoundingClientRect(); };
-    const actualizar = (evento) => {
+    const pintar = () => {
+      pendiente = false;
       if (!rect) medir();
       if (!rect.width || !rect.height) return;
-      const x = ((evento.clientX - rect.left) / rect.width) * 100;
-      const y = ((evento.clientY - rect.top) / rect.height) * 100;
+      const x = ((punteroX - rect.left) / rect.width) * 100;
+      const y = ((punteroY - rect.top) / rect.height) * 100;
       pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
       pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
       // Profundidad: lo que va dentro de la ficha se desplaza un poco contra el puntero.
       pieza.style.setProperty('--px', (x / 50 - 1).toFixed(3));
       pieza.style.setProperty('--py', (y / 50 - 1).toFixed(3));
     };
+    const actualizar = (evento) => {
+      punteroX = evento.clientX;
+      punteroY = evento.clientY;
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(pintar);
+    };
     const limpiar = () => {
       rect = null;
+      pendiente = false;
       pieza.style.removeProperty('--spot-x');
       pieza.style.removeProperty('--spot-y');
       pieza.style.removeProperty('--px');
@@ -99,16 +122,74 @@ function montarHalos() {
   });
 }
 
+// Las fotos que viven en fondos CSS no tienen el mismo mecanismo de carga
+// diferida que un <img>: el navegador puede descargarlas todas al leer la
+// hoja, aunque estén a muchos miles de píxeles. Se conserva la URL en una
+// variable CSS sin usar y se activa cuando la escena se acerca a la ventana.
+const FONDOS_DIFERIDOS = [
+  '.portada__info',
+  '.portada__disciplina',
+  '.portada__spec',
+  '.portada__horario',
+  '.portada__record',
+  '.portada__evento',
+  '.portada__promo',
+  '.portada__galeria figcaption',
+  '.portada__recta-cabeza',
+  '.portada__panel--texto',
+  '.portada__boxes',
+].join(', ');
+
+function montarFondosDiferidos() {
+  const fondos = $$(FONDOS_DIFERIDOS);
+  if (!fondos.length) return;
+
+  const activar = (nodo) => {
+    if (nodo.dataset.fondoCargado === '1') return;
+    const estilo = getComputedStyle(nodo);
+    const estiloEscena = nodo.matches('.portada__info') ? getComputedStyle(nodo, '::before') : null;
+    const fuentes = [
+      [estiloEscena, '--scene-fondo-src', '--scene-fondo'],
+      [estilo, '--card-fondo-src', '--card-fondo'],
+      [estilo, '--caption-fondo-src', '--caption-fondo'],
+      [estilo, '--local-fondo-src', '--local-fondo'],
+    ];
+    let cargo = false;
+    for (const [origen, fuente, destino] of fuentes) {
+      const valor = origen?.getPropertyValue(fuente).trim();
+      if (!valor || valor === 'none') continue;
+      nodo.style.setProperty(destino, valor);
+      cargo = true;
+    }
+    nodo.dataset.fondoCargado = cargo ? '1' : '0';
+  };
+
+  if (typeof IntersectionObserver !== 'function') {
+    fondos.forEach(activar);
+    return;
+  }
+
+  const observador = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      activar(entrada.target);
+      observador.unobserve(entrada.target);
+    }
+  }, { rootMargin: '3000px 0px' });
+  fondos.forEach((fondo) => observador.observe(fondo));
+}
+
 // ---------------------------------------------------------------------------
 // Progreso de la cabecera cuando no hay motor
 // ---------------------------------------------------------------------------
 
 function montarProgresoSimple() {
+  const progreso = $('.entrada__progreso span');
   let pendiente = false;
   const pintar = () => {
     pendiente = false;
     const maximo = Math.max(raiz.scrollHeight - window.innerHeight, 1);
-    raiz.style.setProperty('--scroll', Math.min(1, window.scrollY / maximo).toFixed(4));
+    (progreso || raiz).style.setProperty('--scroll', Math.min(1, window.scrollY / maximo).toFixed(4));
   };
   const programar = () => {
     if (pendiente) return;
@@ -226,11 +307,14 @@ function montarRecta(motor) {
   let recorrido = 0;
   let izquierdas = [];
 
-  // Las fotos del riel están lejos de la pantalla: se cargan ya para que no
-  // lleguen en blanco.
-  const cargarTodo = () => $$('img', riel).forEach((img) => { img.loading = 'eager'; });
-  if (document.readyState === 'complete') cargarTodo();
-  else window.addEventListener('load', cargarTodo, { once: true });
+  // En el recorrido horizontal las fotos comparten el mismo plano vertical,
+  // así que la carga diferida del navegador no distingue cuál está fuera por
+  // el lado. Se adelantan solo estas tres para que el ancho del riel sea exacto
+  // desde el primer cálculo; el resto de la portada sigue cargando sus fondos
+  // por proximidad.
+  const cargarRiel = () => $$('img', riel).forEach((img) => { img.loading = 'eager'; });
+  if (document.readyState === 'complete') cargarRiel();
+  else window.addEventListener('load', cargarRiel, { once: true });
 
   // Marcador de fotos: «02 / 05» y una barra que se llena con el recorrido.
   const fotos = paneles.filter((panel) => panel.tagName === 'FIGURE');
@@ -347,7 +431,6 @@ const PIEZAS = [
   '.portada__pronto-copy',
   '.portada__galeria figure',
   '.portada__promo',
-  '.portada__comunidad-cierre',
 ].join(', ');
 
 /**
@@ -560,6 +643,7 @@ function montarFichasInclinables() {
 
 montarMira();
 montarHalos();
+montarFondosDiferidos();
 montarHorarioVivo();
 montarVolverArriba();
 
