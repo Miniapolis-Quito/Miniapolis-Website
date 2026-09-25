@@ -155,22 +155,26 @@ function pintarEquipo() {
   render(
     $('#seguridad-equipo'),
     el(
-      'table',
-      { class: 'tabla' },
+      'div',
+      { class: 'tabla-envoltura' },
       el(
-        'thead',
-        {},
+        'table',
+        { class: 'tabla' },
         el(
-          'tr',
+          'thead',
           {},
-          el('th', {}, 'Persona'),
-          el('th', {}, 'Rol'),
-          el('th', {}, 'Dos pasos'),
-          el('th', {}, 'Códigos'),
-          el('th', { class: 'derecha' }, 'Acciones'),
+          el(
+            'tr',
+            {},
+            el('th', {}, 'Persona'),
+            el('th', {}, 'Rol'),
+            el('th', {}, 'Dos pasos'),
+            el('th', {}, 'Códigos'),
+            el('th', { class: 'derecha' }, 'Acciones'),
+          ),
         ),
+        el('tbody', {}, filas),
       ),
-      el('tbody', {}, filas),
     ),
   );
 }

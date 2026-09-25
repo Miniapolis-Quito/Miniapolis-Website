@@ -13,7 +13,6 @@
   --interior-linea-fuerte: rgba(217, 230, 222, .3);
   --interior-superficie: rgba(14, 19, 17, .86);
   position: relative;
-  min-width: 320px;
   background:
     radial-gradient(circle at 82% -10%, rgba(147, 210, 65, .1), transparent 30rem),
     linear-gradient(180deg, #050706 0%, #080c0a 34%, #050706 100%);

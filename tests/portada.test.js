@@ -42,7 +42,9 @@ test('el HTML declara las cuatro escenas y portada.js las monta', () => {
 
 test('portada.js importa todas las funciones que usa el motor de escenas', () => {
   assert.match(JS, /import \{[^}]*\beaseOutCubic\b[^}]*\} from '\.\/portada-motor\.js'/s);
-  assert.match(JS, /easeOutCubic\(fase\(/);
+  // El panel de acceso termina de entrar antes de q = 0,5 (la sección centrada):
+  // en reposo no puede asomar por el costado en ninguna pantalla.
+  assert.match(JS, /easeOutCubic\(fase\(q, 0\.12, 0\.45\)\)/);
 });
 
 test('solo lo clicable tiene :hover', () => {
