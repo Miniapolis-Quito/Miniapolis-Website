@@ -212,3 +212,21 @@ test('los rótulos de la portada están en español', () => {
     assert.ok(!rotulos.some((r) => new RegExp(`\\b${ingles}\\b`).test(r)), `rótulo en inglés: ${ingles}`);
   }
 });
+
+test('fluidez: ninguna variable por fotograma se escribe en un contenedor grande', () => {
+  assert.doesNotMatch(MOTOR, /querySelector\('main'\)/, '--vel en <main> recalcula los estilos de toda la página en cada fotograma');
+  assert.match(MOTOR, /SELECTOR_VELOCIDAD/, '--vel se escribe solo en quien la lee');
+  for (const selector of MOTOR.match(/SELECTOR_VELOCIDAD = \[([\s\S]*?)\]/)[1].match(/'[^']+'/g)) {
+    const hojas = CSS + leer('public/css/portada-efectos.css');
+    assert.ok(hojas.includes(selector.slice(1, -1).split(' ').at(-1)), `${selector} no existe en las hojas de la portada`);
+  }
+  assert.match(MOTOR, /if \(e\.publicar\) e\.el\.style\.setProperty\('--p'/, 'las escenas que no leen --p no lo reciben');
+  assert.match(JS, /publicar: false/);
+});
+
+test('fluidez: la posición sigue al scroll real y nada desenfoca lo que se mueve', () => {
+  assert.match(MOTOR, /suave = objetivo;/, 'suavizar la posición hace que todo lo atado al scroll llegue tarde');
+  assert.doesNotMatch(sinComentarios(CSS), /backdrop-filter:\s*blur/, 'un desenfoque sobre un fondo que se mueve se recalcula en cada fotograma');
+  assert.match(CSS, /\.portada-motor \.portada__info\.en-escena::before/, 'el fondo de la escena cercana va en su propia capa');
+  assert.match(JS, /classList\.toggle\('en-escena'/);
+});

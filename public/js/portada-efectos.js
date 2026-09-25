@@ -471,6 +471,7 @@ function montarPie(motor) {
   let maximo = 1;
   const escena = motor.registrar(gigante, {
     modo: 'vista',
+    publicar: false,
     alActualizar: (p) => gigante.style.setProperty('--llena', fase(p / maximo, 0.1, 0.92).toFixed(3)),
   });
   motor.alMedir(() => {

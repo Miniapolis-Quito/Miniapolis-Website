@@ -330,8 +330,6 @@
   border: 1px solid var(--borde-fuerte);
   border-radius: 6px;
   background: rgba(14, 19, 17, .78);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 .entrada__acceso-panel form { margin: 0; }
 .entrada__acceso-panel .campo label { color: var(--texto-2); }
@@ -439,8 +437,6 @@
 .pagina-entrada > .entrada__barra.esta-desplazada {
   background: rgba(7, 10, 9, .94);
   border-bottom-color: rgba(221, 231, 222, .18);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 .entrada__barra-interior { min-height: var(--altura-cabecera); }
@@ -545,8 +541,6 @@
   border-radius: 2px 24px 2px 24px;
   background: #101612;
   box-shadow: 0 26px 64px -34px rgba(16, 22, 18, .7);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 .entrada__acceso-panel .pestanas {
   border-color: rgba(245, 246, 240, .15);
@@ -1205,10 +1199,10 @@
   padding: clamp(24px, 3vw, 40px);
   border: 1px solid rgba(221, 231, 222, .18);
   border-radius: 2px 24px 2px 24px;
-  background: rgba(7, 10, 9, .74);
+  /* Opaco en vez de desenfocar: un desenfoque sobre un fondo que se mueve se
+     recalcula en cada fotograma del scroll. */
+  background: rgba(7, 10, 9, .88);
   box-shadow: 0 40px 90px -44px rgba(0, 0, 0, .95);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
 }
 .portada__horario {
   position: relative;
@@ -1258,9 +1252,7 @@
   overflow: hidden;
   border: 1px solid rgba(221, 231, 222, .16);
   border-radius: var(--esquina);
-  background: rgba(7, 10, 9, .7);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: rgba(7, 10, 9, .86);
 }
 .portada__record {
   position: relative;
@@ -1927,9 +1919,15 @@
 .portada-fija .pagina-entrada .portada__recta-cabeza { border-color: transparent; background: none; }
 .portada-fija .portada__recta-cabeza h2 { text-shadow: 0 10px 40px rgba(0, 0, 0, .6); }
 
-/* --- Escenas: se abren en diagonal y su fondo se asienta ------------------- */
-.portada-motor .portada__info {
-  clip-path: polygon(0 calc((1 - var(--info-in, 1)) * 10vw), 100% 0, 100% 100%, 0 100%);
+/* --- Escenas: su fondo se asienta al entrar ------------------------------- */
+/* Sin recorte diagonal de la sección: descubría el mismo negro que ya hay
+   detrás y obligaba a repintar la escena entera en cada fotograma de entrada. */
+/* Capas solo cerca de la pantalla (portada.js marca `.en-escena`): el fondo y
+   las piezas se desplazan, escalan y funden en la GPU sin repintar la foto. */
+.portada-motor .portada__info.en-escena::before,
+.portada-motor .portada__info.en-escena .portada__evento-fondo img,
+.portada-motor .en-escena :is(.portada__info-cabeza, .portada__disciplina, .portada__spec strong, .portada__horario, .portada__record, .portada__record-meta, .portada__evento, .portada__pronto-visual, .portada__pronto-copy, .portada__galeria figure, .portada__promo) {
+  will-change: transform;
 }
 .portada-motor .portada__info::before {
   transform: translate3d(0, calc(var(--deriva) * -6%), 0) scale(calc(1.16 - var(--info-in, 1) * .16));
@@ -1955,7 +1953,6 @@
 
 /* --- Formatos ------------------------------------------------------------- */
 @media (max-width: 700px) {
-  .portada-motor .portada__info { clip-path: polygon(0 calc((1 - var(--info-in, 1)) * 16vw), 100% 0, 100% 100%, 0 100%); }
 }
 @media (min-width: 1800px) {
   .portada-motor .entrada__vuelta { zoom: 1.3; }

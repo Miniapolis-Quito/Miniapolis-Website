@@ -37,6 +37,8 @@
 .posiciones__promo p { color: var(--pos-texto-2); font-size: .72rem; line-height: 1.3; text-transform: uppercase; }
 .posiciones__promo h2 { margin-top: 10px; font-size: 1.35rem; line-height: 1.04; text-wrap: balance; }
 .posiciones__promo > strong { margin-top: auto; color: var(--pos-acento); font: 650 1.7rem/1 var(--mono); }
+/* Sin precio, el enlace es el que baja al pie de la ficha. */
+.posiciones__promo > h2 + a { margin-top: auto; }
 .posiciones__promo > a { margin-top: 16px; color: var(--pos-acento); font: 650 .7rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
 .posiciones__tabla-panel { min-width: 0; padding: clamp(22px, 3vw, 38px); }
 .posiciones__section-head { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
@@ -61,7 +63,7 @@
 .posiciones__galeria-grid img { display: block; width: 100%; height: clamp(200px, 25vw, 330px); object-fit: cover; filter: saturate(.8) contrast(1.08); }
 .posiciones__galeria-grid figcaption { margin-top: 12px; color: var(--pos-texto-2); font-size: .78rem; line-height: 1.4; }
 .posiciones__pie { border-top: 1px solid var(--pos-borde); }
-.posiciones__pie-interior { min-height: 96px; color: var(--pos-texto-2); font: 650 .7rem/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.posiciones__pie-interior { flex-wrap: wrap; gap: 12px 32px; padding-block: 22px; min-height: 96px; color: var(--pos-texto-2); font: 650 .7rem/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .posiciones__tabla-wrap { scrollbar-color: var(--pos-acento) var(--pos-superficie); scrollbar-width: thin; }
 .posiciones__tabla-wrap:focus-within { outline: 2px solid var(--pos-acento); outline-offset: 4px; }
 
