@@ -320,7 +320,9 @@ function montarBoxes(motor) {
     alActualizar: (p) => {
       const q = p / maximo;
       seccion.style.setProperty('--cruce', fase(q, 0.05, 0.55).toFixed(3));
-      seccion.style.setProperty('--entra', easeOutCubic(fase(q, 0.15, 0.6)).toFixed(3));
+      // Termina antes de q = 0,5, que es la sección centrada en la pantalla:
+      // en reposo el panel ya está entero y no asoma por el costado.
+      seccion.style.setProperty('--entra', easeOutCubic(fase(q, 0.12, 0.45)).toFixed(3));
     },
   });
   motor.alMedir(() => {

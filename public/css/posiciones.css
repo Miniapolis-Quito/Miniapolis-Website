@@ -19,9 +19,9 @@
 .posiciones__nav a:not(.boton), .posiciones__pie a, .posiciones__galeria .posiciones__section-head > a { color: var(--pos-texto-2); font: 650 .72rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
 .posiciones__nav a:not(.boton):hover, .posiciones__pie a:hover, .posiciones__galeria .posiciones__section-head > a:hover { color: var(--pos-acento); }
 .posiciones__main { padding-block: clamp(48px, 7vw, 108px); }
-.posiciones__hero { display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: end; padding-bottom: clamp(48px, 7vw, 90px); border-bottom: 1px solid var(--pos-borde); }
+.posiciones__hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; align-items: end; padding-bottom: clamp(48px, 7vw, 90px); border-bottom: 1px solid var(--pos-borde); }
 .posiciones__eyebrow { margin-bottom: 16px; color: var(--pos-acento); font: 650 .7rem/1 var(--mono); letter-spacing: .17em; text-transform: uppercase; }
-.posiciones__hero h1 { max-width: 8ch; font-size: clamp(3rem, 8vw, 8.2rem); line-height: .86; text-wrap: balance; }
+.posiciones__hero h1 { max-width: 11ch; font-size: clamp(3rem, 6.6vw, 7rem); line-height: .86; text-wrap: balance; }
 .posiciones__hero p:not(.posiciones__eyebrow) { margin-top: 22px; color: var(--pos-texto-2); font-size: 1rem; text-transform: uppercase; letter-spacing: .12em; }
 .posiciones__datos { display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 1px; min-width: min(420px, 100%); border: 1px solid var(--pos-borde); background: var(--pos-borde); }
 .posiciones__datos div { display: grid; gap: 10px; padding: 21px; background: var(--pos-superficie); }

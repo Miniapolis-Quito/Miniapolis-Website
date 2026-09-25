@@ -65,8 +65,24 @@ const navegador = await chromium.launch(opciones);
 
 async function irA(pagina, y) {
   await pagina.evaluate((valor) => window.scrollTo({ top: Math.max(0, Math.round(valor)), behavior: 'instant' }), y);
-  // El motor suaviza el scroll: hay que darle tiempo a asentarse.
-  await pagina.waitForTimeout(1500);
+  // El motor suaviza el scroll: se espera a que el riel y la escena de boxes
+  // dejen de moverse (con la máquina cargada tarda más), no un tiempo fijo.
+  const huella = () => pagina.evaluate(() => {
+    const boxes = document.querySelector('[data-escena=boxes]');
+    const ultimo = [...document.querySelectorAll('.portada__panel')].at(-1);
+    return [
+      Math.round((ultimo?.getBoundingClientRect().left ?? 0) * 2),
+      boxes?.style.getPropertyValue('--cruce'),
+      boxes?.style.getPropertyValue('--entra'),
+    ].join('|');
+  });
+  await pagina.waitForTimeout(800);
+  for (let previa = await huella(), quietas = 0, intentos = 0; quietas < 2 && intentos < 40; intentos += 1) {
+    await pagina.waitForTimeout(300);
+    const actual = await huella();
+    quietas = actual === previa ? quietas + 1 : 0;
+    previa = actual;
+  }
 }
 
 async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false } = {}) {
