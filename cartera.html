@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Guardar mis entradas · Miniápolis #3</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/interior.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.png" type="image/png">
+</head>
+<body class="pagina-interior pagina-interior--sola">
+  <main class="contenedor contenedor--angosto pagina-sola">
+    <div class="centrado mb-3">
+      <div class="brand-lockup brand-lockup--entrada" aria-hidden="true">
+        <img class="brand-lockup__logo" src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="">
+      </div>
+      <span class="seccion-marca">Tus entradas</span>
+      <h1 data-marca>Miniápolis #3</h1>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Guarda tus entradas en el teléfono</h2>
+
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <div id="comprobando" class="vacio">
+        <div class="cargando cargando--grande"></div>
+        <p class="mt">Comprobando el código…</p>
+      </div>
+
+      <div id="pase" hidden>
+        <p class="sin-margen" id="resumen"></p>
+        <p class="tenue pequeno" id="detalle"></p>
+
+        <div class="fila-acciones mt-2" id="botones"></div>
+
+        <p class="tenue-2 pequeno mt-2 sin-margen">
+          El pase muestra cuántas entradas te quedan y el número baja solo cada vez que usas una. Para entrar a la
+          pista, muestra el código QR de tu cuenta.
+        </p>
+      </div>
+
+      <div id="acciones-final" class="mt" hidden>
+        <a class="boton boton--fantasma boton--bloque" href="/app">Ir a mis entradas</a>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="./js/cartera.js"></script>
+</body>
+</html>

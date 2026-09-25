@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Escanear entradas · Miniápolis #3</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/interior.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.png" type="image/png">
+</head>
+<body class="pagina-interior pagina-interior--escaner">
+  <header class="barra" id="cabecera"></header>
+
+  <main class="contenedor">
+    <div class="encabezado-pista fila fila--entre mb-2">
+      <div>
+        <span class="seccion-marca">Puerta</span>
+        <h1 class="sin-margen">Control de acceso</h1>
+        <p class="tenue sin-margen" id="subtitulo">Escanea el QR del cliente y descuéntale una entrada.</p>
+      </div>
+      <div class="fila">
+        <label class="campo__etiqueta sin-salto" for="dispositivo">Puesto</label>
+        <input id="dispositivo" type="text" maxlength="60" placeholder="Puerta 1" autocomplete="off" class="ancho-puesto">
+      </div>
+    </div>
+
+    <div id="aviso" class="aviso" role="alert" hidden></div>
+    <div id="estado-sin-conexion" class="aviso aviso--alerta aviso--sin-conexion" role="status" hidden>
+      <span><strong>Sin conexión.</strong> Sigue escaneando: cada entrada queda guardada en este celular y se cobra sola cuando vuelva la señal.</span>
+    </div>
+
+    <!-- Cuenta sin permiso para escanear: el servidor la rechaza igualmente,
+         esto solo explica por qué y evita encender la cámara para nada. -->
+    <section class="tarjeta" id="sin-permiso" hidden>
+      <div class="vacio">
+        <div class="vacio__icono">
+          <svg class="icono icono--grande" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 11h12v9H6z"></path>
+            <path d="M9 11V8a3 3 0 0 1 6 0v3"></path>
+          </svg>
+        </div>
+        <h2 class="sin-margen">Tu cuenta no puede escanear</h2>
+        <p class="sin-margen">Administración debe habilitar el escáner en tu cuenta.</p>
+        <p class="pequeno tenue-2">
+          Pídele a administración que active «Puede escanear» en tu usuario. Tus entradas están
+          en «Mis entradas», arriba.
+        </p>
+      </div>
+    </section>
+
+    <div id="puesto" class="rejilla rejilla--2 alinea-arriba">
+      <!-- Cámara -->
+      <section class="tarjeta">
+        <div class="tarjeta__titulo">
+          <h2>Cámara</h2>
+          <span class="etiqueta" id="etiqueta-motor" hidden></span>
+        </div>
+
+        <div class="selector-cantidad mb" id="selector-cantidad" role="group" aria-label="Cantidad de entradas por escaneo">
+          <span class="selector-cantidad__etiqueta">Entradas por escaneo</span>
+          <div class="selector-cantidad__opciones">
+            <button type="button" class="btn-cantidad activo" data-cantidad="1" id="btn-cant-1">1</button>
+            <button type="button" class="btn-cantidad" data-cantidad="2" id="btn-cant-2">2</button>
+            <button type="button" class="btn-cantidad" data-cantidad="3" id="btn-cant-3">3</button>
+            <button type="button" class="btn-cantidad" data-cantidad="4" id="btn-cant-4">4</button>
+          </div>
+          <span class="etiqueta etiqueta--info" id="indicador-modo-grupo" hidden>Grupo: 2</span>
+        </div>
+
+        <div class="escaner" id="escaner" hidden>
+          <video id="video" playsinline muted autoplay></video>
+          <div class="escaner__marco"><div class="escaner__mira" id="mira"></div></div>
+        </div>
+
+        <div id="escaner-apagado" class="vacio">
+          <div class="vacio__icono">
+            <svg class="icono icono--grande" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 8h3l2-3h6l2 3h3v12H4z"></path>
+              <path d="M12 16.5a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z"></path>
+            </svg>
+          </div>
+          <p class="sin-margen">La cámara está apagada.</p>
+          <p class="pequeno tenue-2">Necesita permiso del navegador y una conexión segura (HTTPS o localhost).</p>
+        </div>
+
+        <div class="fila mt">
+          <button class="boton boton--principal boton--grande crece" id="btn-camara" type="button">Encender cámara</button>
+          <button class="boton boton--fantasma" id="btn-cambiar-camara" type="button" hidden>Usar otra cámara</button>
+        </div>
+
+        <div class="fila mt">
+          <label class="campo--linea sin-margen-todo">
+            <input type="checkbox" id="chk-continuo" checked>
+            <span class="pequeno">Escaneo continuo</span>
+          </label>
+          <label class="campo--linea sin-margen-todo">
+            <input type="checkbox" id="chk-sonido" checked>
+            <span class="pequeno">Sonido al registrar</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Resultado y entrada manual -->
+      <section class="columna">
+        <div class="resultado" id="resultado">
+          <div class="resultado__icono">
+            <svg class="icono icono--grande" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M5 21V4"></path>
+              <path d="M5 5h13l-2.5 4L18 13H5"></path>
+            </svg>
+          </div>
+          <div class="resultado__titulo">Listo para escanear</div>
+          <div class="resultado__detalle">Apunta la cámara al código del cliente y listo.</div>
+        </div>
+
+        <div class="tarjeta">
+          <h2>Código manual</h2>
+          <p class="tenue pequeno">Si la cámara falla o el cliente no trae el celular, escribe el código del pack.</p>
+          <form id="form-manual" novalidate>
+            <div class="campo">
+              <label for="codigo-manual">Código del pack</label>
+              <input id="codigo-manual" name="code" type="text" placeholder="RHE-XXXX-XXXX"
+                     autocomplete="off" autocapitalize="characters" spellcheck="false" class="entrada-codigo">
+              <div class="campo__error"></div>
+            </div>
+            <div class="fila">
+              <button class="boton boton--fantasma crece" id="btn-consultar" type="button">Consultar</button>
+              <button class="boton boton--principal crece" id="btn-descontar-manual" type="submit">Descontar entrada</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- Lecturas guardadas sin conexión -->
+    <section class="tarjeta mt-2" id="tarjeta-sin-conexion" aria-labelledby="titulo-sin-conexion" hidden>
+      <div class="tarjeta__titulo">
+        <h2 id="titulo-sin-conexion">Guardadas sin señal</h2>
+        <div class="fila">
+          <span class="etiqueta etiqueta--alerta" id="contador-sin-conexion"></span>
+          <button class="boton boton--principal boton--chico" id="btn-enviar-guardadas" type="button">Enviar ahora</button>
+        </div>
+      </div>
+      <div id="lista-sin-conexion" class="columna"></div>
+    </section>
+
+    <!-- Actividad reciente -->
+    <section class="tarjeta mt-2" id="seccion-actividad">
+      <div class="tarjeta__titulo">
+        <h2>Actividad reciente</h2>
+        <div class="fila">
+          <label class="campo--linea sin-margen-todo" id="etiqueta-todos" hidden>
+            <input type="checkbox" id="chk-todos">
+            <span class="pequeno">Ver todo el personal</span>
+          </label>
+          <button class="boton boton--fantasma boton--chico" id="btn-recargar" type="button">Actualizar</button>
+        </div>
+      </div>
+      <div id="actividad"></div>
+    </section>
+  </main>
+
+  <script src="./vendor/jsQR.js" defer></script>
+  <script type="module" src="./js/escaner.js"></script>
+</body>
+</html>
