@@ -88,7 +88,17 @@ function medirPagina() {
     .filter((e) => !e.closest('.galeria, .productos'))
     .map((e) => { const r = e.getBoundingClientRect(); return { e: e.textContent.trim().slice(0, 30), l: r.left, r: r.right, w: r.width }; })
     .filter(({ l, r, w }) => w > 0 && (r > vw + 1 || l < -1));
-  return { desborde: document.documentElement.scrollWidth - vw, partidas, fuera };
+  // Un texto que no cabe en su caja y se recorta, o dos rótulos que se pisan.
+  const recortados = [...document.querySelectorAll('.pestanas, .pestana, .sitio-nav a, .boton, .horario__dia, .horario__horas, .horario__estado, .tiempo__marca, .cifra__valor, .evento h3, .disciplina h3')]
+    .filter((e) => e.getBoundingClientRect().width > 0 && e.scrollWidth > e.clientWidth + 1)
+    .map((e) => e.textContent.trim().slice(0, 30));
+  const choca = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+  const pisados = [...document.querySelectorAll('.horario')].filter((fila) => {
+    const dia = fila.querySelector('.horario__dia').getBoundingClientRect();
+    const horas = fila.querySelector('.horario__horas').getBoundingClientRect();
+    return choca(dia, horas);
+  }).map((fila) => fila.querySelector('.horario__dia').textContent.trim());
+  return { desborde: document.documentElement.scrollWidth - vw, partidas, fuera, recortados, pisados };
 }
 
 async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false } = {}) {
@@ -157,6 +167,8 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
     if (m.desborde > 0) vistos.add(`desborde horizontal de ${m.desborde}px`);
     for (const palabra of m.partidas) vistos.add(`palabra partida: «${palabra}»`);
     for (const f of m.fuera) vistos.add(`texto fuera de la pantalla: «${f.e}»`);
+    for (const t of m.recortados) vistos.add(`texto recortado: «${t}»`);
+    for (const t of m.pisados) vistos.add(`el día y la hora se pisan: «${t}»`);
   }
   fallos.push(...vistos);
 

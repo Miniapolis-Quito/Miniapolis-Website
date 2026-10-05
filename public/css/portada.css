@@ -500,6 +500,17 @@
 @media (max-width: 560px) {
   .horario { grid-template-areas: 'dia horas' 'estado estado'; }
 }
+/* En los teléfonos más estrechos el día va encima de la hora: lado a lado
+   no caben sin pisarse. */
+@media (max-width: 400px) {
+  .horario,
+  .horario:not([data-estado]) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'dia' 'horas' 'estado';
+    row-gap: 6px;
+  }
+  .horario__horas { font-size: 1.7rem; }
+}
 
 .horarios__nota { max-width: 52ch; margin: 24px 0 0; color: var(--texto-3); font-size: .9rem; }
 
@@ -1037,6 +1048,10 @@
 
 @media (max-width: 960px) {
   .acceso__rejilla { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 400px) {
+  .entrada__acceso-panel { padding: 20px 16px; }
+  .entrada__acceso-panel .pestana { padding-inline: 8px; font-size: .68rem; letter-spacing: .07em; }
 }
 
 /* ==========================================================================
