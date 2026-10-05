@@ -439,12 +439,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: 'dia horas' 'estado horas';
+  align-content: center;
   align-items: center;
   column-gap: 24px;
   min-height: clamp(96px, 9vw, 124px);
   padding-block: 18px;
   border-bottom: 1px solid var(--pub-linea);
 }
+.horario:not([data-estado]) { grid-template-areas: 'dia horas'; }
 .horario__dia {
   grid-area: dia;
   font-family: var(--display);
@@ -482,6 +484,7 @@
   font-weight: 650;
   letter-spacing: .16em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .horario__estado::before {
   width: 6px;
@@ -493,6 +496,10 @@
 .horario[data-estado="abierto"] .horario__dia { color: var(--acento); }
 .horario[data-estado="abierto"] .horario__estado { background: var(--acento-suave); color: var(--acento); }
 .horario[data-estado="abierto"] .horario__estado::before { animation: latido 1.8s ease-in-out infinite; }
+
+@media (max-width: 560px) {
+  .horario { grid-template-areas: 'dia horas' 'estado estado'; }
+}
 
 .horarios__nota { max-width: 52ch; margin: 24px 0 0; color: var(--texto-3); font-size: .9rem; }
 

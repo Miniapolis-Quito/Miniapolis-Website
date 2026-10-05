@@ -33,7 +33,7 @@ test('el sitio público anula lo que la app le pondría por defecto', () => {
 
 test('la cabecera queda fija, con la marca, la navegación y la acción de entrar', () => {
   assert.match(HTML, /<header class="sitio-barra">/);
-  assert.match(HTML, /class="sitio-marca"[^>]*>\s*<img src="\.\/images\/miniapolis-logo-oficial\.webp"/);
+  assert.match(HTML, /class="sitio-marca"[^>]*>\s*<img src="\.\/images\/miniapolis-logo-oficial-400\.webp" srcset="[^"]*miniapolis-logo-oficial\.webp 1000w"/);
   assert.match(HTML, /class="sitio-accion boton boton--principal[^"]*" href="#acceso"/);
   assert.match(PUBLICO, /\.sitio-barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s);
   assert.match(PUBLICO, /\.sitio-barra\s*\{[^}]*border-bottom:\s*1px\s+solid/s);

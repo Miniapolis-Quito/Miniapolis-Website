@@ -168,7 +168,7 @@ test('todas las páginas usan el logo oficial como icono de pestaña', () => {
   const manifest = JSON.parse(leer('public/manifest.webmanifest'));
   assert.deepEqual(manifest.icons[0], {
     src: '/favicon.png',
-    sizes: '1254x1254',
+    sizes: '512x512',
     type: 'image/png',
     purpose: 'any',
   });
@@ -258,7 +258,7 @@ test('la portada no repite el mismo encuadre fotográfico en dos bloques', () =>
   // El logotipo firma la cabecera y el pie: es la marca, no un encuadre.
   const imagenes = [...leer(PORTADA).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)]
     .map((m) => m[1])
-    .filter((src) => !src.endsWith('/miniapolis-logo-oficial.webp'));
+    .filter((src) => !/\/miniapolis-logo-oficial(?:-400)?\.webp$/.test(src));
   const repetidas = imagenes.filter((src, indice) => imagenes.indexOf(src) !== indice);
   assert.deepEqual(repetidas, [], 'cada bloque visual debe tener una imagen principal distinta');
 });
