@@ -15,12 +15,15 @@ npm run test:portada
 ```
 
 Recorre la portada en 22 formatos reales (pantalla 4K, portátiles, iPad en las
-dos orientaciones, móviles de 320 a 430 px, móvil apaisado, justo en el límite
-del recorrido horizontal y con movimiento reducido) y comprueba en todos lo
-mismo: sin desborde horizontal, sin titular recortado por la máscara, sin texto
-tapado por el auto, áreas táctiles de al menos 44 px, fotos de la recta sin
-recortar al empezar ni al terminar, pestañas de acceso en una línea y la escena
-de boxes asentada al llegar al final de la página.
+dos orientaciones, móviles de 320 a 430 px, móvil apaisado y con movimiento
+reducido) y comprueba en todos lo mismo: que la apertura termina de verse y
+el titular no queda recortado ni bajo la cabecera, que ninguna palabra de un
+titular o de una cifra se parte entre dos líneas, que nada empuja la página de
+lado, que cada bloque llega a revelarse al bajar, que las áreas táctiles miden
+al menos 44 px, que la galería avanza con sus botones (o se desliza con el
+dedo), que las pestañas de acceso caben en una línea y que el avance de
+lectura llega al final. Con movimiento reducido, además, que no se anima nada
+y todo se ve sin bajar.
 
 ## `interfaz.mjs` — la interfaz, sin montar nada
 

@@ -1,0 +1,372 @@
+/* ==========================================================================
+   Sitio público: portada y tabla de posiciones
+
+   Lo que comparten las páginas que ve cualquiera sin entrar: la rejilla, la
+   cabecera, el pie, los encabezados de sección y el enlace con flecha.
+
+   El criterio es de revista de automovilismo, no de cartel: negro de la
+   marca, líneas de un píxel que ordenan, la Saira ancha solo para lo que se
+   nombra y el verde reservado a lo que importa. Las fotos se miran enteras;
+   el texto nunca se escribe encima de una foto salvo en la apertura, y ahí
+   con un velo que asegura el contraste.
+   ========================================================================== */
+
+:root {
+  --pub-ancho: 1320px;
+  --pub-margen: clamp(20px, 5vw, 64px);
+  --pub-seccion: clamp(96px, 11vw, 168px);
+  --pub-cabecera: 72px;
+  --pub-linea: rgba(255, 255, 255, .08);
+  --pub-linea-2: rgba(255, 255, 255, .16);
+  /* Dos negros apenas distintos alternan las secciones: el ritmo se nota
+     sin que aparezca ningún gris nuevo. */
+  --pub-panel: #070809;
+  --pub-tarjeta: #0b0d0e;
+  --pub-curva: cubic-bezier(.16, 1, .3, 1);
+  --pub-radio: 6px;
+}
+
+html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
+
+.pagina-entrada,
+.pagina-posiciones {
+  background: var(--fondo);
+  overflow-x: clip;
+}
+
+/* La rejilla de fondo es de las pantallas de trabajo, no del sitio público. */
+.pagina-entrada::before,
+.pagina-posiciones::before { display: none; }
+
+.pagina-entrada main,
+.pagina-posiciones main { padding: 0; }
+
+/* shell.js revela los hijos de <main> en las pantallas de la app. Aquí cada
+   sección trae su propio revelado: el genérico no debe tocarlas. */
+.pagina-entrada main > .revelar,
+.pagina-entrada main > .revelar--visible,
+.pagina-posiciones main > .revelar,
+.pagina-posiciones main > .revelar--visible {
+  opacity: 1;
+  transform: none;
+  animation: none;
+  transition: none;
+}
+
+.marco {
+  width: min(var(--pub-ancho), calc(100% - 2 * var(--pub-margen)));
+  margin-inline: auto;
+}
+
+/* --------------------------------------------------------------------------
+   Saltar al contenido
+   -------------------------------------------------------------------------- */
+
+.sitio-saltar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 12px 18px;
+  border-radius: var(--pub-radio);
+  background: var(--acento);
+  color: var(--sobre-acento);
+  font-weight: 650;
+  text-decoration: none;
+  transform: translateY(-180%);
+  transition: transform 240ms var(--pub-curva);
+}
+.sitio-saltar:focus-visible { transform: none; color: var(--sobre-acento); }
+
+/* --------------------------------------------------------------------------
+   Cabecera
+   -------------------------------------------------------------------------- */
+
+.sitio-barra {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  background: rgba(0, 0, 0, .8);
+  -webkit-backdrop-filter: saturate(150%) blur(18px);
+  backdrop-filter: saturate(150%) blur(18px);
+  border-bottom: 1px solid var(--pub-linea);
+}
+
+.sitio-barra__interior {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.4vw, 36px);
+  min-height: var(--pub-cabecera);
+}
+
+.sitio-marca {
+  display: block;
+  flex: none;
+  margin-right: auto;
+  line-height: 0;
+  border-radius: 4px;
+}
+.sitio-marca img { display: block; width: auto; height: 40px; }
+
+.sitio-nav { display: flex; align-items: center; gap: 2px; }
+.sitio-nav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--texto-2);
+  font-family: var(--display);
+  font-stretch: 112%;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 240ms var(--pub-curva);
+}
+.sitio-nav a::after {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  left: 12px;
+  height: 2px;
+  content: '';
+  background: var(--acento);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 420ms var(--pub-curva);
+}
+.sitio-nav a:hover,
+.sitio-nav a[aria-current] { color: var(--texto); }
+.sitio-nav a:hover::after,
+.sitio-nav a[aria-current]::after { transform: scaleX(1); }
+
+/* Avance de lectura: una línea verde que crece bajo la cabecera. */
+.sitio-progreso {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  pointer-events: none;
+}
+.sitio-progreso span {
+  display: block;
+  height: 100%;
+  background: var(--acento);
+  transform: scaleX(var(--progreso, 0));
+  transform-origin: left center;
+}
+
+.sitio-accion.boton.boton--chico { flex: none; min-height: 40px; padding-inline: 22px; }
+
+@media (max-width: 1100px) {
+  .sitio-nav { display: none; }
+}
+@media (pointer: coarse) {
+  .sitio-accion.boton.boton--chico { min-height: 44px; }
+}
+
+/* --------------------------------------------------------------------------
+   Encabezado de sección
+   -------------------------------------------------------------------------- */
+
+.seccion {
+  position: relative;
+  padding-block: var(--pub-seccion);
+}
+.seccion--panel {
+  background: var(--pub-panel);
+  border-block: 1px solid var(--pub-linea);
+}
+
+.seccion__cabeza {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: end;
+  column-gap: clamp(24px, 5vw, 96px);
+  margin-bottom: clamp(44px, 6vw, 88px);
+}
+
+/* Índice: el número de la sección en verde y su nombre en versales. */
+.seccion__indice {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 24px;
+  color: var(--texto-3);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+.seccion__indice span {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--acento);
+  font-variant-numeric: tabular-nums;
+}
+.seccion__indice span::after {
+  width: 32px;
+  height: 1px;
+  content: '';
+  background: var(--pub-linea-2);
+}
+
+.seccion__cabeza h2 {
+  margin: 0;
+  font-size: clamp(2.2rem, 4.6vw, 4.4rem);
+  font-stretch: 116%;
+  font-weight: 700;
+  line-height: .98;
+  letter-spacing: .012em;
+  text-wrap: balance;
+}
+
+.seccion__lead {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--texto-2);
+  font-size: clamp(1rem, .4vw + .9rem, 1.125rem);
+  line-height: 1.68;
+}
+.seccion__cabeza .seccion__lead { padding-bottom: .35em; }
+
+@media (max-width: 860px) {
+  .seccion__cabeza { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
+}
+
+/* En el teléfono la palabra más larga («Especificaciones») tiene que caber
+   entera: la letra se recoge a lo ancho antes que partirse. */
+@media (max-width: 600px) {
+  .seccion__cabeza h2 {
+    font-size: clamp(1.7rem, 8.2vw, 2.5rem);
+    font-stretch: 104%;
+    overflow-wrap: normal;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Enlace con flecha
+   -------------------------------------------------------------------------- */
+
+.enlace-flecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  color: var(--texto);
+  font-family: var(--display);
+  font-stretch: 116%;
+  font-size: .8rem;
+  font-weight: 650;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.enlace-flecha::after {
+  width: 22px;
+  height: 12px;
+  content: '';
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 12'%3E%3Cpath d='M0 6h20M15 1l5 5-5 5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 12'%3E%3Cpath d='M0 6h20M15 1l5 5-5 5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: transform 420ms var(--pub-curva);
+}
+.enlace-flecha:hover { color: var(--acento); }
+.enlace-flecha:hover::after { transform: translateX(6px); }
+
+/* --------------------------------------------------------------------------
+   Pie
+   -------------------------------------------------------------------------- */
+
+.sitio-pie {
+  padding-top: clamp(64px, 8vw, 112px);
+  border-top: 1px solid var(--pub-linea);
+  background: var(--fondo);
+}
+
+.sitio-pie__rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 40px clamp(24px, 4vw, 64px);
+  padding-bottom: clamp(48px, 6vw, 80px);
+}
+
+.sitio-pie__marca img { display: block; width: 176px; height: auto; }
+.sitio-pie__marca p { max-width: 34ch; margin: 20px 0 0; color: var(--texto-3); }
+
+.sitio-pie__columna {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.sitio-pie__titulo {
+  margin: 0 0 12px;
+  color: var(--texto-3);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.sitio-pie__columna a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--texto-2);
+  text-decoration: none;
+  transition: color 240ms var(--pub-curva);
+}
+.sitio-pie__columna a:hover { color: var(--texto); }
+
+.sitio-pie__base {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+  padding-block: 22px calc(22px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--pub-linea);
+  color: var(--texto-3);
+  font-size: .84rem;
+}
+.sitio-pie__base p { margin: 0; }
+.sitio-pie__base p:first-child { margin-right: auto; color: var(--texto-2); }
+
+.sitio-arriba {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--texto-2);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.sitio-arriba:hover { color: var(--acento); }
+
+@media (max-width: 760px) {
+  .sitio-pie__rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sitio-pie__marca { grid-column: 1 / -1; }
+}
+
+/* --------------------------------------------------------------------------
+   Táctil y movimiento reducido
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .sitio-saltar,
+  .sitio-nav a::after,
+  .enlace-flecha::after { transition: none; }
+}

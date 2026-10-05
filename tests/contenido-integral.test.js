@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -8,7 +7,7 @@ const leer = (archivo) => fs.readFileSync(archivo, 'utf8');
 const portada = leer('public/index.html');
 const app = leer('src/app.js');
 const portadaCss = leer('public/css/portada.css');
-const portadaJs = leer('public/js/portada.js');
+const publicoCss = leer('public/css/publico.css');
 const posicionesCss = () => leer('public/css/posiciones.css');
 
 test('la portada contiene el contenido público completo de Miniápolis', () => {
@@ -74,13 +73,16 @@ test('todas las imágenes locales nuevas existen y declaran tamaño y alt', () =
   }
 });
 
-test('los nuevos bloques tienen sistema visual, responsive y salida accesible', () => {
-  for (const selector of ['.portada__info', '.portada__disciplinas', '.portada__spec-grid', '.portada__horarios', '.portada__records', '.portada__eventos-lista', '.portada__galeria', '.portada__promos']) {
-    assert.match(portadaCss, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+test('cada bloque de la portada tiene su sistema visual, responsive y salida accesible', () => {
+  for (const selector of ['.hero', '.mosaico', '.disciplinas', '.ficha', '.plano', '.horarios__lista', '.tiempos', '.agenda', '.pronto', '.galeria', '.productos', '.acceso']) {
+    assert.match(portadaCss, new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{`), `falta ${selector}`);
   }
-  assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__info/);
-  assert.match(portadaCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.portada__info/);
-  assert.match(portadaCss, /@media\s*\(max-width:\s*700px\)[\s\S]*\.portada__disciplinas/);
+  for (const selector of ['.marco', '.sitio-barra', '.sitio-pie', '.seccion__cabeza', '.seccion__indice']) {
+    assert.match(publicoCss, new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{`), `falta ${selector} en publico.css`);
+  }
+  assert.match(portadaCss, /@media\s*\(max-width:\s*760px\)[\s\S]*\.mosaico/);
+  assert.match(portadaCss, /@media\s*\(max-width:\s*700px\)[\s\S]*\.disciplinas/);
+  assert.match(portadaCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   const css = posicionesCss();
   for (const selector of ['.pagina-posiciones', '.posiciones__hero', '.posiciones__tabla', '.posiciones__carrera', '.posiciones__galeria-grid']) {
     assert.match(css, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
@@ -88,96 +90,50 @@ test('los nuevos bloques tienen sistema visual, responsive y salida accesible', 
   assert.match(css, /@media\s*\(max-width:\s*760px\)/);
 });
 
-test('cada tarjeta editorial tiene un fondo distinto y local', () => {
-  const fondos = [
-    ...portadaCss.matchAll(/--card-fondo-src:\s*url\('([^']+)'\)/g),
-    ...portadaCss.matchAll(/--caption-fondo-src:\s*url\('([^']+)'\)/g),
-  ].map((match) => match[1]);
-  assert.equal(fondos.length, 33);
-  assert.equal(new Set(fondos).size, fondos.length);
-  for (const fondo of fondos) assert.ok(fs.existsSync(path.resolve('public/css', fondo)), `falta ${fondo}`);
+test('ninguna foto se usa como fondo detrás de un texto, salvo la apertura con su velo', () => {
+  assert.doesNotMatch(portadaCss, /--(?:scene|card|caption|local)-fondo/, 'las fichas no llevan fotos de fondo');
+  assert.doesNotMatch(portadaCss, /url\(['"]?\.\.\/images/, 'las fotos van en el HTML, con su alt y su carga diferida');
+  assert.match(portadaCss, /\.hero__foto::after\s*\{[^}]*linear-gradient\(90deg, rgba\(0, 0, 0, \.9\)/s, 'el titular de la apertura se lee sobre un velo denso');
 });
 
-test('los fondos fotográficos usados por la portada no repiten bytes', () => {
-  const rutas = [
-    ...portadaCss.matchAll(/--(?:scene|card|caption|local)-fondo-src:\s*url\('([^']+)'\)/g),
-  ].map(([, ruta]) => path.resolve('public/css', ruta));
-  const hashes = rutas.map((ruta) => crypto.createHash('sha256').update(fs.readFileSync(ruta)).digest('hex'));
-  assert.equal(new Set(hashes).size, hashes.length, 'cada fondo fotográfico debe ser un archivo visual distinto');
-});
-
-test('el motor de portada monta las escenas informativas y conserva el fallback', () => {
-  for (const escena of ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad']) {
-    assert.match(portada, new RegExp(`data-escena="${escena}"`));
-    assert.match(portadaJs, new RegExp(`['"]${escena}['"]`), `portada.js no monta ${escena}`);
+test('las fotos de la tienda están optimizadas y comparten formato', () => {
+  const tienda = portada.match(/<ul class="productos[\s\S]*?<\/ul>/)?.[0] ?? '';
+  const fotos = [...tienda.matchAll(/src="\.\/images\/(tienda\/[^"]+)"/g)].map(([, ruta]) => ruta);
+  assert.equal(fotos.length, 5);
+  for (const foto of fotos) {
+    const ruta = path.join('public/images', foto);
+    assert.ok(fs.existsSync(ruta), `falta ${foto}`);
+    assert.match(foto, /\.webp$/);
+    assert.ok(fs.statSync(ruta).size < 120 * 1024, `${foto} pesa demasiado para una tarjeta`);
   }
-  assert.match(portadaJs, /IntersectionObserver/);
-  assert.match(portadaJs, /prefers-reduced-motion|sinMovimiento/);
+  assert.doesNotMatch(portada, /images\/contenido\/[\w-]+\.png/, 'los PNG originales de varios MB no se sirven en la portada');
+  assert.match(tienda, /class="producto producto--pronto"[\s\S]*Próximamente/, 'RC Builder se presenta como próximamente');
 });
 
-test('las secciones informativas consumen el progreso del motor para animarse con el scroll', () => {
-  assert.match(portadaCss, /var\(--info-p/);
-  for (const selector of ['.portada__info--complejo', '.portada__info--datos', '.portada__info--records', '.portada__info--eventos', '.portada__info--galeria', '.portada__info--comunidad']) {
-    assert.match(portadaCss, new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*var\\(--info-p`), `falta movimiento ligado al scroll en ${selector}`);
+test('ninguna imagen de la portada pesa más de lo que aporta', () => {
+  const rutas = new Set([...portada.matchAll(/\bsrc="\.\/(images\/[^"]+)"/g)].map(([, ruta]) => ruta));
+  for (const ruta of rutas) {
+    const peso = fs.statSync(path.join('public', ruta)).size;
+    assert.ok(peso < 420 * 1024, `${ruta} pesa ${Math.round(peso / 1024)} KB`);
   }
 });
 
-test('las secciones nuevas tienen una coreografía propia de pista', () => {
-  for (const [selector, propiedad] of [
-    ['.portada-motor .portada__info--complejo .portada__disciplina', 'clip-path'],
-    ['.portada-motor .portada__info--datos .portada__spec strong', 'transform'],
-    ['.portada-motor .portada__info--split .portada__horario strong', 'transform'],
-    ['.portada-motor .portada__info--eventos .portada__evento h3', 'transform'],
-    ['.portada-motor .portada__info--pronto .portada__pronto-visual img', 'transform'],
-    ['.portada-motor .portada__info--galeria .portada__galeria figcaption', 'transform'],
-    ['.portada-motor .portada__info--comunidad .portada__promo > strong', 'transform'],
-  ]) {
-    const bloque = new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*${propiedad}`);
-    assert.match(portadaCss, bloque, `falta ${propiedad} específico en ${selector}`);
-  }
-  assert.match(portadaCss, /\.portada-motor[^{]*\{[^}]*--vel-abs|\.portada-motor[\s\S]*var\(--vel-abs/, 'la energía del scroll debe alimentar el movimiento de las escenas');
-});
-
-test('cada caja nueva tiene una entrada y una salida de escena diferenciadas', () => {
-  assert.match(portadaCss, /--info-out/);
-  assert.match(portadaCss, /--item-out/);
-  for (const selector of [
-    '.portada-motor .portada__info--complejo .portada__disciplina',
-    '.portada-motor .portada__info--datos .portada__spec',
-    '.portada-motor .portada__info--split .portada__horario',
-    '.portada-motor .portada__info--records .portada__record',
-    '.portada-motor .portada__info--eventos .portada__evento',
-    '.portada-motor .portada__info--galeria figure',
-    '.portada-motor .portada__info--comunidad .portada__promo',
-  ]) {
-    const bloque = new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}[^}]*var\\(--item-out`);
-    assert.match(portadaCss, bloque, `falta salida coreografiada en ${selector}`);
-  }
-  assert.match(portadaCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*--info-out/);
-});
-
-test('los titulares largos y las tarjetas con imagen conservan el texto dentro del layout móvil', () => {
-  const posiciones = leer('public/css/posiciones.css');
-  const portada = leer('public/css/portada.css');
-
+test('los titulares largos caben enteros en el teléfono', () => {
   assert.match(
-    posiciones,
+    publicoCss,
+    /@media\s*\(max-width:\s*600px\)\s*\{\s*\.seccion__cabeza h2\s*\{[^}]*font-stretch:\s*104%;[^}]*overflow-wrap:\s*normal/s,
+    '«Especificaciones» no puede partirse a mitad de palabra',
+  );
+  assert.match(
+    posicionesCss(),
     /@media\s*\(max-width:\s*760px\)[\s\S]*\.posiciones__hero h1\s*\{[^}]*max-width:\s*(?:none|12ch|100%)/,
     'el título de posiciones no debe dejar una palabra huérfana en móvil',
   );
-  assert.match(
-    portada,
-    /\.portada__info--pronto\s* >\s*\*\s*\{[^}]*min-width:\s*0/,
-    'el bloque de muy pronto debe permitir que sus textos se encojan dentro de la rejilla',
-  );
-  assert.match(
-    portada,
-    /\.portada__promo\s*\{[^}]*min-width:\s*0/,
-    'las promociones no deben forzar overflow cuando el texto ocupa varias líneas',
-  );
+  assert.match(portadaCss, /\.productos > li\s*\{\s*min-width:\s*0/, 'las tarjetas de tienda no fuerzan desbordes con textos largos');
+  assert.match(portadaCss, /\.pronto__texto\s*\{\s*min-width:\s*0/);
 });
 
-test('las secciones nuevas usan fotos reales distintas y animan sus visuales con el scroll', () => {
+test('la galería muestra seis fotos reales sin repetir encuadres', () => {
   const fotos = [
     'miniapolis-track-side-wide.webp',
     'miniapolis-gallery-curb-vertical.webp',
@@ -188,29 +144,26 @@ test('las secciones nuevas usan fotos reales distintas y animan sus visuales con
   ];
   const galeria = portada.match(/<section id="galeria"[\s\S]*?<\/section>/)?.[0] ?? '';
   const fotosGaleria = [...galeria.matchAll(/src="\.\/images\/pista\/([^"]+)"/g)].map(([, archivo]) => archivo);
-
-  assert.equal(
-    new Set(fotosGaleria).size,
-    fotos.length,
-    'la galería debe mostrar seis fotos reales sin repetir encuadres',
-  );
+  assert.equal(new Set(fotosGaleria).size, fotos.length, 'la galería debe mostrar seis fotos reales sin repetir encuadres');
   assert.doesNotMatch(galeria, /pista-real|track-portrait|action/, 'la galería no debe volver a cargar fuentes descartadas');
   for (const foto of fotos) {
     assert.match(galeria, new RegExp(`pista/${foto}`), `falta la foto ${foto} en la galería`);
     assert.ok(fs.existsSync(path.join('public/images/pista', foto)), `falta el archivo ${foto}`);
   }
   assert.match(portada, /pista\/miniapolis-asphalt-detail\.webp/);
-  assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__pronto-visual img[\s\S]*var\(--info-p/);
-  assert.match(portadaCss, /\.portada-motor[\s\S]*\.portada__info--galeria \.portada__galeria-card[\s\S]*var\(--info-p/);
-  assert.match(portadaCss, /prefers-reduced-motion[\s\S]*\.portada__pronto-visual img[\s\S]*\.portada__info--galeria img/);
   assert.doesNotMatch(portada, /images\/contenido\/muy-pronto\.png/);
-  assert.doesNotMatch(portadaCss, /images\/contenido\/eventos-fondo\.png/);
+  assert.doesNotMatch(portada + portadaCss, /images\/contenido\/eventos-fondo\.png/);
 });
 
 test('la tabla pública conserva una entrada animada y legible', () => {
   const css = posicionesCss();
+  const posiciones = leer('public/posiciones.html');
   assert.match(css, /@keyframes\s+posicionesEntrada/);
-  assert.match(css, /\.posiciones__hero[^}]*animation/);
-  assert.match(css, /\.posiciones__tabla tbody tr[^}]*animation/);
-  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(css, /\.posiciones__hero\s*\{[^}]*animation/);
+  assert.match(css, /\.posiciones__fila\s*\{[^}]*animation/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*\.posiciones__fila\s*\{\s*animation:\s*none/);
+  assert.equal((posiciones.match(/class="posiciones__fila[^"]*"/g) ?? []).length, 5);
+  assert.doesNotMatch(posiciones, /🥇|🥈|🥉/, 'las posiciones se escriben con cifras, no con emojis');
+  assert.match(posiciones, /<link rel="stylesheet" href="\/css\/publico\.css">/, 'la tabla comparte cabecera y pie con la portada');
+  assert.match(posiciones, /<a href="\.\/posiciones\.html" aria-current="page">/);
 });

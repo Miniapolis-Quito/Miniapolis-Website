@@ -1,680 +1,263 @@
 /**
- * Portada: orquesta las escenas y la mira.
+ * Portada: lo que se mueve y lo que dice la verdad del momento.
  *
- * Sin movimiento (preferencia del sistema o navegador sin soporte) no se añade
- * `.portada-motor` y la página queda estática y completa. La mira se monta
- * siempre que haya puntero fino.
+ * Siempre (no mueven nada): el avance de lectura de la cabecera, la sección
+ * activa en la navegación, el estado de hoy en la tabla de horarios y los
+ * botones de la galería.
+ *
+ * Solo con movimiento: la apertura con el semáforo, el revelado de bloques,
+ * el trazado del plano, el cronómetro de los récords y la foto de la apertura
+ * que se aleja al bajar. Sin movimiento (preferencia del sistema o navegador
+ * sin IntersectionObserver) no se añade `.portada-animada` y la página queda
+ * completa y quieta.
  */
 import { sinMovimiento } from './movimiento.js';
 import {
-  crearMotor, digitosDe, easeOutCubic, entradaPanel, entradaPieza, fase, interpolarCifras, lucesEncendidas,
-  progresoCifra, progresoMaximo, salidaPieza,
-} from './portada-motor.js';
-import { montarEfectos, montarHorarioVivo, montarVolverArriba } from './portada-efectos.js';
+  diaDeTexto, estadoJornada, progresoLectura, rangoDeTexto, textoJornada, tiempoEnTexto, valorContado,
+} from './portada-calculos.js';
 
 const raiz = document.documentElement;
-const reducir = sinMovimiento();
-const punteroFino = () => Boolean(window.matchMedia?.('(hover: hover) and (pointer: fine)').matches);
 const $ = (selector, base = document) => base.querySelector(selector);
 const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
-
-/** Lo único que la mira reconoce como objetivo: lo que se puede pulsar. */
-const CLICABLES = 'a, button, input, select, textarea, label, summary, [role="tab"]';
+const conMovimiento = !sinMovimiento() && typeof IntersectionObserver === 'function';
 
 // ---------------------------------------------------------------------------
-// Mira del puntero
+// Avance de lectura y foto de la apertura
 // ---------------------------------------------------------------------------
 
-function montarMira() {
-  if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
-
-  document.body.classList.add('mira-activa');
-  const mira = document.createElement('span');
-  mira.className = 'entrada__mira';
-  mira.setAttribute('aria-hidden', 'true');
-  const segmento = document.createElement('span');
-  segmento.className = 'entrada__mira--segmento';
-  const centro = document.createElement('span');
-  centro.className = 'entrada__mira-centro';
-  mira.append(segmento, centro);
-  document.body.append(mira);
-
-  const esObjetivo = (nodo) => nodo?.closest?.(CLICABLES);
+function montarDesplazamiento() {
+  const barra = $('.sitio-progreso span');
+  const hero = $('.hero');
+  const foto = conMovimiento ? $('.hero__foto') : null;
   let pendiente = false;
-  let punteroX = -100;
-  let punteroY = -100;
+  let altoHero = hero?.offsetHeight ?? 0;
+
   const pintar = () => {
     pendiente = false;
-    mira.style.setProperty('--puntero-x', `${punteroX}px`);
-    mira.style.setProperty('--puntero-y', `${punteroY}px`);
-  };
-  window.addEventListener('pointermove', (evento) => {
-    punteroX = evento.clientX;
-    punteroY = evento.clientY;
-    if (pendiente) return;
-    pendiente = true;
-    requestAnimationFrame(pintar);
-  }, { passive: true });
-  window.addEventListener('pointerover', (evento) => {
-    raiz.classList.toggle('mira-sobre-objetivo', Boolean(esObjetivo(evento.target)));
-  }, { passive: true });
-  window.addEventListener('pointerout', (evento) => {
-    if (!esObjetivo(evento.relatedTarget)) raiz.classList.remove('mira-sobre-objetivo');
-  }, { passive: true });
-}
-
-// ---------------------------------------------------------------------------
-// Micro-interacciones de superficie
-// ---------------------------------------------------------------------------
-
-/**
- * Mueve el halo de cada ficha según el puntero. No cambia el layout ni el
- * contenido: solo hace que las superficies respondan como paneles físicos.
- * Se desactiva por completo en touch y con movimiento reducido.
- */
-function montarHalos() {
-  if (reducir || !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
-
-  const selectores = [
-    '.portada__disciplina',
-    '.portada__spec',
-    '.portada__evento',
-    '.portada__pronto-visual',
-    '.portada__promo',
-  ];
-
-  $$(selectores.join(',')).forEach((pieza) => {
-    let rect = null;
-    let pendiente = false;
-    let punteroX = 0;
-    let punteroY = 0;
-    const medir = () => { rect = pieza.getBoundingClientRect(); };
-    const pintar = () => {
-      pendiente = false;
-      if (!rect) medir();
-      if (!rect.width || !rect.height) return;
-      const x = ((punteroX - rect.left) / rect.width) * 100;
-      const y = ((punteroY - rect.top) / rect.height) * 100;
-      pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
-      pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
-      // Profundidad: lo que va dentro de la ficha se desplaza un poco contra el puntero.
-      pieza.style.setProperty('--px', (x / 50 - 1).toFixed(3));
-      pieza.style.setProperty('--py', (y / 50 - 1).toFixed(3));
-    };
-    const actualizar = (evento) => {
-      punteroX = evento.clientX;
-      punteroY = evento.clientY;
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(pintar);
-    };
-    const limpiar = () => {
-      rect = null;
-      pendiente = false;
-      pieza.style.removeProperty('--spot-x');
-      pieza.style.removeProperty('--spot-y');
-      pieza.style.removeProperty('--px');
-      pieza.style.removeProperty('--py');
-    };
-    pieza.addEventListener('pointerenter', medir, { passive: true });
-    pieza.addEventListener('pointermove', actualizar, { passive: true });
-    pieza.addEventListener('pointerleave', limpiar, { passive: true });
-  });
-}
-
-// Las fotos que viven en fondos CSS no tienen el mismo mecanismo de carga
-// diferida que un <img>: el navegador puede descargarlas todas al leer la
-// hoja, aunque estén a muchos miles de píxeles. Se conserva la URL en una
-// variable CSS sin usar y se activa cuando la escena se acerca a la ventana.
-const FONDOS_DIFERIDOS = [
-  '.portada__info',
-  '.portada__disciplina',
-  '.portada__spec',
-  '.portada__horario',
-  '.portada__record',
-  '.portada__evento',
-  '.portada__promo',
-  '.portada__galeria figcaption',
-  '.portada__recta-cabeza',
-  '.portada__panel--texto',
-  '.portada__boxes',
-].join(', ');
-
-function montarFondosDiferidos() {
-  const fondos = $$(FONDOS_DIFERIDOS);
-  if (!fondos.length) return;
-
-  const activar = (nodo) => {
-    if (nodo.dataset.fondoCargado === '1') return;
-    const estilo = getComputedStyle(nodo);
-    const estiloEscena = nodo.matches('.portada__info') ? getComputedStyle(nodo, '::before') : null;
-    const fuentes = [
-      [estiloEscena, '--scene-fondo-src', '--scene-fondo'],
-      [estilo, '--card-fondo-src', '--card-fondo'],
-      [estilo, '--caption-fondo-src', '--caption-fondo'],
-      [estilo, '--local-fondo-src', '--local-fondo'],
-    ];
-    let cargo = false;
-    for (const [origen, fuente, destino] of fuentes) {
-      const valor = origen?.getPropertyValue(fuente).trim();
-      if (!valor || valor === 'none') continue;
-      nodo.style.setProperty(destino, valor);
-      cargo = true;
-    }
-    nodo.dataset.fondoCargado = cargo ? '1' : '0';
-  };
-
-  if (typeof IntersectionObserver !== 'function') {
-    fondos.forEach(activar);
-    return;
-  }
-
-  const observador = new IntersectionObserver((entradas) => {
-    for (const entrada of entradas) {
-      if (!entrada.isIntersecting) continue;
-      activar(entrada.target);
-      observador.unobserve(entrada.target);
-    }
-  }, { rootMargin: '3000px 0px' });
-  fondos.forEach((fondo) => observador.observe(fondo));
-}
-
-// ---------------------------------------------------------------------------
-// Progreso de la cabecera cuando no hay motor
-// ---------------------------------------------------------------------------
-
-function montarProgresoSimple() {
-  const progreso = $('.entrada__progreso span');
-  let pendiente = false;
-  const pintar = () => {
-    pendiente = false;
-    const maximo = Math.max(raiz.scrollHeight - window.innerHeight, 1);
-    (progreso || raiz).style.setProperty('--scroll', Math.min(1, window.scrollY / maximo).toFixed(4));
+    const y = window.scrollY;
+    barra?.style.setProperty('--progreso', progresoLectura(y, raiz.scrollHeight, window.innerHeight).toFixed(4));
+    // La foto solo se mueve mientras se ve: más abajo no hay nada que escribir.
+    if (foto && y <= altoHero) foto.style.setProperty('--hero-desplazamiento', `${(y * 0.28).toFixed(1)}px`);
   };
   const programar = () => {
     if (pendiente) return;
     pendiente = true;
     requestAnimationFrame(pintar);
   };
-  pintar();
   window.addEventListener('scroll', programar, { passive: true });
-  window.addEventListener('resize', programar, { passive: true });
+  window.addEventListener('resize', () => { altoHero = hero?.offsetHeight ?? 0; programar(); }, { passive: true });
+  pintar();
 }
 
 // ---------------------------------------------------------------------------
-// Salida: semáforo y titular
+// Navegación: qué sección se está leyendo
 // ---------------------------------------------------------------------------
 
-/** El semáforo apaga sus luces a los 1,1 s: el titular arranca justo detrás. */
-const LUCES_FUERA_MS = 1150;
-
-function arrancarSalida() {
-  const inicio = performance.now();
-  let repetida = false;
-  try {
-    repetida = sessionStorage.getItem('portada-salida') === '1';
-    sessionStorage.setItem('portada-salida', '1');
-  } catch { /* sin almacenamiento: la salida se ve completa */ }
-  if (repetida) raiz.classList.add('portada-rapido');
-
-  const listo = () => {
-    // El semáforo corre desde que se monta el motor: si la foto tardó, el
-    // titular no vuelve a esperar la secuencia entera.
-    const espera = repetida ? 0 : Math.max(0, LUCES_FUERA_MS - (performance.now() - inicio));
-    raiz.style.setProperty('--espera', `${Math.round(espera)}ms`);
-    raiz.classList.add('portada-listos');
-  };
-  const imagen = $('.portada__cielo img');
-  const esperas = [document.fonts?.ready, imagen?.decode?.()].filter(Boolean);
-  // Red de seguridad: el titular nunca se queda esperando a un recurso.
-  Promise.race([Promise.allSettled(esperas), new Promise((r) => setTimeout(r, 1800))]).then(listo);
-}
-
-// ---------------------------------------------------------------------------
-// Tablero: luces de cambio y cuentakilómetros
-// ---------------------------------------------------------------------------
-
-function pieza(clase, texto) {
-  const nodo = document.createElement('span');
-  nodo.className = clase;
-  nodo.textContent = texto;
-  nodo.setAttribute('aria-hidden', 'true');
-  return nodo;
-}
-
-function armarCifras() {
-  return $$('.cifra__num[data-cifra]').map((el) => {
-    const lectura = document.createElement('span');
-    lectura.className = 'portada__lectura';
-    lectura.textContent = el.textContent.trim();
-    const ruedas = digitosDe(el.dataset.cifra).map((digito) => {
-      const rueda = document.createElement('span');
-      rueda.className = 'rueda';
-      rueda.setAttribute('aria-hidden', 'true');
-      const tira = document.createElement('span');
-      tira.className = 'rueda__tira';
-      tira.style.setProperty('--d', String(digito));
-      for (let n = 0; n < 10; n++) {
-        const numero = document.createElement('i');
-        numero.textContent = String(n);
-        tira.append(numero);
-      }
-      rueda.append(tira);
-      return rueda;
-    });
-    const partes = [];
-    if (el.dataset.prefijo) partes.push(pieza('cifra__afijo cifra__afijo--pre', el.dataset.prefijo));
-    partes.push(...ruedas);
-    if (el.dataset.sufijo) partes.push(pieza('cifra__afijo cifra__afijo--suf', el.dataset.sufijo));
-    el.replaceChildren(lectura, ...partes);
-    return el;
-  });
-}
-
-function montarTablero(motor) {
-  const seccion = $('[data-escena="tablero"]');
-  if (!seccion) return;
-  const cifras = armarCifras();
-  const luces = $$('.portada__luces span', seccion);
-  let encendidas = -1;
-  motor.registrar(seccion, {
-    modo: 'vista',
-    publicar: false,
-    alActualizar: (p) => {
-      // La barra debe completar su secuencia mientras el tablero sigue visible,
-      // no esperar a que la sección ya esté terminando de salir de pantalla.
-      const n = lucesEncendidas(fase(p, 0.08, 0.48), luces.length);
-      if (n !== encendidas) {
-        luces.forEach((luz, i) => luz.classList.toggle('on', i < n));
-        encendidas = n;
-      }
-      cifras.forEach((cifra, i) => {
-        cifra.style.setProperty('--rueda', progresoCifra(p, i).toFixed(3));
-      });
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Recta: recorrido horizontal fijo (≥ 900 px y apaisado) o apilado con revelado
-// ---------------------------------------------------------------------------
-
-function montarRecta(motor) {
-  const seccion = $('[data-escena="recta"]');
-  const riel = seccion && $('.portada__riel', seccion);
-  if (!riel) return;
-  const paneles = $$('.portada__panel', riel);
-  const fija = window.matchMedia('(min-width: 900px) and (min-height: 560px) and (min-aspect-ratio: 1/1)');
-  let recorrido = 0;
-  let izquierdas = [];
-
-  // En el recorrido horizontal las fotos comparten el mismo plano vertical,
-  // así que la carga diferida del navegador no distingue cuál está fuera por
-  // el lado. Se adelantan solo estas tres para que el ancho del riel sea exacto
-  // desde el primer cálculo; el resto de la portada sigue cargando sus fondos
-  // por proximidad.
-  const cargarRiel = () => $$('img', riel).forEach((img) => { img.loading = 'eager'; });
-  if (document.readyState === 'complete') cargarRiel();
-  else window.addEventListener('load', cargarRiel, { once: true });
-
-  // Marcador de fotos: «02 / 05» y una barra que se llena con el recorrido.
-  const fotos = paneles.filter((panel) => panel.tagName === 'FIGURE');
-  const hud = document.createElement('div');
-  hud.className = 'portada__recta-hud';
-  hud.setAttribute('aria-hidden', 'true');
-  const actual = document.createElement('b');
-  const barra = document.createElement('span');
-  barra.className = 'portada__recta-barra';
-  const total = document.createElement('span');
-  total.textContent = String(fotos.length).padStart(2, '0');
-  hud.append(actual, barra, total);
-  $('.portada__recta-marco', seccion)?.append(hud);
-  let vistas = -1;
-
-  /** Solo escribe variables: medir aquí dentro volvería a llamar a este mismo ajuste. */
-  const calcular = () => {
-    raiz.classList.toggle('portada-fija', fija.matches);
-    if (fija.matches) {
-      recorrido = Math.max(0, riel.scrollWidth - window.innerWidth);
-      izquierdas = paneles.map((panel) => panel.offsetLeft);
-      seccion.style.setProperty('--recorrido', String(recorrido));
-      seccion.style.setProperty('--alto-recta', `${Math.round(recorrido + window.innerHeight)}px`);
-    } else {
-      seccion.style.removeProperty('--recorrido');
-      seccion.style.removeProperty('--alto-recta');
-    }
-  };
-  const ajustar = () => {
-    calcular();
-    motor.medir();
-  };
-
-  motor.registrar(seccion, {
-    modo: 'fija',
-    alActualizar: (p, { ancho }) => {
-      if (!fija.matches) return;
-      const x = p * recorrido;
-      let dentro = 0;
-      // Una foto más ancha que media pantalla no llegaría nunca a entrar del
-      // todo: al final del riel todas quedan asentadas, rectas y enteras.
-      const cierre = fase(p, 0.8, 0.96);
-      paneles.forEach((panel, i) => {
-        const q = Math.max(entradaPanel(izquierdas[i] - x, ancho), cierre);
-        panel.style.setProperty('--q', q.toFixed(3));
-        if (panel.tagName === 'FIGURE' && q > 0.5) dentro += 1;
-      });
-      const n = Math.max(1, dentro);
-      if (n !== vistas) {
-        vistas = n;
-        actual.textContent = String(n).padStart(2, '0');
-      }
-    },
-  });
-  fija.addEventListener('change', ajustar);
-  new ResizeObserver(ajustar).observe(riel);
-  // Con la página ya medida (fuentes, fotos, cambios de tamaño) el recorrido se
-  // recalcula: un riel medido antes de hora dejaba la recta sin desplazamiento.
-  motor.alMedir(calcular);
-  ajustar();
-
-  // Apilado: cada foto se descubre al llegar.
-  const observador = new IntersectionObserver((entradas) => {
-    for (const entrada of entradas) {
-      if (!entrada.isIntersecting) continue;
-      entrada.target.classList.add('visto');
-      observador.unobserve(entrada.target);
-    }
-  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
-  paneles.forEach((panel) => observador.observe(panel));
-  setTimeout(() => paneles.forEach((panel) => panel.classList.add('visto')), 8000);
-}
-
-// ---------------------------------------------------------------------------
-// Boxes: la bandera cruza y el panel entra frenando
-// ---------------------------------------------------------------------------
-
-function montarBoxes(motor) {
-  const seccion = $('[data-escena="boxes"]');
-  if (!seccion) return;
-  // Es la última escena: en pantallas altas la página no da para que p llegue a
-  // 1. Se normaliza contra lo que de verdad se puede recorrer, y así la bandera
-  // se va y el panel queda asentado al llegar al final.
-  let maximo = 1;
-  const escena = motor.registrar(seccion, {
-    modo: 'vista',
-    publicar: false,
-    alActualizar: (p) => {
-      const q = p / maximo;
-      seccion.style.setProperty('--cruce', fase(q, 0.05, 0.55).toFixed(3));
-      seccion.style.setProperty('--entra', easeOutCubic(fase(q, 0.15, 0.6)).toFixed(3));
-    },
-  });
-  motor.alMedir(() => {
-    const restante = document.documentElement.scrollHeight - (escena.top + escena.alto);
-    maximo = progresoMaximo(escena.alto, restante, window.innerHeight);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Información: la ficha entra como un tablero de boxes, bloque a bloque.
-// ---------------------------------------------------------------------------
-
-/** Piezas con reloj propio: entran al asomar, se leen quietas y salen bajo la cabecera. */
-const PIEZAS = [
-  '.portada__info-cabeza',
-  '.portada__disciplina',
-  '.portada__spec',
-  '.portada__horarios',
-  '.portada__horario',
-  '.portada__record',
-  '.portada__record-meta',
-  '.portada__evento',
-  '.portada__pronto-visual',
-  '.portada__pronto-copy',
-  '.portada__galeria figure',
-  '.portada__promo',
-].join(', ');
-
-/**
- * Las cifras de telemetría se cuentan al entrar, como una lectura que se
- * estabiliza. El valor final queda siempre en una copia para lectores de
- * pantalla; la cifra que corre es solo visual. (Los tiempos de los récords
- * los cuenta su propio cronómetro, en portada-efectos.js.)
- */
-function prepararConteos() {
-  const conteos = new Map();
-  const preparar = (pieza, el, opciones) => {
-    const final = el.textContent.trim();
-    if (!/\d/.test(final)) return;
-    // El texto final sostiene el hueco (y es lo que leen los lectores de
-    // pantalla); la cifra que corre va encima. Así contar nunca cambia el
-    // ancho ni el salto de línea, y la página no se mueve bajo el dedo.
-    const molde = document.createElement('span');
-    molde.className = 'portada__conteo-molde';
-    molde.textContent = final;
-    const visible = document.createElement('i');
-    visible.className = 'portada__conteo';
-    visible.setAttribute('aria-hidden', 'true');
-    visible.textContent = final;
-    el.replaceChildren(molde, visible);
-    let ultimo = final;
-    conteos.set(pieza, (t) => {
-      const texto = interpolarCifras(final, t > 0.995 ? 1 : t, opciones);
-      if (texto === ultimo) return;
-      ultimo = texto;
-      visible.textContent = texto;
-    });
-  };
-  $$('.portada__spec').forEach((spec) => { const el = $('strong', spec); if (el) preparar(spec, el, {}); });
-  return conteos;
-}
-
-function montarInformacion(motor) {
-  const escenas = ['detalle', 'horario', 'records', 'eventos', 'galeria', 'comunidad'];
-  const secciones = escenas.flatMap((escena) => $$(`[data-escena="${escena}"]`));
+function montarNavegacionActiva() {
+  if (typeof IntersectionObserver !== 'function') return;
+  const enlaces = $$('.sitio-nav a[href^="#"]');
+  const porId = new Map(enlaces.map((enlace) => [enlace.getAttribute('href').slice(1), enlace]));
+  const secciones = [...porId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
   if (!secciones.length) return;
 
-  // Solo las escenas cerca de la pantalla suben fondo y piezas a su propia capa
-  // (ver `.en-escena` en portada.css): moverlas es componer, no repintar, y las
-  // lejanas no ocupan memoria de vídeo.
-  const cercania = new IntersectionObserver((entradas) => {
-    for (const entrada of entradas) entrada.target.classList.toggle('en-escena', entrada.isIntersecting);
-  }, { rootMargin: '60% 0px' });
-  secciones.forEach((seccion) => cercania.observe(seccion));
-
-  secciones.forEach((seccion) => {
-    motor.registrar(seccion, {
-      modo: 'vista',
-      // Solo el cierre de comunidad lee `--p` de su escena (se ilumina palabra a palabra).
-      publicar: seccion.dataset.escena === 'comunidad',
-      alActualizar: (p) => seccion.style.setProperty('--info-p', fase(p, 0, 1).toFixed(3)),
-    });
-  });
-
-  // La columna y el techo se miden al montar y al cambiar el tamaño, nunca
-  // dentro del fotograma: leer el layout mientras se escriben variables lo
-  // forzaría una vez por pieza.
-  const cabecera = $('.entrada__barra');
-  let techo = 82;
-  const columnas = new Map();
-  const medirPiezas = () => {
-    techo = cabecera?.offsetHeight || 82;
-    for (const pieza of columnas.keys()) {
-      const padre = pieza.parentElement;
-      const ancho = padre?.clientWidth || 1;
-      const izquierda = pieza.getBoundingClientRect().left - (padre?.getBoundingClientRect().left ?? 0);
-      columnas.set(pieza, Math.max(0, Math.min(1, izquierda / ancho)));
+  const marcar = (id) => {
+    for (const [clave, enlace] of porId) {
+      if (clave === id) enlace.setAttribute('aria-current', 'location');
+      else enlace.removeAttribute('aria-current');
     }
   };
-
-  const conteos = prepararConteos();
-  $$(PIEZAS).forEach((pieza) => {
-    columnas.set(pieza, 0);
-    const conteo = conteos.get(pieza);
-    const escena = motor.registrar(pieza, {
-      modo: 'vista',
-      publicar: false,
-      alActualizar: (p, { alto }) => {
-        const arriba = alto - p * (alto + escena.alto);
-        const retraso = columnas.get(pieza) * alto * 0.14;
-        const entrada = entradaPieza(arriba, alto, retraso);
-        pieza.style.setProperty('--item-in', entrada.toFixed(3));
-        pieza.style.setProperty('--item-out', salidaPieza(arriba, escena.alto, techo).toFixed(3));
-        conteo?.(entrada);
-      },
-    });
-  });
-  motor.alMedir(medirPiezas);
-
   const observador = new IntersectionObserver((entradas) => {
     for (const entrada of entradas) {
-      if (!entrada.isIntersecting) continue;
-      entrada.target.classList.add('visto');
-      observador.unobserve(entrada.target);
+      if (entrada.isIntersecting) marcar(entrada.target.id);
+      else if (porId.get(entrada.target.id)?.hasAttribute('aria-current')) marcar('');
     }
-  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+  }, { rootMargin: '-45% 0px -50% 0px' });
   secciones.forEach((seccion) => observador.observe(seccion));
-  setTimeout(() => secciones.forEach((seccion) => seccion.classList.add('visto')), 9000);
 }
 
 // ---------------------------------------------------------------------------
-// Rótulos sin reloj propio: se levantan al asomar
+// Horarios: qué jornada es hoy y si la pista está abierta
 // ---------------------------------------------------------------------------
 
-/**
- * Los titulares de escena ya van palabra a palabra con su pieza
- * (portada-efectos.js). La recta no tiene reloj por pieza: su rótulo se parte
- * igual y se levanta con `--revela` cuando la escena asoma.
- */
-function montarRotuloDeLaRecta() {
-  const cabeza = $('.portada__recta-cabeza');
-  const h2 = cabeza && $('h2', cabeza);
-  if (!h2) return;
-  let indice = 0;
-  for (const nodo of [...h2.childNodes]) {
-    if (nodo.nodeType !== Node.TEXT_NODE) continue;
-    const trozos = nodo.textContent.split(/(\s+)/).filter(Boolean).map((parte) => {
-      if (/^\s+$/.test(parte)) return document.createTextNode(parte);
-      const palabra = document.createElement('span');
-      palabra.className = 'palabra';
-      palabra.style.setProperty('--w', String(indice++));
-      const interior = document.createElement('span');
-      interior.className = 'palabra__i';
-      interior.textContent = parte;
-      palabra.append(interior);
-      return palabra;
-    });
-    nodo.replaceWith(...trozos);
+function montarHorarioVivo(ahora = new Date()) {
+  for (const fila of $$('.horario')) {
+    const rango = rangoDeTexto($('.horario__horas', fila)?.textContent ?? '');
+    const estado = estadoJornada(diaDeTexto($('.horario__dia', fila)?.textContent ?? ''), rango, ahora);
+    let etiqueta = $('.horario__estado', fila);
+    if (!estado) {
+      delete fila.dataset.estado;
+      etiqueta?.remove();
+      continue;
+    }
+    fila.dataset.estado = estado;
+    if (!etiqueta) {
+      etiqueta = document.createElement('span');
+      etiqueta.className = 'horario__estado';
+      fila.append(etiqueta);
+    }
+    etiqueta.textContent = textoJornada(estado, rango);
   }
-  h2.classList.add('con-palabras');
+}
+
+// ---------------------------------------------------------------------------
+// Galería: avanzar y retroceder con los botones
+// ---------------------------------------------------------------------------
+
+function montarGaleria() {
+  const pista = $('#galeria-pista');
+  const atras = $('[data-galeria="atras"]');
+  const adelante = $('[data-galeria="adelante"]');
+  if (!pista || !atras || !adelante) return;
+
+  const actualizar = () => {
+    const maximo = pista.scrollWidth - pista.clientWidth;
+    atras.disabled = pista.scrollLeft <= 4;
+    adelante.disabled = pista.scrollLeft >= maximo - 4;
+  };
+  const mover = (sentido) => {
+    pista.scrollBy({ left: sentido * pista.clientWidth * 0.72, behavior: sinMovimiento() ? 'auto' : 'smooth' });
+  };
+  atras.addEventListener('click', () => mover(-1));
+  adelante.addEventListener('click', () => mover(1));
+  pista.addEventListener('scroll', () => requestAnimationFrame(actualizar), { passive: true });
+  window.addEventListener('resize', actualizar, { passive: true });
+  window.addEventListener('load', actualizar, { once: true });
+  actualizar();
+}
+
+// ---------------------------------------------------------------------------
+// Apertura: el semáforo se enciende, se apaga y el titular sale
+// ---------------------------------------------------------------------------
+
+/** Las cinco luces tardan 0,8 s en encenderse; se apagan un instante después. */
+const LUCES_FUERA_MS = 1250;
+
+function arrancarApertura() {
+  let repetida = raiz.classList.contains('portada-rapida');
+  try { sessionStorage.setItem('portada-vista', '1'); } catch { /* sin almacenamiento: la apertura completa */ }
+  if (!raiz.classList.contains('portada-intro')) repetida = true;
+
+  const salir = () => requestAnimationFrame(() => {
+    raiz.classList.remove('portada-luces');
+    raiz.classList.remove('portada-intro');
+  });
+  if (repetida) { salir(); return; }
+
+  const imagen = $('.hero__foto img');
+  const esperas = [document.fonts?.ready, imagen?.decode?.()].filter(Boolean);
+  // El titular nunca espera más de un instante a la foto o a las fuentes.
+  Promise.race([Promise.allSettled(esperas), new Promise((r) => setTimeout(r, 1200))]).then(() => {
+    raiz.classList.add('portada-luces');
+    setTimeout(salir, LUCES_FUERA_MS);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Revelado: cada bloque aparece al llegar, en orden
+// ---------------------------------------------------------------------------
+
+function montarRevelado() {
+  const bloques = $$('.revela');
+  const observador = new IntersectionObserver((entradas) => {
+    // Los que llegan juntos se escalonan; el que llega solo no espera.
+    let orden = 0;
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      const bloque = entrada.target;
+      bloque.style.setProperty('--orden', String(orden++));
+      bloque.classList.add('visto');
+      observador.unobserve(bloque);
+    }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  bloques.forEach((bloque) => observador.observe(bloque));
+  // En papel no hay nada que esperar.
+  window.addEventListener('beforeprint', () => bloques.forEach((bloque) => bloque.classList.add('visto')));
+}
+
+// ---------------------------------------------------------------------------
+// Plano: el trazado se dibuja y un punto lo recorre mientras se ve
+// ---------------------------------------------------------------------------
+
+function montarPlano() {
+  const plano = $('.plano');
+  const svg = plano && $('svg', plano);
+  const recorrido = plano && $('animateMotion', plano);
+  if (!svg || typeof recorrido?.beginElement !== 'function') return;
+
+  let arrancado = false;
+  const observador = new IntersectionObserver(([entrada]) => {
+    if (!entrada.isIntersecting) {
+      svg.pauseAnimations?.();
+      return;
+    }
+    if (arrancado) {
+      svg.unpauseAnimations?.();
+      return;
+    }
+    arrancado = true;
+    // Primero se dibuja la línea (portada.css); después sale el punto.
+    setTimeout(() => {
+      plano.classList.add('en-marcha');
+      recorrido.beginElement();
+    }, 2900);
+  }, { threshold: 0.35 });
+  observador.observe(plano);
+}
+
+// ---------------------------------------------------------------------------
+// Récords: el cronómetro corre hasta el tiempo real
+// ---------------------------------------------------------------------------
+
+function montarCronometro() {
+  const tablero = $('.tiempos');
+  const celdas = $$('.tiempo__marca', tablero ?? document).map((el) => ({
+    el,
+    final: el.textContent.trim(),
+    valor: Number.parseFloat(el.textContent),
+  }));
+  if (!tablero || !celdas.length || celdas.some((c) => !Number.isFinite(c.valor))) return;
+
+  const correr = ({ el, final, valor }, retraso) => {
+    // El valor real queda para los lectores de pantalla; lo que corre es solo visual.
+    el.setAttribute('aria-label', final);
+    const duracion = 1400;
+    const inicio = performance.now() + retraso;
+    const paso = (ahora) => {
+      const t = (ahora - inicio) / duracion;
+      if (t >= 1) {
+        el.textContent = final;
+        el.removeAttribute('aria-label');
+        return;
+      }
+      el.textContent = tiempoEnTexto(valorContado(valor, Math.max(0, t)), 2, final.length);
+      requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  };
   const observador = new IntersectionObserver(([entrada]) => {
     if (!entrada.isIntersecting) return;
-    cabeza.classList.add('revelado');
     observador.disconnect();
-  }, { rootMargin: '0px 0px -15% 0px', threshold: 0.2 });
-  observador.observe(cabeza);
-  setTimeout(() => cabeza.classList.add('revelado'), 9000);
-}
-
-// ---------------------------------------------------------------------------
-// Vuelta en la cabecera: un minimapa del circuito que se recorre con el scroll
-// ---------------------------------------------------------------------------
-
-const TRAZADO = 'M70 186H318q46 0 46-46v-8q0-34-34-34h-58q-24 0-36-20l-14-24q-12-20-36-20H92q-50 0-50 50v56q0 46 28 46z';
-
-function montarVuelta(motor) {
-  const interior = $('.entrada__barra-interior');
-  const accion = interior && $('.entrada__accion', interior);
-  if (!accion) return;
-
-  // El analizador de HTML ya coloca el <svg> en su espacio de nombres.
-  const plantilla = document.createElement('template');
-  plantilla.innerHTML = `<div class="entrada__vuelta" aria-hidden="true">
-    <svg class="entrada__vuelta-mapa" viewBox="28 14 350 188">
-      <path class="entrada__vuelta-base" d="${TRAZADO}"/>
-      <path class="entrada__vuelta-traza" d="${TRAZADO}" pathLength="1"/>
-      <circle class="entrada__vuelta-auto" r="12"/>
-    </svg>
-    <span class="entrada__vuelta-avance"></span>
-  </div>`;
-  const vuelta = plantilla.content.firstElementChild;
-  const base = $('.entrada__vuelta-base', vuelta);
-  const traza = $('.entrada__vuelta-traza', vuelta);
-  const auto = $('.entrada__vuelta-auto', vuelta);
-  const avance = $('.entrada__vuelta-avance', vuelta);
-  interior.insertBefore(vuelta, accion);
-
-  let largo = 0;
-  let visible = false;
-  let ultimo = '';
-  const pintar = (fraccion) => {
-    if (!visible) return;
-    const punto = base.getPointAtLength(fraccion * largo);
-    auto.setAttribute('cx', punto.x.toFixed(1));
-    auto.setAttribute('cy', punto.y.toFixed(1));
-    traza.style.setProperty('stroke-dashoffset', (1 - fraccion).toFixed(4));
-    const texto = `${String(Math.round(fraccion * 100)).padStart(3, '0')}%`;
-    if (texto !== ultimo) { avance.textContent = texto; ultimo = texto; }
-  };
-  const fraccionActual = () => Math.min(1, window.scrollY / Math.max(1, raiz.scrollHeight - window.innerHeight));
-  motor.alMedir(() => {
-    // En pantallas estrechas la vuelta no se pinta: tampoco se calcula.
-    visible = vuelta.getClientRects().length > 0;
-    if (visible && !largo) largo = base.getTotalLength();
-    pintar(fraccionActual());
-  });
-  motor.alCuadro(({ fraccion }) => pintar(fraccion));
-}
-
-// ---------------------------------------------------------------------------
-// Fichas de tienda: se inclinan hacia el puntero (son enlaces: se pueden pulsar)
-// ---------------------------------------------------------------------------
-
-function montarFichasInclinables() {
-  if (!punteroFino()) return;
-  $$('a.portada__promo').forEach((ficha) => {
-    let rect = null;
-    ficha.addEventListener('pointerenter', () => { rect = ficha.getBoundingClientRect(); }, { passive: true });
-    ficha.addEventListener('pointermove', (evento) => {
-      if (!rect) rect = ficha.getBoundingClientRect();
-      const x = (evento.clientX - rect.left) / rect.width - 0.5;
-      const y = (evento.clientY - rect.top) / rect.height - 0.5;
-      ficha.style.setProperty('--incl-x', `${(-y * 14).toFixed(2)}deg`);
-      ficha.style.setProperty('--incl-y', `${(x * 16).toFixed(2)}deg`);
-    }, { passive: true });
-    ficha.addEventListener('pointerleave', () => {
-      rect = null;
-      ficha.style.removeProperty('--incl-x');
-      ficha.style.removeProperty('--incl-y');
-    }, { passive: true });
-  });
+    celdas.forEach((celda, i) => correr(celda, 350 + i * 180));
+  }, { threshold: 0.4 });
+  observador.observe(tablero);
 }
 
 // ---------------------------------------------------------------------------
 // Montaje
 // ---------------------------------------------------------------------------
 
-montarMira();
-montarHalos();
-montarFondosDiferidos();
+montarDesplazamiento();
+montarNavegacionActiva();
 montarHorarioVivo();
-montarVolverArriba();
+setInterval(() => montarHorarioVivo(), 60_000);
+montarGaleria();
 
-if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') {
-  montarProgresoSimple();
+if (conMovimiento) {
+  raiz.classList.add('portada-animada');
+  montarRevelado();
+  montarPlano();
+  montarCronometro();
+  arrancarApertura();
 } else {
-  raiz.classList.add('portada-motor');
-  const motor = crearMotor();
-  const salida = $('[data-escena="salida"]');
-  if (salida) motor.registrar(salida, { modo: 'fija' });
-  montarTablero(motor);
-  montarRecta(motor);
-  montarRotuloDeLaRecta();
-  montarInformacion(motor);
-  montarVuelta(motor);
-  montarFichasInclinables();
-  montarBoxes(motor);
-  montarEfectos(motor);
-  motor.iniciar();
-  arrancarSalida();
+  raiz.classList.remove('portada-intro', 'portada-luces');
 }

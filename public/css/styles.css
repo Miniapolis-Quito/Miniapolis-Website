@@ -2153,10 +2153,12 @@ input, select, textarea {
    toca a su vecina—. Sora lleva todo el texto corrido. La mono queda solo
    para lo que se teclea o se compara carácter a carácter: códigos y claves.
 
-   Hovers. Cada control reacciona como un coche en parrilla: se inclina hacia
-   delante, suelta estelas y se enciende. Lo intenso vive dentro de
-   `(hover: hover)`; en táctil queda la respuesta al toque, y quien pide menos
-   movimiento recibe los estados finales sin viaje.
+   Hovers. Cada control reacciona como un coche en parrilla: se inclina un
+   poco más hacia delante, sube un par de píxeles y un brillo lo cruza una
+   sola vez. Nada parpadea en bucle ni cambia de ancho al pasar por encima:
+   un botón que se estira mueve el texto de alrededor. Lo intenso vive dentro
+   de `(hover: hover)`; en táctil queda la respuesta al toque, y quien pide
+   menos movimiento recibe los estados finales sin viaje.
    ========================================================================== */
 
 :root {
@@ -2293,12 +2295,19 @@ th {
 /* El botón deja de ser una pastilla y pasa a ser un chasis: el fondo se
    dibuja en `::before`, inclinado hacia delante como el número de un coche
    de carreras, y el texto queda recto encima. Así el halo no se recorta y la
-   inclinación no deforma las letras. */
-.boton:not(.boton--enlace):not(.boton--nav) {
+   inclinación no deforma las letras.
+
+   Los colores del chasis se declaran con la especificidad mínima de `.boton`:
+   así cada variante (`.boton.boton--principal`, `--fantasma`…) los pisa. Si
+   vivieran en la regla de abajo, sus dos :not() les darían más peso que a
+   cualquier variante y todos los botones saldrían grises. */
+.boton {
   --chasis: var(--superficie-2);
   --chasis-borde: var(--borde-fuerte);
   --chasis-halo: 0 0 0 0 transparent;
   --texto-boton: var(--texto);
+}
+.boton:not(.boton--enlace):not(.boton--nav) {
   position: relative;
   isolation: isolate;
   overflow: visible;
@@ -2316,7 +2325,6 @@ th {
   padding-inline: 26px;
   transition:
     color var(--t-hover) var(--curva-hover),
-    letter-spacing var(--t-turbo) var(--curva-turbo),
     transform var(--t-turbo) var(--curva-turbo),
     opacity var(--t-hover) var(--curva-hover);
 }
@@ -2341,31 +2349,14 @@ th {
     transform var(--t-turbo) var(--curva-turbo);
 }
 
-/* Las estelas: tres trazos que salen por detrás cuando el botón acelera. */
-.boton:not(.boton--enlace):not(.boton--nav)::after {
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 4px);
-  left: auto;
-  bottom: auto;
-  width: 30px;
-  height: 2px;
-  border-radius: 2px;
-  content: '';
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--estela));
-  box-shadow: -10px -8px 0 -.5px var(--estela-2, rgba(147, 210, 65, .45)), -16px 8px 0 -.5px var(--estela-2, rgba(147, 210, 65, .45));
-  opacity: 0;
-  transform: translate3d(22px, -50%, 0) scaleX(.2);
-  transform-origin: right center;
-  animation: none;
-  transition: opacity var(--t-hover) var(--curva-hover), transform var(--t-hover) var(--curva-hover);
-}
+/* El ::after de las capas anteriores (el barrido del botón principal) no
+   vale para el chasis: el brillo ya lo lleva el ::before. */
+.boton:not(.boton--enlace):not(.boton--nav)::after { content: none; }
 
 .boton.boton--principal {
   --chasis: var(--acento);
   --chasis-borde: rgba(255, 255, 255, .22);
-  --chasis-halo: 0 12px 30px -16px rgba(147, 210, 65, .85);
+  --chasis-halo: 0 10px 26px -16px rgba(147, 210, 65, .7);
   --texto-boton: var(--sobre-acento);
   background: transparent;
   border-color: transparent;
@@ -2413,46 +2404,55 @@ th {
 
 /* --- Campos: el rótulo se enciende con el foco ---------------------------- */
 
-.campo > label { transition: color 240ms var(--curva-hover), letter-spacing 520ms var(--curva-turbo); }
-.campo:focus-within > label { color: var(--acento); letter-spacing: .22em; }
+.campo > label { transition: color 240ms var(--curva-hover); }
+.campo:focus-within > label { color: var(--acento); }
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  animation: campoEncendido 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px rgba(147, 210, 65, .14);
 }
-@keyframes campoEncendido {
-  0%, 100% { box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px rgba(147, 210, 65, .12), 0 0 22px -6px rgba(147, 210, 65, .6); }
-  50% { box-shadow: 0 0 0 1px var(--acento), 0 0 0 6px rgba(147, 210, 65, .06), 0 0 30px -4px rgba(147, 210, 65, .75); }
+
+/* La pestaña activa es una píldora verde. Con movimiento, la píldora es el
+   indicador que pone movimiento.js y viaja de una pestaña a otra en vez de
+   apagarse aquí y encenderse allá; sin él, cada pestaña pinta la suya. */
+.pestanas--con-indicador .pestanas__indicador {
+  top: 5px;
+  bottom: 5px;
+  z-index: 0;
+  height: auto;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px -14px rgba(147, 210, 65, .8);
 }
+.pestanas--con-indicador .pestana {
+  position: relative;
+  z-index: 1;
+  transition: color 340ms var(--curva), background-color var(--t-rapida) var(--curva);
+}
+.pestanas--con-indicador .pestana[aria-selected="true"] { background: transparent; }
+/* La píldora no sube con el puntero: el texto tampoco, o se separarían. */
+.pestanas--con-indicador .pestana:hover { transform: none; box-shadow: none; }
 
 /* ==========================================================================
    Estados de hover (solo con puntero real)
    ========================================================================== */
 
 @media (hover: hover) {
-  /* Botones: acelera, se inclina, brilla y suelta estelas. */
+  /* Botones: sube, se inclina un poco más y un brillo lo cruza una vez. */
   .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled) {
     transform: translateY(-2px);
-    letter-spacing: .17em;
     color: var(--texto-boton-hover, var(--texto-boton));
   }
   .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::before {
-    transform: skewX(-18deg) scaleX(1.035);
+    transform: skewX(-16deg) scaleX(1.02);
     background-position: 260% 0, 0 0;
     transition:
       background-position var(--t-hover) var(--curva-hover),
       box-shadow var(--t-hover) var(--curva-hover),
       transform var(--t-hover) var(--curva-hover);
   }
-  .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::after {
-    opacity: 1;
-    transform: translate3d(0, -50%, 0) scaleX(1);
-    animation: estelas 520ms linear 420ms infinite;
-  }
-
   .boton.boton--principal:hover:not(:disabled) {
     --chasis: #93d241;
-    --chasis-halo: 0 0 0 1px rgba(147, 210, 65, .5), 0 18px 44px -12px rgba(147, 210, 65, .95), 0 0 70px -14px rgba(147, 210, 65, .8);
+    --chasis-halo: 0 0 0 1px rgba(147, 210, 65, .45), 0 16px 36px -14px rgba(147, 210, 65, .75);
     color: var(--sobre-acento);
     background: transparent;
     box-shadow: none;
@@ -2460,7 +2460,7 @@ textarea:focus-visible {
   .boton.boton--fantasma:hover:not(:disabled) {
     --chasis: rgba(147, 210, 65, .1);
     --chasis-borde: var(--acento);
-    --chasis-halo: 0 0 34px -10px rgba(147, 210, 65, .7);
+    --chasis-halo: 0 0 28px -12px rgba(147, 210, 65, .55);
     --texto-boton-hover: var(--texto);
     background: transparent;
   }
@@ -2481,26 +2481,12 @@ textarea:focus-visible {
     --chasis-halo: 0 0 30px -12px rgba(147, 210, 65, .7);
   }
 
-  .boton--enlace:hover:not(:disabled) { letter-spacing: .03em; }
-  .boton--nav:hover:not(:disabled) { color: var(--acento); text-shadow: 0 0 16px rgba(147, 210, 65, .55); }
+  .boton--nav:hover:not(:disabled) { color: var(--acento); }
 
   /* Pestañas */
-  .pestana:hover { letter-spacing: .17em; text-shadow: 0 0 14px rgba(147, 210, 65, .45); }
-  .pestana[aria-selected="true"]:hover { text-shadow: none; }
+  .pestana:hover { color: var(--texto); }
+  .pestana[aria-selected="true"]:hover { color: var(--sobre-acento); }
 
-}
-
-@keyframes estelas {
-  0% { transform: translate3d(0, -50%, 0) scaleX(1); opacity: 1; }
-  50% { transform: translate3d(-6px, -50%, 0) scaleX(1.3); opacity: .7; }
-  100% { transform: translate3d(0, -50%, 0) scaleX(1); opacity: 1; }
-}
-
-@keyframes arranque {
-  0% { transform: translateX(0); opacity: 1; filter: none; }
-  45% { transform: translateX(14px); opacity: 0; filter: blur(2px); }
-  46% { transform: translateX(-12px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; filter: none; }
 }
 
 @media (max-width: 620px) {
@@ -2522,10 +2508,7 @@ textarea:focus-visible {
   .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled),
 .boton:not(.boton--enlace):not(.boton--nav):hover:not(:disabled)::before { transform: none !important; }
   .boton:not(.boton--enlace):not(.boton--nav)::before { transform: skewX(var(--inclinacion)) !important; }
-  .boton:not(.boton--enlace):not(.boton--nav)::after { display: none; }
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible { animation: none; }
+  .pestanas--con-indicador .pestana { transition: none; }
 }
 
 @media print {

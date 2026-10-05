@@ -54,7 +54,6 @@ reales del recinto:
 | `pista/miniapolis-hangar-vertical.webp` | Arcos y ventanas del hangar sobre el circuito, 941 × 1671 |
 | `pista/miniapolis-curb-detail-vertical.webp` | Detalle vertical limpio del bordillo rojo y blanco, 941 × 1672 |
 | `pista/miniapolis-asphalt-detail.webp` | Textura vertical limpia del asfalto y línea de carrera, 941 × 1672 |
-| `pista/miniapolis-track-vertical.webp` | Reserva optimizada del trazado vertical real, 941 × 1670 |
 | `pista/miniapolis-pit-corner-vertical.webp` | Esquina limpia junto al área de boxes, 941 × 1671 |
 | `pista/miniapolis-gallery-curb-vertical.webp` | Curva vertical con bordillo y arquitectura real, 941 × 1671 |
 | `pista/miniapolis-gallery-car-vertical.webp` | Auto RC único en la pista, 941 × 1671 |
@@ -71,24 +70,38 @@ personas, camiones, autos de fondo y objetos accidentales sin añadir geometría
 decoración nueva. Las variantes responsive deben compartir el encuadre de su
 master y declarar en HTML sus dimensiones reales.
 
-### Fondos editoriales y tarjetas
+### Sin fotos de fondo
 
-Los fondos de `contenido/` y `contenido/tarjetas/` también parten únicamente
-del material de `oficial/`. Cada bloque usa un encuadre, recorte o tratamiento
-fotográfico distinto para evitar repeticiones visuales; no se añaden edificios,
-vehículos, personas, luces ni señalética que no estén en la pista documentada.
-Los productos de tienda conservan sus PNG reales y los recursos de marca,
-Wallet, PWA y escaneo quedan fuera de esta colección fotográfica.
+La portada no pone fotos detrás de las fichas ni del texto: cada foto va en un
+`<img>` con su `alt`, su tamaño y su carga diferida, y se ve entera. La única
+excepción es la apertura, donde un velo negro asegura el contraste del titular.
+Por eso, en octubre de 2026, se retiraron los fondos de `contenido/` y
+`contenido/tarjetas/` (13 MB que ya no usaba ninguna pantalla), junto con
+`landing/miniapolis-car-detail` y `pista/miniapolis-track-vertical`. Están en el
+historial de git si alguna vez hacen falta.
 
-Los archivos de `landing/` se reservan para composiciones editoriales: `miniapolis-car-detail`
-usa el auto RC como sujeto único y `miniapolis-track-atmosphere` muestra solo el
-ambiente real del circuito. `miniapolis-action`, `miniapolis-track-portrait` y el
-directorio `pista-real/` no son fuentes permitidas para la portada.
-
-`miniapolis-track-atmosphere` se sirve en 1675 × 939 con variantes 1440/960;
-`miniapolis-car-detail` se sirve en 1221 × 1289 con variantes 900/640. El hero
-usa `pista/miniapolis-track-wide` y sus variantes 1440/960; la panorámica oficial
+`landing/miniapolis-track-atmosphere` muestra solo el ambiente real del
+circuito y se sirve en 1675 × 939 con variantes 1440/960. El hero usa
+`pista/miniapolis-track-wide` y sus variantes 1440/960; la panorámica oficial
 queda como material de origen y no se carga en la portada.
+`miniapolis-action`, `miniapolis-track-portrait` y el directorio `pista-real/` no
+son fuentes permitidas para la portada.
+
+### Tienda
+
+| Archivo | Producto |
+| --- | --- |
+| `tienda/lancia-delta-integrale.webp` | Lancia Delta Integrale de competición |
+| `tienda/amortiguadores.webp` | Amortiguadores de alto rendimiento |
+| `tienda/llantas.webp` | Llantas de competición |
+| `tienda/motor-competicion.webp` | Motor brushless de competición |
+| `tienda/rc-builder.webp` | Kit de RC Builder (próximamente) |
+
+Las fotos de producto de Racing Hobbies llegaron como PNG de hasta 1,8 MB y en
+proporciones distintas. Para la tienda se componen todas en 800 × 1000 (4:5),
+con el producto centrado sobre su propio fondo, que se extiende con un borde
+difuminado para que no se note el corte; cada una tiene su variante `-480`.
+Pesan entre 19 y 51 KB.
 
 Los logotipos, iconos PWA, recursos de Wallet y la vista de cámara del escáner no
 se editan con ImageGen ni forman parte de esta colección fotográfica.

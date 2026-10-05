@@ -1,12 +1,12 @@
 /**
  * La portada en cada formato de pantalla, con la aplicación real levantada.
  *
- * Una portada con tanto movimiento se rompe de formas que solo se ven en un
- * tamaño concreto: un titular que la máscara recorta en una pantalla enorme, la
- * bandera que se queda a medias porque en una pantalla alta no hay scroll para
- * terminarla, un botón que en un móvil mide 32 px. Aquí se recorre una lista de
- * formatos reales (escritorio, portátil, tableta, móvil, apaisado, movimiento
- * reducido) y se comprueban las mismas cosas en todos.
+ * Una portada se rompe de formas que solo se ven en un tamaño concreto: un
+ * titular que se parte a mitad de palabra en un móvil pequeño, una tira de
+ * fotos que empuja la página de lado, un botón que en un teléfono mide 32 px,
+ * un bloque que se queda transparente porque nadie lo vio llegar. Aquí se
+ * recorre una lista de formatos reales (escritorio, portátil, tableta, móvil,
+ * apaisado, movimiento reducido) y se comprueban las mismas cosas en todos.
  *
  * No entra en `npm test` porque necesita Playwright, que no es dependencia del
  * proyecto. Ver el README de esta carpeta.
@@ -30,8 +30,8 @@ const FORMATOS = [
   ['netbook 1024×600', 1024, 600],
   ['iPad apaisado', 1024, 768, { tactil: true }],
   ['iPad Pro vertical', 1024, 1366, { tactil: true }],
-  ['justo en el límite (900×600)', 900, 600],
-  ['justo bajo el límite (899×800)', 899, 800],
+  ['tableta 900×600', 900, 600],
+  ['tableta 899×800', 899, 800],
   ['tableta vertical 820×1180', 820, 1180, { tactil: true }],
   ['tableta vertical 768×1024', 768, 1024, { tactil: true }],
   ['móvil grande 430×932', 430, 932, { tactil: true }],
@@ -63,10 +63,42 @@ const opciones = { args: ['--no-sandbox'] };
 if (process.env.CHROMIUM_PATH) opciones.executablePath = process.env.CHROMIUM_PATH;
 const navegador = await chromium.launch(opciones);
 
-async function irA(pagina, y) {
-  await pagina.evaluate((valor) => window.scrollTo({ top: Math.max(0, Math.round(valor)), behavior: 'instant' }), y);
-  // El motor suaviza el scroll: hay que darle tiempo a asentarse.
-  await pagina.waitForTimeout(1500);
+/** Lo que se mide en cualquier punto de la página. */
+function medirPagina() {
+  const vw = document.documentElement.clientWidth;
+  // Una palabra partida entre dos líneas deja dos rectángulos en su rango.
+  const partidas = [];
+  for (const titular of document.querySelectorAll('h1, h2, h3, .cifra__valor, .horario__horas, .tiempo__marca')) {
+    const recorrer = (nodo) => {
+      for (const hijo of nodo.childNodes) {
+        if (hijo.nodeType === Node.ELEMENT_NODE) { recorrer(hijo); continue; }
+        if (hijo.nodeType !== Node.TEXT_NODE) continue;
+        for (const m of hijo.textContent.matchAll(/\S+/g)) {
+          const rango = document.createRange();
+          rango.setStart(hijo, m.index);
+          rango.setEnd(hijo, m.index + m[0].length);
+          const lineas = new Set([...rango.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)));
+          if (lineas.size > 1) partidas.push(m[0]);
+        }
+      }
+    };
+    recorrer(titular);
+  }
+  const fuera = [...document.querySelectorAll('main h1, main h2, main p, main strong, main .boton')]
+    .filter((e) => !e.closest('.galeria, .productos'))
+    .map((e) => { const r = e.getBoundingClientRect(); return { e: e.textContent.trim().slice(0, 30), l: r.left, r: r.right, w: r.width }; })
+    .filter(({ l, r, w }) => w > 0 && (r > vw + 1 || l < -1));
+  // Un texto que no cabe en su caja y se recorta, o dos rótulos que se pisan.
+  const recortados = [...document.querySelectorAll('.pestanas, .pestana, .sitio-nav a, .boton, .horario__dia, .horario__horas, .horario__estado, .tiempo__marca, .cifra__valor, .evento h3, .disciplina h3')]
+    .filter((e) => e.getBoundingClientRect().width > 0 && e.scrollWidth > e.clientWidth + 1)
+    .map((e) => e.textContent.trim().slice(0, 30));
+  const choca = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+  const pisados = [...document.querySelectorAll('.horario')].filter((fila) => {
+    const dia = fila.querySelector('.horario__dia').getBoundingClientRect();
+    const horas = fila.querySelector('.horario__horas').getBoundingClientRect();
+    return choca(dia, horas);
+  }).map((fila) => fila.querySelector('.horario__dia').textContent.trim());
+  return { desborde: document.documentElement.scrollWidth - vw, partidas, fuera, recortados, pisados };
 }
 
 async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false } = {}) {
@@ -82,91 +114,102 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
     if (m.type() === 'error') errores.push(`${nombre} console: ${m.text()}`);
   });
   await pagina.goto(B, { waitUntil: 'networkidle' });
-  await pagina.waitForTimeout(2600);
+  // El semáforo y la salida del titular duran algo menos de tres segundos.
+  await pagina.waitForTimeout(3000);
 
   const fallos = [];
   const hero = await pagina.evaluate(() => {
-    const vw = window.innerWidth;
-    const rects = (sel) => [...document.querySelectorAll(sel)].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
-    // Un párrafo o el kicker ocupan todo el ancho de su caja: se mide el texto, no la caja.
-    const texto = (sel) => [...document.querySelectorAll(sel)].map((e) => { const rango = document.createRange(); rango.selectNodeContents(e); return rango.getBoundingClientRect(); }).filter((r) => r.width > 0);
-    const textos = [
-      ...rects('.portada__linea > span'), ...texto('.portada__kicker'),
-      ...rects('.portada__acciones .boton'), ...rects('.portada__enlace'),
-    ];
-    const auto = document.querySelector('.portada__auto').getBoundingClientRect();
-    const tapa = (r) => Math.min(r.right, auto.right) - Math.max(r.left, auto.left) > 6 && Math.min(r.bottom, auto.bottom) - Math.max(r.top, auto.top) > 6;
-    const pequenos = [...document.querySelectorAll('.entrada__accion, .portada__enlace')]
-      .map((e) => [e.className, e.getBoundingClientRect().height])
+    const raiz = document.documentElement;
+    const cabecera = document.querySelector('.sitio-barra').getBoundingClientRect();
+    const titulo = document.querySelector('#titulo-entrada').getBoundingClientRect();
+    const acciones = document.querySelector('.hero__acciones').getBoundingClientRect();
+    const cifras = document.querySelector('.hero__cifras').getBoundingClientRect();
+    const tactiles = [...document.querySelectorAll('.sitio-accion, .hero__acciones a')]
+      .map((e) => [e.textContent.trim(), e.getBoundingClientRect().height])
       .filter(([, h]) => h < 44);
+    const visible = (s) => {
+      const e = document.querySelector(s);
+      const c = getComputedStyle(e);
+      return e.getBoundingClientRect().width > 0 && c.opacity === '1' && c.visibility === 'visible';
+    };
     return {
-      desborde: document.documentElement.scrollWidth - vw,
-      lineaRecortada: [...document.querySelectorAll('.portada__linea')].some((l) => l.scrollWidth > l.clientWidth + 1),
-      textoFuera: textos.some((r) => r.right > vw + 1 || r.left < -1),
-      textoTapado: textos.some(tapa),
-      pequenos,
-      motor: document.documentElement.classList.contains('portada-motor'),
-      visible: ['#titulo-entrada', '.portada__auto img', '.entrada__acceso-panel'].every((s) => {
-        const e = document.querySelector(s);
-        const c = getComputedStyle(e);
-        return e.getBoundingClientRect().width > 0 && c.opacity === '1' && c.visibility === 'visible';
-      }),
+      animada: raiz.classList.contains('portada-animada'),
+      intro: raiz.classList.contains('portada-intro'),
+      lineaRecortada: [...document.querySelectorAll('.hero__linea')].some((l) => l.scrollWidth > l.clientWidth + 1),
+      bajoCabecera: titulo.top >= cabecera.bottom - 1,
+      solapa: acciones.bottom > cifras.top + 1,
+      tactiles,
+      titularVisible: visible('#titulo-entrada') && visible('.hero__lead') && visible('.hero__cifras'),
+      ...(() => {
+        // Sin movimiento, nada espera a ser revelado: todo se ve sin bajar.
+        const ocultos = [...document.querySelectorAll('.revela')].filter((e) => getComputedStyle(e).opacity !== '1');
+        return { ocultosAlAbrir: ocultos.length };
+      })(),
     };
   });
-  if (hero.desborde !== 0) fallos.push(`desborde horizontal de ${hero.desborde}px`);
-  if (hero.lineaRecortada) fallos.push('la máscara recorta el titular');
-  if (hero.textoFuera) fallos.push('hay texto fuera de la pantalla');
-  if (hero.textoTapado) fallos.push('el auto tapa texto del hero');
-  if (tactil && hero.pequenos.length) fallos.push(`áreas táctiles menores de 44 px: ${JSON.stringify(hero.pequenos)}`);
-  if (reducido && hero.motor) fallos.push('con movimiento reducido no debe montarse el motor');
-  if (reducido && !hero.visible) fallos.push('con movimiento reducido todo debe verse');
+  if (hero.lineaRecortada) fallos.push('la ventana del titular lo recorta');
+  if (!hero.bajoCabecera) fallos.push('la cabecera tapa el titular');
+  if (hero.solapa) fallos.push('las cifras se montan sobre los botones de la apertura');
+  if (tactil && hero.tactiles.length) fallos.push(`áreas táctiles menores de 44 px: ${JSON.stringify(hero.tactiles)}`);
+  if (!hero.titularVisible) fallos.push('la apertura no terminó de verse');
+  if (hero.intro) fallos.push('la apertura se quedó a medias');
+  if (reducido && hero.animada) fallos.push('con movimiento reducido no debe animarse nada');
+  if (reducido && hero.ocultosAlAbrir) fallos.push(`con movimiento reducido hay ${hero.ocultosAlAbrir} bloques ocultos`);
+  if (!reducido && !hero.animada) fallos.push('con movimiento la portada debe animarse');
 
-  const escenas = await pagina.evaluate(() => {
-    const s = (q) => { const b = document.querySelector(q).getBoundingClientRect(); return { top: b.top + scrollY, h: b.height }; };
-    return { recta: s('[data-escena=recta]'), boxes: s('[data-escena=boxes]'), fija: document.documentElement.classList.contains('portada-fija') };
-  });
-  const esperadaFija = !reducido && ancho >= 900 && alto >= 560 && ancho >= alto;
-  if (escenas.fija !== esperadaFija) fallos.push(`recorrido horizontal ${escenas.fija ? 'activo' : 'apagado'} y debería estar ${esperadaFija ? 'activo' : 'apagado'}`);
-
-  // Recta: al empezar y al terminar el recorrido no se recorta ninguna foto.
-  for (const [fraccion, etiqueta] of [[0.02, 'inicio'], [0.98, 'final']]) {
-    await irA(pagina, escenas.recta.top + Math.max(0, escenas.recta.h - alto) * fraccion);
-    const m = await pagina.evaluate(() => ({
-      vw: innerWidth, vh: innerHeight,
-      paneles: [...document.querySelectorAll('.portada__panel')].map((e) => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, h: b.height }; }),
-      tituloB: document.querySelector('.portada__recta-cabeza h2').getBoundingClientRect().bottom,
-    }));
-    if (esperadaFija) {
-      const foto = m.paneles.filter((p) => p.h > 0);
-      if (etiqueta === 'inicio' && foto[0].l < -2) fallos.push('la primera foto arranca recortada');
-      if (etiqueta === 'final' && foto.at(-1).r > m.vw + 2) fallos.push('la última foto termina recortada');
-      const techo = Math.min(...foto.map((p) => p.t));
-      if (m.tituloB > techo + 4) fallos.push('el título de la recta tapa las fotos');
-    } else if (etiqueta === 'inicio') {
-      if (m.paneles.some((p) => p.r > m.vw + 2 || p.l < -2)) fallos.push('hay fotos apiladas fuera de la pantalla');
-      if (m.paneles.some((p) => p.h > m.vh * 0.85 + 2)) fallos.push('hay fotos apiladas más altas que la pantalla');
-    }
+  // Recorre la página de arriba abajo: en cada parada, nada se sale ni se parte.
+  const alto_total = await pagina.evaluate(() => document.documentElement.scrollHeight);
+  const vistos = new Set();
+  for (let y = 0; y < alto_total; y += Math.round(alto * 0.8)) {
+    await pagina.evaluate((valor) => window.scrollTo({ top: valor, behavior: 'instant' }), y);
+    await pagina.waitForTimeout(260);
+    const m = await pagina.evaluate(medirPagina);
+    if (m.desborde > 0) vistos.add(`desborde horizontal de ${m.desborde}px`);
+    for (const palabra of m.partidas) vistos.add(`palabra partida: «${palabra}»`);
+    for (const f of m.fuera) vistos.add(`texto fuera de la pantalla: «${f.e}»`);
+    for (const t of m.recortados) vistos.add(`texto recortado: «${t}»`);
+    for (const t of m.pisados) vistos.add(`el día y la hora se pisan: «${t}»`);
   }
+  fallos.push(...vistos);
 
-  // Final de la página: lo último que se ve es el formulario, asentado.
-  await irA(pagina, await pagina.evaluate(() => document.documentElement.scrollHeight));
+  // Al llegar al final: todo se reveló, el panel de acceso entra y el pie se ve.
+  await pagina.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  await pagina.waitForTimeout(1600);
   const fin = await pagina.evaluate(() => {
-    const seccion = document.querySelector('[data-escena=boxes]');
-    const panel = document.querySelector('.entrada__acceso-panel');
-    const r = panel.getBoundingClientRect();
-    const zoom = Number(getComputedStyle(panel).zoom) || 1;
+    const panel = document.querySelector('.entrada__acceso-panel').getBoundingClientRect();
     return {
-      cruce: seccion.style.getPropertyValue('--cruce'),
-      entra: seccion.style.getPropertyValue('--entra'),
-      dentro: r.left >= -1 && r.right <= innerWidth + 1,
-      pie: document.querySelector('.entrada__pie').getBoundingClientRect().bottom <= innerHeight + 1,
-      pestanas: [...document.querySelectorAll('.entrada__acceso-panel .pestana')].map((e) => e.getBoundingClientRect().height / zoom),
+      sinRevelar: [...document.querySelectorAll('.revela')].filter((e) => getComputedStyle(e).opacity !== '1').map((e) => e.className),
+      dentro: panel.left >= -1 && panel.right <= innerWidth + 1,
+      pie: document.querySelector('.sitio-pie__base').getBoundingClientRect().bottom <= innerHeight + 1,
+      pestanas: [...document.querySelectorAll('.entrada__acceso-panel .pestana')].map((e) => e.getBoundingClientRect().height),
+      progreso: Number(getComputedStyle(document.querySelector('.sitio-progreso span')).getPropertyValue('--progreso')),
     };
   });
-  if (!reducido && (fin.cruce !== '1.000' || fin.entra !== '1.000')) fallos.push(`la escena de boxes queda a medias al final (cruce ${fin.cruce}, entra ${fin.entra})`);
+  if (fin.sinRevelar.length) fallos.push(`bloques que nunca aparecieron: ${fin.sinRevelar.join(', ')}`);
   if (!fin.dentro) fallos.push('el panel de acceso se sale de la pantalla');
   if (!fin.pie) fallos.push('el pie no se ve al llegar al final');
   if (fin.pestanas.some((h) => h > 52)) fallos.push(`las pestañas de acceso se parten en dos líneas (${fin.pestanas.join(', ')} px)`);
+  if (fin.progreso < 0.99) fallos.push(`el avance de lectura no llega al final (${fin.progreso})`);
+
+  // Galería: con botones (pantallas anchas) retrocede apagado y avanzar desplaza la tira.
+  const galeria = await pagina.evaluate(async () => {
+    const pista = document.querySelector('#galeria-pista');
+    const atras = document.querySelector('[data-galeria="atras"]');
+    const adelante = document.querySelector('[data-galeria="adelante"]');
+    pista.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const conBotones = adelante.getBoundingClientRect().width > 0;
+    if (!conBotones) return { conBotones, desliza: pista.scrollWidth > pista.clientWidth };
+    const antes = { atras: atras.disabled, adelante: adelante.disabled };
+    adelante.click();
+    await new Promise((r) => setTimeout(r, 900));
+    return { conBotones, antes, movida: pista.scrollLeft > 0, atrasLuego: atras.disabled };
+  });
+  if (galeria.conBotones) {
+    if (!galeria.antes.atras || galeria.antes.adelante) fallos.push('al empezar, la galería solo debe dejar avanzar');
+    if (!galeria.movida || galeria.atrasLuego) fallos.push('avanzar no desplaza la galería');
+  } else if (!galeria.desliza) {
+    fallos.push('sin botones, la galería debe poder deslizarse');
+  }
 
   await contexto.close();
   if (fallos.length) throw new Error(fallos.join('; '));
