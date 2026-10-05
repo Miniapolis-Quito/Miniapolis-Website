@@ -255,7 +255,10 @@ test('la portada se marca como página de entrada', () => {
 });
 
 test('la portada no repite el mismo encuadre fotográfico en dos bloques', () => {
-  const imagenes = [...leer(PORTADA).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
+  // El logotipo firma la cabecera y el pie: es la marca, no un encuadre.
+  const imagenes = [...leer(PORTADA).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((src) => !src.endsWith('/miniapolis-logo-oficial.webp'));
   const repetidas = imagenes.filter((src, indice) => imagenes.indexOf(src) !== indice);
   assert.deepEqual(repetidas, [], 'cada bloque visual debe tener una imagen principal distinta');
 });
@@ -308,16 +311,24 @@ test('la tipografía es Saira ancha para la voz de pista y Sora para el texto, s
 });
 
 test('ningún texto lleva interletraje negativo: las letras nunca se tocan', () => {
-  for (const hoja of ['public/css/styles.css', 'public/css/portada.css']) {
+  for (const hoja of ['public/css/styles.css', 'public/css/portada.css', 'public/css/publico.css', 'public/css/posiciones.css']) {
     const negativos = [...leer(hoja).matchAll(/letter-spacing:\s*-[\d.]+/g)].map((m) => `${hoja}: ${m[0]}`);
     assert.deepEqual(negativos, []);
   }
 });
 
-test('los botones tienen hover de pista (chasis inclinado con estelas) y los comentarios de la hoja cierran', () => {
+test('los botones tienen hover de pista (chasis inclinado) sin bucles ni saltos y los comentarios de la hoja cierran', () => {
   const css = leer('public/css/styles.css');
   assert.match(css, /\.boton:not\(\.boton--enlace\):not\(\.boton--nav\)::before\s*\{[^}]*transform:\s*skewX\(var\(--inclinacion\)\)/s);
-  assert.match(css, /@keyframes estelas/);
+  // Un hover no se repite en bucle ni estira las letras: eso mueve el texto de alrededor.
+  assert.doesNotMatch(css, /@keyframes (?:estelas|campoEncendido)/);
+  assert.doesNotMatch(css, /infinite[^;]*;[^}]*\}[^{]*(?:\.boton|input)|(?:\.boton|input)[^{]*:(?:hover|focus-visible)[^{]*\{[^}]*infinite/);
+  assert.doesNotMatch(css, /\.boton[^{]*:hover[^{]*\{[^}]*letter-spacing/);
+  assert.doesNotMatch(css, /\.pestana:hover\s*\{[^}]*letter-spacing/);
+  // Los colores del chasis se declaran en `.boton` para que cada variante los pise.
+  assert.match(css, /\.boton\s*\{\s*--chasis:\s*var\(--superficie-2\);/);
+  assert.match(css, /\.boton\.boton--principal\s*\{\s*--chasis:\s*var\(--acento\);/);
+  assert.doesNotMatch(css, /\.boton:not\(\.boton--enlace\):not\(\.boton--nav\)\s*\{[^}]*--chasis:/, 'con dos :not() la regla base pesaría más que cualquier variante');
   // Cada comentario de bloque abre y cierra: un `*/` huérfano se come la regla siguiente.
   const aperturas = (css.match(/\/\*/g) || []).length;
   const cierres = (css.match(/\*\//g) || []).length;

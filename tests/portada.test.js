@@ -6,108 +6,64 @@ import path from 'node:path';
 const leer = (f) => fs.readFileSync(f, 'utf8');
 const HTML = leer('public/index.html');
 const CSS = leer('public/css/portada.css');
+const PUBLICO = leer('public/css/publico.css');
 const JS = leer('public/js/portada.js');
-const MOTOR = leer('public/js/portada-motor.js');
+const ARRANQUE = leer('public/js/portada-arranque.js');
+const CALCULOS = leer('public/js/portada-calculos.js');
 
 const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
   .map((m) => ({ selector: m[1].trim(), cuerpo: m[2] }));
 
-test('la portada anula lo que el resto de la app le pondría por defecto', () => {
-  assert.match(CSS, /\.pagina-entrada main\s*\{[^}]*padding:\s*0/, 'el `main` compartido trae relleno propio');
-  assert.match(CSS, /\.pagina-entrada::before\s*\{[^}]*display:\s*none/, 'la rejilla de body::before no es de la portada');
-  assert.match(CSS, /\.pagina-entrada \.boton\.boton--principal\s*\{[^}]*--chasis:\s*var\(--acento\)/, 'el botón primario de la portada debe ser verde');
-  assert.match(CSS, /\.pagina-entrada main > \.revelar\s*,\s*\.pagina-entrada main > \.revelar--visible\s*\{[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las escenas');
-});
-
-test('el enlace «Ver la pista» comparte el chasis inclinado de los botones', () => {
-  assert.match(CSS, /\.portada__enlace::before\s*\{[^}]*transform:\s*skewX\(var\(--inclinacion\)\)/s);
-  assert.match(CSS, /\.portada__enlace:hover::before\s*\{[^}]*box-shadow:[^}]*var\(--acento\)/s);
-});
-
-test('la portada carga los estilos compartidos, los propios y sus dos módulos', () => {
+test('la portada carga los estilos compartidos, los públicos, los propios y sus módulos', () => {
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/styles\.css">/);
+  assert.match(HTML, /<link rel="stylesheet" href="\/css\/publico\.css">/);
   assert.match(HTML, /<link rel="stylesheet" href="\/css\/portada\.css">/);
   assert.match(HTML, /<script type="module" src="\/js\/login\.js">/);
   assert.match(HTML, /<script type="module" src="\/js\/portada\.js">/);
   assert.match(HTML, /<body class="pagina-entrada">/);
+  assert.match(JS, /from '\.\/portada-calculos\.js'/);
 });
 
-test('el HTML declara las cuatro escenas y portada.js las monta', () => {
-  for (const escena of ['salida', 'tablero', 'recta', 'boxes']) {
-    assert.match(HTML, new RegExp(`data-escena="${escena}"`), `falta la escena ${escena} en el HTML`);
-    assert.ok(JS.includes(`[data-escena="${escena}"]`), `portada.js no monta la escena ${escena}`);
+test('el sitio público anula lo que la app le pondría por defecto', () => {
+  assert.match(PUBLICO, /\.pagina-entrada main,\s*\.pagina-posiciones main\s*\{\s*padding:\s*0/, 'el `main` compartido trae relleno propio');
+  assert.match(PUBLICO, /\.pagina-entrada::before,\s*\.pagina-posiciones::before\s*\{\s*display:\s*none/, 'la rejilla de body::before no es del sitio público');
+  assert.match(PUBLICO, /\.pagina-entrada main > \.revelar,[\s\S]*?\{[^}]*opacity:\s*1;[^}]*animation:\s*none/, 'el revelado genérico de shell.js no debe tocar las secciones');
+});
+
+test('la cabecera queda fija, con la marca, la navegación y la acción de entrar', () => {
+  assert.match(HTML, /<header class="sitio-barra">/);
+  assert.match(HTML, /class="sitio-marca"[^>]*>\s*<img src="\.\/images\/miniapolis-logo-oficial\.webp"/);
+  assert.match(HTML, /class="sitio-accion boton boton--principal[^"]*" href="#acceso"/);
+  assert.match(PUBLICO, /\.sitio-barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s);
+  assert.match(PUBLICO, /\.sitio-barra\s*\{[^}]*border-bottom:\s*1px\s+solid/s);
+  assert.match(HTML, /<a class="sitio-saltar" href="#contenido">/, 'quien navega con teclado puede saltarse la cabecera');
+  assert.match(HTML, /<main id="contenido">/);
+});
+
+test('cada ancla interna lleva a una sección que existe', () => {
+  const ids = new Set([...HTML.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  const anclas = [...HTML.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(anclas.length > 10);
+  assert.deepEqual(anclas.filter((ancla) => !ids.has(ancla)), []);
+  assert.doesNotMatch(HTML, /href="#"/);
+});
+
+test('cada sección se nombra con su propio titular', () => {
+  const secciones = [...HTML.matchAll(/<section\b[^>]*>/g)].map((m) => m[0]);
+  assert.ok(secciones.length >= 10);
+  for (const seccion of secciones) {
+    const id = seccion.match(/aria-labelledby="([^"]+)"/)?.[1];
+    assert.ok(id, `sección sin nombre accesible: ${seccion}`);
+    assert.match(HTML, new RegExp(`<h[12] id="${id}"`), `${id} debe ser el titular de su sección`);
   }
+  assert.equal((HTML.match(/<h1\b/g) ?? []).length, 1, 'un solo titular principal');
 });
 
-test('portada.js importa todas las funciones que usa el motor de escenas', () => {
-  assert.match(JS, /import \{[^}]*\beaseOutCubic\b[^}]*\} from '\.\/portada-motor\.js'/s);
-  assert.match(JS, /easeOutCubic\(fase\(/);
-});
-
-test('solo lo clicable tiene :hover', () => {
-  const CLICABLE = /^(?:a|button|input|select|textarea|label|summary)(?![\w-])|\.(?:boton(?:--[\w-]+)?|entrada__accion|entrada__marca|portada__enlace|pestana)(?![\w-])|\[role="tab"\]/;
-  const fallos = [];
-  for (const { selector } of reglas(CSS)) {
-    if (selector.startsWith('@') || !selector.includes(':hover')) continue;
-    for (const uno of selector.split(',')) {
-      if (!uno.includes(':hover')) continue;
-      const compuestos = uno.trim().split(/\s*[>+~]\s*|\s+/).filter((c) => c.includes(':hover'));
-      for (const compuesto of compuestos) {
-        if (!CLICABLE.test(compuesto)) fallos.push(uno.trim());
-      }
-    }
-  }
-  assert.deepEqual(fallos, [], 'estos selectores dan hover a algo que no se puede pulsar');
-  assert.doesNotMatch(JS + MOTOR, /mouse(?:enter|over)/, 'el movimiento no debe depender de eventos de hover');
-});
-
-test('lo que se oculta para animarse solo se oculta bajo .portada-motor', () => {
-  const ocultan = /(?:^|[;\s])opacity:\s*0\s*(?:;|$)|clip-path:\s*inset\(0 0 100% 0\)|clip-path:\s*inset\(0 0 0 100%\)|visibility:\s*hidden/;
-  const fallos = reglas(CSS)
-    .filter(({ selector }) => !selector.startsWith('@') && !/^(?:\d|from|to)/.test(selector))
-    .filter(({ cuerpo }) => ocultan.test(cuerpo))
-    .filter(({ selector }) => !selector.includes('.portada-motor'))
-    .map(({ selector }) => selector);
-  assert.deepEqual(fallos, [], 'sin movimiento, todo el contenido debe verse');
-});
-
-test('sin movimiento reducido el motor no se monta y la página queda estática', () => {
-  assert.match(JS, /import \{ sinMovimiento \} from '\.\/movimiento\.js'/);
-  assert.match(
-    JS,
-    /if \(reducir[^)]*\) \{\s*montarProgresoSimple\(\);\s*\} else \{[\s\S]*classList\.add\('portada-motor'\)[\s\S]*crearMotor\(\)/,
-    'crearMotor y .portada-motor solo pueden ir en la rama con movimiento',
-  );
-  assert.doesNotMatch(CSS, /(?<!\.portada-motor )\.portada__estela\s*\{[^}]*display:\s*block/, 'la estela solo existe con motor');
-});
-
-test('la mira conserva su apariencia y reacciona solo a lo clicable', () => {
-  for (const pieza of ['.entrada__mira--segmento', '.entrada__mira-centro', 'miraOrbita', 'mix-blend-mode: screen', '.mira-sobre-objetivo .entrada__mira']) {
-    assert.ok(CSS.includes(pieza), `falta ${pieza} en portada.css`);
-  }
-  const clicables = JS.match(/const CLICABLES = '([^']+)'/)?.[1] ?? '';
-  assert.ok(clicables.includes('a,') && clicables.includes('button'), 'la lista de objetivos debe incluir enlaces y botones');
-  assert.doesNotMatch(clicables, /figure|img|foto|picture/, 'la mira no debe reaccionar a fotos');
-  const alMover = JS.match(/'pointermove',\s*\(evento\) => \{[\s\S]*?\n  \}, \{ passive: true \}\)/)?.[0] ?? '';
-  assert.match(JS, /mira\.style\.setProperty\('--puntero-x'/, 'la mira publica la posición del puntero');
-  assert.match(alMover, /requestAnimationFrame/, 'la posición se agrupa en el fotograma de pintura');
-  assert.doesNotMatch(CSS, /\.entrada__mira\s*\{[^}]*transition:\s*[^;}]*\btransform\b/s, 'la mira no debe interpolar su posición');
-});
-
-test('la cabecera de la portada permanece fija durante el scroll', () => {
-  assert.match(HTML, /<header class="entrada__barra"[^>]*>/);
-  assert.match(HTML, /miniapolis-logo-oficial\.webp/);
-  assert.match(HTML, /class="entrada__accion"[^>]*href="#acceso"/);
-  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0\s+0\s+auto;/s);
-});
-
-test('la cabecera permanece negra desde el primer render y no anima su entrada', () => {
-  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*background:\s*rgba\([^;]+\);/s);
-  assert.match(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\s*\{[^}]*border-bottom:\s*1px\s+solid\s+var\(--borde\);/s);
-  assert.doesNotMatch(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra::before\s*\{/);
-  assert.doesNotMatch(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra\.esta-desplazada\s*\{[^}]*background:\s*transparent;/s);
-  assert.doesNotMatch(CSS, /\.pagina-entrada\s*>\s*\.entrada__barra[^}]*transition:\s*transform/);
+test('los índices de sección van en orden, sin saltos ni repeticiones', () => {
+  const indices = [...HTML.matchAll(/class="seccion__indice"><span>(\d{2})<\/span>/g)].map((m) => Number(m[1]));
+  assert.deepEqual(indices, indices.map((_, i) => i + 1));
+  assert.ok(indices.length >= 8);
 });
 
 test('la portada mantiene un copy breve, natural y sin ruido', () => {
@@ -117,17 +73,16 @@ test('la portada mantiene un copy breve, natural y sin ruido', () => {
   for (const frase of ['Asfalto, curvas y control.', 'Rectas, curvas y asfalto.', 'A tu ritmo.', 'Una pista para sentir cada vuelta.', 'READY TO RACE', 'FRAME / 01']) {
     assert.ok(!HTML.includes(frase) && !CSS.includes(frase), `sigue presente el texto decorativo «${frase}»`);
   }
-  for (const clase of ['entrada__capitulo', 'portada__gigante', 'portada__desliza', 'portada__cinta', 'portada__fantasma', 'entrada__pie-gigante']) {
-    assert.doesNotMatch(HTML, new RegExp(`class="[^"]*${clase}`), `sigue presente el elemento decorativo .${clase}`);
-  }
-  for (const rotulo of ['LISTO PARA CORRER', '11 / ACCESO', 'INSTALACIONES', 'FICHA TÉCNICA', 'CRONOMETRAJE', 'CALENDARIO', 'BOXES // SESIONES ABIERTAS', 'MEJOR VUELTA // CRONO EN VIVO', 'ABIERTO', 'NOCTURNA', 'CARRERA', 'PRÓXIMA OBRA', 'CUADRO /']) {
-    assert.doesNotMatch(CSS, new RegExp(rotulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `sigue presente el rótulo decorativo «${rotulo}»`);
-  }
   assert.doesNotMatch(HTML, /·/, 'sin puntos medios como separadores');
   assert.doesNotMatch(HTML, /Track\s+\d+/i, 'sin identificadores artificiales de pista');
   assert.doesNotMatch(HTML, /0°\d+|\d+°\d+['’]/, 'sin coordenadas decorativas');
   assert.doesNotMatch(HTML, /césped|cesped|grass/i, 'la pista es de asfalto');
   assert.doesNotMatch(HTML, /para disfrutar de verdad|dar tus primeras vueltas|buscar tu mejor tiempo|desde cualquier celular/);
+});
+
+test('las cifras de la pista no se contradicen entre secciones', () => {
+  assert.doesNotMatch(HTML, /400\s*m²/, 'el asfalto mide 1.000 m² en toda la portada');
+  assert.ok((HTML.match(/1\.000\s*(?:<small>)?m²/g) ?? []).length >= 2);
 });
 
 test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () => {
@@ -136,97 +91,161 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
     assert.match(etiqueta, /\sheight="\d+"/, `sin height: ${etiqueta.slice(0, 80)}`);
     assert.match(etiqueta, /\salt="/, `sin alt: ${etiqueta.slice(0, 80)}`);
   }
-  assert.match(HTML, /<img[^>]*miniapolis-track-wide\.webp[^>]*fetchpriority="high"/, 'el hero limpio es lo primero que se pide');
+  assert.match(HTML, /<img[^>]*miniapolis-track-wide\.webp[^>]*fetchpriority="high"/, 'la foto de la apertura es lo primero que se pide');
+  assert.match(HTML, /<link rel="preload" as="image"[^>]*imagesrcset="[^"]*miniapolis-track-wide-960\.webp/, 'la precarga pide el mismo tamaño que usará la foto');
   const rutas = new Set();
   for (const m of HTML.matchAll(/\b(?:src|href)="(\.[^"]*\/images\/[^"]+)"/g)) rutas.add(m[1]);
-  for (const m of HTML.matchAll(/\bsrcset="([^"]+)"/g)) {
+  for (const m of HTML.matchAll(/\b(?:srcset|imagesrcset)="([^"]+)"/g)) {
     for (const candidato of m[1].split(',')) rutas.add(candidato.trim().split(/\s+/)[0]);
   }
   const faltan = [...rutas].filter((r) => !fs.existsSync(path.join('public', r.replace(/^\.\//, ''))));
   assert.deepEqual(faltan, []);
+  // Solo la foto de la apertura y el logotipo de la cabecera se piden al abrir.
+  const sinDiferir = [...HTML.matchAll(/<img\b[^>]*>/g)].map((m) => m[0])
+    .filter((img) => !/fetchpriority="high"/.test(img) && !/loading="lazy"/.test(img));
+  assert.equal(sinDiferir.length, 1);
+  assert.match(sinDiferir[0], /miniapolis-logo-oficial\.webp/);
 });
 
-test('portada.css y el JS no dependen de rutas absolutas ni de terceros', () => {
-  assert.doesNotMatch(CSS, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
-  assert.doesNotMatch(JS + MOTOR, /https?:\/\//, 'sin CDN ni recursos externos');
+test('las hojas y el JS no dependen de rutas absolutas ni de terceros', () => {
+  for (const hoja of [CSS, PUBLICO]) assert.doesNotMatch(hoja, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
+  assert.doesNotMatch(JS + ARRANQUE + CALCULOS, /https?:\/\//, 'sin CDN ni recursos externos');
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
+  assert.doesNotMatch(HTML, /<script>(?!<\/script>)/, 'sin scripts en línea');
 });
 
-test('las cajas de contenido permanecen nítidas durante la coreografía', () => {
-  assert.doesNotMatch(CSS, /(^|[;\s])filter:\s*blur\(/, 'el movimiento puede desplazar u ocultar suavemente, pero nunca desenfocar el contenido');
-});
-
-test('el motor solo escribe las variables que el CSS consume', () => {
-  for (const variable of ['--p', '--vel', '--vel-abs', '--scroll', '--scroll-px']) {
-    assert.ok(MOTOR.includes(`'${variable}'`), `el motor no publica ${variable}`);
-    assert.ok(CSS.includes(`var(${variable}`), `portada.css no usa ${variable}`);
+test('solo lo clicable tiene :hover', () => {
+  const CLICABLE = /^(?:a|button|input|select|textarea|label|summary)(?![\w-])|\.(?:boton(?:--[\w-]+)?|sitio-[\w-]+|enlace-flecha|producto|galeria__boton|pestana)(?![\w-])|\[role="tab"\]/;
+  const fallos = [];
+  for (const hoja of [CSS, PUBLICO]) {
+    for (const { selector } of reglas(hoja)) {
+      if (selector.startsWith('@') || !selector.includes(':hover')) continue;
+      for (const uno of selector.split(',')) {
+        if (!uno.includes(':hover')) continue;
+        const compuestos = uno.trim().split(/\s*[>+~]\s*|\s+/).filter((c) => c.includes(':hover'));
+        for (const compuesto of compuestos) {
+          if (!CLICABLE.test(compuesto)) fallos.push(uno.trim());
+        }
+      }
+    }
   }
+  assert.deepEqual(fallos, [], 'estos selectores dan hover a algo que no se puede pulsar');
+  assert.doesNotMatch(JS, /mouse(?:enter|over)/, 'el movimiento no depende de eventos de hover');
 });
 
-test('los formatos: boxes se asienta al final, el toque mide 44 px y el recorrido horizontal es solo apaisado', () => {
-  assert.match(JS, /progresoMaximo\(/, 'la última escena debe normalizarse contra lo que se puede recorrer');
-  assert.match(JS, /motor\.alMedir\(/);
-  assert.match(JS, /min-aspect-ratio:\s*1\/1/, 'en pantallas verticales una foto ancha no cabe en un recorrido horizontal');
-  const tactil = CSS.slice(CSS.indexOf('@media (pointer: coarse)'));
-  assert.ok((tactil.match(/min-height:\s*44px/g) ?? []).length >= 2, 'la acción de cabecera y el enlace del hero miden 44 px en táctil');
-  assert.doesNotMatch(CSS, /\.portada__salida-copy\s*\{[^}]*max-width:\s*min\(880px,\s*100%\)/, 'un tope fijo recorta el titular en pantallas enormes');
-  assert.match(CSS, /--alto-panel:\s*min\([^)]*50vw\)/, 'una foto ancha nunca debe medir más que la pantalla');
+test('lo que se oculta para animarse solo se oculta bajo .portada-intro o .portada-animada', () => {
+  const ocultan = /(?:^|[;\s])opacity:\s*0\s*(?:;|$)|clip-path:\s*inset\(|visibility:\s*hidden|translate3d\(0,\s*1\d\d%/;
+  const fallos = reglas(CSS)
+    .filter(({ selector }) => !selector.startsWith('@') && !/^(?:\d|from|to)/.test(selector))
+    .filter(({ cuerpo }) => ocultan.test(cuerpo))
+    .filter(({ selector }) => !/\.portada-(?:intro|animada)/.test(selector))
+    .map(({ selector }) => selector);
+  assert.deepEqual(fallos, [], 'sin movimiento, todo el contenido debe verse');
 });
 
-test('portada.css cierra cada bloque y cada comentario: una llave huérfana anida el resto de la hoja', () => {
-  const aperturas = (CSS.match(/\/\*/g) || []).length;
-  const cierres = (CSS.match(/\*\//g) || []).length;
-  assert.equal(aperturas, cierres, 'hay un comentario sin abrir o sin cerrar');
-  let profundidad = 0;
-  for (const caracter of sinComentarios(CSS)) {
-    if (caracter === '{') profundidad += 1;
-    if (caracter === '}') profundidad -= 1;
-    assert.ok(profundidad >= 0, 'hay una llave de cierre de más');
-  }
-  assert.equal(profundidad, 0, 'hay un bloque sin cerrar');
+test('sin movimiento no se anima nada y la página queda completa y quieta', () => {
+  assert.match(JS, /import \{ sinMovimiento \} from '\.\/movimiento\.js'/);
+  assert.match(JS, /const conMovimiento = !sinMovimiento\(\) && typeof IntersectionObserver === 'function'/);
+  assert.match(
+    JS,
+    /if \(conMovimiento\) \{\s*raiz\.classList\.add\('portada-animada'\);[\s\S]*arrancarApertura\(\);\s*\} else \{\s*raiz\.classList\.remove\('portada-intro', 'portada-luces'\);/,
+    'la clase que anima solo se pone con movimiento, y sin él se retira la apertura',
+  );
+  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
-test('cada pieza de contenido tiene su propio reloj: se lee quieta entre la entrada y la salida', () => {
-  assert.match(JS, /entradaPieza\(/, 'la entrada de cada pieza depende de su posición');
-  assert.match(JS, /salidaPieza\(/, 'la salida de cada pieza depende de la cabecera');
-  assert.match(JS, /setProperty\('--item-in'/);
-  assert.match(JS, /setProperty\('--item-out'/);
-  assert.doesNotMatch(CSS, /\.portada__info\s*\{[^}]*width:\s*min\(1400px/, 'las escenas van a sangre como la salida y la recta');
-});
-
-test('el telón baja antes del primer fotograma y se retira solo si el motor no llega', () => {
-  const ARRANQUE = leer('public/js/portada-arranque.js');
+test('la apertura se prepara antes del primer fotograma y se retira sola si el módulo no llega', () => {
   const cabeza = HTML.slice(0, HTML.indexOf('</head>'));
   assert.match(cabeza, /<script src="\/js\/portada-arranque\.js"><\/script>/, 'script clásico en el <head>, no módulo diferido');
-  assert.match(ARRANQUE, /prefers-reduced-motion: reduce/, 'sin movimiento no hay telón');
-  assert.match(ARRANQUE, /classList\.add\('portada-telon'\)/);
-  assert.doesNotMatch(ARRANQUE, /classList\.add\('portada-motor'\)/, 'el motor solo lo monta portada.js');
-  assert.match(ARRANQUE, /setTimeout\([\s\S]*classList\.remove\('portada-telon'\)/, 'si el motor falla, la página queda estática y completa');
-  assert.match(CSS, /\.portada-telon \.portada__semaforo,\s*\.portada-motor \.portada__semaforo\s*\{/);
-  assert.match(CSS, /\.portada-motor \.portada__semaforo\s*\{\s*animation:\s*telon/, 'el telón solo se abre con el motor');
+  assert.match(ARRANQUE, /prefers-reduced-motion: reduce/, 'sin movimiento no hay apertura');
+  assert.match(ARRANQUE, /classList\.add\('portada-intro'\)/);
+  assert.doesNotMatch(ARRANQUE, /classList\.add\('portada-animada'\)/, 'la animación solo la monta portada.js');
+  assert.match(ARRANQUE, /setTimeout\([\s\S]*classList\.remove\('portada-intro'\)/, 'si el módulo falla, la página queda estática y completa');
+  assert.match(JS, /Promise\.race\(\[Promise\.allSettled\(esperas\), new Promise\(\(r\) => setTimeout\(r, \d+\)\)\]\)/, 'el titular nunca espera indefinidamente a la foto');
 });
 
-test('los rótulos de la portada están en español', () => {
-  const rotulos = [...sinComentarios(CSS).matchAll(/content:\s*'([^']*[A-Za-z][^']*)'/g)].map((m) => m[1]);
-  for (const ingles of ['READY', 'ACCESS', 'FACILITIES', 'TELEMETRY', 'TIMING', 'CALENDAR', 'VISUALS', 'SUPPLY', 'PIT LANE', 'BEST LAP', 'OPEN', 'NIGHT', 'RACE', 'NEXT BUILD', 'FRAME']) {
+test('el semáforo enciende cinco luces de una en una', () => {
+  assert.equal((HTML.match(/<div class="hero__semaforo" aria-hidden="true">(?:<span><\/span>){5}<\/div>/g) ?? []).length, 1);
+  for (let n = 2; n <= 5; n += 1) {
+    assert.match(CSS, new RegExp(`\\.portada-luces \\.hero__semaforo span:nth-child\\(${n}\\) \\{ animation-delay: ${(n - 1) * 200}ms; \\}`));
+  }
+});
+
+test('las cajas de contenido permanecen nítidas', () => {
+  for (const hoja of [CSS, PUBLICO]) {
+    assert.doesNotMatch(hoja, /(^|[;\s])filter:\s*blur\(/, 'el movimiento puede desplazar u ocultar suavemente, pero nunca desenfocar el contenido');
+  }
+  assert.doesNotMatch(sinComentarios(CSS), /backdrop-filter/, 'un desenfoque sobre un fondo que se mueve se recalcula en cada fotograma');
+  const estiran = reglas(CSS + PUBLICO).filter(({ selector, cuerpo }) => selector.includes(':hover') && /letter-spacing/.test(cuerpo));
+  assert.deepEqual(estiran.map((r) => r.selector), [], 'un hover no cambia el ancho del texto');
+});
+
+test('fluidez: por cada desplazamiento se escribe en un único fotograma y solo en quien lo lee', () => {
+  assert.match(JS, /window\.addEventListener\('scroll', programar, \{ passive: true \}\)/);
+  assert.match(JS, /if \(pendiente\) return;\s*pendiente = true;\s*requestAnimationFrame\(pintar\)/);
+  assert.match(JS, /barra\?\.style\.setProperty\('--progreso'/);
+  assert.match(PUBLICO, /transform:\s*scaleX\(var\(--progreso, 0\)\)/, 'el avance de lectura se compone, no reescribe el layout');
+  assert.match(JS, /if \(foto && y <= altoHero\)/, 'la foto de la apertura solo se mueve mientras se ve');
+  assert.doesNotMatch(JS, /querySelector\('main'\)\.style|document\.body\.style\.setProperty/, 'ninguna variable por fotograma en un contenedor grande');
+});
+
+test('en táctil lo que se pulsa mide al menos 44 px', () => {
+  const tactil = (hoja) => hoja.slice(hoja.indexOf('@media (pointer: coarse)'));
+  assert.match(tactil(PUBLICO), /\.sitio-accion[^{]*\{\s*min-height:\s*44px/);
+  assert.match(tactil(CSS), /\.hero__acciones \.enlace-flecha\s*\{\s*min-height:\s*48px/);
+  assert.match(CSS, /\.galeria__boton\s*\{[^}]*width:\s*52px;[^}]*height:\s*52px/s);
+  assert.match(PUBLICO, /\.sitio-nav a\s*\{[^}]*min-height:\s*44px/s);
+});
+
+test('la galería se recorre con botones nombrados y con el teclado', () => {
+  for (const sentido of ['atras', 'adelante']) {
+    assert.match(HTML, new RegExp(`<button class="galeria__boton" type="button" data-galeria="${sentido}" aria-label="[^"]+" aria-controls="galeria-pista">`));
+  }
+  assert.match(HTML, /<div class="galeria revela" id="galeria-pista" tabindex="0" role="region" aria-label="[^"]+">/);
+  assert.match(JS, /atras\.disabled = /);
+  assert.match(JS, /behavior: sinMovimiento\(\) \? 'auto' : 'smooth'/);
+});
+
+test('el plano del circuito es decorativo, dice que es un esquema y su punto solo corre a la vista', () => {
+  assert.match(HTML, /<svg class="plano__dibujo"[^>]*aria-hidden="true"/);
+  assert.match(HTML, /<figcaption>Esquema ilustrativo del recinto/);
+  assert.match(HTML, /<animateMotion[^>]*begin="indefinite"/, 'el punto no arranca solo: lo arranca portada.js con movimiento');
+  assert.match(JS, /svg\.pauseAnimations\?\.\(\)/, 'fuera de pantalla el punto se detiene');
+  assert.match(CSS, /\.plano__auto\s*\{\s*display:\s*none/);
+});
+
+test('el horario dice la verdad del momento y el cronómetro no engaña a los lectores de pantalla', () => {
+  assert.match(JS, /montarHorarioVivo\(\);\s*setInterval\(\(\) => montarHorarioVivo\(\), 60_000\)/);
+  assert.match(JS, /etiqueta\.textContent = textoJornada\(estado, rango\)/, 'el estado se escribe como texto, no solo como color');
+  assert.match(JS, /el\.setAttribute\('aria-label', final\)/, 'mientras corre, se anuncia el tiempo real');
+  assert.match(JS, /tiempoEnTexto\(valorContado\(valor, Math\.max\(0, t\)\), 2, final\.length\)/, 'la cifra que corre no cambia de ancho');
+});
+
+test('los rótulos de las hojas están en español', () => {
+  const rotulos = [...sinComentarios(CSS + PUBLICO).matchAll(/content:\s*'([^']*[A-Za-z][^']*)'/g)].map((m) => m[1]);
+  for (const ingles of ['READY', 'ACCESS', 'FACILITIES', 'TELEMETRY', 'TIMING', 'CALENDAR', 'OPEN', 'NIGHT', 'RACE', 'FRAME', 'LIVE', 'NEW']) {
     assert.ok(!rotulos.some((r) => new RegExp(`\\b${ingles}\\b`).test(r)), `rótulo en inglés: ${ingles}`);
   }
 });
 
-test('fluidez: ninguna variable por fotograma se escribe en un contenedor grande', () => {
-  assert.doesNotMatch(MOTOR, /querySelector\('main'\)/, '--vel en <main> recalcula los estilos de toda la página en cada fotograma');
-  assert.match(MOTOR, /SELECTOR_VELOCIDAD/, '--vel se escribe solo en quien la lee');
-  for (const selector of MOTOR.match(/SELECTOR_VELOCIDAD = \[([\s\S]*?)\]/)[1].match(/'[^']+'/g)) {
-    const hojas = CSS + leer('public/css/portada-efectos.css');
-    assert.ok(hojas.includes(selector.slice(1, -1).split(' ').at(-1)), `${selector} no existe en las hojas de la portada`);
+test('las hojas del sitio público cierran cada bloque y cada comentario', () => {
+  for (const archivo of ['public/css/portada.css', 'public/css/publico.css', 'public/css/posiciones.css']) {
+    const hoja = leer(archivo);
+    assert.equal((hoja.match(/\/\*/g) || []).length, (hoja.match(/\*\//g) || []).length, `${archivo}: comentario sin cerrar`);
+    let profundidad = 0;
+    for (const caracter of sinComentarios(hoja)) {
+      if (caracter === '{') profundidad += 1;
+      if (caracter === '}') profundidad -= 1;
+      assert.ok(profundidad >= 0, `${archivo}: llave de cierre de más`);
+    }
+    assert.equal(profundidad, 0, `${archivo}: bloque sin cerrar`);
   }
-  assert.match(MOTOR, /if \(e\.publicar\) e\.el\.style\.setProperty\('--p'/, 'las escenas que no leen --p no lo reciben');
-  assert.match(JS, /publicar: false/);
 });
 
-test('fluidez: la posición sigue al scroll real y nada desenfoca lo que se mueve', () => {
-  assert.match(MOTOR, /suave = objetivo;/, 'suavizar la posición hace que todo lo atado al scroll llegue tarde');
-  assert.doesNotMatch(sinComentarios(CSS), /backdrop-filter:\s*blur/, 'un desenfoque sobre un fondo que se mueve se recalcula en cada fotograma');
-  assert.match(CSS, /\.portada-motor \.portada__info\.en-escena::before/, 'el fondo de la escena cercana va en su propia capa');
-  assert.match(JS, /classList\.toggle\('en-escena'/);
+test('el motor de escenas anterior ya no se carga', () => {
+  for (const archivo of ['public/js/portada-motor.js', 'public/js/portada-efectos.js', 'public/css/portada-efectos.css']) {
+    assert.ok(!fs.existsSync(archivo), `${archivo} debería haberse retirado`);
+  }
+  assert.doesNotMatch(HTML, /portada-(?:motor|efectos)/);
+  assert.doesNotMatch(HTML, /entrada__mira|portada__chispas|portada__cinta/);
 });
