@@ -83,3 +83,52 @@ export function textoJornada(estado, rango) {
   if (estado === 'cerrado') return 'Hoy ya cerró';
   return '';
 }
+
+/** 1000 → «1.000»: el separador de miles de Ecuador es el punto. */
+export function formatoMiles(n) {
+  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+/**
+ * Inclinación de la marquesina según la velocidad del desplazamiento
+ * (px/s): se tuerce hacia atrás al bajar rápido y nunca más de ±8°.
+ */
+export function inclinacionPorVelocidad(velocidad, tope = 8, escala = 420) {
+  const grados = -velocidad / escala;
+  return Math.max(-tope, Math.min(tope, Math.round(grados * 100) / 100)) || 0;
+}
+
+/**
+ * En qué punto del recorrido (0..1) se enciende cada una de las `n` curvas
+ * del plano: repartidas entre el 20 % y el 95 % de la vuelta.
+ */
+export function posicionesEnRecorrido(n, desde = 0.2, hasta = 0.95) {
+  if (n <= 0) return [];
+  if (n === 1) return [desde];
+  return Array.from({ length: n }, (_, i) => Math.round((desde + (i * (hasta - desde)) / (n - 1)) * 1000) / 1000);
+}
+
+/**
+ * Imán de un botón: cuánto se desplaza hacia el puntero, en px. `desvio` es
+ * la distancia al centro dividida por la mitad del tamaño (-1..1).
+ */
+export function atraccion(desvio, fuerza = 10) {
+  return Math.round(limitar(desvio, -1, 1) * fuerza * 100) / 100;
+}
+
+/**
+ * Una hora que rueda como un tablero de salidas: las cifras aún no fijadas
+ * cambian al azar y el resto del texto (dos puntos, guion, espacios) queda
+ * quieto. Con `p` = 1 devuelve el texto final; las cifras se fijan de
+ * izquierda a derecha. `azar` se puede inyectar para probarla.
+ */
+export function cifrasRodando(texto, p, azar = Math.random) {
+  const cifras = [...texto].filter((c) => /\d/.test(c)).length;
+  const fijadas = Math.floor(limitar(p) * cifras);
+  let vistas = 0;
+  return [...texto].map((c) => {
+    if (!/\d/.test(c)) return c;
+    vistas += 1;
+    return vistas <= fijadas ? c : String(Math.floor(azar() * 10));
+  }).join('');
+}

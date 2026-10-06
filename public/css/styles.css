@@ -88,7 +88,7 @@
   --transicion: var(--t-rapida) var(--curva);
   /* Un único ritmo para las respuestas al puntero: un poco más pausado para
      que el hover se sienta intencional y no nervioso. */
-  --t-hover: 300ms;
+  --t-hover: 220ms;
   --curva-hover: cubic-bezier(0.16, 1, 0.3, 1);
   --sombra-hover: 0 18px 42px -24px rgba(147, 210, 65, .52);
 
@@ -2052,10 +2052,11 @@ input, select, textarea {
     box-shadow: 0 16px 38px -26px rgba(147, 210, 65, .42);
   }
 
+  /* Un campo no se mueve bajo el puntero: solo se ilumina. Si saltara, el
+     texto que se está escribiendo bailaría con cada pasada del ratón. */
   input:hover:not(:disabled),
   select:hover:not(:disabled),
   textarea:hover:not(:disabled) {
-    transform: translateY(-1px);
     box-shadow: 0 12px 28px -24px rgba(147, 210, 65, .78);
   }
   .pestana:hover {
@@ -2426,9 +2427,15 @@ textarea:focus-visible {
 .pestanas--con-indicador .pestana {
   position: relative;
   z-index: 1;
-  transition: color 340ms var(--curva), background-color var(--t-rapida) var(--curva);
+  /* La pestaña que deja de estar activa suelta su verde al instante: la
+     píldora sale de debajo. */
+  transition: color 340ms var(--curva), background-color 0s;
 }
-.pestanas--con-indicador .pestana[aria-selected="true"] { background: transparent; }
+/* La nueva activa pinta su propio verde cuando la píldora termina de llegar:
+   mientras viaja, se ve la píldora; al llegar, la pestaña ya es legible por sí
+   misma (texto oscuro sobre su propio fondo verde) sin depender de lo que
+   tenga detrás. */
+.pestanas--con-indicador .pestana[aria-selected="true"] { transition: color 340ms var(--curva), background-color 0s linear 340ms; }
 /* La píldora no sube con el puntero: el texto tampoco, o se separarían. */
 .pestanas--con-indicador .pestana:hover { transform: none; box-shadow: none; }
 

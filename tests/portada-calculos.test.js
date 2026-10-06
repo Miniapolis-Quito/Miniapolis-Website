@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   limitar, easeOutCubic, valorContado, tiempoEnTexto, progresoLectura,
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
+  formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -77,3 +78,47 @@ test('textoJornada dice en palabras lo que el color sugiere', () => {
   assert.equal(textoJornada('cerrado', [540, 1080]), 'Hoy ya cerró');
   assert.equal(textoJornada('', null), '');
 });
+
+test('formatoMiles usa el punto como separador, como en Ecuador', () => {
+  assert.equal(formatoMiles(1000), '1.000');
+  assert.equal(formatoMiles(999), '999');
+  assert.equal(formatoMiles(0), '0');
+  assert.equal(formatoMiles(1234567), '1.234.567');
+  assert.equal(formatoMiles(1000.9), '1.000', 'mientras cuenta solo enseña enteros');
+});
+
+test('inclinacionPorVelocidad se tuerce contra el desplazamiento y nunca pasa del tope', () => {
+  assert.equal(inclinacionPorVelocidad(0), 0);
+  assert.ok(inclinacionPorVelocidad(840) < 0, 'al bajar se inclina hacia atrás');
+  assert.ok(inclinacionPorVelocidad(-840) > 0, 'al subir, al revés');
+  assert.equal(inclinacionPorVelocidad(840), -2);
+  assert.equal(inclinacionPorVelocidad(100000), -8);
+  assert.equal(inclinacionPorVelocidad(-100000), 8);
+  assert.ok(Object.is(inclinacionPorVelocidad(-0), 0), 'nunca devuelve -0');
+});
+
+test('posicionesEnRecorrido reparte las curvas a lo largo de la vuelta', () => {
+  assert.deepEqual(posicionesEnRecorrido(6), [0.2, 0.35, 0.5, 0.65, 0.8, 0.95]);
+  assert.deepEqual(posicionesEnRecorrido(1), [0.2]);
+  assert.deepEqual(posicionesEnRecorrido(0), []);
+  const p = posicionesEnRecorrido(9);
+  assert.ok(p.every((x, i) => i === 0 || x > p[i - 1]), 'siempre en orden de paso');
+});
+
+test('atraccion acerca el botón al puntero con un tope', () => {
+  assert.equal(atraccion(0), 0);
+  assert.equal(atraccion(0.5), 5);
+  assert.equal(atraccion(-1, 7), -7);
+  assert.equal(atraccion(3), 10, 'fuera del botón no tira más');
+  assert.equal(atraccion(-3, 7), -7);
+});
+
+test('cifrasRodando solo hace rodar las cifras y las fija de izquierda a derecha', () => {
+  const siempre = (n) => () => n / 10;
+  assert.equal(cifrasRodando('19:00 — 23:30', 0, siempre(7)), '77:77 — 77:77', 'los dos puntos y el guion no se tocan');
+  assert.equal(cifrasRodando('19:00 — 23:30', 1, siempre(7)), '19:00 — 23:30');
+  assert.equal(cifrasRodando('19:00 — 23:30', 0.5, siempre(7)), '19:00 — 77:77', 'a mitad, la primera hora ya está fija');
+  assert.equal(cifrasRodando('19:00 — 23:30', 0.4, siempre(0)).length, '19:00 — 23:30'.length, 'el ancho del texto no cambia');
+  assert.equal(cifrasRodando('cerrado', 0.3), 'cerrado');
+});
+
