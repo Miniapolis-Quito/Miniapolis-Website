@@ -35,8 +35,9 @@ test('la portada contiene el contenido público completo de Miniápolis', () => 
 
 test('la portada enlaza al campeonato y a la tienda sin enlaces ficticios', () => {
   assert.match(portada, /href="\.\/posiciones\.html"/);
-  assert.match(portada, /href="https:\/\/racinghobbiesec\.com"[^>]*target="_blank"[^>]*rel="noreferrer"/);
+  assert.match(portada, /href="https:\/\/racinghobbies\.net\/catalogo" target="_blank" rel="noreferrer">Tienda Racing Hobbies</);
   assert.doesNotMatch(portada, /href="#"/);
+  assert.doesNotMatch(portada, /racinghobbiesec\.com/);
 });
 
 test('cada tarjeta de la tienda abre su producto en el catálogo de Racing Hobbies', () => {
@@ -66,7 +67,18 @@ test('la página pública de posiciones existe y conserva los datos del campeona
     'F1, Tamiya TT-01',
   ]) assert.match(posiciones, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `falta ${copy}`);
   assert.match(posiciones, /href="\.\/index\.html(?:#complejo)?"/);
-  assert.match(posiciones, /href="https:\/\/racinghobbiesec\.com"[^>]*target="_blank"[^>]*rel="noreferrer"/);
+  assert.match(posiciones, /href="https:\/\/racinghobbies\.net\/catalogo" target="_blank" rel="noreferrer">Tienda Racing Hobbies</);
+});
+
+test('las fichas de tienda de posiciones abren el mismo producto que la portada', () => {
+  const posiciones = leer('public/posiciones.html');
+  const fichas = [...posiciones.matchAll(/<a class="posiciones__promo" href="([^"]+)"[^>]*>[\s\S]*?<strong>([^<]+)<\/strong>/g)]
+    .map(([, href, nombre]) => [nombre, href]);
+  assert.deepEqual(fichas, [
+    ['Lancia Delta Integrale', 'https://racinghobbies.net/catalogo?q=lancia'],
+    ['Motor brushless', 'https://racinghobbies.net/catalogo?q=motor%20de%20competici%C3%B3n'],
+  ]);
+  assert.doesNotMatch(posiciones, /racinghobbiesec\.com/);
 });
 
 test('Express sirve la página pública de posiciones', () => {
