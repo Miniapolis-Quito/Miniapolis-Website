@@ -39,6 +39,21 @@ test('la portada enlaza al campeonato y a la tienda sin enlaces ficticios', () =
   assert.doesNotMatch(portada, /href="#"/);
 });
 
+test('cada tarjeta de la tienda abre su producto en el catálogo de Racing Hobbies', () => {
+  const tienda = portada.match(/<ul class="productos[\s\S]*?<\/ul>/)?.[0] ?? '';
+  const tarjetas = [...tienda.matchAll(/<a class="producto[^"]*" href="([^"]+)"[^>]*>[\s\S]*?<strong>([^<]+)<\/strong>/g)]
+    .map(([, href, nombre]) => [nombre, href.replaceAll('&amp;', '&')]);
+  // El catálogo filtra con ?cat= y ?q= al cargar; no tiene una dirección por producto.
+  assert.deepEqual(tarjetas, [
+    ['Lancia Delta Integrale', 'https://racinghobbies.net/catalogo?q=lancia'],
+    ['Amortiguadores de alto rendimiento', 'https://racinghobbies.net/catalogo?cat=louis&q=shock'],
+    ['Llantas de competición', 'https://racinghobbies.net/catalogo?q=tires'],
+    ['Motores de competición', 'https://racinghobbies.net/catalogo?q=motor%20de%20competici%C3%B3n'],
+    ['RC Builder', 'https://racinghobbies.net/catalogo'],
+  ]);
+  assert.equal([...tienda.matchAll(/target="_blank" rel="noreferrer"/g)].length, 5, 'todas abren en otra pestaña');
+});
+
 test('la página pública de posiciones existe y conserva los datos del campeonato', () => {
   assert.ok(fs.existsSync('public/posiciones.html'));
   const posiciones = leer('public/posiciones.html');
