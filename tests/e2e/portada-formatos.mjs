@@ -84,8 +84,17 @@ function medirPagina() {
     };
     recorrer(titular);
   }
+  // Lo que está a mitad de una animación (con un transform propio o de un
+  // antepasado) puede estar fuera a propósito: se mide solo lo que está quieto.
+  const quieto = (e) => {
+    for (let n = e; n && n !== document.body; n = n.parentElement) {
+      const t = getComputedStyle(n).transform;
+      if (t !== 'none' && !new DOMMatrix(t).isIdentity) return false;
+    }
+    return true;
+  };
   const fuera = [...document.querySelectorAll('main h1, main h2, main p, main strong, main .boton')]
-    .filter((e) => !e.closest('.galeria, .productos'))
+    .filter((e) => !e.closest('.galeria, .productos, .marquesina') && quieto(e))
     .map((e) => { const r = e.getBoundingClientRect(); return { e: e.textContent.trim().slice(0, 30), l: r.left, r: r.right, w: r.width }; })
     .filter(({ l, r, w }) => w > 0 && (r > vw + 1 || l < -1));
   // Un texto que no cabe en su caja y se recorta, o dos rótulos que se pisan.
@@ -109,13 +118,30 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
     reducedMotion: reducido ? 'reduce' : 'no-preference',
   });
   const pagina = await contexto.newPage();
+  await pagina.addInitScript(() => {
+    // Lo que tiene que verse al llegar: titulares, textos, fotos, fichas y el acceso.
+    window.CONTENIDO = [
+      'main .seccion__cabeza h2', 'main .seccion__lead', '.mosaico__foto', '.disciplina', '.plano', '.ficha__fila',
+      '.horario', '.tiempo', '.evento', '.pronto__texto h2', '.pronto__foto', '.galeria__foto', '.productos > li',
+      '.ventaja', '.entrada__acceso-panel', '.sitio-pie__columna',
+    ].join(', ');
+    window.opacidadReal = (e) => {
+      let o = 1;
+      for (let n = e; n && n !== document.documentElement; n = n.parentElement) {
+        const c = getComputedStyle(n);
+        if (c.visibility === 'hidden' || c.display === 'none') return 0;
+        o *= Number(c.opacity);
+      }
+      return o;
+    };
+  });
   pagina.on('pageerror', (e) => errores.push(`${nombre} pageerror: ${e.message}`));
   pagina.on('console', (m) => {
     if (m.type() === 'error') errores.push(`${nombre} console: ${m.text()}`);
   });
   await pagina.goto(B, { waitUntil: 'networkidle' });
-  // El semáforo y la salida del titular duran algo menos de tres segundos.
-  await pagina.waitForTimeout(3000);
+  // El semáforo (1,25 s tras cargar la foto) y la salida del titular (unos 2,6 s).
+  await pagina.waitForTimeout(5500);
 
   const fallos = [];
   const hero = await pagina.evaluate(() => {
@@ -142,7 +168,7 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       titularVisible: visible('#titulo-entrada') && visible('.hero__lead') && visible('.hero__cifras'),
       ...(() => {
         // Sin movimiento, nada espera a ser revelado: todo se ve sin bajar.
-        const ocultos = [...document.querySelectorAll('.revela')].filter((e) => getComputedStyle(e).opacity !== '1');
+        const ocultos = [...document.querySelectorAll(window.CONTENIDO)].filter((e) => window.opacidadReal(e) < 0.99);
         return { ocultosAlAbrir: ocultos.length };
       })(),
     };
@@ -156,13 +182,16 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
   if (reducido && hero.animada) fallos.push('con movimiento reducido no debe animarse nada');
   if (reducido && hero.ocultosAlAbrir) fallos.push(`con movimiento reducido hay ${hero.ocultosAlAbrir} bloques ocultos`);
   if (!reducido && !hero.animada) fallos.push('con movimiento la portada debe animarse');
+  const escenas = await pagina.evaluate(() => window.ScrollTrigger?.getAll().length ?? 0);
+  if (!reducido && escenas < 20) fallos.push(`solo hay ${escenas} escenas montadas`);
+  if (reducido && escenas) fallos.push('con movimiento reducido no debe montarse ninguna escena');
 
   // Recorre la página de arriba abajo: en cada parada, nada se sale ni se parte.
   const alto_total = await pagina.evaluate(() => document.documentElement.scrollHeight);
   const vistos = new Set();
   for (let y = 0; y < alto_total; y += Math.round(alto * 0.8)) {
     await pagina.evaluate((valor) => window.scrollTo({ top: valor, behavior: 'instant' }), y);
-    await pagina.waitForTimeout(260);
+    await pagina.waitForTimeout(450);
     const m = await pagina.evaluate(medirPagina);
     if (m.desborde > 0) vistos.add(`desborde horizontal de ${m.desborde}px`);
     for (const palabra of m.partidas) vistos.add(`palabra partida: «${palabra}»`);
@@ -174,18 +203,18 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
 
   // Al llegar al final: todo se reveló, el panel de acceso entra y el pie se ve.
   await pagina.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-  await pagina.waitForTimeout(1600);
+  await pagina.waitForTimeout(2200);
   const fin = await pagina.evaluate(() => {
     const panel = document.querySelector('.entrada__acceso-panel').getBoundingClientRect();
     return {
-      sinRevelar: [...document.querySelectorAll('.revela')].filter((e) => getComputedStyle(e).opacity !== '1').map((e) => e.className),
+      sinRevelar: [...document.querySelectorAll(window.CONTENIDO)].filter((e) => window.opacidadReal(e) < 0.99).map((e) => e.className || e.tagName),
       dentro: panel.left >= -1 && panel.right <= innerWidth + 1,
       pie: document.querySelector('.sitio-pie__base').getBoundingClientRect().bottom <= innerHeight + 1,
       pestanas: [...document.querySelectorAll('.entrada__acceso-panel .pestana')].map((e) => e.getBoundingClientRect().height),
       progreso: Number(getComputedStyle(document.querySelector('.sitio-progreso span')).getPropertyValue('--progreso')),
     };
   });
-  if (fin.sinRevelar.length) fallos.push(`bloques que nunca aparecieron: ${fin.sinRevelar.join(', ')}`);
+  if (fin.sinRevelar.length) fallos.push(`bloques que nunca aparecieron: ${[...new Set(fin.sinRevelar)].join(', ')}`);
   if (!fin.dentro) fallos.push('el panel de acceso se sale de la pantalla');
   if (!fin.pie) fallos.push('el pie no se ve al llegar al final');
   if (fin.pestanas.some((h) => h > 52)) fallos.push(`las pestañas de acceso se parten en dos líneas (${fin.pestanas.join(', ')} px)`);
@@ -197,6 +226,19 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
     const atras = document.querySelector('[data-galeria="atras"]');
     const adelante = document.querySelector('[data-galeria="adelante"]');
     pista.scrollIntoView({ block: 'center', behavior: 'instant' });
+    if (document.querySelector('#galeria').classList.contains('galeria-fija')) {
+      // Fija: la tira corre de lado con el desplazamiento vertical.
+      const seccion = document.querySelector('#galeria');
+      const fija = window.ScrollTrigger.getAll().find((t) => t.pin === seccion);
+      const inicio = fija.start;
+      window.scrollTo({ top: inicio + 10, behavior: 'instant' });
+      await new Promise((r) => setTimeout(r, 900));
+      const antes = new DOMMatrix(getComputedStyle(pista).transform).m41;
+      window.scrollTo({ top: inicio + innerHeight * 1.2, behavior: 'instant' });
+      await new Promise((r) => setTimeout(r, 1400));
+      const despues = new DOMMatrix(getComputedStyle(pista).transform).m41;
+      return { fija: true, corre: despues < antes - 50 };
+    }
     const conBotones = adelante.getBoundingClientRect().width > 0;
     if (!conBotones) return { conBotones, desliza: pista.scrollWidth > pista.clientWidth };
     const antes = { atras: atras.disabled, adelante: adelante.disabled };
@@ -204,7 +246,9 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
     await new Promise((r) => setTimeout(r, 900));
     return { conBotones, antes, movida: pista.scrollLeft > 0, atrasLuego: atras.disabled };
   });
-  if (galeria.conBotones) {
+  if (galeria.fija) {
+    if (!galeria.corre) fallos.push('la galería fija no corre de lado al bajar');
+  } else if (galeria.conBotones) {
     if (!galeria.antes.atras || galeria.antes.adelante) fallos.push('al empezar, la galería solo debe dejar avanzar');
     if (!galeria.movida || galeria.atrasLuego) fallos.push('avanzar no desplaza la galería');
   } else if (!galeria.desliza) {

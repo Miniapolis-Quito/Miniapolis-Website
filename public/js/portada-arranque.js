@@ -22,4 +22,7 @@
   setTimeout(() => {
     if (!raiz.classList.contains('portada-animada')) raiz.classList.remove('portada-intro');
   }, 3000);
+  // La apertura completa (semáforo incluido) dura menos de tres segundos: si a
+  // los seis el titular sigue esperando, algo falló y se muestra tal cual.
+  setTimeout(() => raiz.classList.remove('portada-intro'), 6000);
 })();

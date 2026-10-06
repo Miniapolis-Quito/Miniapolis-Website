@@ -10,6 +10,8 @@ const PUBLICO = leer('public/css/publico.css');
 const JS = leer('public/js/portada.js');
 const ARRANQUE = leer('public/js/portada-arranque.js');
 const CALCULOS = leer('public/js/portada-calculos.js');
+const ESCENAS = leer('public/js/portada-escenas.js');
+const TACTO = leer('public/js/portada-tacto.js');
 
 const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -109,7 +111,8 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
 
 test('las hojas y el JS no dependen de rutas absolutas ni de terceros', () => {
   for (const hoja of [CSS, PUBLICO]) assert.doesNotMatch(hoja, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
-  assert.doesNotMatch(JS + ARRANQUE + CALCULOS, /https?:\/\//, 'sin CDN ni recursos externos');
+  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO, /https?:\/\//, 'sin CDN ni recursos externos');
+  assert.doesNotMatch(HTML, /<script[^>]+src="(?:https?:)?\/\//, 'ningún script se pide a otro dominio');
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
   assert.doesNotMatch(HTML, /<script>(?!<\/script>)/, 'sin scripts en línea');
 });
@@ -134,34 +137,44 @@ test('solo lo clicable tiene :hover', () => {
 });
 
 test('lo que se oculta para animarse solo se oculta bajo .portada-intro o .portada-animada', () => {
+  // Velos y brillos decorativos empiezan apagados: no son contenido.
+  const DECORADO = /^(?:\.hero__sombra|\.producto::after|\.cursor[\w-]*|\.cursor--[\w-]+ \.cursor__[\w-]+|\.disciplinas__vuelta)$/;
   const ocultan = /(?:^|[;\s])opacity:\s*0\s*(?:;|$)|clip-path:\s*inset\(|visibility:\s*hidden|translate3d\(0,\s*1\d\d%/;
   const fallos = reglas(CSS)
     .filter(({ selector }) => !selector.startsWith('@') && !/^(?:\d|from|to)/.test(selector))
     .filter(({ cuerpo }) => ocultan.test(cuerpo))
     .filter(({ selector }) => !/\.portada-(?:intro|animada)/.test(selector))
+    .filter(({ selector }) => !selector.split(',').every((uno) => DECORADO.test(uno.trim())))
     .map(({ selector }) => selector);
   assert.deepEqual(fallos, [], 'sin movimiento, todo el contenido debe verse');
+  assert.doesNotMatch(HTML, /class="[^"]*\brevela\b/, 'el revelado lo hace GSAP; no quedan marcas de un sistema anterior');
 });
 
-test('sin movimiento no se anima nada y la página queda completa y quieta', () => {
+test('sin movimiento o sin GSAP no se anima nada y la página queda completa y quieta', () => {
   assert.match(JS, /import \{ sinMovimiento \} from '\.\/movimiento\.js'/);
-  assert.match(JS, /const conMovimiento = !sinMovimiento\(\) && typeof IntersectionObserver === 'function'/);
-  assert.match(
-    JS,
-    /if \(conMovimiento\) \{\s*raiz\.classList\.add\('portada-animada'\);[\s\S]*arrancarApertura\(\);\s*\} else \{\s*raiz\.classList\.remove\('portada-intro', 'portada-luces'\);/,
-    'la clase que anima solo se pone con movimiento, y sin él se retira la apertura',
-  );
+  assert.match(JS, /const conMovimiento = !sinMovimiento\(\)\s*&& typeof IntersectionObserver === 'function'\s*&& typeof gsap\?\.registerPlugin === 'function'\s*&& typeof ScrollTrigger === 'function'/s,
+    'las escenas exigen movimiento permitido y GSAP cargado');
+  assert.match(JS, /if \(conMovimiento\) \{\s*raiz\.classList\.add\('portada-animada'\);\s*try \{[\s\S]*montarEscenas\(window\)[\s\S]*\} catch \(error\) \{[\s\S]*quedarseQuieta\(\);\s*\}\s*\} else \{\s*quedarseQuieta\(\);\s*\}/,
+    'si algo falla al montar las escenas, la portada queda quieta y completa');
+  assert.match(JS, /function quedarseQuieta\(\) \{\s*raiz\.classList\.remove\('portada-intro', 'portada-luces', 'portada-animada'\);/);
   assert.match(CSS, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(TACTO, /matchMedia\?\.\('\(hover: hover\) and \(pointer: fine\)'\)/, 'el cursor y los imanes solo existen con ratón o trackpad');
 });
 
-test('la apertura se prepara antes del primer fotograma y se retira sola si el módulo no llega', () => {
+test('la apertura se prepara antes del primer fotograma y se retira sola si algo no llega', () => {
   const cabeza = HTML.slice(0, HTML.indexOf('</head>'));
   assert.match(cabeza, /<script src="\/js\/portada-arranque\.js"><\/script>/, 'script clásico en el <head>, no módulo diferido');
   assert.match(ARRANQUE, /prefers-reduced-motion: reduce/, 'sin movimiento no hay apertura');
   assert.match(ARRANQUE, /classList\.add\('portada-intro'\)/);
   assert.doesNotMatch(ARRANQUE, /classList\.add\('portada-animada'\)/, 'la animación solo la monta portada.js');
-  assert.match(ARRANQUE, /setTimeout\([\s\S]*classList\.remove\('portada-intro'\)/, 'si el módulo falla, la página queda estática y completa');
+  assert.match(ARRANQUE, /setTimeout\([\s\S]*classList\.remove\('portada-intro'\)[\s\S]*3000/, 'si el módulo no llega, la página queda estática y completa');
+  assert.match(ARRANQUE, /setTimeout\(\(\) => raiz\.classList\.remove\('portada-intro'\), 6000\)/, 'y si la apertura se atasca, el titular sale igual');
   assert.match(JS, /Promise\.race\(\[Promise\.allSettled\(esperas\), new Promise\(\(r\) => setTimeout\(r, \d+\)\)\]\)/, 'el titular nunca espera indefinidamente a la foto');
+  const apertura = ESCENAS.slice(ESCENAS.indexOf('escenas.apertura = () => {'));
+  assert.ok(
+    apertura.indexOf("classList.remove('portada-intro')") < apertura.indexOf('gsap.timeline('),
+    'la clase que oculta se retira antes de crear los from(): si no, toman como destino el estado oculto',
+  );
 });
 
 test('el semáforo enciende cinco luces de una en una', () => {
@@ -175,18 +188,58 @@ test('las cajas de contenido permanecen nítidas', () => {
   for (const hoja of [CSS, PUBLICO]) {
     assert.doesNotMatch(hoja, /(^|[;\s])filter:\s*blur\(/, 'el movimiento puede desplazar u ocultar suavemente, pero nunca desenfocar el contenido');
   }
+  assert.doesNotMatch(ESCENAS + TACTO, /filter:\s*['"]?blur/, 'ninguna escena desenfoca');
   assert.doesNotMatch(sinComentarios(CSS), /backdrop-filter/, 'un desenfoque sobre un fondo que se mueve se recalcula en cada fotograma');
   const estiran = reglas(CSS + PUBLICO).filter(({ selector, cuerpo }) => selector.includes(':hover') && /letter-spacing/.test(cuerpo));
   assert.deepEqual(estiran.map((r) => r.selector), [], 'un hover no cambia el ancho del texto');
 });
 
-test('fluidez: por cada desplazamiento se escribe en un único fotograma y solo en quien lo lee', () => {
+test('fluidez: GSAP y el CSS nunca animan la misma propiedad del mismo elemento', () => {
+  // Una transición CSS sobre `transform` en algo que GSAP mueve hace que cada
+  // fotograma arranque una transición nueva: el movimiento llega tarde y a
+  // tirones. Estos son los elementos que mueven las escenas y el puntero.
+  const MOVIDOS = ['.hero__foto', '.hero__contenido', '.hero__cifras', '.hero__acciones', '.cifra', '.mosaico__foto', '.marquesina',
+    '.marquesina__fila', '.disciplina', '.plano', '.horario', '.tiempos', '.tiempo', '.evento', '.galeria', '.galeria__foto',
+    '.productos > li', '.producto', '.ventaja', '.entrada__acceso-panel', '.sitio-barra'];
+  const pisan = reglas(CSS + PUBLICO)
+    .filter(({ selector }) => selector.split(',').some((uno) => MOVIDOS.includes(uno.trim())))
+    .filter(({ cuerpo }) => /transition:[^;]*\b(?:transform|all)\b/.test(cuerpo))
+    .map(({ selector }) => selector);
+  assert.deepEqual(pisan, []);
+  assert.match(CSS, /\.producto\s*\{[^}]*transition:\s*border-color 200ms ease-out;/s, 'la tarjeta solo transiciona su borde: la inclinación es de GSAP');
+  assert.doesNotMatch(CSS, /\.producto:hover\s*\{[^}]*transform/, 'el hover de la tarjeta no pisa su inclinación');
+});
+
+test('fluidez: el puntero se sigue con quickTo y el imán no pisa el transform del botón', () => {
+  assert.match(TACTO, /gsap\.quickTo\(punto, 'x'/);
+  assert.match(TACTO, /gsap\.quickTo\(aro, 'x'/);
+  assert.match(TACTO, /gsap\.quickTo\(boton, '--mx'/);
+  assert.match(TACTO, /gsap\.quickTo\(tarjeta, 'rotationX'/);
+  assert.match(CSS, /\.hero__acciones \.boton,[\s\S]*?\{\s*translate:\s*var\(--mx, 0px\) var\(--my, 0px\);\s*\}/,
+    'el imán va por `translate`, independiente del `transform` del hover y del clic');
+  assert.doesNotMatch(TACTO, /mouse(?:enter|over)/, 'los eventos de puntero cubren ratón, lápiz y táctil por igual');
+  assert.match(TACTO, /evento\.pointerType !== 'mouse'/, 'con el dedo no hay imán ni inclinación');
+});
+
+test('fluidez: el avance de lectura se pinta una vez por fotograma y el desplazamiento suave alimenta a ScrollTrigger', () => {
   assert.match(JS, /window\.addEventListener\('scroll', programar, \{ passive: true \}\)/);
   assert.match(JS, /if \(pendiente\) return;\s*pendiente = true;\s*requestAnimationFrame\(pintar\)/);
-  assert.match(JS, /barra\?\.style\.setProperty\('--progreso'/);
   assert.match(PUBLICO, /transform:\s*scaleX\(var\(--progreso, 0\)\)/, 'el avance de lectura se compone, no reescribe el layout');
-  assert.match(JS, /if \(foto && y <= altoHero\)/, 'la foto de la apertura solo se mueve mientras se ve');
-  assert.doesNotMatch(JS, /querySelector\('main'\)\.style|document\.body\.style\.setProperty/, 'ninguna variable por fotograma en un contenedor grande');
+  assert.match(ESCENAS, /lenis\.on\('scroll', ScrollTrigger\.update\)/);
+  assert.match(ESCENAS, /gsap\.ticker\.add\(latir\)/, 'Lenis late con el mismo reloj que GSAP: un solo bucle por fotograma');
+  assert.match(ESCENAS, /mm\.add\('\(hover: hover\) and \(pointer: fine\)'/, 'en táctil el desplazamiento es el nativo del sistema');
+  assert.match(CSS, /html\.lenis \{ scroll-behavior: auto; \}/, 'el scroll suave del CSS y el de Lenis no se suman');
+});
+
+test('las escenas fijas solo existen en pantallas anchas y se deshacen al cambiar de formato', () => {
+  assert.match(ESCENAS, /const mm = gsap\.matchMedia\(\);/);
+  const fijas = (ESCENAS.match(/pin: true/g) ?? []).length;
+  assert.equal(fijas, 3, 'apertura, vuelta por sectores y galería');
+  assert.match(ESCENAS, /scrollTrigger: ancho\s*\?\s*\{ trigger: hero, start: 'top top', end: '\+=70%', pin: true/, 'la apertura solo se fija en pantallas anchas');
+  assert.match(ESCENAS, /if \(contexto\.conditions\.grande\) \{[\s\S]*?pin: true/, 'la vuelta por sectores solo se fija en pantallas grandes');
+  assert.match(ESCENAS, /if \(!contexto\.conditions\.ancho\) \{[\s\S]*?return undefined;\s*\}\s*galeria\.classList\.add\('galeria-fija'\)/, 'la galería solo corre de lado en pantallas anchas');
+  assert.match(ESCENAS, /return \(\) => \{\s*galeria\.classList\.remove\('galeria-fija'\)/, 'al salir del formato se retira la clase y vuelve la tira deslizable');
+  assert.match(CSS, /\.galeria-fija \{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s, 'la columna mide la pantalla y no la tira entera');
 });
 
 test('en táctil lo que se pulsa mide al menos 44 px', () => {
@@ -201,24 +254,30 @@ test('la galería se recorre con botones nombrados y con el teclado', () => {
   for (const sentido of ['atras', 'adelante']) {
     assert.match(HTML, new RegExp(`<button class="galeria__boton" type="button" data-galeria="${sentido}" aria-label="[^"]+" aria-controls="galeria-pista">`));
   }
-  assert.match(HTML, /<div class="galeria revela" id="galeria-pista" tabindex="0" role="region" aria-label="[^"]+">/);
+  assert.match(HTML, /<div class="galeria" id="galeria-pista" tabindex="0" role="region" aria-label="[^"]+">/);
   assert.match(JS, /atras\.disabled = /);
   assert.match(JS, /behavior: sinMovimiento\(\) \? 'auto' : 'smooth'/);
 });
 
-test('el plano del circuito es decorativo, dice que es un esquema y su punto solo corre a la vista', () => {
+test('el plano del circuito es decorativo, dice que es un esquema y el auto lo dibuja con el desplazamiento', () => {
   assert.match(HTML, /<svg class="plano__dibujo"[^>]*aria-hidden="true"/);
   assert.match(HTML, /<figcaption>Esquema ilustrativo del recinto/);
-  assert.match(HTML, /<animateMotion[^>]*begin="indefinite"/, 'el punto no arranca solo: lo arranca portada.js con movimiento');
-  assert.match(JS, /svg\.pauseAnimations\?\.\(\)/, 'fuera de pantalla el punto se detiene');
-  assert.match(CSS, /\.plano__auto\s*\{\s*display:\s*none/);
+  assert.doesNotMatch(HTML, /<animateMotion/, 'el auto lo mueve GSAP, que respeta el movimiento reducido');
+  assert.match(ESCENAS, /motionPath: \{ path: trazado, align: trazado, alignOrigin: \[0\.5, 0\.5\] \}/);
+  assert.match(ESCENAS, /scrollTrigger: \{ trigger: '\.ficha__lista', start: 'top 62%', end: 'bottom 62%', scrub: 0\.8 \}/, 'en pantalla ancha el auto avanza con la lectura de la ficha');
+  assert.match(ESCENAS, /onToggle: \(self\) => \(self\.isActive \? vuelta\.play\(\) : vuelta\.pause\(\)\)/, 'en el teléfono da vueltas solo mientras se ve');
+  assert.match(CSS, /\.plano__auto\s*\{\s*display:\s*none/, 'sin movimiento no hay auto: solo la marca de salida');
 });
 
-test('el horario dice la verdad del momento y el cronómetro no engaña a los lectores de pantalla', () => {
+test('el horario dice la verdad del momento y lo que rueda no engaña a los lectores de pantalla', () => {
   assert.match(JS, /montarHorarioVivo\(\);\s*setInterval\(\(\) => montarHorarioVivo\(\), 60_000\)/);
   assert.match(JS, /etiqueta\.textContent = textoJornada\(estado, rango\)/, 'el estado se escribe como texto, no solo como color');
-  assert.match(JS, /el\.setAttribute\('aria-label', final\)/, 'mientras corre, se anuncia el tiempo real');
-  assert.match(JS, /tiempoEnTexto\(valorContado\(valor, Math\.max\(0, t\)\), 2, final\.length\)/, 'la cifra que corre no cambia de ancho');
+  // Cronómetro de récords y tablero de horarios: mientras ruedan, se anuncia el valor real.
+  assert.equal((ESCENAS.match(/setAttribute\('aria-label', final\)/g) ?? []).length, 2);
+  assert.match(ESCENAS, /tiempoEnTexto\(cuenta\.v, 2, final\.length\)/, 'la cifra que corre no cambia de ancho');
+  assert.match(ESCENAS, /cifrasRodando\(final, rueda\.p\)/, 'en las horas solo ruedan las cifras');
+  assert.match(ESCENAS, /tituloHero\.setAttribute\('aria-label'/, 'el titular partido en letras se anuncia entero');
+  assert.match(ESCENAS, /aria: 'auto'/, 'los titulares partidos conservan su texto accesible');
 });
 
 test('los rótulos de las hojas están en español', () => {
@@ -248,4 +307,56 @@ test('el motor de escenas anterior ya no se carga', () => {
   }
   assert.doesNotMatch(HTML, /portada-(?:motor|efectos)/);
   assert.doesNotMatch(HTML, /entrada__mira|portada__chispas|portada__cinta/);
+});
+
+test('las librerías de animación se sirven desde el dominio, con versión en el nombre y en orden', () => {
+  const pkg = JSON.parse(leer('package.json'));
+  const gsapVersion = JSON.parse(leer('node_modules/gsap/package.json')).version;
+  const lenisVersion = JSON.parse(leer('node_modules/lenis/package.json')).version;
+  assert.ok(pkg.devDependencies.gsap && pkg.devDependencies.lenis, 'gsap y lenis son el origen declarado de las copias');
+  const scripts = [...HTML.matchAll(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g)].map((m) => m[0]);
+  const esperados = ['gsap', 'ScrollTrigger', 'SplitText', 'MotionPathPlugin', 'ScrambleTextPlugin'].map((n) => `/vendor/${n}-${gsapVersion}.min.js`);
+  esperados.push(`/vendor/lenis-${lenisVersion}.min.js`);
+  for (const ruta of esperados) {
+    const etiqueta = scripts.find((s) => s.includes(`src="${ruta}"`));
+    assert.ok(etiqueta, `falta ${ruta}`);
+    assert.match(etiqueta, /\sdefer\b/, `${ruta} no debe bloquear la primera pintura`);
+    assert.ok(fs.existsSync(path.join('public', ruta)), `no existe public${ruta}`);
+  }
+  // Lo servido es exactamente lo instalado (Lenis, sin la línea del mapa de fuentes).
+  for (const nombre of ['gsap', 'ScrollTrigger', 'SplitText', 'MotionPathPlugin', 'ScrambleTextPlugin']) {
+    assert.equal(leer(`public/vendor/${nombre}-${gsapVersion}.min.js`), leer(`node_modules/gsap/dist/${nombre}.min.js`), `${nombre} no coincide con la versión instalada`);
+  }
+  const lenisInstalado = leer('node_modules/lenis/dist/lenis.min.js').replace(/\n?\/\/# sourceMappingURL=.*\n?$/, '\n');
+  assert.equal(leer(`public/vendor/lenis-${lenisVersion}.min.js`).trim(), lenisInstalado.trim());
+  // Los clásicos diferidos se ejecutan antes que los módulos que los usan.
+  assert.ok(HTML.indexOf('gsap-') < HTML.indexOf('src="/js/portada.js"'));
+  assert.match(leer('public/vendor/README.md'), /gsap\.com\/standard-license/);
+  assert.match(leer('public/vendor/README.md'), /Lenis[\s\S]*MIT/);
+});
+
+test('el contenido decorativo repetido no se lee dos veces', () => {
+  assert.match(HTML, /<div class="marquesina" aria-hidden="true">/);
+  assert.match(HTML, /<div class="hero__sombra" aria-hidden="true">/);
+  assert.match(HTML, /<span class="pronto__cinta" aria-hidden="true">/);
+  assert.match(HTML, /<div class="galeria__avance marco" aria-hidden="true">/);
+  assert.match(HTML, /<div class="disciplinas__vuelta" aria-hidden="true">/);
+  assert.match(TACTO, /cursor\.setAttribute\('aria-hidden', 'true'\)/);
+});
+
+test('el cursor propio nunca esconde dónde se escribe', () => {
+  assert.match(CSS, /html\.cursor-propio input,\s*html\.cursor-propio textarea,\s*html\.cursor-propio select \{ cursor: text; \}/);
+  assert.match(TACTO, /cursor\.classList\.toggle\('cursor--oculto', Boolean\(objetivo\?\.closest\(ESCRIBIBLES\)\)\)/);
+  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.cursor \{ display: none; \}/);
+});
+
+test('lo que espera a revelarse se puede enfocar con el teclado', () => {
+  // `autoAlpha` pone `visibility: hidden`, que saca el elemento del orden de
+  // tabulación: un enlace o un campo sin revelar sería inalcanzable con el
+  // teclado. Solo el semáforo, que es decorativo, puede desaparecer del todo.
+  const codigo = ESCENAS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const usos = [...codigo.matchAll(/^.*autoAlpha.*$/gm)].map((m) => m[0].trim());
+  assert.deepEqual(usos, [".to('.hero__semaforo', { autoAlpha: 0, y: -30 }, 0);"], 'sin autoAlpha en el contenido');
+  assert.doesNotMatch(codigo + TACTO, /visibility:\s*['"]?hidden/);
+  assert.match(ESCENAS, /cabecera\.addEventListener\('focusin', \(\) => poner\(true\)\)/, 'la cabecera escondida vuelve en cuanto el foco entra en ella');
 });

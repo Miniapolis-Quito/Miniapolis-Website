@@ -123,7 +123,7 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
   letter-spacing: .14em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: color 240ms var(--pub-curva);
+  transition: color 180ms ease-out;
 }
 .sitio-nav a::after {
   position: absolute;
@@ -135,7 +135,7 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
   background: var(--acento);
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 420ms var(--pub-curva);
+  transition: transform 260ms var(--pub-curva);
 }
 .sitio-nav a:hover,
 .sitio-nav a[aria-current] { color: var(--texto); }
@@ -277,7 +277,7 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
   background: currentColor;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 12'%3E%3Cpath d='M0 6h20M15 1l5 5-5 5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 12'%3E%3Cpath d='M0 6h20M15 1l5 5-5 5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E") center / contain no-repeat;
-  transition: transform 420ms var(--pub-curva);
+  transition: transform 260ms var(--pub-curva);
 }
 .enlace-flecha:hover { color: var(--acento); }
 .enlace-flecha:hover::after { transform: translateX(6px); }
@@ -323,7 +323,7 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
   min-height: 40px;
   color: var(--texto-2);
   text-decoration: none;
-  transition: color 240ms var(--pub-curva);
+  transition: color 180ms ease-out;
 }
 .sitio-pie__columna a:hover { color: var(--texto); }
 
