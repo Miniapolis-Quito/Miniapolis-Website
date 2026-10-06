@@ -847,9 +847,12 @@ scripts/               Utilidades de terminal
 ```
 
 La interfaz no usa ningún framework ni descarga nada de Internet: se sirve tal
-cual y funciona con la política de seguridad cerrada. La única librería de
-terceros del navegador es `jsQR`, incluida en `public/vendor/` como respaldo
-para leer códigos cuando el navegador no ofrece lector propio.
+cual y funciona con la política de seguridad cerrada. Las librerías de terceros
+del navegador viven en `public/vendor/` (ver su README): `jsQR`, como respaldo
+para leer códigos cuando el navegador no ofrece lector propio, y GSAP con Lenis,
+que mueven las escenas de la portada ligadas al desplazamiento. Ninguna es
+imprescindible: sin ellas, o con movimiento reducido, la portada se ve
+completa y quieta.
 
 ### Sobre las migraciones
 
