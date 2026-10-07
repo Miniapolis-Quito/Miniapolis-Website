@@ -14,7 +14,6 @@
   <script defer src="/vendor/ScrollTrigger-3.15.0.min.js"></script>
   <script defer src="/vendor/SplitText-3.15.0.min.js"></script>
   <script defer src="/vendor/MotionPathPlugin-3.15.0.min.js"></script>
-  <script defer src="/vendor/ScrambleTextPlugin-3.15.0.min.js"></script>
   <script defer src="/vendor/lenis-1.3.26.min.js"></script>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.png" type="image/png">
@@ -61,6 +60,7 @@
           <a class="boton boton--principal boton--grande" href="#acceso">Entrar</a>
           <a class="enlace-flecha" href="#pista">Ver la pista</a>
         </div>
+        <span class="hero__guia" aria-hidden="true"><i></i></span>
       </div>
       <ul class="hero__cifras marco">
         <li class="cifra"><strong class="cifra__valor">1.000<small>m²</small></strong><span class="cifra__texto">Asfalto indoor</span></li>
@@ -70,7 +70,7 @@
       </ul>
     </section>
 
-    <section id="pista" class="seccion" aria-labelledby="titulo-pista">
+    <section id="pista" class="seccion seccion--telon" aria-labelledby="titulo-pista">
       <div class="marco">
         <header class="seccion__cabeza">
           <p class="seccion__indice"><span>01</span>Recorrido</p>

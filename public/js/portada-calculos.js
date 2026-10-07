@@ -132,3 +132,20 @@ export function cifrasRodando(texto, p, azar = Math.random) {
     return vistas <= fijadas ? c : String(Math.floor(azar() * 10));
   }).join('');
 }
+
+/**
+ * La vuelta por sectores: en cuál está el lector según lo recorrido de cada
+ * sector (0..1, en orden). Es el último que ya empezó; -1 si todavía no
+ * arrancó ninguno (se está en la apertura, antes de la salida).
+ */
+export function sectorEnCurso(progresos) {
+  for (let i = progresos.length - 1; i >= 0; i -= 1) {
+    if (progresos[i] > 0) return i;
+  }
+  return -1;
+}
+
+/** La vuelta termina cuando el último sector se recorre entero. */
+export function vueltaCompleta(progresos) {
+  return progresos.length > 0 && progresos[progresos.length - 1] >= 0.995;
+}

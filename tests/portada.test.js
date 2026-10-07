@@ -12,6 +12,7 @@ const ARRANQUE = leer('public/js/portada-arranque.js');
 const CALCULOS = leer('public/js/portada-calculos.js');
 const ESCENAS = leer('public/js/portada-escenas.js');
 const TACTO = leer('public/js/portada-tacto.js');
+const VUELTA = leer('public/js/portada-vuelta.js');
 
 const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -111,7 +112,7 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
 
 test('las hojas y el JS no dependen de rutas absolutas ni de terceros', () => {
   for (const hoja of [CSS, PUBLICO]) assert.doesNotMatch(hoja, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
-  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO, /https?:\/\//, 'sin CDN ni recursos externos');
+  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO + VUELTA, /https?:\/\//, 'sin CDN ni recursos externos');
   assert.doesNotMatch(HTML, /<script[^>]+src="(?:https?:)?\/\//, 'ningún script se pide a otro dominio');
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
   assert.doesNotMatch(HTML, /<script>(?!<\/script>)/, 'sin scripts en línea');
@@ -235,7 +236,8 @@ test('las escenas fijas solo existen en pantallas anchas y se deshacen al cambia
   assert.match(ESCENAS, /const mm = gsap\.matchMedia\(\);/);
   const fijas = (ESCENAS.match(/pin: true/g) ?? []).length;
   assert.equal(fijas, 3, 'apertura, vuelta por sectores y galería');
-  assert.match(ESCENAS, /scrollTrigger: ancho\s*\?\s*\{ trigger: hero, start: 'top top', end: '\+=70%', pin: true/, 'la apertura solo se fija en pantallas anchas');
+  assert.match(ESCENAS, /scrollTrigger: ancho\s*\?\s*\{ trigger: hero, start: 'top top', end: 'bottom top', pin: true, pinSpacing: false/,
+    'la apertura solo se fija en pantallas anchas, y sin reservar espacio: la pista sube por encima como un telón');
   assert.match(ESCENAS, /if \(contexto\.conditions\.grande\) \{[\s\S]*?pin: true/, 'la vuelta por sectores solo se fija en pantallas grandes');
   assert.match(ESCENAS, /if \(!contexto\.conditions\.ancho\) \{[\s\S]*?return undefined;\s*\}\s*galeria\.classList\.add\('galeria-fija'\)/, 'la galería solo corre de lado en pantallas anchas');
   assert.match(ESCENAS, /return \(\) => \{\s*galeria\.classList\.remove\('galeria-fija'\)/, 'al salir del formato se retira la clase y vuelve la tira deslizable');
@@ -315,7 +317,7 @@ test('las librerías de animación se sirven desde el dominio, con versión en e
   const lenisVersion = JSON.parse(leer('node_modules/lenis/package.json')).version;
   assert.ok(pkg.devDependencies.gsap && pkg.devDependencies.lenis, 'gsap y lenis son el origen declarado de las copias');
   const scripts = [...HTML.matchAll(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g)].map((m) => m[0]);
-  const esperados = ['gsap', 'ScrollTrigger', 'SplitText', 'MotionPathPlugin', 'ScrambleTextPlugin'].map((n) => `/vendor/${n}-${gsapVersion}.min.js`);
+  const esperados = ['gsap', 'ScrollTrigger', 'SplitText', 'MotionPathPlugin'].map((n) => `/vendor/${n}-${gsapVersion}.min.js`);
   esperados.push(`/vendor/lenis-${lenisVersion}.min.js`);
   for (const ruta of esperados) {
     const etiqueta = scripts.find((s) => s.includes(`src="${ruta}"`));
@@ -324,9 +326,12 @@ test('las librerías de animación se sirven desde el dominio, con versión en e
     assert.ok(fs.existsSync(path.join('public', ruta)), `no existe public${ruta}`);
   }
   // Lo servido es exactamente lo instalado (Lenis, sin la línea del mapa de fuentes).
-  for (const nombre of ['gsap', 'ScrollTrigger', 'SplitText', 'MotionPathPlugin', 'ScrambleTextPlugin']) {
+  for (const nombre of ['gsap', 'ScrollTrigger', 'SplitText', 'MotionPathPlugin']) {
     assert.equal(leer(`public/vendor/${nombre}-${gsapVersion}.min.js`), leer(`node_modules/gsap/dist/${nombre}.min.js`), `${nombre} no coincide con la versión instalada`);
   }
+  // Solo se sirve lo que alguna escena usa.
+  assert.doesNotMatch(HTML, /ScrambleTextPlugin/);
+  assert.ok(!fs.existsSync(`public/vendor/ScrambleTextPlugin-${gsapVersion}.min.js`), 'el plugin de texto revuelto ya no se usa');
   const lenisInstalado = leer('node_modules/lenis/dist/lenis.min.js').replace(/\n?\/\/# sourceMappingURL=.*\n?$/, '\n');
   assert.equal(leer(`public/vendor/lenis-${lenisVersion}.min.js`).trim(), lenisInstalado.trim());
   // Los clásicos diferidos se ejecutan antes que los módulos que los usan.
@@ -341,7 +346,53 @@ test('el contenido decorativo repetido no se lee dos veces', () => {
   assert.match(HTML, /<span class="pronto__cinta" aria-hidden="true">/);
   assert.match(HTML, /<div class="galeria__avance marco" aria-hidden="true">/);
   assert.match(HTML, /<div class="disciplinas__vuelta" aria-hidden="true">/);
+  assert.match(HTML, /<span class="hero__guia" aria-hidden="true">/);
   assert.match(TACTO, /cursor\.setAttribute\('aria-hidden', 'true'\)/);
+  assert.match(VUELTA, /vuelta\.setAttribute\('aria-hidden', 'true'\)/);
+});
+
+test('la página se cuenta como una vuelta: un sector por sección numerada y la meta en «Tu pase»', () => {
+  assert.match(ESCENAS, /import \{ montarVuelta \} from '\.\/portada-vuelta\.js'/);
+  assert.ok(
+    ESCENAS.lastIndexOf('montarVuelta({ gsap, ScrollTrigger })') > ESCENAS.lastIndexOf('pin: true'),
+    'la vuelta se mide después de montar las escenas fijas, que alargan la página',
+  );
+  assert.match(VUELTA, /from '\.\/portada-calculos\.js'/, 'qué sector está en curso lo deciden funciones puras y probadas');
+  // Los sectores salen de los índices de la página: sin textos inventados.
+  assert.match(VUELTA, /\$\$\('main > section'\)/);
+  assert.match(VUELTA, /\$\('\.seccion__indice', seccion\)/);
+  assert.match(VUELTA, /start: 'top center',\s*\.\.\.\(siguiente \? \{ endTrigger: siguiente, end: 'top center' \} : \{ end: 'max' \}\)/,
+    'los tramos son contiguos: siempre hay uno, y solo uno, en curso');
+  assert.match(VUELTA, /onLeave:[\s\S]*onLeaveBack:/, 'un salto con un ancla da los sectores cruzados por recorridos');
+  assert.match(VUELTA, /vuelta--meta/);
+  // Sin movimiento no hay vuelta: todo lo que la esconde cuelga de .portada-animada.
+  assert.match(CSS, /\.portada-animada \.vuelta \{[^}]*opacity: 0;/s);
+  assert.match(CSS, /\.con-vuelta \.sitio-progreso \{ display: none; \}/, 'la vuelta reemplaza a la línea de avance, no se suma');
+  assert.match(CSS, /@media \(min-width: 900px\) and \(min-height: 560px\) \{\s*\.portada-animada \.vuelta \{/, 'regla vertical solo donde hay margen');
+});
+
+test('el telón: la primera sección sube por encima de la apertura fija', () => {
+  assert.match(HTML, /<section id="pista" class="seccion seccion--telon"/);
+  assert.match(CSS, /\.seccion--telon \{[^}]*z-index: 1;[^}]*background: linear-gradient\(180deg, rgba\(0, 0, 0, 0\), var\(--fondo\)/s,
+    'va un plano por delante y su borde de arriba se funde con la foto');
+  assert.doesNotMatch(sinComentarios(CSS), /\.hero \+ \.seccion/,'al fijar la apertura ScrollTrigger la envuelve y deja de ser la hermana de la sección');
+});
+
+test('una sola gramática de movimiento: el encabezado se lee en orden y nada gira para aparecer', () => {
+  assert.match(ESCENAS, /for \(const cabeza of \$\$\('\.seccion__cabeza, \.acceso__intro, \.pronto__texto'\)\) \{\s*const disparo = \(\) => alEntrar\(cabeza, 'top 84%'\);/,
+    'índice, titular y entradilla comparten un único disparo por encabezado');
+  // El orden de lectura: índice, titular (0,1 s) y entradilla (0,32 s).
+  const cabezas = ESCENAS.slice(ESCENAS.indexOf("for (const cabeza of"), ESCENAS.indexOf('// 01 · La pista'));
+  assert.ok(cabezas.indexOf('delay: 0.1') < cabezas.indexOf('delay: 0.32'));
+  // Ni tarjetas que giran en 3D ni fechas que se inclinan: se sube y se enciende.
+  assert.doesNotMatch(ESCENAS, /rotationX|transformPerspective/, 'los bloques no giran para entrar');
+  assert.doesNotMatch(ESCENAS, /rotation: \(i\)/);
+  assert.doesNotMatch(ESCENAS, /scrambleText/);
+  assert.match(ESCENAS, /const SUBIDA = \{ opacity: 0, y: 36, duration: 1\.1 \};/);
+  assert.ok((ESCENAS.match(/\.\.\.SUBIDA/g) ?? []).length >= 10, 'los bloques comparten la misma subida');
+  // Las fotos del recorrido se descubren todas en el mismo sentido.
+  assert.match(ESCENAS, /\$\$\('\.mosaico__foto'\)\.forEach[\s\S]*?clipPath: 'inset\(100% 0% 0% 0%\)'/);
+  assert.doesNotMatch(ESCENAS, /const cortes = /);
 });
 
 test('el cursor propio nunca esconde dónde se escribe', () => {
@@ -356,7 +407,8 @@ test('lo que espera a revelarse se puede enfocar con el teclado', () => {
   // teclado. Solo el semáforo, que es decorativo, puede desaparecer del todo.
   const codigo = ESCENAS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   const usos = [...codigo.matchAll(/^.*autoAlpha.*$/gm)].map((m) => m[0].trim());
-  assert.deepEqual(usos, [".to('.hero__semaforo', { autoAlpha: 0, y: -30 }, 0);"], 'sin autoAlpha en el contenido');
+  assert.equal(usos.length, 1, 'sin autoAlpha en el contenido');
+  assert.match(usos[0], /^\.to\('\.hero__semaforo', \{ autoAlpha: 0, y: -30 \}, 0\);?$/, 'solo el semáforo, que es decorativo');
   assert.doesNotMatch(codigo + TACTO, /visibility:\s*['"]?hidden/);
   assert.match(ESCENAS, /cabecera\.addEventListener\('focusin', \(\) => poner\(true\)\)/, 'la cabecera escondida vuelve en cuanto el foco entra en ella');
 });
