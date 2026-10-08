@@ -7,8 +7,8 @@
  * suavidad, sin reiniciar una transición CSS en cada evento (que es lo que
  * hace que un hover se sienta a tirones).
  *
- *  - Cursor: un punto que va pegado al puntero y un aro que lo sigue con un
- *    poco de inercia y se abre sobre lo que se puede pulsar.
+ *  - Cursor: un punto que va pegado al puntero y un aro sincronizado con él
+ *    que se abre sobre lo que se puede pulsar.
  *  - Imán: los botones grandes se acercan al puntero. Se mueven con la
  *    propiedad CSS `translate` (variables --mx/--my), que no pisa el
  *    `transform` con el que el botón sube al pasar por encima.
@@ -37,8 +37,8 @@ function montarCursor(gsap) {
 
   const xPunto = gsap.quickTo(punto, 'x', { duration: 0.08, ease: 'power3' });
   const yPunto = gsap.quickTo(punto, 'y', { duration: 0.08, ease: 'power3' });
-  const xAro = gsap.quickTo(aro, 'x', { duration: 0.45, ease: 'power3' });
-  const yAro = gsap.quickTo(aro, 'y', { duration: 0.45, ease: 'power3' });
+  const xAro = gsap.quickTo(aro, 'x', { duration: 0.08, ease: 'power3' });
+  const yAro = gsap.quickTo(aro, 'y', { duration: 0.08, ease: 'power3' });
 
   let dentro = false;
   window.addEventListener('pointermove', (evento) => {
