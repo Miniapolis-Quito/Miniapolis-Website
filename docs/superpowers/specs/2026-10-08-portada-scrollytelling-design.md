@@ -89,6 +89,41 @@ Cada criterio del encargo, medido:
 - **Fluidez.** Mediana de 16,7 ms por fotograma en un recorrido completo con
   la rueda; los pocos fotogramas lentos están en la foto grande de la apertura.
 
+## Segunda ronda: lo que pidió el dueño al recorrerla
+
+- **Fotos homogéneas.** Todas las fotos de la portada pasan por la misma
+  gradación (`scripts/gradar-fotos.py`, detallada en `public/images/README.md`):
+  la exposición media quedó entre 0,37 y 0,39 (antes 0,33–0,56) y la
+  saturación entre 0,08 y 0,18 (antes 0,04–0,22). Los productos de la tienda,
+  todos sobre el mismo negro. Ya no hay filtros CSS sueltos por foto.
+- **La marquesina corre sola.** Bucle continuo sin costura (cada fila lleva su
+  texto dos veces y un hueco final que lo cierra; medida la costura: 0 px), en
+  sentidos contrarios. El desplazamiento le da gas (`empujePorVelocidad`) y le
+  cambia el sentido; fuera de la pantalla se pausa.
+- **La línea verde bajo «Snack bar».** Cada fila traza su línea por arriba;
+  la última trae además la suya por debajo.
+- **El cursor, sincronizado.** Punto y aro comparten un solo desplazamiento,
+  sin inercia: medidos en tres posiciones, los dos caen en el píxel del puntero.
+
+Y escenas nuevas, todas al servicio de la vuelta:
+
+- **La pista, a pantalla completa.** En pantallas anchas la primera foto del
+  mosaico entra ocupando toda la pantalla; con el mosaico fijo, la cámara se
+  aleja —vuelve a su casilla— y el resto del hangar aparece alrededor.
+  Comprobado que cubre la pantalla sin franjas en 1280×720, 1440×900,
+  1920×1080, 2560×1440 y 3440×1440.
+- **La charla antes de salir.** En el complejo fijo, la entradilla se
+  enciende palabra a palabra y después la vuelta recorre los cinco sectores.
+- **La galería enfoca.** La foto que pasa por el centro se ve entera y las
+  demás esperan más pequeñas y en penumbra (`enfoqueGaleria`).
+- **La bandera de meta ondea.** La banda de «Tu pase» es una bandera a cuadros
+  dibujada en un lienzo (`portada-bandera.js`): una onda la recorre desde el
+  mástil, con luz en las crestas y sombra en los valles, y ondea más fuerte
+  cuanto más rápido se baja. Solo se dibuja mientras se ve.
+
+Con todo esto, el recorrido completo a 1440×900 sigue en 16,7 ms de mediana y
+ningún fotograma pasa de 34 ms.
+
 ## Verificación
 
 - `npm test`, con pruebas nuevas para la vuelta (funciones puras

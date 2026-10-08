@@ -267,6 +267,13 @@
   text-transform: uppercase;
 }
 
+/* La escena del mosaico (pantallas anchas, con movimiento): la primera foto
+   entra a pantalla completa por encima de las demás y vuelve a su casilla. */
+.mosaico--escena .mosaico__foto:first-child {
+  z-index: 2;
+  will-change: transform;
+}
+
 @media (max-width: 760px) {
   .mosaico { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mosaico__foto--ancha { grid-column: 1 / -1; }
@@ -783,12 +790,13 @@
   height: 10px;
   background: repeating-linear-gradient(-45deg, var(--alerta) 0 14px, #111 14px 28px) 0 0 / 39.6px 10px;
 }
+/* Sin filtro propio: todas las fotos de la portada comparten la misma
+   gradación, hecha en los archivos (ver public/images/README.md). */
 .pronto__foto img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: saturate(.7) brightness(.82);
   will-change: transform;
 }
 
@@ -1095,6 +1103,15 @@
   transform: translateY(-50%);
 }
 
+/* Con movimiento la banda crece y deja ondear la bandera dibujada en su
+   lienzo (portada-bandera.js); sin él queda la tira de cuadros quieta. */
+.portada-animada .acceso__bandera--viva {
+  height: clamp(84px, 10vw, 140px);
+  background: none;
+  opacity: 1;
+}
+.acceso__lienzo { display: block; width: 100%; height: 100%; }
+
 @media (max-width: 960px) {
   .acceso__rejilla { grid-template-columns: minmax(0, 1fr); }
 }
@@ -1216,6 +1233,13 @@ html.lenis { scroll-behavior: auto; }
   transform-origin: left center;
 }
 
+/* La entradilla que se enciende palabra a palabra (escena del complejo):
+   cada palabra sabe su número (--i) y la entradilla, cuánto se ha leído
+   (--luz). Las aún no leídas esperan en penumbra; las leídas, enteras. */
+.portada-animada .seccion__lead--iluminada .palabra-lead {
+  opacity: calc(.22 + .78 * clamp(0, var(--luz, 99) - var(--i, 0), 1));
+}
+
 /* La marca verde de cada fecha se traza al llegar. */
 .portada-animada .evento::before {
   transform: scaleX(var(--linea, 1));
@@ -1234,10 +1258,13 @@ html.lenis { scroll-behavior: auto; }
   user-select: none;
 }
 .marquesina__fila {
+  /* El hueco final cierra el bucle: con él, media fila mide justo un texto. */
+  --hueco: clamp(20px, 3vw, 44px);
   display: flex;
   align-items: center;
-  gap: clamp(20px, 3vw, 44px);
+  gap: var(--hueco);
   width: max-content;
+  padding-right: var(--hueco);
   font-family: var(--display);
   font-stretch: 125%;
   font-size: clamp(2.6rem, 8vw, 7.6rem);
@@ -1455,6 +1482,22 @@ html.lenis { scroll-behavior: auto; }
 .ficha--guiada .ficha__fila.activa,
 .ficha--guiada .ficha__fila.vista { opacity: 1; }
 .ficha--guiada .ficha__fila.activa::before { transform: scaleX(1); }
+/* Cada fila traza su línea por arriba: la que separa dos filas es de la de
+   abajo. La última no tiene quien la cierre por debajo, así que trae la suya
+   y la enciende igual que las demás. */
+.ficha--guiada .ficha__fila:last-child::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  content: '';
+  background: var(--acento);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 520ms var(--pub-curva) 90ms;
+}
+.ficha--guiada .ficha__fila:last-child.activa::after { transform: scaleX(1); }
 .ficha--guiada .ficha__fila.activa strong { color: var(--acento); }
 .ficha--guiada .ficha__fila strong { transition: color 320ms ease-out; }
 
@@ -1546,6 +1589,7 @@ html.lenis { scroll-behavior: auto; }
   left: 0;
   z-index: 200;
   pointer-events: none;
+  will-change: transform;
 }
 .cursor__punto,
 .cursor__aro {

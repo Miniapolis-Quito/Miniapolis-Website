@@ -13,6 +13,7 @@ const CALCULOS = leer('public/js/portada-calculos.js');
 const ESCENAS = leer('public/js/portada-escenas.js');
 const TACTO = leer('public/js/portada-tacto.js');
 const VUELTA = leer('public/js/portada-vuelta.js');
+const BANDERA = leer('public/js/portada-bandera.js');
 
 const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -112,7 +113,7 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
 
 test('las hojas y el JS no dependen de rutas absolutas ni de terceros', () => {
   for (const hoja of [CSS, PUBLICO]) assert.doesNotMatch(hoja, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
-  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO + VUELTA, /https?:\/\//, 'sin CDN ni recursos externos');
+  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO + VUELTA + BANDERA, /https?:\/\//, 'sin CDN ni recursos externos');
   assert.doesNotMatch(HTML, /<script[^>]+src="(?:https?:)?\/\//, 'ningún script se pide a otro dominio');
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
   assert.doesNotMatch(HTML, /<script>(?!<\/script>)/, 'sin scripts en línea');
@@ -212,8 +213,10 @@ test('fluidez: GSAP y el CSS nunca animan la misma propiedad del mismo elemento'
 });
 
 test('fluidez: el puntero se sigue con quickTo y el imán no pisa el transform del botón', () => {
-  assert.match(TACTO, /gsap\.quickTo\(punto, 'x'/);
-  assert.match(TACTO, /gsap\.quickTo\(aro, 'x'/);
+  // Punto y aro van pegados al puntero y juntos: un solo desplazamiento, sin inercia.
+  assert.match(TACTO, /gsap\.quickSetter\(cursor, 'x', 'px'\)/);
+  assert.match(TACTO, /gsap\.quickSetter\(cursor, 'y', 'px'\)/);
+  assert.doesNotMatch(TACTO, /quickTo\((?:punto|aro),/, 'el aro no llega tarde: nada del cursor se interpola');
   assert.match(TACTO, /gsap\.quickTo\(boton, '--mx'/);
   assert.match(TACTO, /gsap\.quickTo\(tarjeta, 'rotationX'/);
   assert.match(CSS, /\.hero__acciones \.boton,[\s\S]*?\{\s*translate:\s*var\(--mx, 0px\) var\(--my, 0px\);\s*\}/,
@@ -235,12 +238,14 @@ test('fluidez: el avance de lectura se pinta una vez por fotograma y el desplaza
 test('las escenas fijas solo existen en pantallas anchas y se deshacen al cambiar de formato', () => {
   assert.match(ESCENAS, /const mm = gsap\.matchMedia\(\);/);
   const fijas = (ESCENAS.match(/pin: true/g) ?? []).length;
-  assert.equal(fijas, 3, 'apertura, vuelta por sectores y galería');
+  assert.equal(fijas, 4, 'apertura, mosaico de la pista, vuelta por sectores y galería');
+  assert.match(ESCENAS, /mm\.add\(\{ escena: '\(min-width: 1100px\)[^']*' \}[\s\S]*?if \(!contexto\.conditions\.escena\) \{\s*fotosMosaico\.forEach\(revelarFoto\);/,
+    'el mosaico solo se fija en pantallas anchas; en las demás, cada foto se revela sola');
   assert.match(ESCENAS, /scrollTrigger: ancho\s*\?\s*\{ trigger: hero, start: 'top top', end: 'bottom top', pin: true, pinSpacing: false/,
     'la apertura solo se fija en pantallas anchas, y sin reservar espacio: la pista sube por encima como un telón');
   assert.match(ESCENAS, /if \(contexto\.conditions\.grande\) \{[\s\S]*?pin: true/, 'la vuelta por sectores solo se fija en pantallas grandes');
   assert.match(ESCENAS, /if \(!contexto\.conditions\.ancho\) \{[\s\S]*?return undefined;\s*\}\s*galeria\.classList\.add\('galeria-fija'\)/, 'la galería solo corre de lado en pantallas anchas');
-  assert.match(ESCENAS, /return \(\) => \{\s*galeria\.classList\.remove\('galeria-fija'\)/, 'al salir del formato se retira la clase y vuelve la tira deslizable');
+  assert.match(ESCENAS, /return \(\) => \{\s*ScrollTrigger\.removeEventListener\('refresh', enfocar\);\s*galeria\.classList\.remove\('galeria-fija'\)/, 'al salir del formato se retira la clase y vuelve la tira deslizable');
   assert.match(CSS, /\.galeria-fija \{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s, 'la columna mide la pantalla y no la tira entera');
 });
 
@@ -412,7 +417,7 @@ test('una sola gramática de movimiento: el encabezado se lee en orden y nada gi
   assert.match(ESCENAS, /const SUBIDA = \{ opacity: 0, y: 36, duration: 1\.1 \};/);
   assert.ok((ESCENAS.match(/\.\.\.SUBIDA/g) ?? []).length >= 10, 'los bloques comparten la misma subida');
   // Las fotos del recorrido se descubren todas en el mismo sentido.
-  assert.match(ESCENAS, /\$\$\('\.mosaico__foto'\)\.forEach[\s\S]*?clipPath: 'inset\(100% 0% 0% 0%\)'/);
+  assert.match(ESCENAS, /const revelarFoto = \(foto, i\) => \{[\s\S]*?clipPath: 'inset\(100% 0% 0% 0%\)'/);
   assert.doesNotMatch(ESCENAS, /const cortes = /);
 });
 
@@ -432,4 +437,68 @@ test('lo que espera a revelarse se puede enfocar con el teclado', () => {
   assert.match(usos[0], /^\.to\('\.hero__semaforo', \{ autoAlpha: 0, y: -30 \}, 0\);?$/, 'solo el semáforo, que es decorativo');
   assert.doesNotMatch(codigo + TACTO, /visibility:\s*['"]?hidden/);
   assert.match(ESCENAS, /cabecera\.addEventListener\('focusin', \(\) => poner\(true\)\)/, 'la cabecera escondida vuelve en cuanto el foco entra en ella');
+});
+
+test('la pista: la curva entra a pantalla completa y vuelve a su casilla del mosaico', () => {
+  // Cubre la pantalla con la escala justa y sin deformarse (la misma en los dos ejes).
+  assert.match(ESCENAS, /Math\.max\(window\.innerWidth \/ c\.ancho, window\.innerHeight \/ c\.alto\) \* 1\.01/);
+  // La posición sale del mosaico (que no se transforma) y no de offsetLeft: al fijarlo,
+  // ScrollTrigger lo envuelve y offsetLeft contaría desde el envoltorio. El tamaño, de
+  // maquetación (offset*), no cambia con el transform de la escena.
+  assert.match(ESCENAS, /izquierda: mosaico\.getBoundingClientRect\(\)\.left/);
+  assert.doesNotMatch(ESCENAS, /izquierda: principal\.offsetLeft/);
+  assert.match(ESCENAS, /ancho: principal\.offsetWidth/);
+  // En pantalla ancha la foto llega a ocupar toda la pantalla: se pide el archivo grande.
+  assert.match(HTML, /sizes="\(max-width: 760px\) 100vw, \(min-width: 1100px\) 100vw, 64vw"[^>]*>\s*<figcaption>Curva con bordillo/);
+  assert.match(ESCENAS, /\{ x: 0, y: 0, scale: 1, borderRadius: 4, duration: 1, ease: 'power2\.inOut' \}/, 'termina exactamente en su casilla');
+  assert.match(ESCENAS, /invalidateOnRefresh: true/, 'al cambiar el tamaño de la ventana se vuelve a medir');
+  assert.match(CSS, /\.mosaico--escena \.mosaico__foto:first-child \{[^}]*z-index: 2;/s, 'pasa por encima de sus vecinas mientras vuelve');
+});
+
+test('la galería enfoca la foto que pasa por el centro', () => {
+  assert.match(ESCENAS, /enfoqueGaleria\(caja\.left \+ caja\.width \/ 2, centro, window\.innerWidth\)/);
+  assert.match(ESCENAS, /onUpdate: enfocar/, 'se recalcula con cada paso de la tira, también mientras el scrub la alcanza');
+  // Se atenúa el marco, no la figura: el pie y el contenido siguen enteros.
+  assert.match(ESCENAS, /const marco = \$\('\.galeria__marco', foto\)/);
+});
+
+test('la meta: una bandera a cuadros de verdad que ondea, y solo mientras se ve', () => {
+  assert.match(ESCENAS, /import \{ montarBandera \} from '\.\/portada-bandera\.js'/);
+  assert.match(BANDERA, /from '\.\/portada-calculos\.js'/, 'la onda es una función pura y probada');
+  assert.match(BANDERA, /onToggle: \(self\) => \(self\.isActive \? gsap\.ticker\.add\(latir\) : gsap\.ticker\.remove\(latir\)\)/, 'fuera de la pantalla no se dibuja');
+  assert.match(BANDERA, /Math\.min\(2, window\.devicePixelRatio \|\| 1\)/, 'nítida en pantallas densas, sin pasarse de memoria');
+  assert.match(BANDERA, /if \(!banda \|\| !ctx\) return/, 'sin lienzo queda la tira del CSS');
+  assert.match(HTML, /<div class="acceso__bandera" aria-hidden="true">/, 'es decorativa');
+  assert.match(CSS, /\.portada-animada \.acceso__bandera--viva \{[^}]*height: clamp\(/s, 'solo crece con movimiento');
+});
+
+test('la marquesina corre sola, sin costura, y el desplazamiento le da gas', () => {
+  assert.match(ESCENAS, /repeat: -1,\s*paused: true,/, 'un bucle infinito que solo corre mientras se ve');
+  assert.match(ESCENAS, /xPercent: alReves \? 0 : -50/, 'corre media fila: el texto va dos veces');
+  assert.match(ESCENAS, /bucle\.totalTime\(bucle\.duration\(\) \* 1000\)/, 'arranca lejos del inicio para poder correr también hacia atrás');
+  assert.match(ESCENAS, /empujePorVelocidad\(velocidad\) \* sentido/, 'acelera con la velocidad y el sentido lo marca hacia dónde se baja');
+  assert.match(CSS, /\.marquesina__fila \{[^}]*gap: var\(--hueco\);[^}]*padding-right: var\(--hueco\);/s, 'el hueco final cierra el bucle');
+  // Cada fila lleva su texto dos veces, idénticas: media fila es un texto entero.
+  for (const fila of HTML.match(/<div class="marquesina__fila[^"]*">.*?<\/div>/g)) {
+    const piezas = [...fila.matchAll(/<span>([^<]+)<\/span>/g)].map((m) => m[1]);
+    assert.deepEqual(piezas.slice(0, piezas.length / 2), piezas.slice(piezas.length / 2));
+  }
+});
+
+test('la ficha cierra su última fila con la misma línea verde que las demás', () => {
+  assert.match(CSS, /\.ficha--guiada \.ficha__fila:last-child::after \{[^}]*bottom: -1px;[^}]*background: var\(--acento\);/s);
+  assert.match(CSS, /\.ficha--guiada \.ficha__fila:last-child\.activa::after \{ transform: scaleX\(1\); \}/);
+});
+
+test('la entradilla del complejo se enciende palabra a palabra antes de la vuelta', () => {
+  assert.match(ESCENAS, /palabra\.style\.setProperty\('--i', i\)/, 'cada palabra sabe su número, también tras volver a partir el texto');
+  assert.match(ESCENAS, /tl\.fromTo\(lead, \{ '--luz': 0 \}, \{ '--luz': palabras \+ 1/);
+  // Sin la escena, todo encendido: --luz no definida vale 99.
+  assert.match(CSS, /\.portada-animada \.seccion__lead--iluminada \.palabra-lead \{\s*opacity: calc\(\.22 \+ \.78 \* clamp\(0, var\(--luz, 99\) - var\(--i, 0\), 1\)\);/);
+});
+
+test('todas las fotos comparten una misma gradación, hecha en los archivos', () => {
+  assert.doesNotMatch(sinComentarios(CSS), /\.pronto__foto img \{[^}]*filter/, 'ninguna foto lleva un filtro propio que la aparte de las demás');
+  assert.ok(fs.existsSync('scripts/gradar-fotos.py'), 'la gradación se puede repetir con una foto nueva');
+  assert.match(leer('public/images/README.md'), /gradar-fotos\.py/);
 });

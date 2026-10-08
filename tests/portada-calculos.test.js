@@ -4,7 +4,7 @@ import {
   limitar, easeOutCubic, valorContado, tiempoEnTexto, progresoLectura,
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
   formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
-  sectorEnCurso, vueltaCompleta, progresosDeSectores, tiempoDeVuelta,
+  sectorEnCurso, vueltaCompleta, progresosDeSectores, tiempoDeVuelta, empujePorVelocidad, onda, enfoqueGaleria,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -162,4 +162,31 @@ test('tiempoDeVuelta se lee como un cronómetro: minutos, segundos y décimas', 
   assert.equal(tiempoDeVuelta(Number.NaN), '');
   // El tablero de salidas lo hace rodar sin mover los dos puntos ni el punto.
   assert.match(cifrasRodando('1:42.3', 0.5, () => 0), /^\d:\d{2}\.\d$/);
+});
+
+test('empujePorVelocidad: la marquesina va a su paso y el desplazamiento le da gas', () => {
+  assert.equal(empujePorVelocidad(0), 1, 'quieta, a paso de crucero');
+  assert.equal(empujePorVelocidad(260), 2);
+  assert.equal(empujePorVelocidad(-260), 2, 'subir empuja igual; el sentido va aparte');
+  assert.equal(empujePorVelocidad(100000), 7, 'un tirón de rueda no la dispara');
+  assert.equal(empujePorVelocidad(Number.NaN), 1);
+});
+
+test('onda: la bandera de meta ondea entre límites y el mástil la sujeta', () => {
+  for (const t of [0, 0.4, 1.7, 9.3]) {
+    for (const i of [0, 5, 20, 40]) {
+      const { desplazamiento, luz } = onda(i, 1, t, 40);
+      assert.ok(Math.abs(desplazamiento) <= 1 && Math.abs(luz) <= 1, 'nunca se sale de la banda');
+    }
+  }
+  const junto = Math.max(...[0, 0.3, 0.6, 0.9].map((t) => Math.abs(onda(0, 0, t, 40).desplazamiento)));
+  const libre = Math.max(...[0, 0.3, 0.6, 0.9].map((t) => Math.abs(onda(39, 0, t, 40).desplazamiento)));
+  assert.ok(junto <= 0.25 && libre > 0.6, 'junto al mástil apenas se mueve; el extremo libre ondea');
+  assert.notDeepEqual(onda(10, 1, 0, 40), onda(10, 1, 0.5, 40), 'la tela se mueve con el tiempo');
+});
+
+test('enfoqueGaleria: la foto del centro está en foco y las de los lados se apartan', () => {
+  assert.equal(enfoqueGaleria(720, 720, 1440), 0);
+  assert.ok(Math.abs(enfoqueGaleria(720 + 396, 720, 1440) - 0.5) < 1e-9, 'a un cuarto de pantalla, a medias');
+  assert.equal(enfoqueGaleria(-500, 720, 1440), 1, 'fuera de la pantalla, del todo fuera de foco');
 });
