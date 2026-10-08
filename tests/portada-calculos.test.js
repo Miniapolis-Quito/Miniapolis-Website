@@ -5,6 +5,7 @@ import {
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
   formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
   sectorEnCurso, vueltaCompleta, progresosDeSectores, tiempoDeVuelta, empujePorVelocidad, onda, enfoqueGaleria,
+  enCarrera, salidaDeCarrera, momentosDeLlegada,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -189,4 +190,26 @@ test('enfoqueGaleria: la foto del centro está en foco y las de los lados se apa
   assert.equal(enfoqueGaleria(720, 720, 1440), 0);
   assert.ok(Math.abs(enfoqueGaleria(720 + 396, 720, 1440) - 0.5) < 1e-9, 'a un cuarto de pantalla, a medias');
   assert.equal(enfoqueGaleria(-500, 720, 1440), 1, 'fuera de la pantalla, del todo fuera de foco');
+});
+
+test('enCarrera: hasta la meta corre con el reloj común y al cruzarla se queda en su marca', () => {
+  assert.deepEqual(enCarrera(11.8, 11.8, 12.46), { tiempo: 11.8, avance: 0, llego: false });
+  const mitad = enCarrera(12.13, 11.8, 12.46);
+  assert.equal(mitad.tiempo, 12.13);
+  assert.ok(Math.abs(mitad.avance - 0.5) < 1e-9, 'a medio camino, media barra');
+  assert.deepEqual(enCarrera(12.9, 11.8, 12.46), { tiempo: 12.46, avance: 1, llego: true }, 'el reloj sigue, su marca no');
+  assert.equal(enCarrera(12, 12, 12).avance, 1, 'sin recorrido, ya llegó');
+});
+
+test('salidaDeCarrera: una décima redonda antes del mejor tiempo', () => {
+  assert.equal(salidaDeCarrera([12.46, 12.86, 13.04]), 11.8);
+  assert.equal(salidaDeCarrera([9.95], 0.5), 9.4);
+});
+
+test('momentosDeLlegada: las diferencias reales, a cámara lenta', () => {
+  const [lider, segundo, tercero] = momentosDeLlegada([12.46, 12.86, 13.04], 11.8);
+  assert.ok(Math.abs(lider - 1.32) < 1e-9);
+  assert.ok(Math.abs(segundo - lider - 0.8) < 1e-9, '+0.40 se ve como 0,8 s');
+  assert.ok(Math.abs(tercero - lider - 1.16) < 1e-9, '+0.58 se ve como 1,16 s');
+  assert.deepEqual(momentosDeLlegada([10], 11), [0], 'nadie llega antes de la salida');
 });

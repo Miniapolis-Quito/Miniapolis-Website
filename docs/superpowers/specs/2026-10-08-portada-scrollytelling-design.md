@@ -39,7 +39,7 @@ Pocas piezas, siempre las mismas:
 | Pieza | Movimiento |
 |---|---|
 | Encabezado | Un solo disparo por encabezado y en orden de lectura: el índice (el número sube por su ventana y su línea se traza), el titular palabra a palabra (0,1 s) y la entradilla línea a línea (0,32 s). |
-| Bloques (filas, tarjetas, paneles) | `SUBIDA`: suben 36 px y se encienden, en escalera de 0,08 s. |
+| Cajas (cifras, filas, tarjetas, paneles) | La telemetría las fija (`portada-mira.js`): un haz de lectura las imprime de izquierda a derecha y una mira, la del cursor, se cierra sobre ellas y se retira. El texto suelto (notas, botones) sigue con `SUBIDA`. |
 | Fotos | Se descubren de abajo arriba mientras la imagen se asienta; al pasar se desplazan un poco más despacio que la página. |
 | Datos | Se cuentan como en la pista: el cronómetro corre hasta el récord, el tablero de salidas rueda hasta la hora, el auto dibuja el trazado mientras se lee la ficha. |
 | Escenas fijas | Solo en pantallas anchas: la salida, la vuelta por los cinco sectores del complejo y la galería que corre de lado. |
@@ -123,6 +123,40 @@ Y escenas nuevas, todas al servicio de la vuelta:
 
 Con todo esto, el recorrido completo a 1440×900 sigue en 16,7 ms de mediana y
 ningún fotograma pasa de 34 ms.
+
+## Tercera ronda: cada caja, fijada por la telemetría
+
+El dueño pidió que cada caja de contenido, hasta la más pequeña, contara su
+parte. En lugar de un efecto distinto por caja, una sola idea que ya estaba
+en la página: el cursor es una mira táctica de un puesto de telemetría. Las
+cajas responden en ese idioma.
+
+- **Fijar.** Al llegar a una caja, un haz verde la recorre en el sentido de
+  la marcha y la va imprimiendo (`clip-path`, que no la saca del orden del
+  teclado); detrás deja una estela que se apaga. Cuatro escuadras se cierran
+  sobre ella como al fijar un objetivo y se retiran. Al terminar no queda
+  recorte: vuelven la sombra del pase y la inclinación 3D de la tienda. Lo
+  usan las cifras de la apertura, los sectores del complejo en el teléfono,
+  el plano y las filas de la ficha, las jornadas, el tablero de récords, las
+  fechas, la tienda, las ventajas y el pie.
+- **La mira sigue la lectura.** En la vuelta del complejo, una sola mira salta
+  de sector en sector con el tramo que se corre. En la ficha se fija en la
+  fila que se lee y su dato rueda hasta el valor, como el tablero de horarios.
+- **Foto finish.** Los récords se corren: un reloj común arranca en 11.80 y
+  cada piloto avanza hacia la meta con su barra; cruza en su tiempo y su cifra
+  se queda quieta. Las llegadas se separan lo que separan las marcas, a
+  cámara lenta (+0.40 son 0,8 s): se ve quién gana y por cuánto. El destello es
+  del mejor tiempo. Mientras corren, los lectores de pantalla oyen la marca
+  real (`enCarrera`, `salidaDeCarrera`, `momentosDeLlegada`).
+- **Las fechas se confirman.** Cada cifra de la agenda llega en contorno y se
+  rellena cuando su tarjeta se fija.
+- **El pase da la vuelta.** El borde del panel de acceso se traza entero, desde
+  la esquina de salida y en el sentido de la marcha; al cerrarse, el pase se
+  abre.
+
+Comprobado bajando, subiendo y volviendo a bajar: ninguna caja se queda a
+medias. Sin movimiento la mira no existe y todo se ve completo. El recorrido
+completo sigue en 16,7 ms de mediana por fotograma.
 
 ## Verificación
 

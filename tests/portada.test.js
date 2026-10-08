@@ -14,6 +14,7 @@ const ESCENAS = leer('public/js/portada-escenas.js');
 const TACTO = leer('public/js/portada-tacto.js');
 const VUELTA = leer('public/js/portada-vuelta.js');
 const BANDERA = leer('public/js/portada-bandera.js');
+const MIRA = leer('public/js/portada-mira.js');
 
 const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = (css) => [...sinComentarios(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -113,7 +114,7 @@ test('cada imagen declara su tamaño y su alt, y todas las rutas existen', () =>
 
 test('las hojas y el JS no dependen de rutas absolutas ni de terceros', () => {
   for (const hoja of [CSS, PUBLICO]) assert.doesNotMatch(hoja, /url\(\s*["']?\/(?!\/)/, 'las url() del CSS deben ser relativas o data:');
-  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO + VUELTA + BANDERA, /https?:\/\//, 'sin CDN ni recursos externos');
+  assert.doesNotMatch(JS + ARRANQUE + CALCULOS + ESCENAS + TACTO + VUELTA + BANDERA + MIRA, /https?:\/\//, 'sin CDN ni recursos externos');
   assert.doesNotMatch(HTML, /<script[^>]+src="(?:https?:)?\/\//, 'ningún script se pide a otro dominio');
   assert.doesNotMatch(HTML, /\sstyle="/, 'la política de seguridad prohíbe estilos en línea');
   assert.doesNotMatch(HTML, /<script>(?!<\/script>)/, 'sin scripts en línea');
@@ -140,7 +141,7 @@ test('solo lo clicable tiene :hover', () => {
 
 test('lo que se oculta para animarse solo se oculta bajo .portada-intro o .portada-animada', () => {
   // Velos y brillos decorativos empiezan apagados: no son contenido.
-  const DECORADO = /^(?:\.hero__sombra|\.producto::after|\.cursor[\w-]*|\.cursor--[\w-]+ \.cursor__[\w-]+|\.disciplinas__vuelta)$/;
+  const DECORADO = /^(?:\.hero__sombra|\.producto::after|\.cursor[\w-]*|\.cursor--[\w-]+ \.cursor__[\w-]+|\.disciplinas__vuelta|\.mira(?:__haz|--viajera)?(?: > i)?)$/;
   const ocultan = /(?:^|[;\s])opacity:\s*0\s*(?:;|$)|clip-path:\s*inset\(|visibility:\s*hidden|translate3d\(0,\s*1\d\d%/;
   const fallos = reglas(CSS)
     .filter(({ selector }) => !selector.startsWith('@') && !/^(?:\d|from|to)/.test(selector))
@@ -202,7 +203,8 @@ test('fluidez: GSAP y el CSS nunca animan la misma propiedad del mismo elemento'
   // tirones. Estos son los elementos que mueven las escenas y el puntero.
   const MOVIDOS = ['.hero__foto', '.hero__contenido', '.hero__cifras', '.hero__acciones', '.cifra', '.mosaico__foto', '.marquesina',
     '.marquesina__fila', '.disciplina', '.plano', '.horario', '.tiempos', '.tiempo', '.evento', '.galeria', '.galeria__foto',
-    '.productos > li', '.producto', '.ventaja', '.entrada__acceso-panel', '.sitio-barra'];
+    '.productos > li', '.producto', '.ventaja', '.entrada__acceso-panel', '.sitio-barra', '.mira', '.mira > i', '.mira__haz',
+    '.mira--viajera', '.tiempo__carrera'];
   const pisan = reglas(CSS + PUBLICO)
     .filter(({ selector }) => selector.split(',').some((uno) => MOVIDOS.includes(uno.trim())))
     .filter(({ cuerpo }) => /transition:[^;]*\b(?:transform|all)\b/.test(cuerpo))
@@ -280,8 +282,10 @@ test('el horario dice la verdad del momento y lo que rueda no engaña a los lect
   assert.match(JS, /montarHorarioVivo\(\);\s*setInterval\(\(\) => montarHorarioVivo\(\), 60_000\)/);
   assert.match(JS, /etiqueta\.textContent = textoJornada\(estado, rango\)/, 'el estado se escribe como texto, no solo como color');
   // Cronómetro de récords y tablero de horarios: mientras ruedan, se anuncia el valor real.
-  assert.equal((ESCENAS.match(/setAttribute\('aria-label', final\)/g) ?? []).length, 2);
-  assert.match(ESCENAS, /tiempoEnTexto\(cuenta\.v, 2, final\.length\)/, 'la cifra que corre no cambia de ancho');
+  assert.match(ESCENAS, /const rodarCifras = [\s\S]*?onStart: \(\) => el\.setAttribute\('aria-label', final\)[\s\S]*?el\.removeAttribute\('aria-label'\)/,
+    'mientras ruedan las cifras se anuncia el dato real');
+  assert.match(ESCENAS, /corredores\.forEach\(\(c\) => c\.celda\.setAttribute\('aria-label', c\.final\)\)/, 'durante el foto finish se anuncia la marca, no el reloj');
+  assert.match(ESCENAS, /tiempoEnTexto\(tiempo, 2, c\.final\.length\)/, 'la cifra que corre no cambia de ancho');
   assert.match(ESCENAS, /cifrasRodando\(final, rueda\.p\)/, 'en las horas solo ruedan las cifras');
   assert.match(ESCENAS, /tituloHero\.setAttribute\('aria-label'/, 'el titular partido en letras se anuncia entero');
   assert.match(ESCENAS, /aria: 'auto'/, 'los titulares partidos conservan su texto accesible');
@@ -414,8 +418,10 @@ test('una sola gramática de movimiento: el encabezado se lee en orden y nada gi
   // Las rejillas (fechas, tienda) no se descuadran mientras se leen.
   assert.doesNotMatch(ESCENAS, /trigger: '\.(?:agenda|productos)', start: 'top bottom', end: 'bottom top', scrub: true/);
   assert.doesNotMatch(ESCENAS, /scrambleText/);
+  // El texto suelto sube; las cajas las fija la telemetría, todas igual.
   assert.match(ESCENAS, /const SUBIDA = \{ opacity: 0, y: 36, duration: 1\.1 \};/);
-  assert.ok((ESCENAS.match(/\.\.\.SUBIDA/g) ?? []).length >= 10, 'los bloques comparten la misma subida');
+  assert.ok((ESCENAS.match(/\.\.\.SUBIDA/g) ?? []).length >= 3, 'el texto suelto comparte la misma subida');
+  assert.ok((ESCENAS.match(/\bfijar\(/g) ?? []).length >= 9, 'las cajas comparten la misma entrada');
   // Las fotos del recorrido se descubren todas en el mismo sentido.
   assert.match(ESCENAS, /const revelarFoto = \(foto, i\) => \{[\s\S]*?clipPath: 'inset\(100% 0% 0% 0%\)'/);
   assert.doesNotMatch(ESCENAS, /const cortes = /);
@@ -501,4 +507,47 @@ test('todas las fotos comparten una misma gradación, hecha en los archivos', ()
   assert.doesNotMatch(sinComentarios(CSS), /\.pronto__foto img \{[^}]*filter/, 'ninguna foto lleva un filtro propio que la aparte de las demás');
   assert.ok(fs.existsSync('scripts/gradar-fotos.py'), 'la gradación se puede repetir con una foto nueva');
   assert.match(leer('public/images/README.md'), /gradar-fotos\.py/);
+});
+
+test('la telemetría fija cada caja: el haz la imprime y la mira se cierra sobre ella', () => {
+  assert.match(ESCENAS, /from '\.\/portada-mira\.js'/);
+  // El haz imprime en el sentido de la marcha y, al terminar, la caja queda sin recorte.
+  assert.match(MIRA, /clipPath: 'inset\(0% 100% 0% 0%\)' \}, \{ clipPath: 'inset\(0% 0% 0% 0%\)'/);
+  assert.match(MIRA, /\.fromTo\(haz, \{ left: '0%', opacity: 1 \}, \{ left: '100%'/, 'el haz va con el borde de lo impreso');
+  assert.match(MIRA, /\.set\(caja, \{ clipPath: 'none' \}, duracion\)/, 'impresa la caja, vuelven su sombra y lo que asoma del borde');
+  assert.match(MIRA, /mira\.setAttribute\('aria-hidden', 'true'\)/, 'la mira es decorativa');
+  assert.doesNotMatch(MIRA, /autoAlpha|visibility/, 'lo que espera sigue en el orden del teclado');
+  // Cada caja, hasta la más pequeña.
+  for (const caja of ["'.hero__cifras .cifra'", 'fijar\\(disciplina', 'fijar\\(plano', 'fijar\\(fila, \\{ duracion: 0\\.8', 'fijar\\(fila, \\{ retraso: i \\* 0\\.12',
+    'fijar\\(tablero', 'fijar\\(evento', 'fijar\\(tarjeta', 'fijar\\(ventaja', "'.sitio-pie__marca, .sitio-pie__columna'"]) {
+    assert.match(ESCENAS, new RegExp(caja), `sin fijar: ${caja}`);
+  }
+  // Solo con movimiento: la mira la crea el módulo, la hoja no la dibuja sola.
+  assert.doesNotMatch(HTML, /class="mira/);
+  assert.match(CSS, /\.mira > i \{[^}]*opacity: 0;/, 'las escuadras esperan apagadas');
+});
+
+test('donde se lee en orden, una sola mira sigue la lectura', () => {
+  assert.match(ESCENAS, /const \{ mira, apuntar \} = miraViajera\(pistaDisciplinas\);/, 'la mira corre la vuelta del complejo sector a sector');
+  assert.match(ESCENAS, /if \(i > 0\) tl\.to\(mira, \{ \.\.\.destino\(i\)/);
+  assert.match(ESCENAS, /const \{ mira, apuntar \} = miraViajera\(ficha\);/, 'en la ficha sigue la fila que se lee');
+  assert.match(ESCENAS, /rodarCifras\(\$\('strong', fila\)\)/, 'y su dato rueda hasta su valor');
+  assert.match(MIRA, /return \{ x: a\.left - b\.left - margen, y: a\.top - b\.top - margen/, 'la mira se mide contra su contenedor: no le afecta la escena fija');
+});
+
+test('récords: foto finish con las diferencias reales', () => {
+  assert.match(ESCENAS, /const inicio = salidaDeCarrera\(finales\);\s*const llegadas = momentosDeLlegada\(finales, inicio\);/);
+  assert.match(ESCENAS, /enCarrera\(reloj\.t, inicio, c\.valor\)/, 'un solo reloj para todos');
+  assert.match(ESCENAS, /corredores\.forEach\(\(c, i\) => tl\.call\(\(\) => llegar\(c\), null, SALIDA \+ llegadas\[i\]\)\)/, 'cada uno cruza en su tiempo');
+  assert.match(ESCENAS, /if \(c\.valor === mejor\) c\.fila\.classList\.add\('tiempo--destello'\)/, 'el destello es del mejor tiempo, no de la primera fila');
+  assert.match(ESCENAS, /scrollTrigger: unaVez\(tablero, 'top 80%'\)/, 'la carrera se corre una vez');
+  assert.match(CSS, /\.tiempo--en-carrera \{ isolation: isolate; \}/, 'la barra corre por debajo del texto');
+});
+
+test('el pase traza su borde como una vuelta y las fechas se confirman', () => {
+  assert.match(ESCENAS, /<rect x="0" y="0" width="100%" height="100%" rx="10" pathLength="1"\/>/);
+  assert.match(ESCENAS, /\.fromTo\(borde, \{ strokeDasharray: 1, strokeDashoffset: 1, opacity: 1 \}, \{ strokeDashoffset: 0, autoRound: false/, 'con pathLength el trazo no puede redondearse');
+  assert.match(ESCENAS, /\.fromTo\(\$\('\.evento__fecha b', evento\), \{ '--relleno': 0 \}, \{ '--relleno': 1/);
+  assert.match(CSS, /\.portada-animada \.evento__fecha b \{[^}]*color: color-mix\(in srgb, var\(--texto\) calc\(var\(--relleno, 1\) \* 100%\), transparent\);/s,
+    'sin movimiento la cifra está llena');
 });

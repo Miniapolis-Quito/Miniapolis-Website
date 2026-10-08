@@ -205,3 +205,31 @@ export function onda(i, j, t, columnas = 40) {
 export function enfoqueGaleria(centroFoto, centroPantalla, anchoPantalla) {
   return limitar(Math.abs(centroFoto - centroPantalla) / Math.max(1, anchoPantalla * 0.55));
 }
+
+/**
+ * Foto finish del tablero de récords. Un solo reloj corre para todos desde
+ * `inicio` y cada piloto cruza la meta en su tiempo: hasta entonces su cifra
+ * es la del reloj y su barra avanza hacia la meta (0..1); al cruzar se queda
+ * en su marca.
+ */
+export function enCarrera(reloj, inicio, final) {
+  const tiempo = Math.min(reloj, final);
+  const tramo = final - inicio;
+  return { tiempo, avance: tramo > 0 ? limitar((tiempo - inicio) / tramo) : 1, llego: reloj >= final };
+}
+
+/**
+ * Cuándo arranca el reloj común: una décima redonda que deja `ventaja`
+ * segundos de carrera antes de la primera llegada.
+ */
+export function salidaDeCarrera(finales, ventaja = 0.6) {
+  return Math.floor((Math.min(...finales) - ventaja) * 10) / 10;
+}
+
+/**
+ * Cuándo cruza cada uno, en segundos de escena: las diferencias reales, a
+ * cámara lenta (`lentitud` veces más despacio) para que se vean.
+ */
+export function momentosDeLlegada(finales, inicio, lentitud = 2) {
+  return finales.map((final) => Math.max(0, (final - inicio) * lentitud));
+}
