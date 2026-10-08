@@ -175,3 +175,33 @@ export function tiempoDeVuelta(ms) {
   const segundos = Math.floor((decimas % 600) / 10);
   return `${minutos}:${String(segundos).padStart(2, '0')}.${decimas % 10}`;
 }
+
+/**
+ * Cuánto empuja el desplazamiento a la marquesina: 1 es su paso de crucero y
+ * crece con la velocidad (px/s) hasta `tope` veces. Siempre positivo; el
+ * sentido lo pone hacia dónde se desplaza.
+ */
+export function empujePorVelocidad(velocidad, escala = 260, tope = 7) {
+  const empuje = 1 + Math.abs(Number(velocidad) || 0) / escala;
+  return Math.round(Math.min(tope, empuje) * 100) / 100;
+}
+
+/**
+ * La onda de la bandera de meta en el vértice (i, j) de la tela en el
+ * instante `t` (s). `desplazamiento` (-1..1) es cuánto sube o baja ese punto;
+ * crece del mástil (columna 0, casi quieta) al extremo libre. `luz` (-1..1)
+ * es la pendiente: crestas iluminadas, valles en sombra.
+ */
+export function onda(i, j, t, columnas = 40) {
+  const fase = i * 0.42 + j * 0.18 - t * 3.1;
+  const libre = Math.min(1, 0.25 + (i / Math.max(1, columnas)) * 1.5);
+  return { desplazamiento: Math.sin(fase) * libre, luz: Math.cos(fase) };
+}
+
+/**
+ * Cuánto se aparta una foto de la galería del foco (0 en el centro de la
+ * pantalla, 1 a partir de algo más de media pantalla de distancia).
+ */
+export function enfoqueGaleria(centroFoto, centroPantalla, anchoPantalla) {
+  return limitar(Math.abs(centroFoto - centroPantalla) / Math.max(1, anchoPantalla * 0.55));
+}

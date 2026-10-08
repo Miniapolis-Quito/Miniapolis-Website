@@ -1,14 +1,15 @@
 /**
  * Portada: lo que responde al puntero.
  *
- * Solo con ratón o trackpad y movimiento permitido. Todo se mueve con
- * `gsap.quickTo`, que reutiliza una sola interpolación por propiedad: el
- * puntero cambia de objetivo cien veces por segundo y la pieza lo sigue con
- * suavidad, sin reiniciar una transición CSS en cada evento (que es lo que
- * hace que un hover se sienta a tirones).
+ * Solo con ratón o trackpad y movimiento permitido. Lo que sigue al puntero
+ * con suavidad (imanes, tarjetas) se mueve con `gsap.quickTo`, que reutiliza
+ * una sola interpolación por propiedad: el puntero cambia de objetivo cien
+ * veces por segundo y la pieza lo sigue sin reiniciar una transición CSS en
+ * cada evento (que es lo que hace que un hover se sienta a tirones).
  *
- *  - Cursor: un punto que va pegado al puntero y un aro que lo sigue con un
- *    poco de inercia y se abre sobre lo que se puede pulsar.
+ *  - Cursor: un punto y un aro que van exactamente donde está el puntero, los
+ *    dos a la vez y sin inercia (un aro que llega tarde se lee como un fallo);
+ *    el aro solo cambia de tamaño: se abre sobre lo que se puede pulsar.
  *  - Imán: los botones grandes se acercan al puntero. Se mueven con la
  *    propiedad CSS `translate` (variables --mx/--my), que no pisa el
  *    `transform` con el que el botón sube al pasar por encima.
@@ -35,29 +36,21 @@ function montarCursor(gsap) {
   document.body.append(cursor);
   document.documentElement.classList.add('cursor-propio');
 
-  const xPunto = gsap.quickTo(punto, 'x', { duration: 0.08, ease: 'power3' });
-  const yPunto = gsap.quickTo(punto, 'y', { duration: 0.08, ease: 'power3' });
-  const xAro = gsap.quickTo(aro, 'x', { duration: 0.45, ease: 'power3' });
-  const yAro = gsap.quickTo(aro, 'y', { duration: 0.45, ease: 'power3' });
+  // Se mueve el cursor entero, sin interpolar: punto y aro comparten un solo
+  // desplazamiento, así que van siempre juntos y pegados al puntero.
+  const ponerX = gsap.quickSetter(cursor, 'x', 'px');
+  const ponerY = gsap.quickSetter(cursor, 'y', 'px');
 
-  let dentro = false;
   window.addEventListener('pointermove', (evento) => {
     if (evento.pointerType !== 'mouse') return;
-    if (!dentro) {
-      // La primera vez el aro aparece donde está el puntero, sin viajar desde la esquina.
-      gsap.set([punto, aro], { x: evento.clientX, y: evento.clientY });
-      dentro = true;
-    }
-    xPunto(evento.clientX);
-    yPunto(evento.clientY);
-    xAro(evento.clientX);
-    yAro(evento.clientY);
+    ponerX(evento.clientX);
+    ponerY(evento.clientY);
     const objetivo = evento.target instanceof Element ? evento.target : null;
     cursor.classList.toggle('cursor--enlace', Boolean(objetivo?.closest(CLICABLES)));
     cursor.classList.toggle('cursor--oculto', Boolean(objetivo?.closest(ESCRIBIBLES)));
   }, { passive: true });
-  document.addEventListener('pointerleave', () => { cursor.classList.add('cursor--oculto'); dentro = false; });
-  document.documentElement.addEventListener('pointerleave', () => { cursor.classList.add('cursor--oculto'); dentro = false; });
+  document.addEventListener('pointerleave', () => cursor.classList.add('cursor--oculto'));
+  document.documentElement.addEventListener('pointerleave', () => cursor.classList.add('cursor--oculto'));
   window.addEventListener('pointerdown', () => cursor.classList.add('cursor--pulsado'), { passive: true });
   window.addEventListener('pointerup', () => cursor.classList.remove('cursor--pulsado'), { passive: true });
   window.addEventListener('blur', () => cursor.classList.add('cursor--oculto'));

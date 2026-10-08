@@ -110,6 +110,36 @@ Las tres composiciones de marca (`miniapolis-bandera-hero.webp`,
 `miniapolis-logo-dark.webp`, `miniapolis-logo-light.webp`) se conservan como
 material de origen aunque ninguna pantalla las use ahora mismo.
 
+## Gradación común
+
+Las fotos de la pista y de la galería llegaron de cámaras y momentos
+distintos: unas cálidas por el atardecer en las ventanas, otras frías, unas
+lavadas y otras muy contrastadas. En octubre de 2026 se graduaron todas con la
+misma receta para que la portada se vea como una sola serie: balance de
+blancos neutro, mismos puntos de negro y blanco, misma exposición media, el
+mismo contraste, la saturación a un nivel común, sombras frías y una viñeta
+suave. Medidas antes y después (mediana de luminancia y de saturación):
+
+| | Luminancia | Saturación |
+| --- | --- | --- |
+| Antes | 0,33 – 0,56 | 0,04 – 0,22 |
+| Después | 0,37 – 0,39 | 0,08 – 0,18 |
+
+La receta está en `scripts/gradar-fotos.py`. Una foto nueva entra igual que
+las demás pasándola por él (una sola vez, sobre la original: rehace también
+sus variantes de tamaño):
+
+```bash
+python3 scripts/gradar-fotos.py public/images pista/foto-nueva.webp
+```
+
+Ninguna foto lleva un filtro CSS propio que la aparte de las demás; el único
+que queda es el gris de «RC Builder», que dice que aún no está a la venta.
+
+Los productos de la tienda van todos sobre el mismo negro: al de «Llantas»
+se le bajó a negro el azul marino del fondo y al de «RC Builder» se le separó
+el gris de estudio rellenando desde los bordes.
+
 ## Peso
 
 Estas imágenes las carga un teléfono en la pista, muchas veces con mala señal,

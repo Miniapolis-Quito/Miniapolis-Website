@@ -18,8 +18,12 @@
  *  - Bloques (filas, tarjetas, paneles): suben y se encienden, en escalera.
  *  - Datos: lo que se cuenta se cuenta como en la pista —el cronómetro corre
  *    hasta el récord, el tablero de salidas rueda hasta la hora—.
- *  - Escenas fijas (solo en pantallas anchas): la salida, la vuelta por los
- *    cinco sectores del complejo y la galería que corre de lado.
+ *  - Escenas fijas (solo en pantallas anchas): la salida; la curva que entra
+ *    a pantalla completa y vuelve a su casilla del mosaico; el complejo, que
+ *    enciende su entradilla palabra a palabra y da la vuelta por sus cinco
+ *    sectores; y la galería que corre de lado enfocando cada foto.
+ *  - La marquesina corre sola y el desplazamiento le da gas; la meta ondea
+ *    una bandera a cuadros de verdad (portada-bandera.js).
  *
  * Cada escena se monta dentro de `gsap.matchMedia()`: al cambiar de formato
  * (girar el teléfono, estrechar la ventana) se deshace sola y se vuelve a
@@ -28,7 +32,8 @@
  * Solo se llama con movimiento permitido (portada.js lo decide). Las cuentas
  * puras viven en portada-calculos.js.
  */
-import { cifrasRodando, formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, tiempoEnTexto } from './portada-calculos.js';
+import { cifrasRodando, empujePorVelocidad, enfoqueGaleria, formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, tiempoEnTexto } from './portada-calculos.js';
+import { montarBandera } from './portada-bandera.js';
 import { montarVuelta } from './portada-vuelta.js';
 
 const $ = (selector, base = document) => base.querySelector(selector);
@@ -228,16 +233,23 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     const lead = $('.seccion__lead, :scope > .entrada__acceso-nota', cabeza);
     if (lead) {
       partir(lead, {
-        type: 'lines',
+        // Las palabras van numeradas (--i): la escena del complejo las enciende
+        // una a una moviendo una sola variable (--luz) en la entradilla, que
+        // sobrevive a que SplitText vuelva a partir el texto al cambiar el ancho.
+        type: 'lines,words',
         mask: 'lines',
         linesClass: 'linea-split',
-        onSplit: (self) => gsap.from(self.lines, {
+        wordsClass: 'palabra-lead',
+        onSplit: (self) => {
+          self.words.forEach((palabra, i) => palabra.style.setProperty('--i', i));
+          return gsap.from(self.lines, {
           yPercent: 105,
           duration: 1.1,
           stagger: ESCALON,
           delay: 0.32,
           scrollTrigger: disparo(),
-        }),
+          });
+        },
       });
     }
     const acciones = $$(':scope > .boton, .galeria__controles', cabeza);
@@ -245,10 +257,13 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   }
 
   // -------------------------------------------------------------------------
-  // 01 · La pista: las fotos se descubren de abajo arriba y flotan al pasar
+  // 01 · La pista: la curva llena la pantalla y vuelve a su sitio en el mosaico
   // -------------------------------------------------------------------------
 
-  $$('.mosaico__foto').forEach((foto, i) => {
+  const mosaico = $('.mosaico');
+  const fotosMosaico = $$('.mosaico__foto');
+  /** El revelado de siempre: de abajo arriba, con la imagen asentándose. */
+  const revelarFoto = (foto, i) => {
     const img = $('img', foto);
     const pie = $('figcaption', foto);
     // Las dos de una misma fila llegan una detrás de otra.
@@ -256,31 +271,112 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     tl.fromTo(foto, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'expo.inOut' })
       .fromTo(img, { scale: 1.32 }, { scale: 1.08, duration: 2, ease: 'expo.out' }, 0.1);
     if (pie) tl.from(pie, { opacity: 0, y: 16, duration: 0.9 }, 0.8);
-    gsap.fromTo(img, { yPercent: -6 }, {
+  };
+  // Al pasar, cada foto se desplaza un poco más despacio que la página.
+  for (const foto of fotosMosaico) {
+    gsap.fromTo($('img', foto), { yPercent: -6 }, {
       yPercent: 6,
       ease: 'none',
       scrollTrigger: { trigger: foto, start: 'top bottom', end: 'bottom top', scrub: true },
     });
+  }
+  mm.add({ escena: '(min-width: 1100px) and (min-aspect-ratio: 1/1) and (min-height: 640px)' }, (contexto) => {
+    if (!mosaico || fotosMosaico.length < 2) return undefined;
+    if (!contexto.conditions.escena) {
+      fotosMosaico.forEach(revelarFoto);
+      return undefined;
+    }
+    // Pantalla ancha: ya en la pista. La primera foto entra ocupando toda la
+    // pantalla; con el mosaico fijo, la cámara se aleja —la foto vuelve a su
+    // casilla— y el resto del hangar aparece alrededor.
+    const [principal, ...resto] = fotosMosaico;
+    mosaico.classList.add('mosaico--escena');
+    // Dónde está la foto cuando el mosaico se fija arriba y cuánto hay que
+    // agrandarla para cubrir la pantalla. Es la primera casilla: empieza en la
+    // esquina del mosaico, que no se transforma (su caja vale tal cual). El
+    // tamaño, de maquetación (offset*), no cambia con el transform de la
+    // escena. No se usa offsetLeft: al fijar el mosaico, ScrollTrigger lo
+    // envuelve y la cuenta empezaría en ese envoltorio, no en la pantalla.
+    const casilla = () => ({
+      izquierda: mosaico.getBoundingClientRect().left,
+      arriba: 0,
+      ancho: principal.offsetWidth,
+      alto: principal.offsetHeight,
+    });
+    // Un 1 % de margen: al fijarse, el scrub ya la ha encogido un pelo y no
+    // debe asomar ni una línea del fondo.
+    const cubrir = () => {
+      const c = casilla();
+      return Math.max(window.innerWidth / c.ancho, window.innerHeight / c.alto) * 1.01;
+    };
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: mosaico,
+        start: 'top top',
+        end: '+=120%',
+        pin: true,
+        scrub: 0.7,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+      },
+    });
+    tl.fromTo(principal, {
+      x: () => window.innerWidth / 2 - (casilla().izquierda + casilla().ancho / 2),
+      y: () => window.innerHeight / 2 - (casilla().arriba + casilla().alto / 2),
+      scale: cubrir,
+      borderRadius: 0,
+    }, { x: 0, y: 0, scale: 1, borderRadius: 4, duration: 1, ease: 'power2.inOut' }, 0)
+      .fromTo($('img', principal), { scale: 1.16 }, { scale: 1.04, duration: 1, ease: 'power1.out' }, 0)
+      .fromTo(resto, { opacity: 0, y: 90, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.12, ease: 'power2.out' }, 0.42)
+      .from($$('figcaption', mosaico), { opacity: 0, y: 14, duration: 0.3, stagger: 0.06 }, 0.85);
+    return () => mosaico.classList.remove('mosaico--escena');
   });
 
   // -------------------------------------------------------------------------
-  // Marquesina: corre con el desplazamiento y se inclina con la velocidad
+  // Marquesina: corre sola y el desplazamiento le da gas y le cambia el sentido
   // -------------------------------------------------------------------------
 
   const marquesina = $('.marquesina');
   if (marquesina) {
-    const recorrido = { trigger: marquesina, start: 'top bottom', end: 'bottom top', scrub: 0.5 };
-    gsap.fromTo('.marquesina__fila--llena', { xPercent: 0 }, { xPercent: -22, ease: 'none', scrollTrigger: recorrido });
-    gsap.fromTo('.marquesina__fila--hueca', { xPercent: -22 }, { xPercent: 0, ease: 'none', scrollTrigger: { ...recorrido } });
+    const filas = $$('.marquesina__fila', marquesina);
+    // Cada fila lleva su texto dos veces: correr la mitad de su ancho la deja
+    // como al empezar, y el bucle no tiene costura. Las filas van en sentidos
+    // contrarios y a distinto paso, como dos carriles.
+    const bucles = filas.map((fila, i) => {
+      const alReves = i % 2 === 1;
+      const bucle = gsap.fromTo(fila, { xPercent: alReves ? -50 : 0 }, {
+        xPercent: alReves ? 0 : -50,
+        duration: 34 + i * 8,
+        ease: 'none',
+        repeat: -1,
+        paused: true,
+      });
+      // Se arranca lejos del principio: así también puede correr hacia atrás
+      // sin toparse con el inicio del bucle.
+      bucle.totalTime(bucle.duration() * 1000);
+      return bucle;
+    });
+    let sentido = 1;
+    const aCrucero = gsap.delayedCall(0.2, () => {
+      bucles.forEach((bucle) => gsap.to(bucle, { timeScale: sentido, duration: 1.4, ease: 'power2.out', overwrite: true }));
+    }).pause();
     // Se inclinan las filas, no la banda: la banda torcida asomaría por los lados.
-    const inclinar = gsap.quickTo($$('.marquesina__fila', marquesina), 'skewX', { duration: 0.6, ease: 'power3.out' });
+    const inclinar = gsap.quickTo(filas, 'skewX', { duration: 0.6, ease: 'power3.out' });
     const enderezar = gsap.delayedCall(0.14, () => inclinar(0)).pause();
     ScrollTrigger.create({
       trigger: marquesina,
       start: 'top bottom',
       end: 'bottom top',
+      // Fuera de la pantalla no gasta nada.
+      onToggle: (self) => bucles.forEach((bucle) => (self.isActive ? bucle.play() : bucle.pause())),
       onUpdate: (self) => {
-        inclinar(inclinacionPorVelocidad(self.getVelocity(), 6));
+        const velocidad = self.getVelocity();
+        sentido = self.direction;
+        const empuje = empujePorVelocidad(velocidad) * sentido;
+        bucles.forEach((bucle) => gsap.to(bucle, { timeScale: empuje, duration: 0.3, ease: 'power2.out', overwrite: true }));
+        aCrucero.restart(true);
+        inclinar(inclinacionPorVelocidad(velocidad, 6));
         enderezar.restart(true);
       },
     });
@@ -300,18 +396,29 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       // la vuelta se lee con su título. Si no, solo la lista.
       const bloque = pistaDisciplinas.closest('.marco');
       const fijo = bloque && bloque.offsetHeight < window.innerHeight * 0.86 ? bloque : pistaDisciplinas;
+      // Con el titular a la vista, la escena empieza por leerlo: la entradilla
+      // se enciende palabra a palabra, como una charla antes de salir a pista,
+      // y después la vuelta recorre los cinco sectores.
+      const lead = fijo === bloque ? $('.seccion__lead', bloque) : null;
+      const palabras = lead ? lead.querySelectorAll('.palabra-lead').length : 0;
+      const salida = palabras ? 1.4 : 0;
+      if (palabras) lead.classList.add('seccion__lead--iluminada');
       const tl = gsap.timeline({
         defaults: { ease: 'none' },
-        scrollTrigger: { trigger: fijo, start: 'center center', end: '+=150%', pin: true, scrub: 0.6, anticipatePin: 1 },
+        scrollTrigger: { trigger: fijo, start: 'center center', end: palabras ? '+=200%' : '+=150%', pin: true, scrub: 0.6, anticipatePin: 1 },
       });
-      tl.fromTo('.disciplinas__vuelta span', { scaleX: 0 }, { scaleX: 1, duration: disciplinas.length }, 0);
+      if (palabras) tl.fromTo(lead, { '--luz': 0 }, { '--luz': palabras + 1, duration: salida }, 0);
+      tl.fromTo('.disciplinas__vuelta span', { scaleX: 0 }, { scaleX: 1, duration: disciplinas.length }, salida);
       disciplinas.forEach((disciplina, i) => {
-        tl.fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1 }, i)
-          .fromTo(disciplina, { opacity: 0.22 }, { opacity: 1, duration: 0.3, ease: 'power1.out' }, i)
-          .fromTo($('.disciplina__num', disciplina), { color: '#8b9296' }, { color: '#93d241', duration: 0.2 }, i)
-          .from($$('h3, p', disciplina), { y: 24, duration: 0.5, stagger: 0.1, ease: 'power2.out' }, i);
+        tl.fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1 }, salida + i)
+          .fromTo(disciplina, { opacity: 0.22 }, { opacity: 1, duration: 0.3, ease: 'power1.out' }, salida + i)
+          .fromTo($('.disciplina__num', disciplina), { color: '#8b9296' }, { color: '#93d241', duration: 0.2 }, salida + i)
+          .from($$('h3, p', disciplina), { y: 24, duration: 0.5, stagger: 0.1, ease: 'power2.out' }, salida + i);
       });
-      return () => pistaDisciplinas.classList.remove('disciplinas--vuelta');
+      return () => {
+        pistaDisciplinas.classList.remove('disciplinas--vuelta');
+        lead?.classList.remove('seccion__lead--iluminada');
+      };
     }
     disciplinas.forEach((disciplina) => {
       const tl = gsap.timeline({ scrollTrigger: alEntrar(disciplina, 'top 90%') });
@@ -506,9 +613,28 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     pista.scrollLeft = 0;
     const distancia = () => Math.max(0, pista.scrollWidth - document.documentElement.clientWidth);
     const contador = $('.galeria__contador b');
+    // La tira enfoca: la foto que pasa por el centro de la pantalla se ve
+    // entera y las demás esperan un poco más pequeñas y en penumbra.
+    const enfoques = fotos.map((foto) => {
+      const marco = $('.galeria__marco', foto);
+      // `quickSetter` no admite el atajo `scale`: un ajuste por eje.
+      const ancho = gsap.quickSetter(marco, 'scaleX');
+      const alto = gsap.quickSetter(marco, 'scaleY');
+      return { foto, escala: (valor) => { ancho(valor); alto(valor); }, luz: gsap.quickSetter(marco, 'opacity') };
+    });
+    const enfocar = () => {
+      const centro = window.innerWidth / 2;
+      for (const { foto, escala, luz } of enfoques) {
+        const caja = foto.getBoundingClientRect();
+        const lejos = enfoqueGaleria(caja.left + caja.width / 2, centro, window.innerWidth);
+        escala(1 - 0.12 * lejos);
+        luz(1 - 0.55 * lejos);
+      }
+    };
     const avance = gsap.to(pista, {
       x: () => -distancia(),
       ease: 'none',
+      onUpdate: enfocar,
       scrollTrigger: {
         trigger: galeria,
         start: 'top top',
@@ -544,7 +670,10 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         scrollTrigger: { trigger: foto, containerAnimation: avance, start: 'left 78%', toggleActions: 'play none none reverse' },
       });
     });
+    enfocar();
+    ScrollTrigger.addEventListener('refresh', enfocar);
     return () => {
+      ScrollTrigger.removeEventListener('refresh', enfocar);
       galeria.classList.remove('galeria-fija');
       if (contador) contador.textContent = '01';
     };
@@ -567,17 +696,14 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
 
   const acceso = $('.acceso');
   if (acceso) {
-    // La bandera se tiende de lado a lado al llegar y después ondea con el desplazamiento.
-    gsap.fromTo('.acceso__bandera', { scaleX: 0 }, {
-      scaleX: 1,
+    // La línea de llegada: la bandera se despliega de lado a lado al llegar y
+    // ondea (portada-bandera.js), más fuerte cuanto más rápido se baja.
+    gsap.fromTo('.acceso__bandera', { clipPath: 'inset(0% 100% 0% 0%)' }, {
+      clipPath: 'inset(0% 0% 0% 0%)',
       ease: 'power2.inOut',
-      scrollTrigger: { trigger: acceso, start: 'top bottom', end: 'top 45%', scrub: 0.6 },
+      scrollTrigger: { trigger: acceso, start: 'top bottom', end: 'top 40%', scrub: 0.6 },
     });
-    gsap.fromTo('.acceso__bandera', { backgroundPositionX: '0px' }, {
-      backgroundPositionX: '-320px',
-      ease: 'none',
-      scrollTrigger: { trigger: acceso, start: 'top bottom', end: 'bottom top', scrub: true },
-    });
+    montarBandera({ gsap, ScrollTrigger });
     const ventajas = $$('.ventaja');
     gsap.from(ventajas, { ...SUBIDA, y: 24, stagger: 0.12, scrollTrigger: alEntrar('.ventajas', 'top 88%') });
     // Cada icono se dibuja con un solo trazo, como se marca una línea en la pista.
