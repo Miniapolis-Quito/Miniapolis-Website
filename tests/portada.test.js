@@ -375,6 +375,21 @@ test('la página se cuenta como una vuelta: un sector por sección numerada y la
   assert.match(CSS, /@media \(min-width: 900px\) and \(min-height: 560px\) \{\s*\.portada-animada \.vuelta \{/, 'regla vertical solo donde hay margen');
 });
 
+test('la meta da el tiempo de la vuelta, contado desde que se apaga el semáforo', () => {
+  // Arranca con la salida: la apertura se llama cuando las luces se apagan.
+  const apertura = ESCENAS.slice(ESCENAS.indexOf('escenas.apertura = () => {'));
+  assert.ok(apertura.indexOf('escenas.vuelta?.darSalida()') < apertura.indexOf('gsap.timeline('), 'el cronómetro arranca con la salida');
+  assert.match(ESCENAS, /escenas\.vuelta = montarVuelta\(\{ gsap, ScrollTrigger \}\)/);
+  // Se lee como un cronómetro y rueda como el tablero de salidas.
+  assert.match(VUELTA, /tiempoDeVuelta\(performance\.now\(\) - salida\)/);
+  assert.match(VUELTA, /cifrasRodando\(tiempo, rueda\.p\)/);
+  // Va en el pie, junto a «Volver arriba», y una sola vez: la primera que se cruza la línea.
+  assert.match(VUELTA, /base\.insertBefore\(lectura, \$\('\.sitio-arriba', base\)\)/);
+  assert.match(VUELTA, /if \(lectura \|\| !base \|\| !tiempo\) return;/);
+  assert.match(VUELTA, /lectura\.setAttribute\('aria-hidden', 'true'\)/, 'es un guiño, no contenido: no se anuncia');
+  assert.match(CSS, /\.sitio-vuelta b \{[^}]*color: var\(--acento\);[^}]*tabular-nums/s, 'la cifra, en verde y sin bailar, como en el tablero de tiempos');
+});
+
 test('el telón: la primera sección sube por encima de la apertura fija', () => {
   assert.match(HTML, /<section id="pista" class="seccion seccion--telon"/);
   assert.match(CSS, /\.seccion--telon \{[^}]*z-index: 1;[^}]*background: linear-gradient\(180deg, rgba\(0, 0, 0, 0\), var\(--fondo\)/s,

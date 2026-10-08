@@ -1372,6 +1372,28 @@ html.lenis { scroll-behavior: auto; }
   .vuelta--meta .vuelta__nombre { color: var(--texto); }
 }
 
+/* La meta: al cruzarla, el pie da el tiempo de la vuelta junto a «Volver
+   arriba». Rótulo en versales como el resto del pie y la cifra en verde,
+   como en el tablero de mejores tiempos. Lo escribe portada-vuelta.js. */
+.sitio-vuelta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.sitio-vuelta b {
+  color: var(--acento);
+  font-size: 1.32em;
+  font-weight: 700;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 /* --- Ficha técnica guiada por el desplazamiento ---------------------------------- */
 
 .portada-animada .plano__auto {

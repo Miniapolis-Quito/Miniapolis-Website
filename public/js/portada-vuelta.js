@@ -9,13 +9,14 @@
  * marcador, cada sector se llena mientras se recorre y el nombre del que está
  * en curso se lee al lado. En pantallas anchas es una regla vertical en el
  * margen izquierdo; en las estrechas, una línea partida en sectores arriba
- * del todo. Al cruzar la meta el número se convierte en la bandera.
+ * del todo. Al cruzar la meta el número se convierte en la bandera y el pie
+ * da el tiempo de la vuelta, contado desde que se apagó el semáforo.
  *
  * Es decorativo (`aria-hidden`): la navegación de la cabecera ya dice dónde
  * se está. Solo existe con movimiento permitido; sin él no hay vuelta que
  * contar y la página queda quieta.
  */
-import { progresosDeSectores, sectorEnCurso, vueltaCompleta } from './portada-calculos.js';
+import { cifrasRodando, progresosDeSectores, sectorEnCurso, tiempoDeVuelta, vueltaCompleta } from './portada-calculos.js';
 
 const $ = (selector, base = document) => base.querySelector(selector);
 const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
@@ -44,7 +45,7 @@ function leerSectores() {
 
 export function montarVuelta({ gsap, ScrollTrigger }) {
   const sectores = leerSectores();
-  if (sectores.length < 2) return () => {};
+  if (sectores.length < 2) return { darSalida() {}, desmontar() {} };
   const raiz = document.documentElement;
 
   const vuelta = crear('div', 'vuelta');
@@ -68,6 +69,10 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   const tramosVistos = [...tramos.children];
   let enCurso = -1;
   let meta = false;
+  // El cronómetro arranca cuando se apaga el semáforo (darSalida); si la
+  // apertura no llegara a darla, cuenta desde que se montó la vuelta.
+  let salida = performance.now();
+  let lectura = null;
 
   const rodar = (posicion) => gsap.to(pila, {
     yPercent: (-100 * posicion) / (sectores.length + 1),
@@ -85,12 +90,38 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
       .fromTo(texto, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: 'expo.out' });
   };
 
+  // La meta: el tiempo de la vuelta se escribe en el pie, junto a «Volver
+  // arriba» —que invita a dar otra—, y rueda como el tablero de salidas hasta
+  // fijarse. Se anota la primera vez que se cruza la línea, como en la pista.
+  const cronometrar = () => {
+    const base = $('.sitio-pie__base');
+    const tiempo = tiempoDeVuelta(performance.now() - salida);
+    if (lectura || !base || !tiempo) return;
+    lectura = crear('p', 'sitio-vuelta');
+    lectura.setAttribute('aria-hidden', 'true');
+    crear('span', '', lectura).textContent = 'Tu vuelta';
+    const cifras = crear('b', '', lectura);
+    cifras.textContent = tiempo;
+    base.insertBefore(lectura, $('.sitio-arriba', base));
+    const rueda = { p: 0 };
+    gsap.timeline()
+      .from(lectura, { opacity: 0, y: 12, duration: 0.8, ease: 'expo.out' })
+      .to(rueda, {
+        p: 1,
+        duration: 1.2,
+        ease: 'power2.out',
+        onUpdate: () => { cifras.textContent = cifrasRodando(tiempo, rueda.p); },
+        onComplete: () => { cifras.textContent = tiempo; },
+      }, 0);
+  };
+
   const actualizar = () => {
     const sector = sectorEnCurso(progresos);
     const llegada = vueltaCompleta(progresos);
     if (sector === enCurso && llegada === meta) return;
     enCurso = sector;
     meta = llegada;
+    if (meta) cronometrar();
     vuelta.classList.toggle('vuelta--en-pista', sector >= 0);
     vuelta.classList.toggle('vuelta--meta', meta);
     tramosVistos.forEach((tramo, i) => tramo.classList.toggle('activo', i === sector));
@@ -129,10 +160,15 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   const seguimiento = ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (self) => pintar(self.scroll()) });
   remedir();
 
-  return () => {
-    ScrollTrigger.removeEventListener('refresh', remedir);
-    seguimiento.kill();
-    vuelta.remove();
-    raiz.classList.remove('con-vuelta');
+  return {
+    /** El semáforo se apagó: empieza a contar la vuelta. */
+    darSalida() { salida = performance.now(); },
+    desmontar() {
+      ScrollTrigger.removeEventListener('refresh', remedir);
+      seguimiento.kill();
+      vuelta.remove();
+      lectura?.remove();
+      raiz.classList.remove('con-vuelta');
+    },
   };
 }

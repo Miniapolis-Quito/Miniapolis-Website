@@ -212,6 +212,27 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       pie: document.querySelector('.sitio-pie__base').getBoundingClientRect().bottom <= innerHeight + 1,
       pestanas: [...document.querySelectorAll('.entrada__acceso-panel .pestana')].map((e) => e.getBoundingClientRect().height),
       progreso: Number(getComputedStyle(document.querySelector('.sitio-progreso span')).getPropertyValue('--progreso')),
+      // La vuelta: nueve sectores llenos, la bandera y el tiempo en el pie.
+      vuelta: (() => {
+        const v = document.querySelector('.vuelta');
+        if (!v) return null;
+        const tramos = [...v.querySelectorAll('.vuelta__sectores b')];
+        return {
+          tramos: tramos.length,
+          llenos: tramos.filter((b) => Number(b.style.getPropertyValue('--llenado')) >= 0.999).length,
+          meta: v.classList.contains('vuelta--meta'),
+          tiempo: document.querySelector('.sitio-vuelta b')?.textContent ?? '',
+        };
+      })(),
+      // «Muy pronto» toma forma letra a letra: al pasar, todas quedan en su sitio.
+      prontoSinAsentar: [...document.querySelectorAll('#titulo-pronto .letra-split')].filter((l) => {
+        const c = getComputedStyle(l);
+        return c.opacity !== '1' || (c.transform !== 'none' && !new DOMMatrix(c.transform).isIdentity);
+      }).length,
+      guia: (() => {
+        const g = document.querySelector('.hero__guia');
+        return { visible: getComputedStyle(g).display !== 'none', animacion: getComputedStyle(g.querySelector('i')).animationName };
+      })(),
     };
   });
   if (fin.sinRevelar.length) fallos.push(`bloques que nunca aparecieron: ${[...new Set(fin.sinRevelar)].join(', ')}`);
@@ -219,6 +240,20 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
   if (!fin.pie) fallos.push('el pie no se ve al llegar al final');
   if (fin.pestanas.some((h) => h > 52)) fallos.push(`las pestañas de acceso se parten en dos líneas (${fin.pestanas.join(', ')} px)`);
   if (fin.progreso < 0.99) fallos.push(`el avance de lectura no llega al final (${fin.progreso})`);
+  if (reducido) {
+    if (fin.vuelta) fallos.push('con movimiento reducido no hay vuelta que contar');
+  } else if (!fin.vuelta) {
+    fallos.push('con movimiento la vuelta debe contarse');
+  } else {
+    if (fin.vuelta.tramos !== 9) fallos.push(`la vuelta debe tener nueve sectores (${fin.vuelta.tramos})`);
+    if (!fin.vuelta.meta || fin.vuelta.llenos !== fin.vuelta.tramos) fallos.push(`al final la vuelta debe estar completa (${fin.vuelta.llenos}/${fin.vuelta.tramos}, meta: ${fin.vuelta.meta})`);
+    if (!/^\d+:\d{2}\.\d$/.test(fin.vuelta.tiempo)) fallos.push(`al cruzar la meta el pie debe dar el tiempo de la vuelta («${fin.vuelta.tiempo}»)`);
+  }
+  if (fin.prontoSinAsentar) fallos.push(`«Muy pronto» quedó con ${fin.prontoSinAsentar} letras sin asentar`);
+  // La guía de desplazamiento: con movimiento y fuera del teléfono, una luz que baja; si no, nada.
+  const conGuia = !reducido && ancho > 760;
+  if (fin.guia.visible !== conGuia) fallos.push(conGuia ? 'falta la guía de desplazamiento en la apertura' : 'la guía de desplazamiento sobra en este formato');
+  if (conGuia && fin.guia.animacion !== 'guia') fallos.push('la luz de la guía no se mueve');
 
   // Galería: con botones (pantallas anchas) retrocede apagado y avanzar desplaza la tira.
   const galeria = await pagina.evaluate(async () => {
