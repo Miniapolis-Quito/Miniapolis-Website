@@ -860,3 +860,12 @@ completa y quieta.
 cada una. Para cambiar el esquema se **agrega** una entrada al final; nunca se
 edita ni se reordena una ya publicada, porque las bases existentes ya la
 aplicaron.
+
+### Estándares de diseño, código y agentes de IA
+
+Para asegurar que todo cambio mantenga la uniformidad y respete la estética exacta del proyecto («Pit Lane Editorial / Puesto de Telemetría»), consulta la documentación de estándares:
+
+- **[AGENTS.md](./AGENTS.md)**: Reglas de oro, restricciones de CSP y checklist obligatorio para agentes de IA (Claude, Gemini, Cursor, Copilot, Antigravity, etc.).
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)**: Pautas de contribución, pruebas y formato de commits.
+- **[docs/ESTANDARES.md](./docs/ESTANDARES.md)**: Manual exhaustivo de diseño, tokens CSS, componentes, arquitectura backend, accesibilidad y calidad.
+
