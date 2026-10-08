@@ -89,8 +89,18 @@ export function montarBandera({ gsap, ScrollTrigger }) {
     end: 'bottom top',
     // Fuera de la pantalla no se dibuja nada.
     onToggle: (self) => (self.isActive ? gsap.ticker.add(latir) : gsap.ticker.remove(latir)),
-    // Bajar rápido es más viento.
-    onUpdate: (self) => { viento = Math.min(1, Math.max(viento, Math.abs(self.getVelocity()) / 2400)); },
+  });
+  // Bajar rápido es más viento, pero solo mientras se despliega (el mismo
+  // tramo que el recorte de portada-escenas.js). Ya desplegada, el scroll no
+  // la toca: el viento amaina y sigue ondeando sola.
+  const despliegue = ScrollTrigger.create({
+    trigger: banda,
+    start: 'top bottom',
+    end: 'top 40%',
+    onUpdate: (self) => {
+      if (!self.isActive) return;
+      viento = Math.min(1, Math.max(viento, Math.abs(self.getVelocity()) / 2400));
+    },
   });
   const alCambiar = () => { medir(); dibujar(); };
   ScrollTrigger.addEventListener('refresh', alCambiar);
@@ -100,6 +110,7 @@ export function montarBandera({ gsap, ScrollTrigger }) {
   return () => {
     gsap.ticker.remove(latir);
     seguimiento.kill();
+    despliegue.kill();
     ScrollTrigger.removeEventListener('refresh', alCambiar);
     lienzo.remove();
     banda.classList.remove('acceso__bandera--viva');
