@@ -45,6 +45,8 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
    sección trae su propio revelado: el genérico no debe tocarlas. */
 .pagina-entrada main > .revelar,
 .pagina-entrada main > .revelar--visible,
+.pagina-entrada .pin-spacer > .revelar,
+.pagina-entrada .pin-spacer > .revelar--visible,
 .pagina-posiciones main > .revelar,
 .pagina-posiciones main > .revelar--visible {
   opacity: 1;
@@ -90,6 +92,7 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
   -webkit-backdrop-filter: saturate(150%) blur(18px);
   backdrop-filter: saturate(150%) blur(18px);
   border-bottom: 1px solid var(--pub-linea);
+  will-change: transform;
 }
 
 .sitio-barra__interior {

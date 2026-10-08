@@ -502,7 +502,10 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     galeria.classList.add('galeria-fija');
     // En la tira fija todas las fotos comparten el mismo plano vertical: la
     // carga diferida no sabe cuáles están lejos por el lado.
-    $$('img', pista).forEach((imagen) => { imagen.loading = 'eager'; });
+    $$('img', pista).forEach((imagen) => {
+      imagen.loading = 'eager';
+      imagen.decode?.().catch(() => {});
+    });
     pista.scrollLeft = 0;
     const distancia = () => Math.max(0, pista.scrollWidth - document.documentElement.clientWidth);
     const contador = $('.galeria__contador b');
@@ -535,7 +538,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         xPercent: 9,
         scale: 1.2,
         ease: 'none',
-        scrollTrigger: { trigger: foto, containerAnimation: avance, start: 'left right', end: 'right left', scrub: true },
+        scrollTrigger: { trigger: foto, containerAnimation: avance, start: 'left right', end: 'right left', scrub: true, invalidateOnRefresh: true },
       });
       gsap.from($('figcaption', foto), {
         opacity: 0,

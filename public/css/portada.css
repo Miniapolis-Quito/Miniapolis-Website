@@ -41,6 +41,8 @@
   inset: 0;
   z-index: -1;
   overflow: hidden;
+  transform: translateZ(0);
+  will-change: transform;
 }
 .hero__foto img {
   display: block;
@@ -67,6 +69,7 @@
   background: #000;
   opacity: 0;
   pointer-events: none;
+  will-change: opacity;
 }
 
 .hero__contenido {
@@ -231,6 +234,8 @@
   overflow: hidden;
   border-radius: 4px;
   background: var(--pub-tarjeta);
+  transform: translateZ(0);
+  will-change: clip-path;
 }
 .mosaico__foto--ancha { grid-column: span 8; aspect-ratio: 16 / 9; }
 .mosaico__foto--alta { grid-column: span 4; }
@@ -242,6 +247,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  will-change: transform;
 }
 .mosaico__foto picture { display: contents; }
 
@@ -354,6 +360,7 @@
   background:
     radial-gradient(ellipse 70% 60% at 50% 45%, rgba(147, 210, 65, .07), transparent 72%),
     var(--pub-tarjeta);
+  transform: translateZ(0);
 }
 .plano__dibujo { display: block; width: 100%; height: auto; overflow: visible; }
 .plano__reticula { stroke: rgba(255, 255, 255, .045); stroke-width: 1; }
@@ -763,6 +770,8 @@
   overflow: hidden;
   border-radius: var(--pub-radio);
   background: var(--pub-tarjeta);
+  transform: translateZ(0);
+  will-change: clip-path;
 }
 /* Cinta de obra en el canto superior; con movimiento se desplaza con el scroll. */
 .pronto__cinta {
@@ -780,6 +789,7 @@
   height: 100%;
   object-fit: cover;
   filter: saturate(.7) brightness(.82);
+  will-change: transform;
 }
 
 @media (max-width: 760px) {
@@ -795,6 +805,7 @@
 .galeria__controles { display: flex; gap: 10px; padding-bottom: .3em; }
 .galeria__boton {
   translate: var(--mx, 0px) var(--my, 0px);
+  will-change: translate;
   display: grid;
   place-items: center;
   width: 52px;
@@ -845,6 +856,8 @@
   overflow: hidden;
   border-radius: 4px;
   background: var(--pub-tarjeta);
+  isolation: isolate;
+  transform: translateZ(0);
 }
 .galeria__foto img {
   display: block;
@@ -895,6 +908,7 @@
   color: var(--texto);
   text-decoration: none;
   transition: border-color 200ms ease-out;
+  will-change: transform;
 }
 .producto__foto { display: block; aspect-ratio: 4 / 5; overflow: hidden; background: #000; }
 .producto__foto img {
@@ -902,6 +916,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  will-change: transform;
 }
 .producto__texto {
   display: flex;
@@ -991,6 +1006,8 @@
   background: repeating-conic-gradient(#f4f6f3 0 25%, #000 0 50%) 0 0 / 16px 16px;
   opacity: .92;
   transform-origin: left center;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .acceso__rejilla {
@@ -1184,7 +1201,9 @@ html.lenis { scroll-behavior: auto; }
   margin-block: -.14em -.06em;
 }
 .letra-split,
-.palabra-split { will-change: transform; }
+.palabra-split,
+.linea-split,
+.numero-split { will-change: transform; }
 
 /* El número del índice sube por su propia ventana, como el de un marcador, y
    la línea que lo sigue se traza después (--trazo la mueve GSAP). */
@@ -1246,7 +1265,10 @@ html.lenis { scroll-behavior: auto; }
 
 /* --- Complejo: la vuelta por sectores -------------------------------------------- */
 
-.portada-animada .disciplina__sector { width: 100%; }
+.portada-animada .disciplina__sector {
+  width: 100%;
+  will-change: transform;
+}
 .disciplinas--vuelta .disciplinas__vuelta {
   display: flex;
   align-items: center;
@@ -1261,6 +1283,7 @@ html.lenis { scroll-behavior: auto; }
   height: 100%;
   background: linear-gradient(90deg, rgba(147, 210, 65, .2), var(--acento));
   transform-origin: left center;
+  will-change: transform;
 }
 
 /* --- La vuelta: el avance contado por sectores ------------------------------------- */
@@ -1280,6 +1303,8 @@ html.lenis { scroll-behavior: auto; }
   z-index: 60;
   pointer-events: none;
   opacity: 0;
+  transform: translateZ(0);
+  will-change: transform, opacity;
   transition: opacity 600ms var(--pub-curva), transform 600ms var(--pub-curva);
 }
 .portada-animada .vuelta.vuelta--en-pista { opacity: 1; }
@@ -1304,6 +1329,7 @@ html.lenis { scroll-behavior: auto; }
   background: var(--acento);
   transform: scaleX(var(--llenado, 0));
   transform-origin: left center;
+  will-change: transform;
 }
 
 @media (min-width: 900px) and (min-height: 560px) {
@@ -1334,7 +1360,12 @@ html.lenis { scroll-behavior: auto; }
     line-height: 1.25;
     font-variant-numeric: tabular-nums lining-nums;
   }
-  .vuelta__pila { display: flex; flex-direction: column; align-items: center; }
+  .vuelta__pila {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    will-change: transform;
+  }
   .vuelta__pila > span { display: flex; align-items: center; justify-content: center; height: 1.25em; }
   /* La meta: el número se convierte en la bandera a cuadros. */
   .vuelta__bandera {
@@ -1368,7 +1399,10 @@ html.lenis { scroll-behavior: auto; }
     white-space: nowrap;
     writing-mode: vertical-rl;
   }
-  .vuelta__nombre span { display: inline-block; }
+  .vuelta__nombre span {
+    display: inline-block;
+    will-change: transform, opacity;
+  }
   .vuelta--meta .vuelta__nombre { color: var(--texto); }
 }
 
@@ -1399,6 +1433,7 @@ html.lenis { scroll-behavior: auto; }
 .portada-animada .plano__auto {
   display: inline;
   filter: drop-shadow(0 0 6px rgba(147, 210, 65, .9));
+  will-change: transform;
 }
 .ficha--guiada .ficha__fila {
   position: relative;
@@ -1443,7 +1478,10 @@ html.lenis { scroll-behavior: auto; }
   scroll-snap-type: none;
   will-change: transform;
 }
-.galeria-fija .galeria__foto img { height: clamp(260px, 52vh, 580px); }
+.galeria-fija .galeria__foto img {
+  height: clamp(260px, 52vh, 580px);
+  will-change: transform;
+}
 .galeria-fija .galeria__avance {
   display: flex;
   align-items: center;
@@ -1470,6 +1508,7 @@ html.lenis { scroll-behavior: auto; }
   background: var(--acento);
   transform: scaleX(0);
   transform-origin: left center;
+  will-change: transform;
 }
 
 /* --- Tienda: brillo que sigue al puntero en la tarjeta inclinada ------------------ */
@@ -1515,6 +1554,7 @@ html.lenis { scroll-behavior: auto; }
   left: 0;
   border-radius: 50%;
   pointer-events: none;
+  will-change: transform;
 }
 .cursor__punto {
   width: 6px;

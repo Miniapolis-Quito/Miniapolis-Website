@@ -81,10 +81,19 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
     overwrite: true,
   });
 
+  let transicionTexto = null;
+  let rotuloActual = '';
+
   const rotular = (rotulo) => {
-    if (texto.textContent === rotulo) return;
-    gsap.killTweensOf(texto);
-    gsap.timeline()
+    if (rotuloActual === rotulo) return;
+    rotuloActual = rotulo;
+    transicionTexto?.kill();
+    if (!texto.textContent) {
+      texto.textContent = rotulo;
+      transicionTexto = gsap.fromTo(texto, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: 'expo.out' });
+      return;
+    }
+    transicionTexto = gsap.timeline()
       .to(texto, { opacity: 0, y: -10, duration: 0.18, ease: 'power2.in' })
       .add(() => { texto.textContent = rotulo; })
       .fromTo(texto, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: 'expo.out' });
@@ -125,7 +134,10 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
     vuelta.classList.toggle('vuelta--en-pista', sector >= 0);
     vuelta.classList.toggle('vuelta--meta', meta);
     tramosVistos.forEach((tramo, i) => tramo.classList.toggle('activo', i === sector));
-    if (sector < 0) return;
+    if (sector < 0) {
+      rotuloActual = '';
+      return;
+    }
     rodar(meta ? sectores.length : sector);
     rotular(sectores[sector].nombre);
   };
