@@ -55,8 +55,35 @@ en cuatro direcciones distintas y el número de sección revuelto (con él se fu
 - La vuelta se monta al final de las escenas, cuando las fijas ya alargaron la
   página, y busca los sectores en todo `main`: la galería fija va dentro del
   envoltorio de ScrollTrigger.
+- Lo recorrido de cada sector sale de la posición (`progresosDeSectores`), con
+  límites medidos después de cada `refresh`. Una sección fija se mide por su
+  envoltorio: medida por sí misma, el sector de la galería terminaba a un
+  tercio de la escena y su tramo se quedaba lleno y quieto dos pantallas.
 - Sin movimiento (o sin GSAP) no hay telón, ni vuelta, ni guía: la página se ve
   completa y quieta.
+
+## Revisión de diseño (después del primer merge)
+
+Cada criterio del encargo, medido:
+
+- **Ritmo.** Pantallas de desplazamiento por sector a 1440×900: 01 2,2 · 02 2,5
+  · 03 1,5 · 04 0,8 · 05 0,8 · 06 2,2 · 07 3,2 · 08 1,1 · 09 1,0 (16,9 en total).
+  Las escenas largas (el recorrido, la vuelta del complejo, la galería) se
+  alternan con sectores de datos que se leen de un vistazo, y la vuelta cierra
+  con una recta corta hasta la meta. En el teléfono, sin escenas fijas, entre
+  0,9 y 2,2 por sector (13,9 en total).
+- **Sin efectos gratuitos.** Inventario de todo lo que se mueve y qué cuenta.
+  Se retiró la deriva de las tarjetas de eventos y de la tienda, que subían a
+  distinta velocidad y descuadraban la rejilla mientras se leía sin decir nada
+  de la vuelta. El paralaje de las fotos se queda: ocurre dentro de su marco y
+  no mueve la rejilla.
+- **Cohesión del indicador.** Verificado sector por sector en escritorio,
+  móvil e iPad: cada sección muestra su número y su nombre, los anteriores
+  quedan llenos, la meta llega con la bandera y 9/9 tramos, arriba no se ve y
+  con movimiento reducido no existe. El tramo de la galería se llena con la
+  escena (33 % → 57 % → 81 % a lo largo de la tira).
+- **Fluidez.** Mediana de 16,7 ms por fotograma en un recorrido completo con
+  la rueda; los pocos fotogramas lentos están en la foto grande de la apertura.
 
 ## Verificación
 

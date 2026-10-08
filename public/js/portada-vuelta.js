@@ -15,7 +15,7 @@
  * se está. Solo existe con movimiento permitido; sin él no hay vuelta que
  * contar y la página queda quieta.
  */
-import { sectorEnCurso, vueltaCompleta } from './portada-calculos.js';
+import { progresosDeSectores, sectorEnCurso, vueltaCompleta } from './portada-calculos.js';
 
 const $ = (selector, base = document) => base.querySelector(selector);
 const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
@@ -99,29 +99,39 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
     rotular(sectores[sector].nombre);
   };
 
-  // Cada sector va de que su sección cruza la mitad de la pantalla a que la
-  // cruza la siguiente; el último, hasta el final de la página. Así los
-  // tramos son contiguos y siempre hay uno, y solo uno, en curso.
-  const triggers = sectores.map(({ seccion }, i) => {
-    const siguiente = sectores[i + 1]?.seccion;
-    return ScrollTrigger.create({
-      trigger: seccion,
-      start: 'top center',
-      ...(siguiente ? { endTrigger: siguiente, end: 'top center' } : { end: 'max' }),
-      onUpdate: (self) => {
-        progresos[i] = self.progress;
-        llenar[i](self.progress);
-        actualizar();
-      },
-      // Un salto (un ancla, la tecla Fin) cruza sectores sin pasar por ellos:
-      // se dan por recorridos o por pendientes enteros.
-      onLeave: () => { progresos[i] = 1; llenar[i](1); actualizar(); },
-      onLeaveBack: () => { progresos[i] = 0; llenar[i](0); actualizar(); },
+  // Cada sector empieza cuando su sección cruza la mitad de la pantalla y
+  // termina cuando la cruza la siguiente; el último, al final de la página.
+  // Los límites se miden después de cada `refresh`, con las escenas fijas ya
+  // en su sitio: una sección fija se mide por su envoltorio, que ocupa en la
+  // página todo lo que dura la escena (ella misma puede estar clavada arriba).
+  let inicios = [];
+  let fin = 0;
+  const medir = () => {
+    const mitad = window.innerHeight / 2;
+    inicios = sectores.map(({ seccion }) => {
+      const ancla = seccion.parentElement?.classList.contains('pin-spacer') ? seccion.parentElement : seccion;
+      return ancla.getBoundingClientRect().top + window.scrollY - mitad;
     });
-  });
+    fin = ScrollTrigger.maxScroll(window);
+  };
+  // La posición manda, no el camino: un salto (un ancla, la tecla Fin) deja
+  // cada sector recorrido o pendiente entero sin pasar por los de en medio.
+  const pintar = (posicion) => {
+    progresosDeSectores(posicion, inicios, fin).forEach((valor, i) => {
+      if (valor === progresos[i]) return;
+      progresos[i] = valor;
+      llenar[i](valor);
+    });
+    actualizar();
+  };
+  const remedir = () => { medir(); pintar(window.scrollY); };
+  ScrollTrigger.addEventListener('refresh', remedir);
+  const seguimiento = ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (self) => pintar(self.scroll()) });
+  remedir();
 
   return () => {
-    triggers.forEach((t) => t.kill());
+    ScrollTrigger.removeEventListener('refresh', remedir);
+    seguimiento.kill();
     vuelta.remove();
     raiz.classList.remove('con-vuelta');
   };

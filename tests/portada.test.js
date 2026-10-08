@@ -361,9 +361,13 @@ test('la página se cuenta como una vuelta: un sector por sección numerada y la
   // Los sectores salen de los índices de la página: sin textos inventados.
   assert.match(VUELTA, /\$\$\('main section'\)/, 'también la galería, que va dentro del envoltorio de ScrollTrigger');
   assert.match(VUELTA, /\$\('\.seccion__indice', seccion\)/);
-  assert.match(VUELTA, /start: 'top center',\s*\.\.\.\(siguiente \? \{ endTrigger: siguiente, end: 'top center' \} : \{ end: 'max' \}\)/,
-    'los tramos son contiguos: siempre hay uno, y solo uno, en curso');
-  assert.match(VUELTA, /onLeave:[\s\S]*onLeaveBack:/, 'un salto con un ancla da los sectores cruzados por recorridos');
+  // Los tramos son contiguos y salen de la posición, no del camino: un salto
+  // con un ancla deja cada sector recorrido o pendiente entero.
+  assert.match(VUELTA, /progresosDeSectores\(posicion, inicios, fin\)/);
+  assert.match(VUELTA, /ScrollTrigger\.addEventListener\('refresh', remedir\)/, 'los límites se vuelven a medir cuando cambia la página');
+  // Una sección fija se mide por su envoltorio: si no, su sector terminaría
+  // antes que la escena (la galería corre dos pantallas más).
+  assert.match(VUELTA, /seccion\.parentElement\?\.classList\.contains\('pin-spacer'\) \? seccion\.parentElement : seccion/);
   assert.match(VUELTA, /vuelta--meta/);
   // Sin movimiento no hay vuelta: todo lo que la esconde cuelga de .portada-animada.
   assert.match(CSS, /\.portada-animada \.vuelta \{[^}]*opacity: 0;/s);
@@ -387,6 +391,8 @@ test('una sola gramática de movimiento: el encabezado se lee en orden y nada gi
   // Ni tarjetas que giran en 3D ni fechas que se inclinan: se sube y se enciende.
   assert.doesNotMatch(ESCENAS, /rotationX|transformPerspective/, 'los bloques no giran para entrar');
   assert.doesNotMatch(ESCENAS, /rotation: \(i\)/);
+  // Las rejillas (fechas, tienda) no se descuadran mientras se leen.
+  assert.doesNotMatch(ESCENAS, /trigger: '\.(?:agenda|productos)', start: 'top bottom', end: 'bottom top', scrub: true/);
   assert.doesNotMatch(ESCENAS, /scrambleText/);
   assert.match(ESCENAS, /const SUBIDA = \{ opacity: 0, y: 36, duration: 1\.1 \};/);
   assert.ok((ESCENAS.match(/\.\.\.SUBIDA/g) ?? []).length >= 10, 'los bloques comparten la misma subida');

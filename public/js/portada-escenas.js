@@ -447,15 +447,8 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   if (eventos.length) {
     gsap.from(eventos, { ...SUBIDA, y: 56, stagger: 0.12, duration: 1.3, scrollTrigger: alEntrar('.agenda', 'top 88%') });
     gsap.fromTo(eventos, { '--linea': 0 }, { '--linea': 1, stagger: 0.12, delay: 0.35, duration: 1, ease: 'expo.inOut', scrollTrigger: alEntrar('.agenda', 'top 88%') });
-    mm.add('(min-width: 861px)', () => {
-      eventos.forEach((evento, i) => {
-        gsap.fromTo(evento, { yPercent: (i - 1) * 5 }, {
-          yPercent: (i - 1) * -5,
-          ease: 'none',
-          scrollTrigger: { trigger: '.agenda', start: 'top bottom', end: 'bottom top', scrub: true },
-        });
-      });
-    });
+    // Una vez en su sitio las tarjetas se quedan alineadas: una rejilla que
+    // se descuadra al leerla no cuenta nada.
     gsap.from('.agenda__accion', { ...SUBIDA, y: 24, scrollTrigger: alEntrar('.agenda__accion', 'top 95%') });
   }
 
@@ -561,16 +554,9 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
 
   const productos = $$('.productos > li');
   if (productos.length) {
+    // Llegan en escalera y se quedan alineadas; el movimiento de la tarjeta es
+    // la respuesta al puntero (portada-tacto.js), no el desplazamiento.
     gsap.from(productos, { ...SUBIDA, y: 64, stagger: ESCALON, duration: 1.3, scrollTrigger: alEntrar('.productos', 'top 90%') });
-    mm.add('(min-width: 1101px)', () => {
-      productos.forEach((producto, i) => {
-        gsap.fromTo(producto, { yPercent: i % 2 ? 6 : -2 }, {
-          yPercent: i % 2 ? -6 : 2,
-          ease: 'none',
-          scrollTrigger: { trigger: '.productos', start: 'top bottom', end: 'bottom top', scrub: true },
-        });
-      });
-    });
   }
 
   // -------------------------------------------------------------------------

@@ -149,3 +149,16 @@ export function sectorEnCurso(progresos) {
 export function vueltaCompleta(progresos) {
   return progresos.length > 0 && progresos[progresos.length - 1] >= 0.995;
 }
+
+/**
+ * Lo recorrido de cada sector (0..1) en una posición de desplazamiento.
+ * `inicios` son las posiciones, crecientes, en que empieza cada sector; cada
+ * uno termina donde empieza el siguiente y el último, en `fin`.
+ */
+export function progresosDeSectores(posicion, inicios, fin) {
+  return inicios.map((inicio, i) => {
+    const final = i + 1 < inicios.length ? inicios[i + 1] : fin;
+    if (final <= inicio) return posicion >= inicio ? 1 : 0;
+    return limitar((posicion - inicio) / (final - inicio));
+  });
+}

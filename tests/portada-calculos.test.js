@@ -4,7 +4,7 @@ import {
   limitar, easeOutCubic, valorContado, tiempoEnTexto, progresoLectura,
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
   formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
-  sectorEnCurso, vueltaCompleta,
+  sectorEnCurso, vueltaCompleta, progresosDeSectores,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -137,4 +137,16 @@ test('vueltaCompleta solo cuando el último sector se recorre entero', () => {
   assert.equal(vueltaCompleta([1, 1, 1]), true);
   assert.equal(vueltaCompleta([1, 1, 0.996]), true, 'el redondeo del final de la página cuenta como meta');
   assert.equal(vueltaCompleta([]), false);
+});
+
+test('progresosDeSectores reparte la vuelta en tramos contiguos', () => {
+  const inicios = [100, 300, 1000];
+  assert.deepEqual(progresosDeSectores(0, inicios, 1200), [0, 0, 0], 'en la apertura no empezó ninguno');
+  assert.deepEqual(progresosDeSectores(200, inicios, 1200), [0.5, 0, 0]);
+  assert.deepEqual(progresosDeSectores(650, inicios, 1200), [1, 0.5, 0], 'el sector largo (una escena fija) se llena a su ritmo');
+  assert.deepEqual(progresosDeSectores(1200, inicios, 1200), [1, 1, 1], 'al final de la página la vuelta está completa');
+  assert.deepEqual(progresosDeSectores(5000, inicios, 1200), [1, 1, 1], 'el rebote del final no pasa de 1');
+  assert.deepEqual(progresosDeSectores(1000, [100, 1000], 1000), [1, 1], 'un último sector sin recorrido cuenta como hecho al llegar');
+  assert.equal(vueltaCompleta(progresosDeSectores(1200, inicios, 1200)), true);
+  assert.equal(sectorEnCurso(progresosDeSectores(650, inicios, 1200)), 1);
 });
