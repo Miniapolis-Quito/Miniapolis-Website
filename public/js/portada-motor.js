@@ -100,9 +100,14 @@ export function crearMotor() {
 
   let limiteScroll = 1;
   let ultVel = null;
+  let ultVelNum = -999;
   let ultVelAbs = null;
+  let ultVelAbsNum = -999;
   let ultScroll = null;
+  let ultScrollNum = -999;
   let ultScrollPx = null;
+  let ultScrollPxNum = -999;
+  const ctx = { velocidad: 0, ancho: 0, alto: 0 };
 
   function calcular(e) {
     return e.modo === 'fija'
@@ -111,12 +116,15 @@ export function crearMotor() {
   }
 
   function pintar() {
+    ctx.velocidad = velocidad;
+    ctx.ancho = ancho;
+    ctx.alto = alto;
     for (const e of escenas) {
       const p = calcular(e);
       if (Math.abs(p - e.p) < 0.0004) continue;
       e.p = p;
       e.el.style.setProperty('--p', p.toFixed(4));
-      e.alActualizar?.(p, { velocidad, ancho, alto });
+      e.alActualizar?.(p, ctx);
     }
   }
 
@@ -125,30 +133,44 @@ export function crearMotor() {
     ultimo = ahora;
     const objetivo = window.scrollY;
     const previo = suave;
-    suave = suavizar(suave, objetivo, 9, dt);
-    velocidad = suavizar(velocidad, normalizarVelocidad((suave - previo) / dt), 10, dt);
-    const quieto = Math.abs(objetivo - suave) < 0.1 && Math.abs(velocidad) < 0.003;
+    suave = suavizar(suave, objetivo, 15, dt);
+    velocidad = suavizar(velocidad, normalizarVelocidad((suave - previo) / dt), 15, dt);
+    const quieto = Math.abs(objetivo - suave) < 0.15 && Math.abs(velocidad) < 0.002;
     if (quieto) { suave = objetivo; velocidad = 0; }
 
-    const vStr = velocidad.toFixed(3);
-    if (vStr !== ultVel) {
-      ultVel = vStr;
-      raiz.style.setProperty('--vel', vStr);
+    if (Math.abs(velocidad - ultVelNum) >= 0.0005) {
+      ultVelNum = velocidad;
+      const vStr = velocidad.toFixed(3);
+      if (vStr !== ultVel) {
+        ultVel = vStr;
+        raiz.style.setProperty('--vel', vStr);
+      }
     }
-    const vAbsStr = Math.abs(velocidad).toFixed(3);
-    if (vAbsStr !== ultVelAbs) {
-      ultVelAbs = vAbsStr;
-      raiz.style.setProperty('--vel-abs', vAbsStr);
+    const vAbs = Math.abs(velocidad);
+    if (Math.abs(vAbs - ultVelAbsNum) >= 0.0005) {
+      ultVelAbsNum = vAbs;
+      const vAbsStr = vAbs.toFixed(3);
+      if (vAbsStr !== ultVelAbs) {
+        ultVelAbs = vAbsStr;
+        raiz.style.setProperty('--vel-abs', vAbsStr);
+      }
     }
-    const sStr = limitar(suave / limiteScroll).toFixed(4);
-    if (sStr !== ultScroll) {
-      ultScroll = sStr;
-      raiz.style.setProperty('--scroll', sStr);
+    const sRel = limitar(suave / limiteScroll);
+    if (Math.abs(sRel - ultScrollNum) >= 0.0001) {
+      ultScrollNum = sRel;
+      const sStr = sRel.toFixed(4);
+      if (sStr !== ultScroll) {
+        ultScroll = sStr;
+        raiz.style.setProperty('--scroll', sStr);
+      }
     }
-    const sPxStr = suave.toFixed(1);
-    if (sPxStr !== ultScrollPx) {
-      ultScrollPx = sPxStr;
-      raiz.style.setProperty('--scroll-px', sPxStr);
+    if (Math.abs(suave - ultScrollPxNum) >= 0.1) {
+      ultScrollPxNum = suave;
+      const sPxStr = suave.toFixed(1);
+      if (sPxStr !== ultScrollPx) {
+        ultScrollPx = sPxStr;
+        raiz.style.setProperty('--scroll-px', sPxStr);
+      }
     }
     pintar();
 

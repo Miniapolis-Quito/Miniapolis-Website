@@ -71,17 +71,30 @@ function montarHalos() {
 
   $$(selectores.join(',')).forEach((pieza) => {
     let rect = null;
+    let rafId = 0;
+    let ultX = 0;
+    let ultY = 0;
     const medir = () => { rect = pieza.getBoundingClientRect(); };
-    const actualizar = (evento) => {
-      if (!rect) medir();
-      if (!rect.width || !rect.height) return;
-      const x = ((evento.clientX - rect.left) / rect.width) * 100;
-      const y = ((evento.clientY - rect.top) / rect.height) * 100;
+    const renderizar = () => {
+      rafId = 0;
+      if (!rect || !rect.width || !rect.height) return;
+      const x = ((ultX - rect.left) / rect.width) * 100;
+      const y = ((ultY - rect.top) / rect.height) * 100;
       pieza.style.setProperty('--spot-x', `${Math.max(0, Math.min(100, x)).toFixed(1)}%`);
       pieza.style.setProperty('--spot-y', `${Math.max(0, Math.min(100, y)).toFixed(1)}%`);
     };
+    const actualizar = (evento) => {
+      if (!rect) medir();
+      ultX = evento.clientX;
+      ultY = evento.clientY;
+      if (!rafId) rafId = requestAnimationFrame(renderizar);
+    };
     const limpiar = () => {
       rect = null;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
       pieza.style.removeProperty('--spot-x');
       pieza.style.removeProperty('--spot-y');
     };
@@ -126,7 +139,8 @@ function arrancarSalida() {
 
   const listo = () => raiz.classList.add('portada-listos');
   const imagen = $('.portada__cielo img');
-  const esperas = [document.fonts?.ready, imagen?.decode?.()].filter(Boolean);
+  const auto = $('.portada__auto img');
+  const esperas = [document.fonts?.ready, imagen?.decode?.(), auto?.decode?.()].filter(Boolean);
   // Red de seguridad: el titular nunca se queda esperando a un recurso.
   Promise.race([Promise.allSettled(esperas), new Promise((r) => setTimeout(r, 1800))]).then(listo);
 }
@@ -178,6 +192,7 @@ function montarTablero(motor) {
   const cifras = armarCifras();
   const luces = $$('.portada__luces span', seccion);
   let encendidas = -1;
+  const ultRuedas = cifras.map(() => -1);
   motor.registrar(seccion, {
     modo: 'vista',
     alActualizar: (p) => {
@@ -189,7 +204,11 @@ function montarTablero(motor) {
         encendidas = n;
       }
       cifras.forEach((cifra, i) => {
-        cifra.style.setProperty('--rueda', progresoCifra(p, i).toFixed(3));
+        const val = Number(progresoCifra(p, i).toFixed(3));
+        if (val !== ultRuedas[i]) {
+          ultRuedas[i] = val;
+          cifra.style.setProperty('--rueda', val.toFixed(3));
+        }
       });
     },
   });
@@ -228,13 +247,18 @@ function montarRecta(motor) {
     motor.medir();
   };
 
+  const ultQ = paneles.map(() => -1);
   motor.registrar(seccion, {
     modo: 'fija',
     alActualizar: (p, { ancho }) => {
       if (!fija.matches) return;
       const x = p * recorrido;
       paneles.forEach((panel, i) => {
-        panel.style.setProperty('--q', entradaPanel(izquierdas[i] - x, ancho).toFixed(3));
+        const q = Number(entradaPanel(izquierdas[i] - x, ancho).toFixed(3));
+        if (q !== ultQ[i]) {
+          ultQ[i] = q;
+          panel.style.setProperty('--q', q.toFixed(3));
+        }
       });
     },
   });
@@ -265,12 +289,22 @@ function montarBoxes(motor) {
   // 1. Se normaliza contra lo que de verdad se puede recorrer, y así la bandera
   // se va y el panel queda asentado al llegar al final.
   let maximo = 1;
+  let ultCruce = -1;
+  let ultEntra = -1;
   const escena = motor.registrar(seccion, {
     modo: 'vista',
     alActualizar: (p) => {
       const q = p / maximo;
-      seccion.style.setProperty('--cruce', fase(q, 0.05, 0.55).toFixed(3));
-      seccion.style.setProperty('--entra', easeOutCubic(fase(q, 0.15, 0.6)).toFixed(3));
+      const cruce = Number(fase(q, 0.05, 0.55).toFixed(3));
+      if (cruce !== ultCruce) {
+        ultCruce = cruce;
+        seccion.style.setProperty('--cruce', cruce.toFixed(3));
+      }
+      const entra = Number(easeOutCubic(fase(q, 0.15, 0.6)).toFixed(3));
+      if (entra !== ultEntra) {
+        ultEntra = entra;
+        seccion.style.setProperty('--entra', entra.toFixed(3));
+      }
     },
   });
   motor.alMedir(() => {
@@ -289,9 +323,16 @@ function montarInformacion(motor) {
   if (!secciones.length) return;
 
   secciones.forEach((seccion) => {
+    let ultP = -1;
     motor.registrar(seccion, {
       modo: 'vista',
-      alActualizar: (p) => seccion.style.setProperty('--info-p', fase(p, 0, 1).toFixed(3)),
+      alActualizar: (p) => {
+        const val = Number(fase(p, 0, 1).toFixed(3));
+        if (val !== ultP) {
+          ultP = val;
+          seccion.style.setProperty('--info-p', val.toFixed(3));
+        }
+      },
     });
   });
 
@@ -304,6 +345,66 @@ function montarInformacion(motor) {
   }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
   secciones.forEach((seccion) => observador.observe(seccion));
   setTimeout(() => secciones.forEach((seccion) => seccion.classList.add('visto')), 9000);
+}
+
+// ---------------------------------------------------------------------------
+// Precarga pasiva de texturas de fondo para scroll sin tirones
+// ---------------------------------------------------------------------------
+
+function precargarFondos() {
+  const urls = [
+    './images/pista/miniapolis-track-vertical.webp',
+    './images/contenido/tarjetas/disciplina-crawling-fondo.webp',
+    './images/contenido/tarjetas/disciplina-rally-fondo.webp',
+    './images/contenido/tarjetas/disciplina-drones-fondo.webp',
+    './images/contenido/tarjetas/disciplina-fpv-fondo.webp',
+    './images/oficial/pista-circuito-panorama.webp',
+    './images/oficial/pista-hangar-curva.webp',
+    './images/oficial/pista-hangar-vertical.webp',
+    './images/oficial/pista-senna-wide.webp',
+    './images/oficial/pista-senna-vertical.webp',
+    './images/pista/miniapolis-asphalt-detail.webp',
+    './images/pista/miniapolis-curb-detail-vertical.webp',
+    './images/pista/miniapolis-track-corner-wide.webp',
+    './images/contenido/tarjetas/horario-miercoles-fondo.webp',
+    './images/contenido/tarjetas/horario-sabado-fondo.webp',
+    './images/contenido/tarjetas/horario-domingo-fondo.webp',
+    './images/contenido/tarjetas/record-danilo-fondo.webp',
+    './images/contenido/tarjetas/record-stalin-fondo.webp',
+    './images/contenido/tarjetas/record-marco-fondo.webp',
+    './images/contenido/tarjetas/evento-experiencia-fondo.webp',
+    './images/contenido/tarjetas/evento-drift-fondo.webp',
+    './images/contenido/tarjetas/evento-campeonato-fondo.webp',
+    './images/landing/miniapolis-track-atmosphere.webp',
+    './images/landing/miniapolis-track-portrait.webp',
+    './images/pista/miniapolis-track-wide.webp',
+    './images/contenido/tarjetas/promo-lancia-fondo.webp',
+    './images/contenido/tarjetas/promo-amortiguadores-fondo.webp',
+    './images/contenido/tarjetas/promo-llantas-fondo.webp',
+    './images/contenido/tarjetas/promo-motor-fondo.webp',
+    './images/contenido/tarjetas/promo-builder-fondo.webp',
+    './images/contenido/tarjetas/recta-cabeza-fondo.webp',
+    './images/oficial/miniapolis-bandera-hero.webp',
+  ];
+  const pedirSiguiente = (i) => {
+    if (i >= urls.length) return;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = urls[i];
+    const paso = () => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => pedirSiguiente(i + 1), { timeout: 200 });
+      } else {
+        setTimeout(() => pedirSiguiente(i + 1), 30);
+      }
+    };
+    img.decode?.().then(paso, paso) || paso();
+  };
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => pedirSiguiente(0), { timeout: 1000 });
+  } else {
+    setTimeout(() => pedirSiguiente(0), 400);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -326,4 +427,5 @@ if (reducir || typeof IntersectionObserver !== 'function' || typeof ResizeObserv
   montarBoxes(motor);
   motor.iniciar();
   arrancarSalida();
+  precargarFondos();
 }
