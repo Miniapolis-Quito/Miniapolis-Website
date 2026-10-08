@@ -27,9 +27,13 @@ function crear(etiqueta, clase, padre) {
   return nodo;
 }
 
-/** Los sectores son las secciones con número, en el orden de la página. */
+/**
+ * Los sectores son las secciones con número, en el orden de la página. Se
+ * buscan en todo `main` y no solo entre sus hijas: una sección fija (la
+ * galería) va dentro del envoltorio que le pone ScrollTrigger.
+ */
 function leerSectores() {
-  return $$('main > section').flatMap((seccion) => {
+  return $$('main section').flatMap((seccion) => {
     const indice = $('.seccion__indice', seccion);
     const numero = indice && $(':scope > span', indice);
     if (!numero) return [];

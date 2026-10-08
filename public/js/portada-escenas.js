@@ -329,6 +329,9 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   const auto = $('.plano__auto');
   const filas = $$('.ficha__fila');
   if (plano && trazado && auto) {
+    // El auto espera en la parrilla (el trazado empieza en la línea de
+    // salida) y no en el origen del dibujo mientras nadie lo pone a andar.
+    if (MotionPathPlugin) gsap.set(auto, { motionPath: { path: trazado, align: trazado, alignOrigin: [0.5, 0.5], end: 0 } });
     gsap.from(plano, { ...SUBIDA, y: 48, duration: 1.3, scrollTrigger: alEntrar(plano, 'top 85%') });
     gsap.from('.plano__cota', { opacity: 0, duration: 1, stagger: 0.2, delay: 0.3, scrollTrigger: alEntrar(plano, 'top 85%') });
   }
@@ -341,7 +344,9 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         defaults: { ease: 'none' },
         scrollTrigger: { trigger: '.ficha__lista', start: 'top 62%', end: 'bottom 62%', scrub: 0.8 },
       });
-      tl.fromTo(trazado, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0, duration: 1 }, 0);
+      // `pathLength="1"`: el trazo entero mide 1. GSAP redondea los píxeles
+      // a enteros y sin `autoRound: false` saltaría de nada a todo a mitad.
+      tl.fromTo(trazado, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0, autoRound: false, duration: 1 }, 0);
       if (MotionPathPlugin) {
         tl.to(auto, { motionPath: { path: trazado, align: trazado, alignOrigin: [0.5, 0.5] }, duration: 1 }, 0);
       }
@@ -363,7 +368,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       };
     }
     // En el teléfono el trazado se dibuja al llegar y el auto da vueltas mientras se ve.
-    gsap.fromTo(trazado, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.4, ease: 'power2.inOut', scrollTrigger: unaVez(plano, 'top 75%') });
+    gsap.fromTo(trazado, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, autoRound: false, duration: 2.4, ease: 'power2.inOut', scrollTrigger: unaVez(plano, 'top 75%') });
     if (MotionPathPlugin) {
       const vuelta = gsap.to(auto, { motionPath: { path: trazado, align: trazado, alignOrigin: [0.5, 0.5] }, duration: 7, ease: 'none', repeat: -1, paused: true });
       ScrollTrigger.create({ trigger: plano, start: 'top bottom', end: 'bottom top', onToggle: (self) => (self.isActive ? vuelta.play() : vuelta.pause()) });
@@ -592,6 +597,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     trazos.forEach((trazo) => trazo.setAttribute('pathLength', '1'));
     gsap.fromTo(trazos, { strokeDasharray: 1, strokeDashoffset: 1 }, {
       strokeDashoffset: 0,
+      autoRound: false,
       duration: 1.4,
       ease: 'power2.inOut',
       stagger: 0.12,

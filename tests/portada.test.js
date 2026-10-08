@@ -359,7 +359,7 @@ test('la página se cuenta como una vuelta: un sector por sección numerada y la
   );
   assert.match(VUELTA, /from '\.\/portada-calculos\.js'/, 'qué sector está en curso lo deciden funciones puras y probadas');
   // Los sectores salen de los índices de la página: sin textos inventados.
-  assert.match(VUELTA, /\$\$\('main > section'\)/);
+  assert.match(VUELTA, /\$\$\('main section'\)/, 'también la galería, que va dentro del envoltorio de ScrollTrigger');
   assert.match(VUELTA, /\$\('\.seccion__indice', seccion\)/);
   assert.match(VUELTA, /start: 'top center',\s*\.\.\.\(siguiente \? \{ endTrigger: siguiente, end: 'top center' \} : \{ end: 'max' \}\)/,
     'los tramos son contiguos: siempre hay uno, y solo uno, en curso');
