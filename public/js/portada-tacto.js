@@ -100,6 +100,8 @@ function montarInclinacion(gsap) {
     const fy = foto ? gsap.quickTo(foto, 'yPercent', { duration: 0.6, ease: 'power3' }) : () => {};
     const escala = foto ? gsap.quickTo(foto, 'scale', { duration: 0.6, ease: 'power3' }) : () => {};
     let caja = null;
+    let ultBx = '';
+    let ultBy = '';
     tarjeta.addEventListener('pointerenter', () => {
       caja = tarjeta.getBoundingClientRect();
       sube(-6);
@@ -114,11 +116,21 @@ function montarInclinacion(gsap) {
       rx(-py * 10);
       fx(-px * 5);
       fy(-py * 5);
-      tarjeta.style.setProperty('--brillo-x', `${((px + 0.5) * 100).toFixed(1)}%`);
-      tarjeta.style.setProperty('--brillo-y', `${((py + 0.5) * 100).toFixed(1)}%`);
+      const bx = `${((px + 0.5) * 100).toFixed(1)}%`;
+      const by = `${((py + 0.5) * 100).toFixed(1)}%`;
+      if (bx !== ultBx) {
+        ultBx = bx;
+        tarjeta.style.setProperty('--brillo-x', bx);
+      }
+      if (by !== ultBy) {
+        ultBy = by;
+        tarjeta.style.setProperty('--brillo-y', by);
+      }
     }, { passive: true });
     tarjeta.addEventListener('pointerleave', () => {
       caja = null;
+      ultBx = '';
+      ultBy = '';
       rx(0);
       ry(0);
       sube(0);

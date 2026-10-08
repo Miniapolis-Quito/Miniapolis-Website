@@ -158,6 +158,7 @@ const RED_DE_SEGURIDAD_MS = 2500;
 let observadorRevelado = null;
 
 export function revelarAlEntrar() {
+  if (document.body?.classList?.contains('pagina-entrada') || document.body?.classList?.contains('pagina-posiciones')) return;
   const sinMovimiento = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if (sinMovimiento || typeof IntersectionObserver !== 'function') return;
 

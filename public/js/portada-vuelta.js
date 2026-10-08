@@ -63,9 +63,16 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   raiz.classList.add('con-vuelta');
 
   const progresos = sectores.map(() => 0);
+  const ultLlenados = sectores.map(() => '');
   // Cuánto se llenó cada tramo va en una variable: la hoja decide si crece a
   // lo alto (regla vertical) o a lo ancho (línea de arriba).
-  const llenar = rellenos.map((relleno) => (valor) => relleno.style.setProperty('--llenado', valor.toFixed(4)));
+  const llenar = rellenos.map((relleno, i) => (valor) => {
+    const str = valor.toFixed(4);
+    if (str !== ultLlenados[i]) {
+      ultLlenados[i] = str;
+      relleno.style.setProperty('--llenado', str);
+    }
+  });
   const tramosVistos = [...tramos.children];
   let enCurso = -1;
   let meta = false;
@@ -81,10 +88,19 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
     overwrite: true,
   });
 
+  let transicionTexto = null;
+  let rotuloActual = '';
+
   const rotular = (rotulo) => {
-    if (texto.textContent === rotulo) return;
-    gsap.killTweensOf(texto);
-    gsap.timeline()
+    if (rotuloActual === rotulo) return;
+    rotuloActual = rotulo;
+    transicionTexto?.kill();
+    if (!texto.textContent) {
+      texto.textContent = rotulo;
+      transicionTexto = gsap.fromTo(texto, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: 'expo.out' });
+      return;
+    }
+    transicionTexto = gsap.timeline()
       .to(texto, { opacity: 0, y: -10, duration: 0.18, ease: 'power2.in' })
       .add(() => { texto.textContent = rotulo; })
       .fromTo(texto, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: 'expo.out' });
@@ -125,7 +141,10 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
     vuelta.classList.toggle('vuelta--en-pista', sector >= 0);
     vuelta.classList.toggle('vuelta--meta', meta);
     tramosVistos.forEach((tramo, i) => tramo.classList.toggle('activo', i === sector));
-    if (sector < 0) return;
+    if (sector < 0) {
+      rotuloActual = '';
+      return;
+    }
     rodar(meta ? sectores.length : sector);
     rotular(sectores[sector].nombre);
   };
