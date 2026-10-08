@@ -14,7 +14,6 @@
   <script defer src="/vendor/ScrollTrigger-3.15.0.min.js"></script>
   <script defer src="/vendor/SplitText-3.15.0.min.js"></script>
   <script defer src="/vendor/MotionPathPlugin-3.15.0.min.js"></script>
-  <script defer src="/vendor/ScrambleTextPlugin-3.15.0.min.js"></script>
   <script defer src="/vendor/lenis-1.3.26.min.js"></script>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.png" type="image/png">
@@ -61,6 +60,7 @@
           <a class="boton boton--principal boton--grande" href="#acceso">Entrar</a>
           <a class="enlace-flecha" href="#pista">Ver la pista</a>
         </div>
+        <span class="hero__guia" aria-hidden="true"><i></i></span>
       </div>
       <ul class="hero__cifras marco">
         <li class="cifra"><strong class="cifra__valor">1.000<small>m²</small></strong><span class="cifra__texto">Asfalto indoor</span></li>
@@ -70,7 +70,7 @@
       </ul>
     </section>
 
-    <section id="pista" class="seccion" aria-labelledby="titulo-pista">
+    <section id="pista" class="seccion seccion--telon" aria-labelledby="titulo-pista">
       <div class="marco">
         <header class="seccion__cabeza">
           <p class="seccion__indice"><span>01</span>Recorrido</p>
@@ -187,7 +187,7 @@
                 <text x="-32" y="112.5" text-anchor="middle" transform="rotate(-90 -32 112.5)">22,5 m</text>
               </g>
               <path class="plano__asfalto" d="M70 198H330C372 198 400 178 400 140V100C400 72 360 58 335 74L262 120C240 134 214 128 206 106L194 62C188 40 172 30 150 30H82C56 30 40 48 40 74V160C40 182 52 198 70 198Z"/>
-              <path id="plano-trazado" class="plano__trazado" pathLength="1" d="M70 198H330C372 198 400 178 400 140V100C400 72 360 58 335 74L262 120C240 134 214 128 206 106L194 62C188 40 172 30 150 30H82C56 30 40 48 40 74V160C40 182 52 198 70 198Z"/>
+              <path id="plano-trazado" class="plano__trazado" pathLength="1" d="M200 198H330C372 198 400 178 400 140V100C400 72 360 58 335 74L262 120C240 134 214 128 206 106L194 62C188 40 172 30 150 30H82C56 30 40 48 40 74V160C40 182 52 198 70 198Z"/>
               <path class="plano__meta" d="M200 186V210"/>
               <g class="plano__curvas">
                 <text x="414" y="196">1</text>

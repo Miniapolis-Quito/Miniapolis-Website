@@ -8,9 +8,8 @@
   Solo se usa como respaldo: si el navegador ofrece la API nativa
   `BarcodeDetector` (Chrome/Edge en Android y escritorio), se usa esa.
 
-- `gsap-3.15.0.min.js`, `ScrollTrigger-3.15.0.min.js`, `SplitText-3.15.0.min.js`,
-  `MotionPathPlugin-3.15.0.min.js` y `ScrambleTextPlugin-3.15.0.min.js` — GSAP de
-  GreenSock (licencia «Standard No Charge», <https://gsap.com/standard-license>:
+- `gsap-3.15.0.min.js`, `ScrollTrigger-3.15.0.min.js`, `SplitText-3.15.0.min.js`
+  y `MotionPathPlugin-3.15.0.min.js` — GSAP de GreenSock (licencia «Standard No Charge», <https://gsap.com/standard-license>:
   gratuita para sitios web, también comerciales). Copiados desde
   `node_modules/gsap/dist/`. Mueven las escenas de la portada ligadas al
   desplazamiento.

@@ -4,6 +4,7 @@ import {
   limitar, easeOutCubic, valorContado, tiempoEnTexto, progresoLectura,
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
   formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
+  sectorEnCurso, vueltaCompleta,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -122,3 +123,18 @@ test('cifrasRodando solo hace rodar las cifras y las fija de izquierda a derecha
   assert.equal(cifrasRodando('cerrado', 0.3), 'cerrado');
 });
 
+
+test('sectorEnCurso dice en qué sector de la vuelta se está leyendo', () => {
+  assert.equal(sectorEnCurso([0, 0, 0]), -1, 'en la apertura todavía no arrancó ningún sector');
+  assert.equal(sectorEnCurso([0.4, 0, 0]), 0);
+  assert.equal(sectorEnCurso([1, 0.02, 0]), 1, 'basta con entrar en un sector para estar en él');
+  assert.equal(sectorEnCurso([1, 1, 1]), 2);
+  assert.equal(sectorEnCurso([]), -1);
+});
+
+test('vueltaCompleta solo cuando el último sector se recorre entero', () => {
+  assert.equal(vueltaCompleta([1, 1, 0.9]), false);
+  assert.equal(vueltaCompleta([1, 1, 1]), true);
+  assert.equal(vueltaCompleta([1, 1, 0.996]), true, 'el redondeo del final de la página cuenta como meta');
+  assert.equal(vueltaCompleta([]), false);
+});

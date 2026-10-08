@@ -70,6 +70,7 @@
 }
 
 .hero__contenido {
+  position: relative;
   align-self: center;
   padding-block: clamp(40px, 7vh, 96px) clamp(28px, 5vh, 56px);
 }
@@ -206,6 +207,17 @@
 /* ==========================================================================
    01 · La pista: mosaico de fotos
    ========================================================================== */
+
+/* El telón: en pantallas anchas la apertura se queda fija y esta sección
+   sube por encima (portada-escenas.js). Va un plano por delante y su borde
+   de arriba se funde con la foto en lugar de cortarla. Sin movimiento la
+   apertura no se fija y no se nota nada: el negro es el de la página. Va por
+   clase y no por `.hero + .seccion`: al fijarla, ScrollTrigger envuelve la
+   apertura y deja de ser la hermana de esta sección. */
+.seccion--telon {
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), var(--fondo) calc(var(--pub-seccion) * .62));
+}
 
 .mosaico {
   display: grid;
@@ -978,6 +990,7 @@
   height: 16px;
   background: repeating-conic-gradient(#f4f6f3 0 25%, #000 0 50%) 0 0 / 16px 16px;
   opacity: .92;
+  transform-origin: left center;
 }
 
 .acceso__rejilla {
@@ -1130,6 +1143,38 @@ html.lenis { scroll-behavior: auto; }
   }
 }
 
+/* --- Guía de desplazamiento ---------------------------------------------------- */
+
+/* Una línea fina con una luz que baja: la vuelta sigue hacia abajo. Sin
+   movimiento no hace falta (no hay escenas que esperar) y no existe. */
+.hero__guia { display: none; }
+.portada-animada .hero__guia {
+  position: absolute;
+  right: 0;
+  bottom: clamp(28px, 5vh, 56px);
+  display: block;
+  width: 1px;
+  height: 72px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .26);
+}
+.portada-animada .hero__guia i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: var(--acento);
+  animation: guia 2.4s cubic-bezier(.65, 0, .35, 1) infinite;
+}
+@keyframes guia {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(250%); }
+}
+@media (max-width: 760px) {
+  .portada-animada .hero__guia { display: none; }
+}
+
 /* --- Titulares partidos (SplitText) ------------------------------------------ */
 
 /* Cada línea es una ventana que recorta lo que sube por debajo. Se ensancha
@@ -1140,6 +1185,23 @@ html.lenis { scroll-behavior: auto; }
 }
 .letra-split,
 .palabra-split { will-change: transform; }
+
+/* El número del índice sube por su propia ventana, como el de un marcador, y
+   la línea que lo sigue se traza después (--trazo la mueve GSAP). */
+.numero-split-mask {
+  padding-block: .12em;
+  margin-block: -.12em;
+}
+.portada-animada .seccion__indice > span::after {
+  transform: scaleX(var(--trazo, 1));
+  transform-origin: left center;
+}
+
+/* La marca verde de cada fecha se traza al llegar. */
+.portada-animada .evento::before {
+  transform: scaleX(var(--linea, 1));
+  transform-origin: left center;
+}
 
 /* --- Marquesina ------------------------------------------------------------------ */
 
@@ -1199,6 +1261,115 @@ html.lenis { scroll-behavior: auto; }
   height: 100%;
   background: linear-gradient(90deg, rgba(147, 210, 65, .2), var(--acento));
   transform-origin: left center;
+}
+
+/* --- La vuelta: el avance contado por sectores ------------------------------------- */
+
+/* Lo monta portada-vuelta.js y es decorativo: la navegación ya dice dónde se
+   está. En el teléfono es una línea partida en nueve sectores arriba del
+   todo; en pantallas anchas, una regla vertical en el margen izquierdo con
+   el número del sector, que rueda, y su nombre. Reemplaza a la línea de
+   avance de la cabecera, que se esconde al bajar justo cuando se lee. */
+.con-vuelta .sitio-progreso { display: none; }
+
+.portada-animada .vuelta {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 600ms var(--pub-curva), transform 600ms var(--pub-curva);
+}
+.portada-animada .vuelta.vuelta--en-pista { opacity: 1; }
+.vuelta__numero,
+.vuelta__nombre { display: none; }
+.vuelta__sectores {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 3px;
+  height: 2px;
+}
+.vuelta__sectores i {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .12);
+  transition: background-color 300ms ease-out;
+}
+.vuelta__sectores b {
+  position: absolute;
+  inset: 0;
+  background: var(--acento);
+  transform: scaleX(var(--llenado, 0));
+  transform-origin: left center;
+}
+
+@media (min-width: 900px) and (min-height: 560px) {
+  .portada-animada .vuelta {
+    top: calc(50% - 150px);
+    right: auto;
+    left: max(12px, calc((100vw - min(var(--pub-ancho), 100vw - 2 * var(--pub-margen))) / 2 - 46px));
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 24px;
+    /* Sobre una foto clara el rótulo se sigue leyendo. */
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, .7));
+    transform: translateX(-10px);
+  }
+  .portada-animada .vuelta.vuelta--en-pista { transform: none; }
+  .vuelta__numero {
+    display: block;
+    height: 1.25em;
+    overflow: hidden;
+    color: var(--acento);
+    font-family: var(--display);
+    font-stretch: 115%;
+    font-size: .74rem;
+    font-weight: 700;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .vuelta__pila { display: flex; flex-direction: column; align-items: center; }
+  .vuelta__pila > span { display: flex; align-items: center; justify-content: center; height: 1.25em; }
+  /* La meta: el número se convierte en la bandera a cuadros. */
+  .vuelta__bandera {
+    display: block;
+    width: 1em;
+    height: 1em;
+    background: repeating-conic-gradient(var(--texto) 0 25%, transparent 0 50%) 0 0 / 50% 50%;
+  }
+  .vuelta__sectores {
+    grid-auto-rows: 18px;
+    grid-auto-columns: auto;
+    grid-auto-flow: row;
+    gap: 5px;
+    width: 2px;
+    height: auto;
+  }
+  .vuelta__sectores i.activo { background: rgba(255, 255, 255, .28); }
+  .vuelta__sectores b {
+    transform: scaleY(var(--llenado, 0));
+    transform-origin: center top;
+  }
+  .vuelta__nombre {
+    display: block;
+    color: var(--texto-2);
+    font-family: var(--display);
+    font-stretch: 115%;
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+  }
+  .vuelta__nombre span { display: inline-block; }
+  .vuelta--meta .vuelta__nombre { color: var(--texto); }
 }
 
 /* --- Ficha técnica guiada por el desplazamiento ---------------------------------- */
@@ -1362,6 +1533,7 @@ html.cursor-propio select { cursor: text; }
   .producto em::after,
   .galeria__boton { transition: none; }
   .horario[data-estado="abierto"] .horario__estado::before { animation: none; }
+  .hero__guia i { animation: none; }
   .cursor { display: none; }
 }
 
