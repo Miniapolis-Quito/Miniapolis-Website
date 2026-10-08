@@ -163,12 +163,35 @@ function quedarseQuieta() {
   raiz.classList.remove('portada-intro', 'portada-luces', 'portada-animada');
 }
 
+function precargarImagenes() {
+  const fotos = $$('main img[loading="lazy"]');
+  if (!fotos.length) return;
+  const pedir = (i) => {
+    if (i >= fotos.length) return;
+    const img = fotos[i];
+    const siguiente = () => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => pedir(i + 1), { timeout: 300 });
+      } else {
+        setTimeout(() => pedir(i + 1), 50);
+      }
+    };
+    img.decode?.().then(siguiente, siguiente) || siguiente();
+  };
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => pedir(0), { timeout: 1200 });
+  } else {
+    setTimeout(() => pedir(0), 400);
+  }
+}
+
 if (conMovimiento) {
   raiz.classList.add('portada-animada');
   try {
     const escenas = montarEscenas(window);
     montarTacto(gsap);
     arrancarApertura(escenas.apertura);
+    precargarImagenes();
   } catch (error) {
     // Un adorno nunca puede esconder el contenido: si algo falla al montar las
     // escenas, se deshace lo hecho y la portada queda quieta y completa.

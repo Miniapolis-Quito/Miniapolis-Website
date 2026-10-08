@@ -63,9 +63,16 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   raiz.classList.add('con-vuelta');
 
   const progresos = sectores.map(() => 0);
+  const ultLlenados = sectores.map(() => '');
   // Cuánto se llenó cada tramo va en una variable: la hoja decide si crece a
   // lo alto (regla vertical) o a lo ancho (línea de arriba).
-  const llenar = rellenos.map((relleno) => (valor) => relleno.style.setProperty('--llenado', valor.toFixed(4)));
+  const llenar = rellenos.map((relleno, i) => (valor) => {
+    const str = valor.toFixed(4);
+    if (str !== ultLlenados[i]) {
+      ultLlenados[i] = str;
+      relleno.style.setProperty('--llenado', str);
+    }
+  });
   const tramosVistos = [...tramos.children];
   let enCurso = -1;
   let meta = false;

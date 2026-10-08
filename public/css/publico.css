@@ -32,6 +32,10 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
 .pagina-posiciones {
   background: var(--fondo);
   overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  touch-action: pan-y;
 }
 
 /* La rejilla de fondo es de las pantallas de trabajo, no del sitio público. */
@@ -93,6 +97,7 @@ html { scroll-padding-top: calc(var(--pub-cabecera) + 12px); }
   backdrop-filter: saturate(150%) blur(18px);
   border-bottom: 1px solid var(--pub-linea);
   will-change: transform;
+  transform: translateZ(0);
 }
 
 .sitio-barra__interior {
