@@ -22,9 +22,12 @@ titular o de una cifra se parte entre dos líneas, que nada empuja la página de
 lado, que cada bloque llega a revelarse al bajar, que las áreas táctiles miden
 al menos 44 px, que la galería avanza con sus botones (o se desliza con el
 dedo), que las pestañas de acceso caben en una línea y que el avance de
-lectura llega al final. Con movimiento, que GSAP montó sus escenas y que la
-galería fija corre de lado al bajar; con movimiento reducido, que no se monta
-ninguna escena y todo se ve sin bajar.
+lectura llega al final. Con movimiento, que GSAP montó sus escenas, que la
+galería fija corre de lado al bajar, que la vuelta llega a la meta con sus
+nueve sectores llenos y el tiempo en el pie, que «Muy pronto» termina con
+todas sus letras en su sitio y que la guía de la apertura (fuera del teléfono)
+tiene su luz en marcha; con movimiento reducido, que no se monta ninguna
+escena, no hay vuelta ni guía y todo se ve sin bajar.
 
 ## `interfaz.mjs` — la interfaz, sin montar nada
 

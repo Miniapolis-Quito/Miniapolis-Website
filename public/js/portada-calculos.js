@@ -162,3 +162,16 @@ export function progresosDeSectores(posicion, inicios, fin) {
     return limitar((posicion - inicio) / (final - inicio));
   });
 }
+
+/**
+ * El tiempo de la vuelta como en un cronómetro: «1:42.3» (minutos, segundos
+ * y décimas). Sin tiempo que mostrar (negativo, no numérico o de una hora o
+ * más, que ya no es una vuelta sino una pestaña olvidada) devuelve ''.
+ */
+export function tiempoDeVuelta(ms) {
+  if (!Number.isFinite(ms) || ms < 0 || ms >= 3_600_000) return '';
+  const decimas = Math.floor(ms / 100);
+  const minutos = Math.floor(decimas / 600);
+  const segundos = Math.floor((decimas % 600) / 10);
+  return `${minutos}:${String(segundos).padStart(2, '0')}.${decimas % 10}`;
+}

@@ -58,7 +58,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   const cabecera = $('.sitio-barra');
   const altoCabecera = () => cabecera?.offsetHeight ?? 72;
   const partir = (el, vars) => (SplitText ? SplitText.create(el, { aria: 'auto', autoSplit: true, ...vars }) : null);
-  const escenas = { lenis: null, apertura: null };
+  const escenas = { lenis: null, apertura: null, vuelta: null };
 
   // -------------------------------------------------------------------------
   // Desplazamiento suave (solo con ratón o trackpad)
@@ -118,6 +118,8 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   const letrasPorLinea = lineas.map((linea) => partir(linea, { type: 'chars', charsClass: 'letra-split', autoSplit: false, aria: 'none' })?.chars ?? [linea]);
 
   escenas.apertura = () => {
+    // Las luces se apagaron: es la salida y empieza a contar la vuelta.
+    escenas.vuelta?.darSalida();
     // Primero se retira la clase que lo ocultaba antes del primer fotograma:
     // `from()` toma como destino el estado actual, y tiene que ser el visible.
     // Todo ocurre en la misma tarea, así que no llega a pintarse nada a medias.
@@ -603,7 +605,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   // La vuelta: al final, cuando las escenas fijas ya ocupan su sitio
   // -------------------------------------------------------------------------
 
-  montarVuelta({ gsap, ScrollTrigger });
+  escenas.vuelta = montarVuelta({ gsap, ScrollTrigger });
 
   // Fotos y fuentes cambian medidas al llegar: se vuelve a medir todo.
   window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });

@@ -4,7 +4,7 @@ import {
   limitar, easeOutCubic, valorContado, tiempoEnTexto, progresoLectura,
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
   formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
-  sectorEnCurso, vueltaCompleta, progresosDeSectores,
+  sectorEnCurso, vueltaCompleta, progresosDeSectores, tiempoDeVuelta,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -149,4 +149,17 @@ test('progresosDeSectores reparte la vuelta en tramos contiguos', () => {
   assert.deepEqual(progresosDeSectores(1000, [100, 1000], 1000), [1, 1], 'un último sector sin recorrido cuenta como hecho al llegar');
   assert.equal(vueltaCompleta(progresosDeSectores(1200, inicios, 1200)), true);
   assert.equal(sectorEnCurso(progresosDeSectores(650, inicios, 1200)), 1);
+});
+
+test('tiempoDeVuelta se lee como un cronómetro: minutos, segundos y décimas', () => {
+  assert.equal(tiempoDeVuelta(102_340), '1:42.3');
+  assert.equal(tiempoDeVuelta(0), '0:00.0');
+  assert.equal(tiempoDeVuelta(9_999), '0:09.9', 'las décimas se truncan: nunca se adelanta el tiempo');
+  assert.equal(tiempoDeVuelta(600_000), '10:00.0');
+  assert.equal(tiempoDeVuelta(3_599_999), '59:59.9');
+  assert.equal(tiempoDeVuelta(3_600_000), '', 'una hora ya no es una vuelta');
+  assert.equal(tiempoDeVuelta(-5), '');
+  assert.equal(tiempoDeVuelta(Number.NaN), '');
+  // El tablero de salidas lo hace rodar sin mover los dos puntos ni el punto.
+  assert.match(cifrasRodando('1:42.3', 0.5, () => 0), /^\d:\d{2}\.\d$/);
 });

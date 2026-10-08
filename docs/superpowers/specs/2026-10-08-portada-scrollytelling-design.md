@@ -23,6 +23,10 @@ quitarse.
   avance de la cabecera, que se esconde al bajar justo cuando se lee.
 - **Meta.** En «Tu pase» la bandera a cuadros se tiende de lado a lado y, al
   final de la página, el número del indicador se convierte en la bandera.
+  El pie da entonces el tiempo de la vuelta («Tu vuelta 1:42.3»), contado
+  desde que se apagó el semáforo y rodando como el tablero de salidas hasta
+  fijarse, junto a «Volver arriba», que invita a dar otra. Es el cierre de una
+  pista que vive del cronometraje: el visitante se lleva su propio tiempo.
 
 Los nombres de los sectores salen de los índices de la página: no se añade
 ningún texto. El indicador es decorativo (`aria-hidden`): la navegación de la
@@ -90,7 +94,11 @@ Cada criterio del encargo, medido:
 - `npm test`, con pruebas nuevas para la vuelta (funciones puras
   `sectorEnCurso` y `vueltaCompleta`), el telón y la gramática compartida.
 - `npm run test:portada`: 22 formatos, de 320 px a 4K y con movimiento
-  reducido.
+  reducido. En cada uno comprueba además que la vuelta llega a la meta con sus
+  nueve tramos llenos y el tiempo en el pie, que «Muy pronto» termina con
+  todas sus letras en su sitio y que la guía de la apertura tiene su luz en
+  marcha donde corresponde. Probado contra una versión rota a propósito (sin
+  tiempo en la meta): falla en los dos formatos probados y dice por qué.
 - Capturas fotograma a fotograma con la rueda del ratón en la salida, el
   complejo, la ficha, el cambio de sector del indicador y la meta; y tiempos
   de fotograma de un recorrido completo (mediana de 16,7 ms).
