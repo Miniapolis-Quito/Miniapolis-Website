@@ -450,7 +450,7 @@ test('lo que espera a revelarse se puede enfocar con el teclado', () => {
   assert.match(ESCENAS, /cabecera\.addEventListener\('focusin', \(\) => poner\(true\)\)/, 'la cabecera escondida vuelve en cuanto el foco entra en ella');
 });
 
-test('la pista: la curva entra a pantalla completa y vuelve a su casilla del mosaico', () => {
+test('la pista: el trazado completo entra a pantalla completa y vuelve a su casilla del mosaico', () => {
   // Cubre la pantalla con la escala justa y sin deformarse (la misma en los dos ejes).
   assert.match(ESCENAS, /Math\.max\(window\.innerWidth \/ c\.ancho, window\.innerHeight \/ c\.alto\) \* 1\.01/);
   // La posición sale del mosaico (que no se transforma) y no de offsetLeft: al fijarlo,
@@ -460,7 +460,8 @@ test('la pista: la curva entra a pantalla completa y vuelve a su casilla del mos
   assert.doesNotMatch(ESCENAS, /izquierda: principal\.offsetLeft/);
   assert.match(ESCENAS, /ancho: principal\.offsetWidth/);
   // En pantalla ancha la foto llega a ocupar toda la pantalla: se pide el archivo grande.
-  assert.match(HTML, /sizes="\(max-width: 760px\) 100vw, \(min-width: 1100px\) 100vw, 64vw"[^>]*>\s*<figcaption>Curva con bordillo/);
+  assert.match(HTML, /sizes="\(max-width: 760px\) 100vw, \(min-width: 1100px\) 100vw, 64vw"[^>]*>\s*<figcaption>El trazado completo/);
+  assert.match(HTML, /<div class="mosaico">\s*<figure class="mosaico__foto mosaico__foto--ancha">\s*<img src="\.\/images\/landing\/miniapolis-track-atmosphere\.webp"/, 'la que se agranda es la primera: el trazado completo');
   assert.match(ESCENAS, /\{ x: 0, y: 0, scale: 1, borderRadius: 4, duration: 1, ease: 'power2\.inOut' \}/, 'termina exactamente en su casilla');
   assert.match(ESCENAS, /invalidateOnRefresh: true/, 'al cambiar el tamaño de la ventana se vuelve a medir');
   assert.match(CSS, /\.mosaico--escena \.mosaico__foto:first-child \{[^}]*z-index: 2;/s, 'pasa por encima de sus vecinas mientras vuelve');

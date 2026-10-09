@@ -78,3 +78,19 @@ las propiedades `scale` y `translate` del CSS de lo que anima (con ellas el
 semáforo se quedaba a escala cero para siempre). Antes de la cuenta atrás el
 pórtico espera apagado bajo `.portada-intro`; con movimiento reducido o en
 una visita repetida no hay pórtico y el semáforo está en su sitio.
+
+## 01 · La pista: el trazado completo, como una toma aérea
+
+La foto que entra a pantalla completa es ahora la del trazado completo (pasó
+a la primera casilla; la curva con bordillo, a la última). La escena se cuenta
+en tres tiempos sobre una fijación más larga (190 % de pantalla):
+
+1. **Pantalla completa.** El circuito cubre la pantalla y la cámara lo recorre
+   de derecha a izquierda mientras se asienta (escala 1,3 → 1,04).
+2. **La cámara se aleja.** La foto vuelve a su casilla y las otras tres se arman
+   alrededor, cada una desde su lado del mosaico (la dirección sale de su
+   casilla respecto de la principal) y con su propio fondo, que también se
+   asienta.
+3. **Fijado.** Llegan los pies de foto y la mira se cierra sobre el trazado,
+   como sobre las demás cajas de la página. Sin la retirada larga de
+   `cerrarEscuadras`: en una escena con scrub, esa espera era pantalla quieta.

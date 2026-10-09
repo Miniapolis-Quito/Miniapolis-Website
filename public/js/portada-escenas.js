@@ -357,7 +357,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   }
 
   // -------------------------------------------------------------------------
-  // 01 · La pista: la curva llena la pantalla y vuelve a su sitio en el mosaico
+  // 01 · La pista: el circuito llena la pantalla y vuelve a su sitio en el mosaico
   // -------------------------------------------------------------------------
 
   const mosaico = $('.mosaico');
@@ -386,10 +386,24 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       fotosMosaico.forEach(revelarFoto);
       return undefined;
     }
-    // Pantalla ancha: ya en la pista. La primera foto entra ocupando toda la
-    // pantalla; con el mosaico fijo, la cámara se aleja —la foto vuelve a su
-    // casilla— y el resto del hangar aparece alrededor.
+    // Pantalla ancha: ya en la pista, como una toma aérea en tres tiempos.
+    //  1. El trazado completo llena la pantalla y la cámara lo recorre de lado
+    //     mientras se asienta.
+    //  2. La cámara se aleja: la foto vuelve a su casilla y las otras tres se
+    //     arman alrededor, cada una desde su lado del mosaico.
+    //  3. Llegan los pies de foto y la mira se cierra sobre el trazado, como
+    //     sobre las demás cajas de la página: fijado.
     const [principal, ...resto] = fotosMosaico;
+    const imgPrincipal = $('img', principal);
+    const mira = ponerMira(principal, { haz: false });
+    // De qué lado del mosaico llega cada foto: el de su casilla respecto de la
+    // principal. Se mide con offset*, que no ve los transform de la escena.
+    const lado = (el) => {
+      const dx = el.offsetLeft + el.offsetWidth / 2 - (principal.offsetLeft + principal.offsetWidth / 2);
+      const dy = el.offsetTop + el.offsetHeight / 2 - (principal.offsetTop + principal.offsetHeight / 2);
+      const largo = Math.hypot(dx, dy) || 1;
+      return { x: (dx / largo) * 160, y: (dy / largo) * 120 };
+    };
     mosaico.classList.add('mosaico--escena');
     // Dónde está la foto cuando el mosaico se fija arriba y cuánto hay que
     // agrandarla para cubrir la pantalla. Es la primera casilla: empieza en la
@@ -414,23 +428,41 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       scrollTrigger: {
         trigger: mosaico,
         start: 'top top',
-        end: '+=120%',
+        end: '+=190%',
         pin: true,
         scrub: 0.7,
         anticipatePin: 1,
         invalidateOnRefresh: true,
       },
     });
-    tl.fromTo(principal, {
-      x: () => window.innerWidth / 2 - (casilla().izquierda + casilla().ancho / 2),
-      y: () => window.innerHeight / 2 - (casilla().arriba + casilla().alto / 2),
-      scale: cubrir,
-      borderRadius: 0,
-    }, { x: 0, y: 0, scale: 1, borderRadius: 4, duration: 1, ease: 'power2.inOut' }, 0)
-      .fromTo($('img', principal), { scale: 1.16 }, { scale: 1.04, duration: 1, ease: 'power1.out' }, 0)
-      .fromTo(resto, { opacity: 0, y: 90, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.12, ease: 'power2.out' }, 0.42)
-      .from($$('figcaption', mosaico), { opacity: 0, y: 14, duration: 0.3, stagger: 0.06 }, 0.85);
-    return () => mosaico.classList.remove('mosaico--escena');
+    // 1 · Pantalla completa: la foto se queda cubriendo la pantalla mientras
+    // la cámara la recorre de derecha a izquierda y se asienta.
+    tl.fromTo(imgPrincipal, { scale: 1.3, xPercent: 8 }, { scale: 1.04, xPercent: 0, duration: 1.45, ease: 'power1.inOut' }, 0)
+      // 2 · La cámara se aleja hasta la casilla…
+      .fromTo(principal, {
+        x: () => window.innerWidth / 2 - (casilla().izquierda + casilla().ancho / 2),
+        y: () => window.innerHeight / 2 - (casilla().arriba + casilla().alto / 2),
+        scale: cubrir,
+        borderRadius: 0,
+      }, { x: 0, y: 0, scale: 1, borderRadius: 4, duration: 1, ease: 'power2.inOut' }, 0.45)
+      // …y las demás se arman alrededor, desde su lado y con su propio fondo.
+      .fromTo(resto, {
+        opacity: 0,
+        x: (i, el) => lado(el).x,
+        y: (i, el) => lado(el).y,
+        scale: 0.9,
+      }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.7, stagger: 0.1, ease: 'power3.out' }, 0.8)
+      .fromTo(resto.map((foto) => $('img', foto)), { scale: 1.3 }, { scale: 1.06, duration: 0.8, stagger: 0.1, ease: 'power2.out' }, 0.8)
+      // 3 · Fijado: los pies de foto y la mira sobre el trazado.
+      .from($$('figcaption', mosaico), { opacity: 0, y: 14, duration: 0.3, stagger: 0.06 }, 1.35)
+      // Sin la retirada larga de las demás cajas: en una escena con scrub,
+      // esa espera sería pantalla quieta al final de la fijación.
+      .add(cerrarEscuadras(gsap, mira, { retirar: false }), 1.4)
+      .to($$(':scope > i', mira), { opacity: 0, duration: 0.25, ease: 'power1.out' }, 1.85);
+    return () => {
+      mosaico.classList.remove('mosaico--escena');
+      mira.remove();
+    };
   });
 
   // -------------------------------------------------------------------------
