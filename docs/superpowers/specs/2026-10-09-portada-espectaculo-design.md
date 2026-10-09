@@ -94,3 +94,22 @@ en tres tiempos sobre una fijación más larga (190 % de pantalla):
 3. **Fijado.** Llegan los pies de foto y la mira se cierra sobre el trazado,
    como sobre las demás cajas de la página. Sin la retirada larga de
    `cerrarEscuadras`: en una escena con scrub, esa espera era pantalla quieta.
+
+## 02 · Complejo: un escenario para cada disciplina
+
+La fila de cinco textos pequeños se leía genérica. Ahora cada disciplina tiene
+su dibujo de línea —el circuito visto desde arriba, un crawler subiendo por
+las rocas, la horquilla de rally sobre grava, el dron cruzando sus gates, el
+simulador FPV—, en el idioma del plano de la ficha: trazos finos, el asfalto
+como banda tenue, verde solo en lo que se mueve, sobre una lámina con la
+misma retícula.
+
+En pantalla ancha, con movimiento, las cinco comparten un escenario: tras la
+entradilla, cada una ocupa la pantalla en su turno con su número enorme de
+contorno, su titular grande y su dibujo trazándose línea a línea; debajo, el
+tablero de sectores se llena y la mira corre por él. Sin la escena (teléfono,
+movimiento reducido) se leen en fila o en lista, cada una con su dibujo.
+
+Los trazos se dibujan con `pathLength="1"` y su grosor va en unidades del
+dibujo, sin `vector-effect: non-scaling-stroke`: con él, Chrome mide el guion
+en píxeles de pantalla y el dibujo se quedaba a medias.

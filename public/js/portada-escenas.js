@@ -524,6 +524,22 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     if (!pistaDisciplinas || !disciplinas.length) return undefined;
     if (contexto.conditions.grande) {
       pistaDisciplinas.classList.add('disciplinas--vuelta');
+      // El tablero de sectores: cinco tramos con su número y su nombre. Se
+      // monta antes de medir si el bloque cabe en la pantalla.
+      const indice = document.createElement('ol');
+      indice.className = 'disciplinas__indice';
+      indice.setAttribute('aria-hidden', 'true');
+      const tramos = disciplinas.map((disciplina) => {
+        const tramo = document.createElement('li');
+        const numero = document.createElement('b');
+        numero.textContent = $('.disciplina__num', disciplina)?.textContent ?? '';
+        const nombre = document.createElement('span');
+        nombre.textContent = $('h3', disciplina)?.textContent ?? '';
+        tramo.append(numero, nombre, document.createElement('i'));
+        indice.append(tramo);
+        return tramo;
+      });
+      pistaDisciplinas.append(indice);
       // Si el titular y la lista caben juntos en la pantalla, se quedan los dos:
       // la vuelta se lee con su título. Si no, solo la lista.
       const bloque = pistaDisciplinas.closest('.marco');
@@ -537,37 +553,57 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       if (palabras) lead.classList.add('seccion__lead--iluminada');
       const tl = gsap.timeline({
         defaults: { ease: 'none' },
-        scrollTrigger: { trigger: fijo, start: 'center center', end: palabras ? '+=200%' : '+=150%', pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true },
+        scrollTrigger: { trigger: fijo, start: 'center center', end: palabras ? '+=340%' : '+=280%', pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true },
       });
       if (palabras) tl.fromTo(lead, { '--luz': 0 }, { '--luz': palabras + 1, duration: salida }, 0);
-      tl.fromTo('.disciplinas__vuelta span', { scaleX: 0 }, { scaleX: 1, duration: disciplinas.length }, salida);
-      // La mira sigue la vuelta: se fija en el sector que se está corriendo y
-      // salta al siguiente cuando su tramo se completa.
+      // La mira sigue la vuelta por el tablero: se fija en el sector que se
+      // está corriendo y salta al siguiente cuando su tramo se completa.
       const { mira, apuntar } = miraViajera(pistaDisciplinas);
       const destino = (i) => ({
-        x: () => apuntar(disciplinas[i], 12).x,
-        y: () => apuntar(disciplinas[i], 12).y,
-        width: () => apuntar(disciplinas[i], 12).width,
-        height: () => apuntar(disciplinas[i], 12).height,
+        x: () => apuntar(tramos[i], 10).x,
+        y: () => apuntar(tramos[i], 10).y,
+        width: () => apuntar(tramos[i], 10).width,
+        height: () => apuntar(tramos[i], 10).height,
       });
       tl.set(mira, destino(0), salida)
         .fromTo(mira, { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'expo.out' }, salida);
+      // Cada sector toma el escenario en su turno: el anterior sube y se
+      // apaga, el nuevo llega desde abajo, su número de contorno sube por su
+      // ventana y su dibujo se traza línea a línea mientras se llena su tramo.
+      const laminas = disciplinas.map((disciplina) => $('.disciplina__lamina', disciplina));
       disciplinas.forEach((disciplina, i) => {
-        tl.fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1 }, salida + i)
-          .fromTo(disciplina, { opacity: 0.22 }, { opacity: 1, duration: 0.3, ease: 'power1.out' }, salida + i)
-          .fromTo($('.disciplina__num', disciplina), { color: '#8b9296' }, { color: '#93d241', duration: 0.2 }, salida + i)
-          .from($$('h3, p', disciplina), { y: 24, duration: 0.5, stagger: 0.1, ease: 'power2.out' }, salida + i);
-        if (i > 0) tl.to(mira, { ...destino(i), duration: 0.3, ease: 'power3.inOut' }, salida + i - 0.15);
+        const momento = salida + i;
+        const lamina = laminas[i];
+        const trazos = $$('.trazo:not(.trazo--punteado)', lamina);
+        const punteados = $$('.trazo--punteado', lamina);
+        tl.call(() => tramos.forEach((tramo, k) => tramo.classList.toggle('activo', k === i)), null, momento);
+        if (i > 0) {
+          tl.to(laminas[i - 1], { opacity: 0, y: -48, duration: 0.3, ease: 'power2.in' }, momento - 0.12)
+            .fromTo(lamina, { opacity: 0, y: 56 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }, momento + 0.1);
+        } else {
+          tl.fromTo(lamina, { opacity: 0, y: 56 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }, momento);
+        }
+        if (i > 0) tl.to(mira, { ...destino(i), duration: 0.3, ease: 'power3.inOut' }, momento - 0.15);
+        tl.fromTo($('.disciplina__num', disciplina), { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.45, ease: 'expo.out' }, momento + 0.12)
+          .fromTo(trazos, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0, autoRound: false, duration: 0.65, stagger: 0.04, ease: 'power2.inOut' }, momento + 0.15)
+          .fromTo(punteados, { opacity: 0 }, { opacity: 1, duration: 0.3 }, momento + 0.55)
+          .fromTo($('i', tramos[i]), { scaleX: 0 }, { scaleX: 1, duration: 1 }, momento);
       });
+      // El último sector se queda en escena un instante antes de soltarse.
+      tl.to({}, { duration: 0.35 });
       return () => {
         pistaDisciplinas.classList.remove('disciplinas--vuelta');
         lead?.classList.remove('seccion__lead--iluminada');
         mira.remove();
+        indice.remove();
       };
     }
     disciplinas.forEach((disciplina) => {
       fijar(disciplina, { scrollTrigger: alEntrar(disciplina, 'top 90%') })
-        .fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: 'expo.inOut' }, 0.6);
+        .fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: 'expo.inOut' }, 0.6)
+        .fromTo($$('.trazo:not(.trazo--punteado)', disciplina), { strokeDasharray: 1, strokeDashoffset: 1 }, {
+          strokeDasharray: 1, strokeDashoffset: 0, autoRound: false, duration: 1.2, stagger: 0.05, ease: 'power2.inOut',
+        }, 0.4);
     });
     return undefined;
   });

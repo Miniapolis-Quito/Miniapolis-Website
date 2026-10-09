@@ -324,7 +324,7 @@
 .disciplinas__vuelta { display: none; }
 .disciplina__num {
   display: block;
-  margin-bottom: clamp(28px, 4vw, 56px);
+  margin-bottom: 18px;
   color: var(--texto-3);
   font-family: var(--display);
   font-stretch: 115%;
@@ -333,6 +333,32 @@
   letter-spacing: .2em;
   font-variant-numeric: tabular-nums;
 }
+/* Cada disciplina tiene su dibujo, en el mismo idioma que el plano del
+   circuito: líneas de un píxel y medio, el asfalto como banda tenue y el
+   verde solo para lo que se mueve (el auto, el dron, la línea de vuelo). */
+.disciplina__dibujo {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  margin-bottom: 22px;
+  overflow: visible;
+}
+.trazo {
+  fill: none;
+  stroke: var(--texto-2);
+  /* En unidades del dibujo y sin `vector-effect`: el trazo se dibuja con
+     `pathLength`, y con el grosor fijo en píxeles Chrome mediría el guion en
+     la pantalla y el dibujo se quedaría a medias. */
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.trazo--tenue { stroke: var(--texto-3); }
+.trazo--acento { stroke: var(--acento); }
+.trazo--asfalto { stroke: rgba(255, 255, 255, .08); stroke-width: 14; }
+.trazo--tierra { stroke: rgba(255, 209, 102, .07); }
+.trazo--punteado { stroke-dasharray: 3 6; }
 .disciplina h3 {
   margin: 0 0 12px;
   font-size: clamp(1.02rem, 1.2vw, 1.14rem);
@@ -353,7 +379,9 @@
     column-gap: 12px;
     padding-block: 24px;
   }
-  .disciplina__num { grid-row: span 2; margin: 0; padding-top: 3px; }
+  .disciplina__lamina { display: contents; }
+  .disciplina__num { grid-row: span 3; margin: 0; padding-top: 3px; }
+  .disciplina__dibujo { max-width: 160px; margin-bottom: 16px; }
 }
 
 /* ==========================================================================
@@ -1696,28 +1724,138 @@ html.lenis { scroll-behavior: auto; }
   background: repeating-conic-gradient(rgba(244, 246, 243, .38) 0 25%, transparent 0 50%) 0 0 / 50% 50%;
 }
 
-/* --- Complejo: la vuelta por sectores -------------------------------------------- */
+/* --- Complejo: el escenario de los cinco sectores --------------------------------- */
 
+/* En pantalla ancha, con movimiento, las cinco disciplinas comparten un
+   escenario: cada una ocupa la pantalla en su turno, con su número enorme de
+   contorno, su titular grande y su dibujo trazándose. Debajo, el tablero de
+   sectores se llena con la vuelta y la mira corre por él. La clase la pone
+   portada-escenas.js; sin ella, las cinco se leen en fila. */
 .portada-animada .disciplina__sector {
   width: 100%;
   will-change: transform;
 }
-.disciplinas--vuelta .disciplinas__vuelta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: clamp(28px, 3vw, 40px);
-  height: 2px;
-  background: var(--pub-linea);
+.disciplinas--vuelta .disciplinas { grid-template-columns: minmax(0, 1fr); }
+.disciplinas--vuelta .disciplina {
+  grid-area: 1 / 1;
+  padding: 0;
+  border: 0;
 }
-.disciplinas--vuelta .disciplinas__vuelta span {
-  display: block;
+.disciplinas--vuelta .disciplina__sector { display: none; }
+.disciplinas--vuelta .disciplina__lamina {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-areas:
+    'num dibujo'
+    'titulo dibujo'
+    'texto dibujo';
+  grid-template-rows: 1fr auto auto;
+  column-gap: clamp(40px, 6vw, 112px);
+  align-items: end;
+  min-height: clamp(300px, 54vh, 540px);
+  will-change: transform, opacity;
+}
+.disciplinas--vuelta .disciplina__num {
+  grid-area: num;
+  align-self: end;
+  margin: 0 0 clamp(8px, 1.4vh, 18px) -.04em;
+  color: transparent;
+  font-size: clamp(5.6rem, 12vw, 11.5rem);
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: .8;
+  letter-spacing: 0;
+  -webkit-text-stroke: 1.5px rgba(147, 210, 65, .72);
+}
+.disciplinas--vuelta .disciplina h3 {
+  grid-area: titulo;
+  margin-bottom: 16px;
+  font-size: clamp(2rem, 3.4vw, 3.3rem);
+  font-stretch: 120%;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: .98;
+}
+.disciplinas--vuelta .disciplina p {
+  grid-area: texto;
+  max-width: 38ch;
+  font-size: clamp(1rem, .4vw + .9rem, 1.15rem);
+  line-height: 1.6;
+}
+.disciplinas--vuelta .disciplina__dibujo {
+  grid-area: dibujo;
+  align-self: center;
+  justify-self: end;
+  width: min(100%, 620px);
+  max-width: none;
+  max-height: 54vh;
+  margin: 0;
+  padding: clamp(18px, 2.4vw, 32px);
+  border: 1px solid var(--pub-linea);
+  border-radius: var(--pub-radio);
+  /* La lámina de un plano: la misma retícula fina que el plano del circuito. */
+  background:
+    linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--pub-tarjeta);
+  box-shadow: var(--filo);
+}
+.disciplinas--vuelta .trazo { stroke-width: .95; }
+.disciplinas--vuelta .trazo--asfalto { stroke-width: 12; }
+
+/* El tablero de sectores, bajo el escenario: cinco tramos con su número y su
+   nombre que se llenan en orden. La línea de la vuelta corre por encima. */
+.disciplinas__indice { display: none; }
+.disciplinas--vuelta .disciplinas__indice {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(10px, 1.4vw, 20px);
+  margin: clamp(28px, 4vh, 48px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.disciplinas__indice li {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 16px;
+  color: var(--texto-3);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .64rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 300ms ease-out;
+}
+.disciplinas__indice li::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: '';
+  background: var(--pub-linea-2);
+}
+.disciplinas__indice b { color: inherit; font-weight: 700; font-variant-numeric: tabular-nums; }
+.disciplinas__indice span { overflow: hidden; text-overflow: ellipsis; }
+.disciplinas__indice i {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(147, 210, 65, .2), var(--acento));
+  height: 2px;
+  background: var(--acento);
+  transform: scaleX(0);
   transform-origin: left center;
   will-change: transform;
 }
+.disciplinas__indice li.activo { color: var(--texto); }
+.disciplinas__indice li.activo b { color: var(--acento); }
+.disciplinas--vuelta .disciplinas__vuelta { display: none; }
 
 /* --- La vuelta: el avance contado por sectores ------------------------------------- */
 
