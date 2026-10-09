@@ -124,7 +124,6 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       'main .seccion__cabeza h2', 'main .seccion__lead', '.mosaico__foto', '.disciplina', '.plano', '.ficha__fila',
       '.horario', '.tiempo', '.evento', '.pronto__texto h2', '.pronto__foto', '.galeria__foto', '.productos > li',
       '.ventaja', '.entrada__acceso-panel', '.sitio-pie__columna',
-      '.manifiesto__texto .palabra-split', '.telemetria__cabeza', '.telemetria__crono', '.telemetria__dato', '.telemetria__grafica',
     ].join(', ');
     window.opacidadReal = (e) => {
       let o = 1;
