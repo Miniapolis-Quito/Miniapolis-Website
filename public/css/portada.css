@@ -82,11 +82,19 @@
 .hero__semaforo {
   display: inline-flex;
   gap: 9px;
-  margin-bottom: clamp(24px, 3.4vh, 36px);
   padding: 9px 12px;
   border-radius: 999px;
   background: rgba(0, 0, 0, .6);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09);
+}
+/* El pórtico de la cuenta atrás: lo lleva al centro de la pantalla y de
+   vuelta portada-escenas.js. Es una caja propia y no el semáforo, que ya lo
+   aparta la salida: dos animaciones sobre el mismo `transform` se pisarían. */
+.hero__portico {
+  display: inline-block;
+  margin-bottom: clamp(24px, 3.4vh, 36px);
+  vertical-align: middle;
+  transform-origin: 50% 50%;
 }
 .hero__semaforo span {
   width: 12px;
@@ -1390,8 +1398,8 @@
 
 /* Junto al semáforo, la verdad del momento: si la pista está abierta, hasta
    cuándo; si no, cuándo abre. Lo escribe portada.js con la tabla de horarios. */
-.hero__semaforo,
 .hero__estado { vertical-align: middle; }
+.hero__semaforo { vertical-align: top; }
 .hero__estado {
   display: inline-flex;
   align-items: center;
@@ -1417,7 +1425,7 @@
 /* Cuando el rótulo no cabe junto al semáforo, va justo debajo y no a una
    distancia de párrafo: los dos son la misma señal de salida. */
 @media (max-width: 560px) {
-  .hero__semaforo { margin-bottom: 10px; }
+  .hero__portico { margin-bottom: 10px; }
   .hero__estado { margin-left: 0; }
 }
 
@@ -1460,6 +1468,9 @@ html.lenis { scroll-behavior: auto; }
    apagado. GSAP toma el relevo y lo saca; si no llega, portada-arranque.js
    retira la clase y todo se ve en su sitio. */
 .portada-intro .hero__linea > span { transform: translate3d(0, 110%, 0); }
+/* Hasta que empieza la cuenta atrás el semáforo no se ve en su sitio: aparece
+   ya en el centro, como pórtico. */
+.portada-intro:not(.portada-luces) .hero__portico { opacity: 0; }
 .portada-intro .hero__kicker,
 .portada-intro .hero__estado,
 .portada-intro .hero__lead,

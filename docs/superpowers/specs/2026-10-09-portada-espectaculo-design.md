@@ -61,3 +61,19 @@ récords. Con ellos se fueron sus funciones puras y sus pruebas.
   numerada.
 - Recorrido completo con la rueda en 1440×900 y 390×844: mediana y percentil
   95 de 16,7 ms por fotograma, sin errores de consola ni desborde horizontal.
+
+## La cuenta atrás, como un pórtico de salida
+
+El semáforo era el gran momento de la apertura y se vivía en una pastilla de
+12 px en una esquina, con la pantalla quieta. Ahora, mientras las cinco luces
+se encienden, va grande en el centro de la pantalla (hasta 3,4 veces, el 70 %
+del ancho en el teléfono) sobre la nave a media luz. Al apagarse vuelve a su
+sitio mientras el titular arranca, la nave se enciende y las estelas salen
+disparadas.
+
+Se mueve una caja propia, `.hero__portico`, y no el semáforo: la salida ya
+anima el `transform` del semáforo y GSAP, además, absorbe en su `transform`
+las propiedades `scale` y `translate` del CSS de lo que anima (con ellas el
+semáforo se quedaba a escala cero para siempre). Antes de la cuenta atrás el
+pórtico espera apagado bajo `.portada-intro`; con movimiento reducido o en
+una visita repetida no hay pórtico y el semáforo está en su sitio.

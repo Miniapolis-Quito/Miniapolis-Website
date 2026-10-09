@@ -130,5 +130,7 @@ export function montarEstelas({ gsap, ScrollTrigger }) {
   return {
     /** La salida avanza (0..1): las estelas aceleran con ella. */
     acelerar(p) { salida = p; },
+    /** Luces fuera: un golpe de velocidad que se apaga solo. */
+    arrancar() { empuje = 1; },
   };
 }

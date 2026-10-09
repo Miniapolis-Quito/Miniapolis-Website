@@ -97,7 +97,7 @@ function montarEstadoPista(ahora = new Date()) {
   if (!rotulo) {
     rotulo = document.createElement('p');
     rotulo.className = 'hero__estado';
-    semaforo.after(rotulo);
+    ($('.hero__portico') ?? semaforo).after(rotulo);
   }
   rotulo.classList.toggle('hero__estado--abierta', proxima.abierta);
   rotulo.textContent = textoProximaJornada(proxima);
@@ -156,13 +156,13 @@ function montarGaleria() {
 /** Las cinco luces tardan 0,8 s en encenderse; se apagan un instante después. */
 const LUCES_FUERA_MS = 1250;
 
-function arrancarApertura(salir) {
+function arrancarApertura(escenas) {
   const repetida = raiz.classList.contains('portada-rapida') || !raiz.classList.contains('portada-intro');
   try { sessionStorage.setItem('portada-vista', '1'); } catch { /* sin almacenamiento: la apertura completa */ }
 
   const arrancar = () => requestAnimationFrame(() => {
     raiz.classList.remove('portada-luces');
-    salir();
+    escenas.apertura();
   });
   if (repetida) { arrancar(); return; }
 
@@ -170,6 +170,8 @@ function arrancarApertura(salir) {
   const esperas = [document.fonts?.ready, imagen?.decode?.()].filter(Boolean);
   // El titular nunca espera más de un instante a la foto o a las fuentes.
   Promise.race([Promise.allSettled(esperas), new Promise((r) => setTimeout(r, 1200))]).then(() => {
+    // El semáforo pasa al centro, como el pórtico de salida, y se encienden las luces.
+    escenas.cuentaAtras?.();
     raiz.classList.add('portada-luces');
     setTimeout(arrancar, LUCES_FUERA_MS);
   });
@@ -223,7 +225,7 @@ if (conMovimiento) {
   try {
     const escenas = montarEscenas(window);
     montarTacto(gsap);
-    arrancarApertura(escenas.apertura);
+    arrancarApertura(escenas);
     precargarImagenes();
   } catch (error) {
     // Un adorno nunca puede esconder el contenido: si algo falla al montar las
