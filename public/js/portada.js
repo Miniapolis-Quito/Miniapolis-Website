@@ -2,8 +2,9 @@
  * Portada: el arranque.
  *
  * Siempre (no mueven nada): el avance de lectura de la cabecera, la sección
- * activa en la navegación, el estado de hoy en la tabla de horarios y los
- * botones de la galería.
+ * activa en la navegación, el estado de hoy en la tabla de horarios y en la
+ * apertura, los botones de la galería, la telemetría de la vuelta récord (en
+ * la meta) y el teléfono de «Cómo funciona».
  *
  * Con movimiento permitido y GSAP cargado: las escenas ligadas al
  * desplazamiento (portada-escenas.js), lo que responde al puntero
@@ -11,9 +12,11 @@
  * no llega, no se añade `.portada-animada` y la página queda completa y quieta.
  */
 import { sinMovimiento } from './movimiento.js';
-import { diaDeTexto, estadoJornada, progresoLectura, rangoDeTexto, textoJornada } from './portada-calculos.js';
+import { diaDeTexto, estadoJornada, progresoLectura, proximaJornada, rangoDeTexto, textoJornada, textoProximaJornada } from './portada-calculos.js';
 import { montarEscenas } from './portada-escenas.js';
+import { montarFunciona } from './portada-funciona.js';
 import { montarTacto } from './portada-tacto.js';
+import { montarTelemetria } from './portada-telemetria.js';
 
 const raiz = document.documentElement;
 const $ = (selector, base = document) => base.querySelector(selector);
@@ -75,6 +78,32 @@ function montarNavegacionActiva() {
 // ---------------------------------------------------------------------------
 // Horarios: qué jornada es hoy y si la pista está abierta
 // ---------------------------------------------------------------------------
+
+/**
+ * Junto al semáforo, la próxima jornada: si la pista está abierta, hasta
+ * cuándo; si no, cuándo abre. Sale de la misma tabla de horarios.
+ */
+function montarEstadoPista(ahora = new Date()) {
+  const semaforo = $('.hero__semaforo');
+  if (!semaforo) return;
+  const jornadas = $$('.horario').map((fila) => ({
+    dia: diaDeTexto($('.horario__dia', fila)?.textContent ?? ''),
+    rango: rangoDeTexto($('.horario__horas', fila)?.textContent ?? ''),
+  }));
+  const proxima = proximaJornada(jornadas, ahora);
+  let rotulo = $('.hero__estado');
+  if (!proxima) {
+    rotulo?.remove();
+    return;
+  }
+  if (!rotulo) {
+    rotulo = document.createElement('p');
+    rotulo.className = 'hero__estado';
+    semaforo.after(rotulo);
+  }
+  rotulo.classList.toggle('hero__estado--abierta', proxima.abierta);
+  rotulo.textContent = textoProximaJornada(proxima);
+}
 
 function montarHorarioVivo(ahora = new Date()) {
   for (const fila of $$('.horario')) {
@@ -156,7 +185,10 @@ montarAvance();
 montarNavegacionActiva();
 montarHorarioVivo();
 setInterval(() => montarHorarioVivo(), 60_000);
+montarEstadoPista();
+setInterval(() => montarEstadoPista(), 60_000);
 montarGaleria();
+montarTelemetria();
 
 /** Sin escenas: todo a la vista y en su sitio. */
 function quedarseQuieta() {
@@ -184,6 +216,10 @@ function precargarImagenes() {
     setTimeout(() => pedir(0), 400);
   }
 }
+
+// El teléfono de «Cómo funciona» cambia de pantalla con o sin movimiento;
+// con él, además, lo que llega a la pantalla sube y se enciende.
+montarFunciona({ gsap: conMovimiento ? gsap : null });
 
 if (conMovimiento) {
   raiz.classList.add('portada-animada');

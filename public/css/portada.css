@@ -1121,6 +1121,536 @@
 }
 
 /* ==========================================================================
+   Manifiesto: lo que es la pista, dicho de una vez
+   ========================================================================== */
+
+/* Una sola frase grande entre la marquesina y el complejo. Con movimiento,
+   las palabras se encienden de una en una al leerla (portada-escenas.js);
+   sin él se lee entera, en blanco y con lo que importa en verde. */
+.manifiesto {
+  position: relative;
+  padding-block: clamp(88px, 13vw, 200px);
+  background: var(--fondo);
+}
+.manifiesto__texto {
+  max-width: 20em;
+  margin: 0;
+  color: var(--texto);
+  font-family: var(--display);
+  font-stretch: 112%;
+  font-size: clamp(1.75rem, 4.3vw, 4.4rem);
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: .004em;
+  text-wrap: balance;
+}
+.manifiesto__texto em { color: var(--acento); font-style: normal; }
+
+/* ==========================================================================
+   05 · La vuelta récord, en telemetría
+   ========================================================================== */
+
+/* El puesto de telemetría de verdad: crono, cuatro canales, parciales, el
+   mapa con el auto y la traza de velocidad. Las cifras las escribe
+   portada-telemetria.js a partir del trazado; sin JavaScript se queda la
+   foto final de la vuelta: el tiempo del récord. */
+.telemetria {
+  display: grid;
+  gap: clamp(20px, 2.6vw, 32px);
+  margin-top: clamp(64px, 8vw, 120px);
+  padding: clamp(20px, 3vw, 40px);
+  border: 1px solid var(--pub-linea);
+  border-radius: var(--pub-radio);
+  background:
+    radial-gradient(ellipse 60% 80% at 12% 0%, rgba(147, 210, 65, .055), transparent 70%),
+    var(--pub-tarjeta);
+  box-shadow: var(--filo);
+}
+.telemetria__cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px clamp(16px, 2vw, 28px);
+  padding-bottom: clamp(16px, 2vw, 24px);
+  border-bottom: 1px solid var(--pub-linea);
+}
+.telemetria__rotulo,
+.telemetria__piloto,
+.telemetria__crono span,
+.telemetria__dato dt,
+.telemetria__parcial span {
+  margin: 0;
+  color: var(--texto-3);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.telemetria__rotulo { display: inline-flex; align-items: center; gap: 10px; color: var(--acento); }
+.telemetria__vivo {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--acento);
+}
+.telemetria__cabeza h3 {
+  margin: 0;
+  font-size: clamp(1.15rem, 1.6vw, 1.5rem);
+  font-stretch: 116%;
+  letter-spacing: .03em;
+}
+.telemetria__piloto { margin-left: auto; color: var(--texto-2); }
+
+.telemetria__tablero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, .95fr);
+  grid-template-areas:
+    'crono datos mapa'
+    'parciales parciales mapa';
+  gap: clamp(20px, 2.6vw, 36px) clamp(20px, 3vw, 48px);
+  align-items: center;
+}
+.telemetria__crono { grid-area: crono; margin: 0; }
+.telemetria__crono span { display: block; margin-bottom: 12px; }
+.telemetria__cifra {
+  display: block;
+  color: var(--texto);
+  font-family: var(--display);
+  font-stretch: 125%;
+  font-size: clamp(3.4rem, 8vw, 8.4rem);
+  font-weight: 800;
+  line-height: .86;
+  letter-spacing: .01em;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+.telemetria--meta .telemetria__cifra { color: var(--acento); }
+
+.telemetria__datos {
+  grid-area: datos;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--pub-linea);
+}
+.telemetria__dato {
+  min-width: 0;
+  padding: 16px 0 16px;
+  border-bottom: 1px solid var(--pub-linea);
+}
+.telemetria__dato:nth-child(even) { padding-left: clamp(14px, 1.6vw, 22px); border-left: 1px solid var(--pub-linea); }
+.telemetria__dato dt { margin-bottom: 10px; }
+.telemetria__dato dd {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 2.1rem;
+  margin: 0;
+}
+.telemetria__dato dd b {
+  font-family: var(--display);
+  font-stretch: 120%;
+  font-size: clamp(1.6rem, 2.3vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.telemetria__velocidad,
+.telemetria__fuerza { min-width: 2ch; }
+.telemetria__dato dd small { color: var(--acento); font-family: var(--display); font-size: .78rem; font-weight: 650; letter-spacing: .06em; }
+.telemetria__barra {
+  position: relative;
+  align-self: center;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--fondo-2);
+  box-shadow: inset 0 0 0 1px var(--pub-linea);
+}
+.telemetria__barra i {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(147, 210, 65, .35), var(--acento));
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.telemetria__acelerador,
+.telemetria__freno { will-change: transform; }
+.telemetria__barra--freno i { background: linear-gradient(90deg, rgba(255, 116, 109, .3), var(--error)); }
+
+.telemetria__parciales {
+  grid-area: parciales;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.telemetria__parcial {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--pub-linea);
+  border-radius: var(--pub-radio);
+  background: var(--fondo);
+  transition: border-color 300ms ease-out, background-color 300ms ease-out;
+}
+.telemetria__parcial span { display: block; margin-bottom: 8px; }
+.telemetria__parcial b {
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.telemetria__parcial--en-curso { border-color: var(--acento-borde); background: rgba(147, 210, 65, .06); }
+.telemetria__parcial--en-curso span { color: var(--acento); }
+.telemetria__parcial--hecho b { color: var(--texto); }
+
+.telemetria__mapa {
+  grid-area: mapa;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.telemetria__mapa-asfalto { fill: none; stroke: rgba(255, 255, 255, .07); stroke-width: 20; stroke-linejoin: round; }
+.telemetria__mapa-trazado { fill: none; stroke: var(--acento); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.telemetria__mapa-meta { stroke: var(--texto); stroke-width: 3; stroke-dasharray: 3 3; }
+.telemetria__mapa-auto { fill: var(--acento); filter: drop-shadow(0 0 7px rgba(147, 210, 65, .9)); }
+
+.telemetria__grafica {
+  display: block;
+  width: 100%;
+  height: clamp(96px, 16vh, 168px);
+  overflow: visible;
+}
+.telemetria__rejilla path { fill: none; stroke: var(--pub-linea); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.telemetria__sectores path { fill: none; stroke: var(--pub-linea-2); stroke-width: 1; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
+.telemetria__area { fill: rgba(147, 210, 65, .09); }
+.telemetria__fantasma { fill: none; stroke: rgba(244, 246, 243, .16); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.telemetria__recorte { fill: #fff; }
+.telemetria__traza { fill: none; stroke: var(--acento); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.telemetria__cursor { display: none; stroke: var(--texto); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.telemetria__nota { margin: 0; color: var(--texto-3); font-size: .84rem; }
+
+@media (max-width: 960px) {
+  .telemetria__tablero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'crono crono'
+      'datos mapa'
+      'parciales parciales';
+  }
+}
+@media (max-width: 600px) {
+  .telemetria__tablero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'crono' 'mapa' 'datos' 'parciales';
+  }
+  .telemetria__mapa { max-width: 340px; }
+  .telemetria__piloto { margin-left: 0; }
+  .telemetria__parcial { padding: 12px 10px; }
+}
+
+/* ==========================================================================
+   09 · Cómo funciona: del pack a la pista
+   ========================================================================== */
+
+/* Los tres pasos se leen a la izquierda y el teléfono se queda a la vista a
+   la derecha (`sticky`, sin JavaScript), enseñando la pantalla del paso que
+   se está leyendo. portada-pase.js cambia la pantalla; sin él, el teléfono
+   enseña la última: el saldo después de entrar. */
+/* El teléfono fijo no empuja la página de lado en ningún formato. */
+.funciona { overflow-x: clip; }
+.funciona__escena {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  gap: clamp(32px, 6vw, 112px);
+  align-items: start;
+}
+.funciona__pasos { margin: 0; padding: 0; list-style: none; }
+.funciona__paso {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: min(76vh, 720px);
+  padding-block: 32px;
+  border-top: 1px solid var(--pub-linea);
+  transition: opacity 420ms ease-out;
+}
+.funciona__paso:first-child { border-top: 0; }
+.funciona--guiado .funciona__paso { opacity: .3; }
+.funciona--guiado .funciona__paso.funciona__paso--activo { opacity: 1; }
+.funciona__num {
+  margin-bottom: 18px;
+  color: var(--acento);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  font-variant-numeric: tabular-nums;
+}
+.funciona__paso h3 {
+  margin: 0 0 16px;
+  font-size: clamp(1.9rem, 3.4vw, 3.2rem);
+  font-stretch: 118%;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .01em;
+}
+.funciona__paso p { max-width: 40ch; margin: 0; color: var(--texto-2); font-size: clamp(1rem, .3vw + .94rem, 1.12rem); line-height: 1.66; }
+
+.funciona__telefono {
+  position: sticky;
+  top: calc(50vh - min(320px, 39vh) + var(--pub-cabecera) / 2);
+  justify-self: center;
+  width: min(100%, calc(min(640px, 78vh) * .49));
+  /* Todo lo de dentro se mide en `em` sobre el ancho del teléfono: en
+     pequeño es la misma pantalla, solo que más cerca de la vista. */
+  container-type: inline-size;
+}
+.funciona__marco {
+  position: relative;
+  aspect-ratio: 9 / 18.4;
+  padding: 12px;
+  border-radius: 46px;
+  font-size: clamp(10px, 5cqi, 16px);
+  background: linear-gradient(160deg, #15191b, #050607 46%);
+  box-shadow: inset 0 0 0 1px var(--pub-linea-2), var(--filo), var(--sombra-alta);
+}
+.funciona__isla {
+  position: absolute;
+  top: 1.5em;
+  left: 50%;
+  z-index: 2;
+  width: 30%;
+  height: 1.5em;
+  border-radius: 999px;
+  background: #000;
+  transform: translateX(-50%);
+}
+.funciona__pantalla {
+  position: absolute;
+  inset: 12px;
+  display: none;
+  flex-direction: column;
+  gap: .9em;
+  padding: 4em 1.4em 1.75em;
+  overflow: hidden;
+  border-radius: 35px;
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(147, 210, 65, .07), transparent 70%),
+    var(--superficie);
+}
+.funciona__telefono[data-paso="1"] .funciona__pantalla--1,
+.funciona__telefono[data-paso="2"] .funciona__pantalla--2,
+.funciona__telefono[data-paso="3"] .funciona__pantalla--3 { display: flex; }
+.funciona__app {
+  margin: 0;
+  color: var(--texto-3);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .62em;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.funciona__titulo { margin: 0 0 .4em; font-family: var(--display); font-stretch: 116%; font-size: 1.45em; font-weight: 700; }
+.funciona__pack {
+  display: flex;
+  align-items: baseline;
+  gap: .6em;
+  margin: 0;
+  padding: 1em 1.1em;
+  border: 1px solid var(--pub-linea-2);
+  border-radius: .75em;
+  background: var(--fondo-2);
+}
+.funciona__pack b { font-family: var(--display); font-stretch: 120%; font-size: 2.1em; font-weight: 800; line-height: 1; }
+.funciona__pack span { color: var(--texto-2); font-size: .9em; }
+.funciona__pack--elegido { border-color: var(--acento-borde); background: var(--acento-suave); }
+.funciona__pack--elegido b { color: var(--acento); }
+.funciona__boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3em;
+  margin-top: auto;
+  border-radius: .75em;
+  background: var(--acento);
+  color: var(--sobre-acento);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .74em;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.funciona__qr { display: block; width: 100%; height: auto; margin-top: .4em; border-radius: .75em; }
+.funciona__qr-fondo { fill: var(--texto); }
+.funciona__qr-fijo,
+.funciona__qr-datos { fill: var(--fondo); }
+.funciona__qr-datos--b { display: none; }
+.funciona__qr--renovado .funciona__qr-datos--a { display: none; }
+.funciona__qr--renovado .funciona__qr-datos--b { display: inline; }
+.funciona__haz { display: none; fill: var(--acento); }
+.funciona__codigo {
+  margin: .25em 0 0;
+  color: var(--texto);
+  font-family: var(--mono);
+  font-size: .92em;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-align: center;
+  white-space: nowrap;
+}
+.funciona__renueva { margin: 0; color: var(--texto-3); font-size: .82em; text-align: center; }
+.funciona__cuenta { display: inline-block; min-width: 2ch; text-align: right; }
+.funciona__renueva b { color: var(--acento); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.funciona__saldo { display: grid; justify-items: start; margin: 1.1em 0 0; }
+.funciona__saldo b {
+  font-family: var(--display);
+  font-stretch: 125%;
+  font-size: 6.4em;
+  font-weight: 800;
+  line-height: .9;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.funciona__entradas { display: block; }
+.funciona__saldo span { margin-top: .5em; color: var(--texto-2); }
+.funciona__ok {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: .6em;
+  margin: .5em 0 0;
+  padding: .65em .9em;
+  border: 1px solid var(--acento-borde);
+  border-radius: 999px;
+  background: var(--acento-suave);
+  color: var(--acento);
+  font-size: .86em;
+  font-weight: 600;
+}
+.funciona__ok::before {
+  width: .9em;
+  height: .5em;
+  margin-top: -.2em;
+  content: '';
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+.funciona__vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: .8em;
+  margin: auto 0 0;
+  color: var(--texto-3);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .62em;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.funciona__vivo::before { width: .7em; height: .7em; content: ''; border-radius: 50%; background: var(--acento); }
+
+@media (max-width: 900px) and (orientation: portrait) {
+  /* En el teléfono en vertical el teléfono va arriba, fijo, y los pasos pasan
+     por debajo en tarjetas, como las notas de un reportaje. Apaisado hay sitio
+     a lo ancho y se queda como en pantalla ancha, uno al lado del otro. */
+  .funciona__escena { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .funciona__telefono {
+    top: calc(var(--pub-cabecera) + 12px);
+    order: -1;
+    width: min(56vw, calc(min(400px, 44vh) * .49));
+  }
+  .funciona__marco { padding: 8px; border-radius: 30px; }
+  .funciona__pantalla { inset: 8px; border-radius: 23px; }
+  .funciona__pasos { position: relative; z-index: 1; padding-top: 24px; }
+  .funciona__paso {
+    min-height: 0;
+    margin-bottom: 46vh;
+    padding: 24px 22px;
+    border: 1px solid var(--pub-linea-2);
+    border-radius: var(--pub-radio);
+    background: rgba(11, 13, 14, .96);
+  }
+  .funciona__paso:first-child { border-top: 1px solid var(--pub-linea-2); }
+  .funciona__paso:last-child { margin-bottom: 8vh; }
+  .funciona--guiado .funciona__paso { opacity: 1; }
+}
+
+/* ==========================================================================
+   Pie: el nombre de la pista, de lado a lado
+   ========================================================================== */
+
+/* El último trazo de la página. Sin movimiento es un contorno; con él, el
+   verde lo llena de izquierda a derecha al llegar al final, como la línea de
+   meta que se cruza. */
+.sitio-pie__gigante {
+  position: relative;
+  margin-bottom: clamp(12px, 2.4vw, 32px);
+  font-family: var(--display);
+  font-stretch: 125%;
+  /* «MINIÁPOLIS» mide unas 6,6 veces su cuerpo: llena la columna de lado a lado. */
+  font-size: min(calc((100vw - 2 * var(--pub-margen)) / 6.75), calc(var(--pub-ancho) / 6.75));
+  font-weight: 800;
+  line-height: .82;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+}
+.sitio-pie__gigante span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(244, 246, 243, .22);
+}
+.sitio-pie__gigante b { display: none; }
+
+/* ==========================================================================
+   Apertura: el estado de la pista
+   ========================================================================== */
+
+/* Junto al semáforo, la verdad del momento: si la pista está abierta, hasta
+   cuándo; si no, cuándo abre. Lo escribe portada.js con la tabla de horarios. */
+.hero__semaforo,
+.hero__estado { vertical-align: middle; }
+.hero__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 clamp(24px, 3.4vh, 36px) 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09);
+  color: var(--texto-2);
+  font-family: var(--display);
+  font-stretch: 115%;
+  font-size: .64rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.hero__estado::before { width: 7px; height: 7px; content: ''; border-radius: 50%; background: var(--texto-3); }
+.hero__estado--abierta { color: var(--acento); }
+.hero__estado--abierta::before { background: var(--acento); animation: latido 1.8s ease-in-out infinite; }
+
+@media (max-width: 400px) {
+  .hero__estado { margin-left: 0; }
+}
+
+/* ==========================================================================
    Táctil: lo que se pulsa mide al menos 44 px
    ========================================================================== */
 
@@ -1160,6 +1690,7 @@ html.lenis { scroll-behavior: auto; }
    retira la clase y todo se ve en su sitio. */
 .portada-intro .hero__linea > span { transform: translate3d(0, 110%, 0); }
 .portada-intro .hero__kicker,
+.portada-intro .hero__estado,
 .portada-intro .hero__lead,
 .portada-intro .hero__acciones,
 .portada-intro .cifra { opacity: 0; }
@@ -1409,7 +1940,7 @@ html.lenis { scroll-behavior: auto; }
 /* --- La vuelta: el avance contado por sectores ------------------------------------- */
 
 /* Lo monta portada-vuelta.js y es decorativo: la navegación ya dice dónde se
-   está. En el teléfono es una línea partida en nueve sectores arriba del
+   está. En el teléfono es una línea partida en sectores arriba del
    todo; en pantallas anchas, una regla vertical en el margen izquierdo con
    el número del sector, que rueda, y su nombre. Reemplaza a la línea de
    avance de la cabecera, que se esconde al bajar justo cuando se lee. */
@@ -1784,6 +2315,151 @@ html.cursor-propio input,
 html.cursor-propio textarea,
 html.cursor-propio select { cursor: text; }
 
+/* --- Apertura: estelas de velocidad y la foto que sigue al puntero ------------- */
+
+/* Las estelas las dibuja portada-estelas.js en un lienzo: líneas finas que
+   salen del fondo de la nave hacia los bordes, más largas y rápidas cuanto
+   más rápido se baja. Van sobre la foto y bajo el titular. */
+.hero__estelas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+/* La foto se mueve unos píxeles con el puntero: la nave tiene fondo. Va por
+   `translate`, que no pisa el `transform` con que GSAP la escala, y la foto
+   es un poco más grande que su marco para que el borde nunca asome. */
+.cursor-propio .hero__foto img {
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  margin: -24px;
+  translate: var(--hx, 0px) var(--hy, 0px);
+}
+
+/* --- Números fantasma: el número de cada sector, enorme y de contorno ---------- */
+
+/* Detrás de cada encabezado, el número de su sector en contorno de un píxel:
+   la página se orienta de un vistazo, como los dorsales en la nave. Lo pone
+   portada-escenas.js y se desplaza un poco más despacio que la página. */
+.pagina-entrada .seccion,
+.pagina-entrada .acceso { isolation: isolate; }
+.seccion__fantasma {
+  position: absolute;
+  top: calc(var(--pub-seccion) * .42);
+  right: var(--pub-margen);
+  z-index: -1;
+  color: transparent;
+  font-family: var(--display);
+  font-stretch: 125%;
+  font-size: clamp(7rem, 24vw, 23rem);
+  font-weight: 800;
+  line-height: .8;
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-text-stroke: 1px rgba(244, 246, 243, .075);
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
+}
+
+/* --- Manifiesto ----------------------------------------------------------------- */
+
+.manifiesto--fijo {
+  display: grid;
+  align-content: center;
+  min-height: 100vh;
+}
+
+/* --- La vuelta: el cronómetro en marcha, con el parcial de cada sector ----------- */
+
+.vuelta__crono { display: none; }
+@media (min-width: 900px) and (min-height: 560px) {
+  .vuelta__crono {
+    display: block;
+    color: var(--texto-3);
+    font-family: var(--mono);
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .vuelta--meta .vuelta__crono,
+  .vuelta__crono--parcial { color: var(--acento); }
+}
+
+/* --- Telemetría -------------------------------------------------------------------- */
+
+.portada-animada .telemetria__cursor { display: inline; }
+.portada-animada .telemetria__vivo::after {
+  position: absolute;
+  inset: -3px;
+  content: '';
+  border: 1px solid var(--acento);
+  border-radius: 50%;
+  animation: pulsoPunto 2.5s var(--curva-entrada) infinite;
+}
+.telemetria__mapa-auto,
+.telemetria__cursor { will-change: transform; }
+/* Pantalla ancha: el tablero se queda fijo mientras la vuelta corre. */
+.telemetria--fija {
+  min-height: calc(100vh - var(--pub-cabecera) - 48px);
+  align-content: center;
+}
+.telemetria--meta .telemetria__cifra { animation: destelloCifra 1.2s ease-out 1; }
+@keyframes destelloCifra {
+  0% { text-shadow: 0 0 34px rgba(147, 210, 65, .75); }
+  100% { text-shadow: 0 0 0 rgba(147, 210, 65, 0); }
+}
+
+/* --- Cómo funciona: el haz del lector recorre el QR ------------------------------- */
+
+/* En pantalla ancha, un riel de un píxel junto a los pasos se llena de verde
+   mientras se leen (--avance lo mueve GSAP), como el tramo de un sector. */
+@media (min-width: 901px) {
+  .portada-animada .funciona__pasos { position: relative; padding-left: clamp(24px, 3vw, 48px); }
+  .portada-animada .funciona__pasos::before,
+  .portada-animada .funciona__pasos::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    content: '';
+    background: var(--pub-linea-2);
+  }
+  .portada-animada .funciona__pasos::after {
+    width: 2px;
+    background: var(--acento);
+    transform: scaleY(var(--avance, 0));
+    transform-origin: center top;
+  }
+}
+
+.portada-animada .funciona__haz {
+  display: inline;
+  opacity: .75;
+  animation: haz 2.4s cubic-bezier(.65, 0, .35, 1) infinite alternate;
+}
+@keyframes haz {
+  from { transform: translateY(0); }
+  to { transform: translateY(25.8px); }
+}
+.funciona__pantalla > * { will-change: transform, opacity; }
+
+/* --- Pie: la línea de meta llena el nombre ------------------------------------------ */
+
+.portada-animada .sitio-pie__gigante b {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: var(--acento);
+  font-weight: inherit;
+  clip-path: inset(-40% 100% -10% 0);
+  will-change: clip-path;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero__semaforo span,
   .producto,
@@ -1791,6 +2467,9 @@ html.cursor-propio select { cursor: text; }
   .galeria__boton { transition: none; }
   .horario[data-estado="abierto"] .horario__estado::before { animation: none; }
   .hero__guia i { animation: none; }
+  .hero__estado--abierta::before,
+  .funciona__haz { animation: none; }
+  .funciona__paso { transition: none; }
   .cursor { display: none; }
 }
 

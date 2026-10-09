@@ -28,6 +28,12 @@
  *    sectores; y la galería que corre de lado enfocando cada foto.
  *  - La marquesina corre sola y el desplazamiento le da gas; la meta ondea
  *    una bandera a cuadros de verdad (portada-bandera.js).
+ *  - Ambiente: estelas de velocidad en la apertura (portada-estelas.js), el
+ *    número de cada sector enorme y de contorno detrás de su encabezado y, al
+ *    final, el nombre de la pista que se llena de verde al cruzar la meta.
+ *  - Más escenas fijas: el manifiesto, que se enciende palabra a palabra, y la
+ *    repetición de la vuelta récord en telemetría (portada-telemetria.js),
+ *    donde el desplazamiento es el tiempo.
  *
  * Cada escena se monta dentro de `gsap.matchMedia()`: al cambiar de formato
  * (girar el teléfono, estrechar la ventana) se deshace sola y se vuelve a
@@ -41,7 +47,9 @@ import {
   momentosDeLlegada, posicionesEnRecorrido, salidaDeCarrera, tiempoEnTexto,
 } from './portada-calculos.js';
 import { montarBandera } from './portada-bandera.js';
+import { montarEstelas } from './portada-estelas.js';
 import { cerrarEscuadras, fijarCaja, miraViajera, ponerMira } from './portada-mira.js';
+import { montarTelemetria } from './portada-telemetria.js';
 import { montarVuelta } from './portada-vuelta.js';
 
 const $ = (selector, base = document) => base.querySelector(selector);
@@ -97,6 +105,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   };
   const escenas = { lenis: null, apertura: null, vuelta: null };
 
+
   // -------------------------------------------------------------------------
   // Desplazamiento suave (solo con ratón o trackpad)
   // -------------------------------------------------------------------------
@@ -143,6 +152,8 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     cabecera.addEventListener('focusin', () => poner(true));
   }
 
+  const estelas = montarEstelas({ gsap, ScrollTrigger });
+
   // -------------------------------------------------------------------------
   // Salida: el titular sale letra a letra; al bajar, la pista sube como un telón
   // -------------------------------------------------------------------------
@@ -169,6 +180,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       .from(letrasPorLinea.flat(), { yPercent: 118, rotate: 6, duration: 1.25, stagger: 0.035 }, 0)
       .from('.hero__foto img', { scale: 1.16, duration: 2.6, ease: 'power3.out' }, 0)
       .from('.hero__kicker', { opacity: 0, x: -36, duration: 1 }, 0.15)
+      .from('.hero__estado', { opacity: 0, x: -16, duration: 1 }, 0.3)
       .from('.hero__lead', { opacity: 0, y: 26, duration: 1 }, 0.4)
       // Los botones tienen sus propias transiciones de hover: se mueve su caja.
       .from('.hero__acciones', { opacity: 0, y: 26, duration: 1 }, 0.5)
@@ -210,6 +222,8 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       .to('.hero__sombra', { opacity: 0.86 }, 0)
       .to('.hero__semaforo', { autoAlpha: 0, y: -30 }, 0)
       .to('.hero__guia', { opacity: 0, duration: 0.2 }, 0);
+    // La apertura acelera hacia la pista: las estelas siguen a la salida.
+    if (estelas) salida.eventCallback('onUpdate', () => estelas.acelerar(salida.progress()));
     if (ancho && letrasPorLinea.length === 2) {
       // Se acelera hacia la pista: «VEN A» se aparta a la izquierda y
       // «RODAR.» a la derecha, letra a letra, como lo que se deja atrás.
@@ -289,6 +303,27 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     }
     const acciones = $$(':scope > .boton, .galeria__controles', cabeza);
     if (acciones.length) gsap.from(acciones, { ...SUBIDA, y: 20, delay: 0.5, scrollTrigger: disparo() });
+  }
+
+  // -------------------------------------------------------------------------
+  // Números fantasma: el dorsal de cada sector, detrás de su encabezado
+  // -------------------------------------------------------------------------
+
+  for (const seccion of $$('main section')) {
+    const numero = $('.seccion__indice > span', seccion);
+    if (!numero) continue;
+    const fantasma = document.createElement('span');
+    fantasma.className = 'seccion__fantasma';
+    fantasma.setAttribute('aria-hidden', 'true');
+    fantasma.textContent = numero.textContent.trim();
+    seccion.prepend(fantasma);
+    // Más despacio que la página: queda detrás, como un plano más lejano.
+    gsap.fromTo(fantasma, { yPercent: 35 }, {
+      yPercent: -35,
+      ease: 'none',
+      scrollTrigger: { trigger: seccion, start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    gsap.from(fantasma, { opacity: 0, x: 60, duration: 1.6, scrollTrigger: alEntrar(seccion, 'top 70%') });
   }
 
   // -------------------------------------------------------------------------
@@ -416,6 +451,31 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       },
     });
   }
+
+  // -------------------------------------------------------------------------
+  // Manifiesto: la frase se enciende palabra a palabra mientras se lee
+  // -------------------------------------------------------------------------
+
+  const manifiesto = $('.manifiesto');
+  const fraseManifiesto = $('.manifiesto__texto');
+  const palabrasManifiesto = fraseManifiesto
+    ? partir(fraseManifiesto, { type: 'words', wordsClass: 'palabra-split', autoSplit: false, aria: 'auto' })?.words ?? []
+    : [];
+  mm.add({ fijo: '(min-width: 900px) and (min-height: 600px)', todas: 'all' }, (contexto) => {
+    if (!manifiesto || !palabrasManifiesto.length) return undefined;
+    const { fijo } = contexto.conditions;
+    // En pantalla ancha la frase se queda en el centro hasta encenderse
+    // entera; en el teléfono se enciende mientras pasa.
+    if (fijo) manifiesto.classList.add('manifiesto--fijo');
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: fijo
+        ? { trigger: manifiesto, start: 'top top', end: '+=140%', pin: true, scrub: 0.6, anticipatePin: 1 }
+        : { trigger: fraseManifiesto, start: 'top 85%', end: 'bottom 40%', scrub: 0.6 },
+    });
+    tl.fromTo(palabrasManifiesto, { opacity: 0.12, y: 14 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.12 }, 0);
+    return () => manifiesto.classList.remove('manifiesto--fijo');
+  });
 
   // -------------------------------------------------------------------------
   // 02 · Complejo: una vuelta por los cinco sectores
@@ -627,6 +687,54 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   }
 
   // -------------------------------------------------------------------------
+  // 05 · La vuelta récord: la repetición en telemetría
+  // -------------------------------------------------------------------------
+
+  const telemetria = montarTelemetria();
+  if (telemetria) {
+    const { raiz } = telemetria;
+    // Cada caja del tablero se fija como el resto de la página, en el orden
+    // en que la leería el ingeniero: crono, canales, parciales, mapa, traza.
+    $$('.telemetria__crono, .telemetria__dato, .telemetria__parcial, .telemetria__mapa, .telemetria__grafica', raiz)
+      .forEach((caja, i) => fijar(caja, { duracion: 0.8, retraso: i * 0.06, scrollTrigger: alEntrar(raiz, 'top 82%') }));
+  }
+  mm.add({ fija: '(min-width: 1100px) and (min-height: 700px)', todas: 'all' }, (contexto) => {
+    if (!telemetria) return undefined;
+    const { raiz, tiempo, pintar } = telemetria;
+    const reloj = { t: 0 };
+    const avanzar = () => pintar(reloj.t);
+    if (contexto.conditions.fija) {
+      // El tablero se queda fijo y el desplazamiento es el tiempo: bajar es
+      // rodar la vuelta, subir es rebobinarla.
+      raiz.classList.add('telemetria--fija');
+      gsap.fromTo(reloj, { t: 0 }, {
+        t: tiempo,
+        ease: 'none',
+        onUpdate: avanzar,
+        scrollTrigger: { trigger: raiz, start: 'center center', end: '+=190%', pin: true, scrub: 0.5, anticipatePin: 1 },
+      });
+      return () => {
+        raiz.classList.remove('telemetria--fija');
+        pintar(tiempo);
+      };
+    }
+    // En el teléfono la vuelta corre a tiempo real cada vez que se llega a ella.
+    pintar(0);
+    const repeticion = gsap.fromTo(reloj, { t: 0 }, { t: tiempo, duration: tiempo, ease: 'none', paused: true, onUpdate: avanzar });
+    ScrollTrigger.create({
+      trigger: raiz,
+      start: 'top 65%',
+      end: 'bottom 20%',
+      onEnter: () => repeticion.restart(),
+      onEnterBack: () => repeticion.restart(),
+    });
+    return () => {
+      repeticion.kill();
+      pintar(tiempo);
+    };
+  });
+
+  // -------------------------------------------------------------------------
   // 06 · Eventos: las fechas llegan en escalera y su marca se traza
   // -------------------------------------------------------------------------
 
@@ -782,7 +890,20 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   });
 
   // -------------------------------------------------------------------------
-  // 09 · Tu pase: la meta. La bandera a cuadros cruza la pantalla y el panel llega
+  // 09 · Cómo funciona: el riel de los pasos se llena mientras se leen
+  // -------------------------------------------------------------------------
+
+  const pasosFunciona = $('.funciona__pasos');
+  if (pasosFunciona) {
+    gsap.fromTo(pasosFunciona, { '--avance': 0 }, {
+      '--avance': 1,
+      ease: 'none',
+      scrollTrigger: { trigger: pasosFunciona, start: 'top 50%', end: 'bottom 50%', scrub: 0.4 },
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // 10 · Tu pase: la meta. La bandera a cuadros cruza la pantalla y el panel llega
   // -------------------------------------------------------------------------
 
   const acceso = $('.acceso');
@@ -829,6 +950,17 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   // -------------------------------------------------------------------------
 
   $$('.sitio-pie__marca, .sitio-pie__columna').forEach((caja, i) => fijar(caja, { duracion: 0.8, retraso: i * 0.12, scrollTrigger: alEntrar('.sitio-pie', 'top 92%') }));
+  // La línea de meta: el nombre de la pista se llena de verde en la última recta.
+  const gigante = $('.sitio-pie__gigante');
+  if (gigante) {
+    // El recorte sube por encima de la caja: la tilde de la Á asoma sobre la línea.
+    gsap.fromTo($('b', gigante), { clipPath: 'inset(-40% 100% -10% 0%)' }, {
+      clipPath: 'inset(-40% 0% -10% 0%)',
+      ease: 'none',
+      scrollTrigger: { trigger: gigante, start: 'top bottom', end: 'max', scrub: 0.6 },
+    });
+    gsap.from($('span', gigante), { opacity: 0, yPercent: 30, duration: 1.4, scrollTrigger: alEntrar(gigante, 'top 98%') });
+  }
 
   // -------------------------------------------------------------------------
   // La vuelta: al final, cuando las escenas fijas ya ocupan su sitio
