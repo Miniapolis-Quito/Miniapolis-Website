@@ -3,8 +3,7 @@
  *
  * Siempre (no mueven nada): el avance de lectura de la cabecera, la sección
  * activa en la navegación, el estado de hoy en la tabla de horarios y en la
- * apertura, los botones de la galería, la telemetría de la vuelta récord (en
- * la meta) y el teléfono de «Cómo funciona».
+ * apertura, los botones de la galería y el teléfono de «Cómo funciona».
  *
  * Con movimiento permitido y GSAP cargado: las escenas ligadas al
  * desplazamiento (portada-escenas.js), lo que responde al puntero
@@ -16,7 +15,6 @@ import { diaDeTexto, estadoJornada, progresoLectura, proximaJornada, rangoDeText
 import { montarEscenas } from './portada-escenas.js';
 import { montarFunciona } from './portada-funciona.js';
 import { montarTacto } from './portada-tacto.js';
-import { montarTelemetria } from './portada-telemetria.js';
 
 const raiz = document.documentElement;
 const $ = (selector, base = document) => base.querySelector(selector);
@@ -188,7 +186,6 @@ setInterval(() => montarHorarioVivo(), 60_000);
 montarEstadoPista();
 setInterval(() => montarEstadoPista(), 60_000);
 montarGaleria();
-montarTelemetria();
 
 /** Sin escenas: todo a la vista y en su sitio. */
 function quedarseQuieta() {

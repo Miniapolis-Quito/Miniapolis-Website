@@ -17,8 +17,10 @@
  *    revés y un brillo sigue la luz.
  *  - Apertura: la foto de la nave se desplaza unos píxeles al revés que el
  *    puntero, como se mueve el fondo cuando uno gira la cabeza.
+ *  - «Cómo funciona»: el teléfono se inclina hacia el puntero, como uno que
+ *    se tiene en la mano para enseñarlo en la puerta.
  */
-import { atraccion } from './portada-calculos.js';
+import { atraccion, limitar } from './portada-calculos.js';
 
 const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
 
@@ -163,10 +165,32 @@ function montarFondoApertura(gsap) {
   });
 }
 
+function montarTelefono(gsap) {
+  const escena = document.querySelector('.funciona__escena');
+  const marco = escena?.querySelector('.funciona__marco');
+  if (!escena || !marco) return;
+  gsap.set(marco, { transformPerspective: 1100 });
+  const rx = gsap.quickTo(marco, 'rotationX', { duration: 0.8, ease: 'power3' });
+  const ry = gsap.quickTo(marco, 'rotationY', { duration: 0.8, ease: 'power3' });
+  escena.addEventListener('pointermove', (evento) => {
+    if (evento.pointerType !== 'mouse') return;
+    const caja = marco.getBoundingClientRect();
+    const px = limitar((evento.clientX - (caja.left + caja.width / 2)) / window.innerWidth, -1, 1);
+    const py = limitar((evento.clientY - (caja.top + caja.height / 2)) / window.innerHeight, -1, 1);
+    ry(px * 16);
+    rx(-py * 10);
+  }, { passive: true });
+  escena.addEventListener('pointerleave', () => {
+    rx(0);
+    ry(0);
+  });
+}
+
 export function montarTacto(gsap) {
   if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
   montarCursor(gsap);
   montarImanes(gsap);
   montarInclinacion(gsap);
   montarFondoApertura(gsap);
+  montarTelefono(gsap);
 }

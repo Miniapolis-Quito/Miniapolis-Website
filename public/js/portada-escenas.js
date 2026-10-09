@@ -31,9 +31,6 @@
  *  - Ambiente: estelas de velocidad en la apertura (portada-estelas.js), el
  *    número de cada sector enorme y de contorno detrás de su encabezado y, al
  *    final, el nombre de la pista que se llena de verde al cruzar la meta.
- *  - Más escenas fijas: el manifiesto, que se enciende palabra a palabra, y la
- *    repetición de la vuelta récord en telemetría (portada-telemetria.js),
- *    donde el desplazamiento es el tiempo.
  *
  * Cada escena se monta dentro de `gsap.matchMedia()`: al cambiar de formato
  * (girar el teléfono, estrechar la ventana) se deshace sola y se vuelve a
@@ -49,7 +46,6 @@ import {
 import { montarBandera } from './portada-bandera.js';
 import { montarEstelas } from './portada-estelas.js';
 import { cerrarEscuadras, fijarCaja, miraViajera, ponerMira } from './portada-mira.js';
-import { montarTelemetria } from './portada-telemetria.js';
 import { montarVuelta } from './portada-vuelta.js';
 
 const $ = (selector, base = document) => base.querySelector(selector);
@@ -453,31 +449,6 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   }
 
   // -------------------------------------------------------------------------
-  // Manifiesto: la frase se enciende palabra a palabra mientras se lee
-  // -------------------------------------------------------------------------
-
-  const manifiesto = $('.manifiesto');
-  const fraseManifiesto = $('.manifiesto__texto');
-  const palabrasManifiesto = fraseManifiesto
-    ? partir(fraseManifiesto, { type: 'words', wordsClass: 'palabra-split', autoSplit: false, aria: 'auto' })?.words ?? []
-    : [];
-  mm.add({ fijo: '(min-width: 900px) and (min-height: 600px)', todas: 'all' }, (contexto) => {
-    if (!manifiesto || !palabrasManifiesto.length) return undefined;
-    const { fijo } = contexto.conditions;
-    // En pantalla ancha la frase se queda en el centro hasta encenderse
-    // entera; en el teléfono se enciende mientras pasa.
-    if (fijo) manifiesto.classList.add('manifiesto--fijo');
-    const tl = gsap.timeline({
-      defaults: { ease: 'none' },
-      scrollTrigger: fijo
-        ? { trigger: manifiesto, start: 'top top', end: '+=140%', pin: true, scrub: 0.6, anticipatePin: 1 }
-        : { trigger: fraseManifiesto, start: 'top 85%', end: 'bottom 40%', scrub: 0.6 },
-    });
-    tl.fromTo(palabrasManifiesto, { opacity: 0.12, y: 14 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.12 }, 0);
-    return () => manifiesto.classList.remove('manifiesto--fijo');
-  });
-
-  // -------------------------------------------------------------------------
   // 02 · Complejo: una vuelta por los cinco sectores
   // -------------------------------------------------------------------------
 
@@ -685,54 +656,6 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       corredores.forEach((c, i) => tl.call(() => llegar(c), null, SALIDA + llegadas[i]));
     }
   }
-
-  // -------------------------------------------------------------------------
-  // 05 · La vuelta récord: la repetición en telemetría
-  // -------------------------------------------------------------------------
-
-  const telemetria = montarTelemetria();
-  if (telemetria) {
-    const { raiz } = telemetria;
-    // Cada caja del tablero se fija como el resto de la página, en el orden
-    // en que la leería el ingeniero: crono, canales, parciales, mapa, traza.
-    $$('.telemetria__crono, .telemetria__dato, .telemetria__parcial, .telemetria__mapa, .telemetria__grafica', raiz)
-      .forEach((caja, i) => fijar(caja, { duracion: 0.8, retraso: i * 0.06, scrollTrigger: alEntrar(raiz, 'top 82%') }));
-  }
-  mm.add({ fija: '(min-width: 1100px) and (min-height: 700px)', todas: 'all' }, (contexto) => {
-    if (!telemetria) return undefined;
-    const { raiz, tiempo, pintar } = telemetria;
-    const reloj = { t: 0 };
-    const avanzar = () => pintar(reloj.t);
-    if (contexto.conditions.fija) {
-      // El tablero se queda fijo y el desplazamiento es el tiempo: bajar es
-      // rodar la vuelta, subir es rebobinarla.
-      raiz.classList.add('telemetria--fija');
-      gsap.fromTo(reloj, { t: 0 }, {
-        t: tiempo,
-        ease: 'none',
-        onUpdate: avanzar,
-        scrollTrigger: { trigger: raiz, start: 'center center', end: '+=190%', pin: true, scrub: 0.5, anticipatePin: 1 },
-      });
-      return () => {
-        raiz.classList.remove('telemetria--fija');
-        pintar(tiempo);
-      };
-    }
-    // En el teléfono la vuelta corre a tiempo real cada vez que se llega a ella.
-    pintar(0);
-    const repeticion = gsap.fromTo(reloj, { t: 0 }, { t: tiempo, duration: tiempo, ease: 'none', paused: true, onUpdate: avanzar });
-    ScrollTrigger.create({
-      trigger: raiz,
-      start: 'top 65%',
-      end: 'bottom 20%',
-      onEnter: () => repeticion.restart(),
-      onEnterBack: () => repeticion.restart(),
-    });
-    return () => {
-      repeticion.kill();
-      pintar(tiempo);
-    };
-  });
 
   // -------------------------------------------------------------------------
   // 06 · Eventos: las fechas llegan en escalera y su marca se traza

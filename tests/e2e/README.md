@@ -24,8 +24,7 @@ al menos 44 px, que la galería avanza con sus botones (o se desliza con el
 dedo), que las pestañas de acceso caben en una línea y que el avance de
 lectura llega al final. Con movimiento, que GSAP montó sus escenas, que la
 galería fija corre de lado al bajar, que la vuelta llega a la meta con un
-sector lleno por sección numerada y el tiempo en el pie, que el manifiesto y
-la telemetría de la vuelta récord terminan a la vista, que «Muy pronto» termina con
+sector lleno por sección numerada y el tiempo en el pie, que «Muy pronto» termina con
 todas sus letras en su sitio y que la guía de la apertura (fuera del teléfono)
 tiene su luz en marcha; con movimiento reducido, que no se monta ninguna
 escena, no hay vuelta ni guía y todo se ve sin bajar.

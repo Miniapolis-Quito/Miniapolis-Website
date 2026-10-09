@@ -166,92 +166,10 @@ test('tiempoDeVuelta se lee como un cronómetro: minutos, segundos y décimas', 
 });
 
 // ---------------------------------------------------------------------------
-// La vuelta récord y la próxima jornada
+// La próxima jornada
 // ---------------------------------------------------------------------------
 
-import {
-  curvaturas, perfilDeVelocidad, telemetriaDeVuelta, muestraEnTiempo, parcialesDeVuelta,
-  proximaJornada, textoProximaJornada,
-} from '../public/js/portada-calculos.js';
-
-/** Un estadio: dos rectas de 40 y dos curvas de radio 10, muestreado cada ~0,5. */
-function estadio() {
-  const puntos = [];
-  for (let x = 0; x < 40; x += 0.5) puntos.push({ x, y: 0 });
-  for (let a = -Math.PI / 2; a < Math.PI / 2; a += 0.05) puntos.push({ x: 40 + 10 * Math.cos(a), y: 10 + 10 * Math.sin(a) });
-  for (let x = 40; x > 0; x -= 0.5) puntos.push({ x, y: 20 });
-  for (let a = Math.PI / 2; a < (3 * Math.PI) / 2; a += 0.05) puntos.push({ x: 10 * Math.cos(a), y: 10 + 10 * Math.sin(a) });
-  return puntos;
-}
-
-test('curvaturas: cero en la recta y 1/R en la curva', () => {
-  const k = curvaturas(estadio());
-  assert.ok(Math.abs(k[20]) < 1e-9, 'la recta no curva');
-  assert.ok(Math.abs(k[100] - 0.1) < 0.005, `en la curva de radio 10 la curvatura es 0,1 (es ${k[100]})`);
-  assert.deepEqual(curvaturas([{ x: 0, y: 0 }]), [0]);
-});
-
-test('perfilDeVelocidad: punta en la recta, más lento en la curva y nunca por encima del agarre', () => {
-  const k = curvaturas(estadio());
-  const v = perfilDeVelocidad(k, 0.5, { punta: 20, agarre: 12, aceleracion: 8, frenada: 14 });
-  const enCurva = v[100];
-  assert.ok(Math.abs(enCurva - Math.sqrt(12 / 0.1)) < 0.3, 'en la curva va al límite del agarre');
-  assert.ok(Math.max(...v) > enCurva + 2, 'en la recta acelera');
-  assert.ok(Math.max(...v) <= 20, 'nunca pasa de la punta');
-  // Ningún salto de velocidad supera lo que permiten aceleración y frenada.
-  for (let i = 1; i < v.length; i += 1) {
-    const dv2 = v[i] ** 2 - v[i - 1] ** 2;
-    assert.ok(dv2 <= 2 * 8 * 0.5 + 1e-6 && dv2 >= -2 * 14 * 0.5 - 1e-6, `salto imposible en ${i}`);
-  }
-});
-
-test('telemetriaDeVuelta: dura exactamente el tiempo pedido y es coherente', () => {
-  const tel = telemetriaDeVuelta(estadio(), { longitud: 172, tiempo: 12.46 });
-  assert.ok(tel.length > 100);
-  assert.equal(tel[0].t, 0);
-  assert.equal(tel[0].d, 0);
-  const ultimo = tel.at(-1);
-  assert.ok(ultimo.t < 12.46 && ultimo.d < 1);
-  // Distancia y tiempo crecen siempre.
-  for (let i = 1; i < tel.length; i += 1) assert.ok(tel[i].t > tel[i - 1].t && tel[i].d > tel[i - 1].d);
-  // 172 m en 12,46 s: media de 49,7 km/h; la punta por encima y la curva por debajo.
-  const vMax = Math.max(...tel.map((m) => m.v));
-  const vMin = Math.min(...tel.map((m) => m.v));
-  assert.ok(vMax > 49.7 && vMin < 49.7, `${vMin} < media < ${vMax}`);
-  for (const m of tel) {
-    assert.ok(m.acelerador >= 0 && m.acelerador <= 1 && m.freno >= 0 && m.freno <= 1);
-    assert.ok(!(m.acelerador > 0 && m.freno > 0), 'no se acelera y frena a la vez');
-    assert.ok(m.gLat >= 0 && Number.isFinite(m.gLat));
-  }
-  assert.ok(tel.some((m) => m.freno > 0.5), 'antes de la curva se frena');
-  assert.deepEqual(telemetriaDeVuelta([{ x: 0, y: 0 }]), []);
-  assert.deepEqual(telemetriaDeVuelta(estadio(), { tiempo: 0 }), []);
-});
-
-test('muestraEnTiempo interpola y se posa en la meta', () => {
-  const tel = telemetriaDeVuelta(estadio());
-  assert.equal(muestraEnTiempo(tel, 0).d, 0);
-  const mitad = muestraEnTiempo(tel, 6.23);
-  assert.ok(mitad.d > 0.3 && mitad.d < 0.7);
-  assert.equal(mitad.t, 6.23);
-  const meta = muestraEnTiempo(tel, 99);
-  assert.equal(meta.d, 1);
-  assert.equal(meta.t, 12.46);
-  assert.equal(muestraEnTiempo([], 3), null);
-  // Dentro de un tramo, la distancia queda entre la de sus extremos.
-  const j = 40;
-  const entre = muestraEnTiempo(tel, (tel[j].t + tel[j + 1].t) / 2);
-  assert.ok(entre.d > tel[j].d && entre.d < tel[j + 1].d);
-});
-
-test('parcialesDeVuelta suma el tiempo de la vuelta', () => {
-  const tel = telemetriaDeVuelta(estadio());
-  const parciales = parcialesDeVuelta(tel, 3);
-  assert.equal(parciales.length, 3);
-  assert.ok(Math.abs(parciales.reduce((s, p) => s + p, 0) - 12.46) < 1e-9);
-  assert.ok(parciales.every((p) => p > 2 && p < 7));
-  assert.deepEqual(parcialesDeVuelta([], 3), []);
-});
+import { proximaJornada, textoProximaJornada } from '../public/js/portada-calculos.js';
 
 test('proximaJornada: abierta ahora, más tarde hoy, mañana o el día que toque', () => {
   const jornadas = [
