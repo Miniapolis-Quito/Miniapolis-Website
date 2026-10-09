@@ -1699,6 +1699,7 @@ html.lenis { scroll-behavior: auto; }
   margin: -2px 0 0 -2px;
   background: var(--acento);
   box-shadow: 0 0 5px var(--acento);
+  transition: transform 240ms var(--pub-curva), background-color 240ms ease-out, box-shadow 240ms ease-out;
 }
 .cursor__aro {
   width: 36px;
@@ -1759,7 +1760,12 @@ html.lenis { scroll-behavior: auto; }
   background: rgba(147, 210, 65, .09);
   box-shadow: 0 0 14px rgba(147, 210, 65, .25), inset 0 0 8px rgba(147, 210, 65, .1);
 }
-.cursor--enlace .cursor__punto { opacity: 0; }
+/* Sobre un objetivo el centro no se apaga: se enciende y fija la mira. */
+.cursor--enlace .cursor__punto {
+  transform: scale(1.5);
+  background: var(--texto);
+  box-shadow: 0 0 6px var(--acento);
+}
 .cursor--pulsado .cursor__aro {
   width: 26px;
   height: 26px;
