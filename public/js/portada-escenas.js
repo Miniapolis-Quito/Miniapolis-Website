@@ -28,7 +28,7 @@
  *    sectores; y la galería que corre de lado enfocando cada foto.
  *  - La marquesina corre sola y el desplazamiento le da gas; la meta ondea
  *    una bandera a cuadros de verdad (portada-bandera.js).
- *  - Ambiente: estelas de velocidad en la apertura (portada-estelas.js), el
+ *  - Ambiente: la nave que respira tras la apertura, el
  *    número de cada sector enorme y de contorno detrás de su encabezado y, al
  *    final, el nombre de la pista que se llena de verde al cruzar la meta.
  *
@@ -44,7 +44,6 @@ import {
   momentosDeLlegada, posicionesEnRecorrido, salidaDeCarrera, tiempoEnTexto,
 } from './portada-calculos.js';
 import { montarBandera } from './portada-bandera.js';
-import { montarEstelas } from './portada-estelas.js';
 import { cerrarEscuadras, fijarCaja, miraViajera, ponerMira } from './portada-mira.js';
 import { montarVuelta } from './portada-vuelta.js';
 
@@ -148,8 +147,6 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     cabecera.addEventListener('focusin', () => poner(true));
   }
 
-  const estelas = montarEstelas({ gsap, ScrollTrigger });
-
   // -------------------------------------------------------------------------
   // Salida: el titular sale letra a letra; al bajar, la pista sube como un telón
   // -------------------------------------------------------------------------
@@ -185,6 +182,16 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     if (fotoHero) gsap.set(fotoHero, { filter: 'brightness(0.42)' });
   };
 
+  // Después de la apertura la nave respira: un acercamiento lentísimo, de ida
+  // y vuelta, para que la portada no se quede en una foto quieta. Se detiene
+  // mientras la apertura no se ve.
+  let respiro = null;
+  const respirar = () => {
+    if (!fotoHero || !hero || respiro) return;
+    respiro = gsap.to(fotoHero, { scale: 1.06, duration: 18, ease: 'sine.inOut', repeat: -1, yoyo: true });
+    ScrollTrigger.create({ trigger: hero, start: 'top bottom', end: 'bottom top', onToggle: (self) => respiro.paused(!self.isActive) });
+  };
+
   escenas.apertura = () => {
     // Las luces se apagaron: es la salida y empieza a contar la vuelta.
     escenas.vuelta?.darSalida();
@@ -194,16 +201,16 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     document.documentElement.classList.remove('portada-intro');
     const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
     if (enPortico) {
-      // Luces fuera: el pórtico vuelve a su sitio, la nave se enciende y las
-      // estelas salen disparadas con el titular.
+      // Luces fuera: el pórtico vuelve a su sitio y la nave se enciende
+      // mientras sale el titular.
       enPortico = false;
       tl.to(portico, { x: 0, y: 0, scale: 1, duration: 0.95, ease: 'expo.inOut', clearProps: 'transform' }, 0);
       if (fotoHero) tl.to(fotoHero, { filter: 'brightness(1)', duration: 1.1, ease: 'power2.out', clearProps: 'filter' }, 0.05);
-      estelas?.arrancar();
     }
     tl.set(lineas, { yPercent: 0 })
       .from(letrasPorLinea.flat(), { yPercent: 118, rotate: 6, duration: 1.25, stagger: 0.035 }, 0)
       .from('.hero__foto img', { scale: 1.16, duration: 2.6, ease: 'power3.out' }, 0)
+      .call(respirar, null, 2.6)
       .from('.hero__kicker', { opacity: 0, x: -36, duration: 1 }, 0.15)
       .from('.hero__estado', { opacity: 0, x: -16, duration: 1 }, 0.3)
       .from('.hero__lead', { opacity: 0, y: 26, duration: 1 }, 0.4)
@@ -247,8 +254,6 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       .to('.hero__sombra', { opacity: 0.86 }, 0)
       .to('.hero__semaforo', { autoAlpha: 0, y: -30 }, 0)
       .to('.hero__guia', { opacity: 0, duration: 0.2 }, 0);
-    // La apertura acelera hacia la pista: las estelas siguen a la salida.
-    if (estelas) salida.eventCallback('onUpdate', () => estelas.acelerar(salida.progress()));
     if (ancho && letrasPorLinea.length === 2) {
       // Se acelera hacia la pista: «VEN A» se aparta a la izquierda y
       // «RODAR.» a la derecha, letra a letra, como lo que se deja atrás.
