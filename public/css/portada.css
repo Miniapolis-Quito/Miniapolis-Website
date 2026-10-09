@@ -1612,6 +1612,25 @@ html.lenis { scroll-behavior: auto; }
 .mira > i:nth-child(2) { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; }
 .mira > i:nth-child(3) { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
 .mira > i:nth-child(4) { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; }
+/* Aire para la mira: las escuadras se cierran sobre el borde de la caja. En
+   las cajas sin relleno propio (las cifras de la apertura, los horarios, las
+   ventajas, el pie y, en el teléfono, las disciplinas y las filas de la ficha)
+   el texto tocaba ese borde y la mira se le montaba encima. Con movimiento,
+   que es cuando hay mira, llevan un poco de aire por dentro; la animación es
+   la misma. */
+.portada-animada { --aire-mira: clamp(12px, 1.2vw, 16px); }
+.portada-animada .cifra,
+.portada-animada .cifra + .cifra { padding-inline: var(--aire-mira); padding-bottom: var(--aire-mira); }
+.portada-animada .horario,
+.portada-animada .ventaja { padding-inline: var(--aire-mira); }
+.portada-animada .sitio-pie__marca,
+.portada-animada .sitio-pie__columna { padding: var(--aire-mira); }
+@media (max-width: 960px) {
+  .portada-animada .ficha__fila { padding-inline: var(--aire-mira); }
+}
+@media (max-width: 700px) {
+  .portada-animada .disciplina { padding-inline: var(--aire-mira); }
+}
 /* El haz va justo por detrás del borde de lo impreso, con una estela que se apaga. */
 .mira__haz {
   position: absolute;
