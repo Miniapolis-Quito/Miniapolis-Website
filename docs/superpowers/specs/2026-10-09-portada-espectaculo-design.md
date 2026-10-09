@@ -12,7 +12,7 @@ vuelta o se quita.
 
 | Momento | Qué pasa | Qué cuenta |
 |---|---|---|
-| Salida | Junto al semáforo, el estado real de la pista («Pista abierta hasta las 23:00», «Abre mañana a las 09:00»), sacado de la tabla de horarios. Estelas de luz salen del fondo de la nave y aceleran con la rueda y con la salida; la foto se mueve unos píxeles con el puntero. | Que la pista existe ahora mismo, y velocidad. |
+| Salida | Junto al semáforo, el estado real de la pista («Pista abierta hasta las 23:00», «Abre mañana a las 09:00»), sacado de la tabla de horarios. La cuenta atrás es un pórtico de salida en el centro; después la nave respira (un acercamiento lentísimo de ida y vuelta) y la foto se mueve unos píxeles con el puntero. | Que la pista existe ahora mismo. |
 | Sectores | Detrás de cada encabezado, su número enorme en contorno de un píxel, más lento que la página. | Dónde se está, como los dorsales en la nave. |
 | 09 · Cómo funciona | «Del pack a la pista»: tres pasos y un teléfono `sticky` que enseña la pantalla del paso que se lee (el pack, el QR que se renueva con su haz de lectura y su cuenta atrás, el saldo que baja de 10 a 9). Con ratón, el teléfono se inclina hacia el puntero; en pantalla ancha, un riel junto a los pasos se llena al leerlos. | El producto: el pase en el teléfono. |
 | Cronómetro | En la regla vertical de la vuelta corre el tiempo; al cruzar cada sector se detiene un instante en verde con su parcial; en la meta se queda fijo. | La vuelta se está cronometrando. |
@@ -34,9 +34,11 @@ récords. Con ellos se fueron sus funciones puras y sus pruebas.
 - **matchMedia.** Con un objeto de condiciones, `gsap.matchMedia()` solo
   llama a la escena si alguna se cumple: todas llevan `todas: 'all'` para que
   el teléfono monte su versión.
-- **Estelas.** Un lienzo 2D, 70 líneas como mucho (34 en el teléfono), dos
-  pasadas por línea (halo y núcleo) en lugar de un desenfoque, apagadas donde
-  va el titular y solo mientras la apertura se ve.
+- **Las estelas se retiraron** (las líneas de luz que salían del fondo de la
+  nave): se leían como un efecto añadido y no como parte de la pista.
+- **La foto que sigue al puntero no se movía.** Iba por la propiedad
+  `translate` del CSS y GSAP, que escala esa foto en la apertura, la absorbe
+  en su `transform` y la deja en `none`. Ahora va por la `x` y la `y` de GSAP.
 - **El teléfono se mide en `em` sobre su propio ancho** (`container-type:
   inline-size`): en el móvil es la misma pantalla, más pequeña, y deja ver la
   pantalla por encima de las tarjetas de los pasos. Apaisado se queda lado a
@@ -68,8 +70,7 @@ El semáforo era el gran momento de la apertura y se vivía en una pastilla de
 12 px en una esquina, con la pantalla quieta. Ahora, mientras las cinco luces
 se encienden, va grande en el centro de la pantalla (hasta 3,4 veces, el 70 %
 del ancho en el teléfono) sobre la nave a media luz. Al apagarse vuelve a su
-sitio mientras el titular arranca, la nave se enciende y las estelas salen
-disparadas.
+sitio mientras el titular arranca y la nave se enciende.
 
 Se mueve una caja propia, `.hero__portico`, y no el semáforo: la salida ya
 anima el `transform` del semáforo y GSAP, además, absorbe en su `transform`

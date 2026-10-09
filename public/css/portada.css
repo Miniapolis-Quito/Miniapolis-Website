@@ -2097,27 +2097,16 @@ html.cursor-propio input,
 html.cursor-propio textarea,
 html.cursor-propio select { cursor: text; }
 
-/* --- Apertura: estelas de velocidad y la foto que sigue al puntero ------------- */
+/* --- Apertura: la foto que sigue al puntero --------------------------------- */
 
-/* Las estelas las dibuja portada-estelas.js en un lienzo: líneas finas que
-   salen del fondo de la nave hacia los bordes, más largas y rápidas cuanto
-   más rápido se baja. Van sobre la foto y bajo el titular. */
-.hero__estelas {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-/* La foto se mueve unos píxeles con el puntero: la nave tiene fondo. Va por
-   `translate`, que no pisa el `transform` con que GSAP la escala, y la foto
-   es un poco más grande que su marco para que el borde nunca asome. */
+/* La foto se mueve unos píxeles con el puntero (portada-tacto.js): la nave
+   tiene fondo. Es un poco más grande que su marco para que el borde no asome
+   nunca. Se mueve con la `x` y la `y` de GSAP, que se suman a la escala con
+   que la anima la apertura; con `translate`, GSAP la anularía. */
 .cursor-propio .hero__foto img {
   width: calc(100% + 48px);
   height: calc(100% + 48px);
   margin: -24px;
-  translate: var(--hx, 0px) var(--hy, 0px);
 }
 
 /* --- Números fantasma: el número de cada sector, enorme y de contorno ---------- */
