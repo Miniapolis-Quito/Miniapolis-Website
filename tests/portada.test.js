@@ -497,9 +497,11 @@ test('la marquesina corre sola, sin costura, y el desplazamiento le da gas', () 
   }
 });
 
-test('la ficha cierra su última fila con la misma línea verde que las demás', () => {
-  assert.match(CSS, /\.ficha--guiada \.ficha__fila:last-child::after \{[^}]*bottom: -1px;[^}]*background: var\(--acento\);/s);
-  assert.match(CSS, /\.ficha--guiada \.ficha__fila:last-child\.activa::after \{ transform: scaleX\(1\); \}/);
+test('cada fila activa de la ficha enciende su línea de arriba y la de abajo', () => {
+  assert.match(CSS, /\.ficha--guiada \.ficha__fila\.activa::before \{ transform: scaleX\(1\); \}/);
+  assert.match(CSS, /\.ficha--guiada \.ficha__fila::after \{[^}]*bottom: -1px;[^}]*background: var\(--acento\);/s);
+  assert.match(CSS, /\.ficha--guiada \.ficha__fila\.activa::after \{ transform: scaleX\(1\); \}/);
+  assert.doesNotMatch(CSS, /\.ficha--guiada \.ficha__fila:last-child/, 'la línea inferior no es solo de la última fila');
 });
 
 test('la entradilla del complejo se enciende palabra a palabra antes de la vuelta', () => {
