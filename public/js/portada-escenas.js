@@ -164,6 +164,27 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   }
   const letrasPorLinea = lineas.map((linea) => partir(linea, { type: 'chars', charsClass: 'letra-split', autoSplit: false, aria: 'none' })?.chars ?? [linea]);
 
+  // El pórtico de salida: durante la cuenta atrás el semáforo va grande en el
+  // centro de la pantalla, sobre la nave a media luz. Al apagarse vuelve a su
+  // sitio mientras el titular arranca. Se mueve su caja (`.hero__portico`) y no
+  // él: el `transform` del semáforo ya es de la salida, que lo aparta al bajar.
+  const portico = $('.hero__portico');
+  const fotoHero = $('.hero__foto img');
+  let enPortico = false;
+  escenas.cuentaAtras = () => {
+    const caja = portico?.getBoundingClientRect();
+    if (!caja?.width) return;
+    enPortico = true;
+    const escala = Math.min(3.4, (window.innerWidth * 0.7) / caja.width);
+    gsap.set(portico, {
+      x: window.innerWidth / 2 - (caja.left + caja.width / 2),
+      y: window.innerHeight * 0.46 - (caja.top + caja.height / 2),
+      scale: escala,
+    });
+    gsap.from(portico, { scale: escala * 0.8, duration: 0.5, ease: 'expo.out' });
+    if (fotoHero) gsap.set(fotoHero, { filter: 'brightness(0.42)' });
+  };
+
   escenas.apertura = () => {
     // Las luces se apagaron: es la salida y empieza a contar la vuelta.
     escenas.vuelta?.darSalida();
@@ -172,6 +193,14 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     // Todo ocurre en la misma tarea, así que no llega a pintarse nada a medias.
     document.documentElement.classList.remove('portada-intro');
     const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+    if (enPortico) {
+      // Luces fuera: el pórtico vuelve a su sitio, la nave se enciende y las
+      // estelas salen disparadas con el titular.
+      enPortico = false;
+      tl.to(portico, { x: 0, y: 0, scale: 1, duration: 0.95, ease: 'expo.inOut', clearProps: 'transform' }, 0);
+      if (fotoHero) tl.to(fotoHero, { filter: 'brightness(1)', duration: 1.1, ease: 'power2.out', clearProps: 'filter' }, 0.05);
+      estelas?.arrancar();
+    }
     tl.set(lineas, { yPercent: 0 })
       .from(letrasPorLinea.flat(), { yPercent: 118, rotate: 6, duration: 1.25, stagger: 0.035 }, 0)
       .from('.hero__foto img', { scale: 1.16, duration: 2.6, ease: 'power3.out' }, 0)
