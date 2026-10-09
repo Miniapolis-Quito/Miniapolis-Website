@@ -2026,10 +2026,9 @@ html.lenis { scroll-behavior: auto; }
 .ficha--guiada .ficha__fila.activa,
 .ficha--guiada .ficha__fila.vista { opacity: 1; }
 .ficha--guiada .ficha__fila.activa::before { transform: scaleX(1); }
-/* Cada fila traza su línea por arriba: la que separa dos filas es de la de
-   abajo. La última no tiene quien la cierre por debajo, así que trae la suya
-   y la enciende igual que las demás. */
-.ficha--guiada .ficha__fila:last-child::after {
+/* Cada fila activa enciende su recuadro entero: la línea de arriba y la de
+   abajo, igual en todas. */
+.ficha--guiada .ficha__fila::after {
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -2041,7 +2040,7 @@ html.lenis { scroll-behavior: auto; }
   transform-origin: left center;
   transition: transform 520ms var(--pub-curva) 90ms;
 }
-.ficha--guiada .ficha__fila:last-child.activa::after { transform: scaleX(1); }
+.ficha--guiada .ficha__fila.activa::after { transform: scaleX(1); }
 .ficha--guiada .ficha__fila.activa strong { color: var(--acento); }
 .ficha--guiada .ficha__fila strong { transition: color 320ms ease-out; }
 
