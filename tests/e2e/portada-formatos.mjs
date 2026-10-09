@@ -124,6 +124,7 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       'main .seccion__cabeza h2', 'main .seccion__lead', '.mosaico__foto', '.disciplina', '.plano', '.ficha__fila',
       '.horario', '.tiempo', '.evento', '.pronto__texto h2', '.pronto__foto', '.galeria__foto', '.productos > li',
       '.ventaja', '.entrada__acceso-panel', '.sitio-pie__columna',
+      '.manifiesto__texto .palabra-split', '.telemetria__cabeza', '.telemetria__crono', '.telemetria__dato', '.telemetria__grafica',
     ].join(', ');
     window.opacidadReal = (e) => {
       let o = 1;
@@ -212,12 +213,13 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       pie: document.querySelector('.sitio-pie__base').getBoundingClientRect().bottom <= innerHeight + 1,
       pestanas: [...document.querySelectorAll('.entrada__acceso-panel .pestana')].map((e) => e.getBoundingClientRect().height),
       progreso: Number(getComputedStyle(document.querySelector('.sitio-progreso span')).getPropertyValue('--progreso')),
-      // La vuelta: nueve sectores llenos, la bandera y el tiempo en el pie.
+      // La vuelta: un sector lleno por sección numerada, la bandera y el tiempo en el pie.
       vuelta: (() => {
         const v = document.querySelector('.vuelta');
         if (!v) return null;
         const tramos = [...v.querySelectorAll('.vuelta__sectores b')];
         return {
+          secciones: document.querySelectorAll('main section .seccion__indice > span').length,
           tramos: tramos.length,
           llenos: tramos.filter((b) => Number(b.style.getPropertyValue('--llenado')) >= 0.999).length,
           meta: v.classList.contains('vuelta--meta'),
@@ -245,7 +247,7 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
   } else if (!fin.vuelta) {
     fallos.push('con movimiento la vuelta debe contarse');
   } else {
-    if (fin.vuelta.tramos !== 9) fallos.push(`la vuelta debe tener nueve sectores (${fin.vuelta.tramos})`);
+    if (fin.vuelta.tramos !== fin.vuelta.secciones) fallos.push(`la vuelta debe tener un sector por sección numerada (${fin.vuelta.tramos} de ${fin.vuelta.secciones})`);
     if (!fin.vuelta.meta || fin.vuelta.llenos !== fin.vuelta.tramos) fallos.push(`al final la vuelta debe estar completa (${fin.vuelta.llenos}/${fin.vuelta.tramos}, meta: ${fin.vuelta.meta})`);
     if (!/^\d+:\d{2}\.\d$/.test(fin.vuelta.tiempo)) fallos.push(`al cruzar la meta el pie debe dar el tiempo de la vuelta («${fin.vuelta.tiempo}»)`);
   }

@@ -176,6 +176,178 @@ export function tiempoDeVuelta(ms) {
   return `${minutos}:${String(segundos).padStart(2, '0')}.${decimas % 10}`;
 }
 
+// ---------------------------------------------------------------------------
+// La vuelta récord, reconstruida a partir del trazado
+// ---------------------------------------------------------------------------
+
+/** Gravedad, para pasar la aceleración lateral a «g». */
+const G = 9.81;
+
+/**
+ * Curvatura (1/radio) en cada punto de un trazado cerrado, por la
+ * circunferencia que pasa por el punto y sus vecinos a `salto` muestras. Un
+ * salto de varias muestras suaviza el ruido de un trazado muestreado.
+ */
+export function curvaturas(puntos, salto = 3) {
+  const n = puntos.length;
+  if (n < 3) return puntos.map(() => 0);
+  return puntos.map((b, i) => {
+    const a = puntos[(i - salto + n) % n];
+    const c = puntos[(i + salto) % n];
+    const ab = Math.hypot(b.x - a.x, b.y - a.y);
+    const bc = Math.hypot(c.x - b.x, c.y - b.y);
+    const ca = Math.hypot(a.x - c.x, a.y - c.y);
+    const doble = Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+    const producto = ab * bc * ca;
+    return producto > 0 ? (2 * doble) / producto : 0;
+  });
+}
+
+/**
+ * Perfil de velocidad de una vuelta cerrada, como lo calcula un ingeniero de
+ * pista: en cada punto, lo más rápido que permite el agarre en la curva
+ * (√(a_lat · R)), sin pasar de la punta; después, la aceleración limita lo
+ * que se gana a la salida de cada curva y la frenada lo que hay que perder
+ * antes de la siguiente. La vuelta es cerrada: se repasa dos veces para que
+ * la salida de meta herede la velocidad con que se cruza.
+ */
+export function perfilDeVelocidad(curvatura, paso, { punta = 20, agarre = 12, aceleracion = 8, frenada = 14 } = {}) {
+  const n = curvatura.length;
+  const v = curvatura.map((k) => Math.min(punta, k > 0 ? Math.sqrt(agarre / k) : punta));
+  for (let vuelta = 0; vuelta < 2; vuelta += 1) {
+    for (let i = 1; i <= n; i += 1) {
+      const actual = i % n;
+      v[actual] = Math.min(v[actual], Math.sqrt(v[i - 1] ** 2 + 2 * aceleracion * paso));
+    }
+    for (let i = n - 2; i >= -1; i -= 1) {
+      const actual = (i + n) % n;
+      const siguiente = (i + 1) % n;
+      v[actual] = Math.min(v[actual], Math.sqrt(v[siguiente] ** 2 + 2 * frenada * paso));
+    }
+  }
+  return v;
+}
+
+/**
+ * La telemetría completa de una vuelta: para cada muestra del trazado, la
+ * distancia (0..1), el tiempo (s), la velocidad (km/h), el acelerador y el
+ * freno (0..1) y la aceleración lateral (g). Se escala para que la vuelta
+ * mida `longitud` metros y dure exactamente `tiempo` segundos: es la
+ * recreación de una vuelta concreta, no una simulación libre.
+ */
+export function telemetriaDeVuelta(puntos, { longitud = 172, tiempo = 12.46, ...limites } = {}) {
+  const n = puntos.length;
+  if (n < 3 || !(longitud > 0) || !(tiempo > 0)) return [];
+  let perimetro = 0;
+  for (let i = 0; i < n; i += 1) {
+    const a = puntos[i];
+    const b = puntos[(i + 1) % n];
+    perimetro += Math.hypot(b.x - a.x, b.y - a.y);
+  }
+  if (!(perimetro > 0)) return [];
+  const escala = longitud / perimetro;
+  const metros = puntos.map((p) => ({ x: p.x * escala, y: p.y * escala }));
+  const paso = longitud / n;
+  const curvatura = curvaturas(metros);
+  const v = perfilDeVelocidad(curvatura, paso, limites);
+  // Tiempo de cada tramo con la velocidad media entre sus extremos.
+  const tramos = v.map((vi, i) => paso / Math.max(0.1, (vi + v[(i + 1) % n]) / 2));
+  const bruto = tramos.reduce((s, t) => s + t, 0);
+  const factor = bruto / tiempo;
+  const { aceleracion = 8, frenada = 14 } = limites;
+  let t = 0;
+  return v.map((vi, i) => {
+    const velocidad = vi * factor;
+    const siguiente = v[(i + 1) % n] * factor;
+    const a = (siguiente ** 2 - velocidad ** 2) / (2 * paso);
+    const aceleraMax = aceleracion * factor ** 2;
+    const frenaMax = frenada * factor ** 2;
+    const cruzando = Math.abs(a) < aceleraMax * 0.04;
+    const muestra = {
+      d: i / n,
+      t,
+      v: velocidad * 3.6,
+      acelerador: a > 0 && !cruzando ? limitar(0.55 + (0.45 * a) / aceleraMax) : cruzando ? (vi >= (limites.punta ?? 20) - 0.01 ? 1 : 0.42) : 0,
+      freno: a < 0 && !cruzando ? limitar(-a / frenaMax) : 0,
+      gLat: (velocidad ** 2 * curvatura[i]) / G,
+    };
+    t += tramos[i] / factor;
+    return muestra;
+  });
+}
+
+/**
+ * La telemetría en un instante `t` de la vuelta (s), interpolada entre las
+ * dos muestras que lo rodean. Pasado el final, la línea de meta.
+ */
+export function muestraEnTiempo(telemetria, t, tiempo = 12.46) {
+  if (!telemetria.length) return null;
+  const objetivo = limitar(t, 0, tiempo);
+  let bajo = 0;
+  let alto = telemetria.length - 1;
+  while (bajo < alto) {
+    const medio = Math.ceil((bajo + alto) / 2);
+    if (telemetria[medio].t <= objetivo) bajo = medio;
+    else alto = medio - 1;
+  }
+  const a = telemetria[bajo];
+  const b = telemetria[bajo + 1] ?? { ...telemetria[0], d: 1, t: tiempo };
+  const f = b.t > a.t ? limitar((objetivo - a.t) / (b.t - a.t)) : 0;
+  const mezcla = (clave) => a[clave] + (b[clave] - a[clave]) * f;
+  return { d: mezcla('d'), t: objetivo, v: mezcla('v'), acelerador: mezcla('acelerador'), freno: mezcla('freno'), gLat: mezcla('gLat') };
+}
+
+/**
+ * Los parciales de la vuelta: el tiempo de cada uno de los `sectores`
+ * tramos iguales del recorrido. Suman exactamente el tiempo de la vuelta.
+ */
+export function parcialesDeVuelta(telemetria, sectores = 3, tiempo = 12.46) {
+  if (!telemetria.length || sectores < 1) return [];
+  const cortes = Array.from({ length: sectores - 1 }, (_, i) => {
+    const limite = (i + 1) / sectores;
+    const j = telemetria.findIndex((m) => m.d >= limite);
+    if (j <= 0) return tiempo;
+    const a = telemetria[j - 1];
+    const b = telemetria[j];
+    return a.t + ((b.t - a.t) * (limite - a.d)) / (b.d - a.d || 1);
+  });
+  const marcas = [0, ...cortes, tiempo];
+  return marcas.slice(1).map((m, i) => m - marcas[i]);
+}
+
+/**
+ * La próxima vez que la pista está abierta, a partir de las jornadas de la
+ * tabla de horarios (`[{ dia, rango }]`). Si está abierta ahora, cuándo
+ * cierra; si no, qué día y a qué hora abre. Sin jornadas válidas, null.
+ */
+export function proximaJornada(jornadas, ahora = new Date()) {
+  const validas = jornadas.filter((j) => j.dia >= 0 && j.rango);
+  if (!validas.length) return null;
+  const hora = horaEcuador(ahora);
+  const abierta = validas.find((j) => j.dia === hora.dia && hora.minutos >= j.rango[0] && hora.minutos < j.rango[1]);
+  if (abierta) return { abierta: true, dia: abierta.dia, dias: 0, minutos: abierta.rango[1], dentroDe: 0 };
+  let mejor = null;
+  for (const j of validas) {
+    let dias = (j.dia - hora.dia + 7) % 7;
+    if (dias === 0 && hora.minutos >= j.rango[0]) dias = 7;
+    const espera = dias * 1440 + j.rango[0] - hora.minutos;
+    if (!mejor || espera < mejor.dentroDe) mejor = { abierta: false, dia: j.dia, dias, minutos: j.rango[0], dentroDe: espera };
+  }
+  return mejor;
+}
+
+const NOMBRES_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const reloj = (minutos) => `${String(Math.floor(minutos / 60)).padStart(2, '0')}:${String(minutos % 60).padStart(2, '0')}`;
+
+/** Lo que dice el rótulo de la apertura sobre la próxima jornada. */
+export function textoProximaJornada(proxima) {
+  if (!proxima) return '';
+  if (proxima.abierta) return `Pista abierta hasta las ${reloj(proxima.minutos)}`;
+  if (proxima.dias === 0) return `Abre hoy a las ${reloj(proxima.minutos)}`;
+  if (proxima.dias === 1) return `Abre mañana a las ${reloj(proxima.minutos)}`;
+  return `Abre el ${NOMBRES_DIA[proxima.dia]} a las ${reloj(proxima.minutos)}`;
+}
+
 /**
  * Cuánto empuja el desplazamiento a la marquesina: 1 es su paso de crucero y
  * crece con la velocidad (px/s) hasta `tope` veces. Siempre positivo; el

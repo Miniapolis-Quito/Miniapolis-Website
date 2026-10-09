@@ -240,11 +240,11 @@ test('fluidez: el avance de lectura se pinta una vez por fotograma y el desplaza
 test('las escenas fijas solo existen en pantallas anchas y se deshacen al cambiar de formato', () => {
   assert.match(ESCENAS, /const mm = gsap\.matchMedia\(\);/);
   const fijas = (ESCENAS.match(/pin: true/g) ?? []).length;
-  assert.equal(fijas, 4, 'apertura, mosaico de la pista, vuelta por sectores y galería');
+  assert.equal(fijas, 6, 'apertura, mosaico de la pista, manifiesto, vuelta por sectores, vuelta récord y galería');
   // Con condiciones con nombre, matchMedia solo llama si alguna se cumple:
   // sin `todas: 'all'` la versión para pantallas estrechas no correría nunca.
   const conNombre = [...ESCENAS.matchAll(/mm\.add\(\{ ([^}]*) \}/g)].map((m) => m[1]);
-  assert.equal(conNombre.length, 5);
+  assert.equal(conNombre.length, 7);
   for (const condiciones of conNombre) assert.match(condiciones, /, todas: 'all'$/, `sin versión estrecha: ${condiciones}`);
   assert.match(ESCENAS, /mm\.add\(\{ escena: '\(min-width: 1100px\)[^']*', todas: 'all' \}[\s\S]*?if \(!contexto\.conditions\.escena\) \{\s*fotosMosaico\.forEach\(revelarFoto\);/,
     'el mosaico solo se fija en pantallas anchas; en las demás, cada foto se revela sola');

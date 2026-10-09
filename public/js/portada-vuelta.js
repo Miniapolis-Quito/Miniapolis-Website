@@ -3,7 +3,7 @@
  *
  * El hilo que cose la página: leerla es dar una vuelta al circuito. El
  * semáforo da la salida, cada sección numerada es un sector (01 Recorrido …
- * 09 Acceso) y la última recta termina en la bandera a cuadros de «Tu pase».
+ * 10 Acceso) y la última recta termina en la bandera a cuadros de «Tu pase».
  *
  * Un indicador fijo cuenta la vuelta: el número del sector rueda como un
  * marcador, cada sector se llena mientras se recorre y el nombre del que está
@@ -11,6 +11,11 @@
  * margen izquierdo; en las estrechas, una línea partida en sectores arriba
  * del todo. Al cruzar la meta el número se convierte en la bandera y el pie
  * da el tiempo de la vuelta, contado desde que se apagó el semáforo.
+ *
+ * En la regla vertical corre además el cronómetro de la vuelta, como el
+ * rótulo de tiempo de una retransmisión: al cruzar cada sector se detiene un
+ * instante en verde con el parcial de ese sector y sigue corriendo; en la
+ * meta se queda fijo en el tiempo final.
  *
  * Es decorativo (`aria-hidden`): la navegación de la cabecera ya dice dónde
  * se está. Solo existe con movimiento permitido; sin él no hay vuelta que
@@ -55,6 +60,7 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   const pila = crear('span', 'vuelta__pila', marcador);
   for (const { numero } of sectores) crear('span', '', pila).textContent = numero;
   crear('i', 'vuelta__bandera', crear('span', '', pila));
+  const crono = crear('span', 'vuelta__crono', vuelta);
   const tramos = crear('span', 'vuelta__sectores', vuelta);
   const rellenos = sectores.map(() => crear('b', '', crear('i', '', tramos)));
   const nombre = crear('span', 'vuelta__nombre', vuelta);
@@ -80,6 +86,26 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   // apertura no llegara a darla, cuenta desde que se montó la vuelta.
   let salida = performance.now();
   let lectura = null;
+  // El cronómetro: cuándo empezó el sector en curso y hasta cuándo se ve su parcial.
+  let inicioSector = salida;
+  let parcialHasta = 0;
+  let tiempoFinal = '';
+  let ultimoCrono = '';
+  const escribirCrono = (valor) => {
+    if (valor === ultimoCrono) return;
+    ultimoCrono = valor;
+    crono.textContent = valor;
+  };
+  const latir = () => {
+    if (enCurso < 0) return;
+    const ahora = performance.now();
+    if (tiempoFinal) escribirCrono(tiempoFinal);
+    else if (ahora >= parcialHasta) {
+      crono.classList.remove('vuelta__crono--parcial');
+      escribirCrono(tiempoDeVuelta(ahora - salida));
+    }
+  };
+  gsap.ticker.add(latir);
 
   const rodar = (posicion) => gsap.to(pila, {
     yPercent: (-100 * posicion) / (sectores.length + 1),
@@ -113,6 +139,7 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
     const base = $('.sitio-pie__base');
     const tiempo = tiempoDeVuelta(performance.now() - salida);
     if (lectura || !base || !tiempo) return;
+    tiempoFinal = tiempo;
     lectura = crear('p', 'sitio-vuelta');
     lectura.setAttribute('aria-hidden', 'true');
     crear('span', '', lectura).textContent = 'Tu vuelta';
@@ -131,10 +158,25 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
       }, 0);
   };
 
+  // Al pasar a un sector nuevo, el parcial del que se deja se queda un
+  // instante en el cronómetro, en verde.
+  const marcarParcial = () => {
+    const ahora = performance.now();
+    const parcial = tiempoDeVuelta(ahora - inicioSector);
+    inicioSector = ahora;
+    if (!parcial || tiempoFinal) return;
+    parcialHasta = ahora + 1600;
+    crono.classList.add('vuelta__crono--parcial');
+    escribirCrono(parcial);
+    gsap.fromTo(crono, { opacity: 0.2, y: 6 }, { opacity: 1, y: 0, duration: 0.5, ease: 'expo.out', overwrite: true });
+  };
+
   const actualizar = () => {
     const sector = sectorEnCurso(progresos);
     const llegada = vueltaCompleta(progresos);
     if (sector === enCurso && llegada === meta) return;
+    if (sector > enCurso && enCurso >= 0) marcarParcial();
+    else if (enCurso < 0) inicioSector = performance.now();
     enCurso = sector;
     meta = llegada;
     if (meta) cronometrar();
@@ -166,7 +208,10 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
   };
   // La posición manda, no el camino: un salto (un ancla, la tecla Fin) deja
   // cada sector recorrido o pendiente entero sin pasar por los de en medio.
-  const pintar = (posicion) => {
+  const pintar = (desplazado) => {
+    // Las alturas fraccionarias se redondean: el final real de la página
+    // puede quedar un píxel antes del medido, y la meta no se cruzaría nunca.
+    const posicion = desplazado >= fin - 2 ? fin : desplazado;
     progresosDeSectores(posicion, inicios, fin).forEach((valor, i) => {
       if (valor === progresos[i]) return;
       progresos[i] = valor;
@@ -181,8 +226,12 @@ export function montarVuelta({ gsap, ScrollTrigger }) {
 
   return {
     /** El semáforo se apagó: empieza a contar la vuelta. */
-    darSalida() { salida = performance.now(); },
+    darSalida() {
+      salida = performance.now();
+      inicioSector = salida;
+    },
     desmontar() {
+      gsap.ticker.remove(latir);
       ScrollTrigger.removeEventListener('refresh', remedir);
       seguimiento.kill();
       vuelta.remove();
