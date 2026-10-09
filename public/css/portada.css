@@ -195,9 +195,11 @@
 @media (max-width: 760px) {
   .hero { min-height: max(620px, 100svh); }
   .hero__foto img { object-position: 62% 50%; }
+  /* En vertical el texto ocupa casi toda la altura y la pared del hangar es
+     clara: el velo no se abre del todo en ningún tramo donde haya texto. */
   .hero__foto::after {
     background:
-      linear-gradient(180deg, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .2) 24%, rgba(0, 0, 0, .62) 52%, rgba(0, 0, 0, .9) 76%, #000 100%);
+      linear-gradient(180deg, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .32) 16%, rgba(0, 0, 0, .66) 34%, rgba(0, 0, 0, .8) 56%, rgba(0, 0, 0, .9) 76%, #000 100%);
   }
   .hero__contenido { align-self: end; }
   .hero__titulo { font-size: clamp(3.3rem, 17.4vw, 5.6rem); }
@@ -1412,7 +1414,10 @@
 .hero__estado--abierta { color: var(--acento); }
 .hero__estado--abierta::before { background: var(--acento); animation: latido 1.8s ease-in-out infinite; }
 
-@media (max-width: 400px) {
+/* Cuando el rótulo no cabe junto al semáforo, va justo debajo y no a una
+   distancia de párrafo: los dos son la misma señal de salida. */
+@media (max-width: 560px) {
+  .hero__semaforo { margin-bottom: 10px; }
   .hero__estado { margin-left: 0; }
 }
 
