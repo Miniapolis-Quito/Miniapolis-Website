@@ -241,7 +241,12 @@ test('las escenas fijas solo existen en pantallas anchas y se deshacen al cambia
   assert.match(ESCENAS, /const mm = gsap\.matchMedia\(\);/);
   const fijas = (ESCENAS.match(/pin: true/g) ?? []).length;
   assert.equal(fijas, 4, 'apertura, mosaico de la pista, vuelta por sectores y galería');
-  assert.match(ESCENAS, /mm\.add\(\{ escena: '\(min-width: 1100px\)[^']*' \}[\s\S]*?if \(!contexto\.conditions\.escena\) \{\s*fotosMosaico\.forEach\(revelarFoto\);/,
+  // Con condiciones con nombre, matchMedia solo llama si alguna se cumple:
+  // sin `todas: 'all'` la versión para pantallas estrechas no correría nunca.
+  const conNombre = [...ESCENAS.matchAll(/mm\.add\(\{ ([^}]*) \}/g)].map((m) => m[1]);
+  assert.equal(conNombre.length, 5);
+  for (const condiciones of conNombre) assert.match(condiciones, /, todas: 'all'$/, `sin versión estrecha: ${condiciones}`);
+  assert.match(ESCENAS, /mm\.add\(\{ escena: '\(min-width: 1100px\)[^']*', todas: 'all' \}[\s\S]*?if \(!contexto\.conditions\.escena\) \{\s*fotosMosaico\.forEach\(revelarFoto\);/,
     'el mosaico solo se fija en pantallas anchas; en las demás, cada foto se revela sola');
   assert.match(ESCENAS, /scrollTrigger: ancho\s*\?\s*\{ trigger: hero, start: 'top top', end: 'bottom top', pin: true, pinSpacing: false/,
     'la apertura solo se fija en pantallas anchas, y sin reservar espacio: la pista sube por encima como un telón');

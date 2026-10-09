@@ -154,6 +154,15 @@ cajas responden en ese idioma.
   la esquina de salida y en el sentido de la marcha; al cerrarse, el pase se
   abre.
 
+De paso apareció un fallo antiguo: `gsap.matchMedia()` con condiciones con
+nombre solo llama a la función si alguna se cumple, así que la versión para
+pantallas estrechas de cada escena (la apertura que se aleja, el mosaico, el
+complejo, la ficha con su auto y la galería) nunca había corrido en teléfonos
+y tabletas: el contenido se veía, pero quieto. Cada una lleva ahora además
+`todas: 'all'`. En la galería estrecha las fotos se descubren con un recorte y
+no se desplazan de lado: en un carrusel con anclaje, mover las fotos mueve sus
+puntos de anclaje y el carrusel arrancaba ya empezado.
+
 Comprobado bajando, subiendo y volviendo a bajar: ninguna caja se queda a
 medias. Sin movimiento la mira no existe y todo se ve completo. El recorrido
 completo sigue en 16,7 ms de mediana por fotograma.

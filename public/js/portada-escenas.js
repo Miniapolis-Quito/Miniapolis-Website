@@ -101,6 +101,9 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   // Desplazamiento suave (solo con ratón o trackpad)
   // -------------------------------------------------------------------------
 
+  // Cada escena con dos versiones (pantalla ancha y estrecha) lleva además la
+  // condición `todas: 'all'`: matchMedia solo llama a la función si alguna de
+  // sus condiciones se cumple, y sin ella la versión estrecha nunca correría.
   const mm = gsap.matchMedia();
   mm.add('(hover: hover) and (pointer: fine)', () => {
     if (typeof Lenis !== 'function') return undefined;
@@ -187,7 +190,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     return tl;
   };
 
-  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 560px)' }, (contexto) => {
+  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 560px)', todas: 'all' }, (contexto) => {
     if (!hero) return;
     const { ancho } = contexto.conditions;
     // En pantalla ancha la apertura se queda quieta y la primera sección sube
@@ -312,7 +315,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       scrollTrigger: { trigger: foto, start: 'top bottom', end: 'bottom top', scrub: true },
     });
   }
-  mm.add({ escena: '(min-width: 1100px) and (min-aspect-ratio: 1/1) and (min-height: 640px)' }, (contexto) => {
+  mm.add({ escena: '(min-width: 1100px) and (min-aspect-ratio: 1/1) and (min-height: 640px)', todas: 'all' }, (contexto) => {
     if (!mosaico || fotosMosaico.length < 2) return undefined;
     if (!contexto.conditions.escena) {
       fotosMosaico.forEach(revelarFoto);
@@ -420,7 +423,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
 
   const pistaDisciplinas = $('.disciplinas__pista');
   const disciplinas = $$('.disciplina');
-  mm.add({ grande: '(min-width: 1100px) and (min-height: 640px)' }, (contexto) => {
+  mm.add({ grande: '(min-width: 1100px) and (min-height: 640px)', todas: 'all' }, (contexto) => {
     if (!pistaDisciplinas || !disciplinas.length) return undefined;
     if (contexto.conditions.grande) {
       pistaDisciplinas.classList.add('disciplinas--vuelta');
@@ -488,7 +491,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     fijar(plano, { duracion: 1.2, scrollTrigger: alEntrar(plano, 'top 85%') });
     gsap.from('.plano__cota', { opacity: 0, duration: 1, stagger: 0.2, delay: 0.3, scrollTrigger: alEntrar(plano, 'top 85%') });
   }
-  mm.add({ guiada: '(min-width: 961px)' }, (contexto) => {
+  mm.add({ guiada: '(min-width: 961px)', todas: 'all' }, (contexto) => {
     if (!ficha || !trazado || !auto) return undefined;
     const curvas = $$('.plano__curvas text');
     if (contexto.conditions.guiada) {
@@ -680,10 +683,13 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   const galeria = $('#galeria');
   const pista = $('#galeria-pista');
   const fotos = $$('.galeria__foto');
-  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 600px)' }, (contexto) => {
+  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 600px)', todas: 'all' }, (contexto) => {
     if (!galeria || !pista || !fotos.length) return undefined;
     if (!contexto.conditions.ancho) {
-      gsap.from(fotos, { ...SUBIDA, y: 0, x: 64, stagger: ESCALON, scrollTrigger: alEntrar(pista, 'top 85%') });
+      // Se descubren como las del mosaico. Nada de desplazarlas de lado: en un
+      // carrusel con anclaje, mover las fotos mueve sus puntos de anclaje y el
+      // carrusel arrancaría ya empezado. El recorte no toca la maquetación.
+      fotos.forEach(revelarFoto);
       return undefined;
     }
     galeria.classList.add('galeria-fija');
