@@ -15,9 +15,13 @@
  *    se lee en el orden en que aparece.
  *  - Fotos: se descubren de abajo arriba mientras la imagen se asienta, y al
  *    pasar se desplazan un poco más despacio que la página.
- *  - Bloques (filas, tarjetas, paneles): suben y se encienden, en escalera.
- *  - Datos: lo que se cuenta se cuenta como en la pista —el cronómetro corre
- *    hasta el récord, el tablero de salidas rueda hasta la hora—.
+ *  - Cajas (cifras, filas, tarjetas, paneles): la telemetría las fija
+ *    (portada-mira.js). Un haz de lectura las imprime en el sentido de la
+ *    marcha y una mira, la misma del cursor, se cierra sobre ellas. Donde se
+ *    lee en orden, una sola mira sigue la lectura de caja en caja.
+ *  - Datos: lo que se cuenta se cuenta como en la pista —foto finish en los
+ *    récords (un reloj común, cada piloto cruza en su tiempo), las cifras que
+ *    ruedan como en un tablero de salidas, fechas que se confirman—.
  *  - Escenas fijas (solo en pantallas anchas): la salida; la curva que entra
  *    a pantalla completa y vuelve a su casilla del mosaico; el complejo, que
  *    enciende su entradilla palabra a palabra y da la vuelta por sus cinco
@@ -32,8 +36,12 @@
  * Solo se llama con movimiento permitido (portada.js lo decide). Las cuentas
  * puras viven en portada-calculos.js.
  */
-import { cifrasRodando, empujePorVelocidad, enfoqueGaleria, formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, tiempoEnTexto } from './portada-calculos.js';
+import {
+  cifrasRodando, empujePorVelocidad, enCarrera, enfoqueGaleria, formatoMiles, inclinacionPorVelocidad,
+  momentosDeLlegada, posicionesEnRecorrido, salidaDeCarrera, tiempoEnTexto,
+} from './portada-calculos.js';
 import { montarBandera } from './portada-bandera.js';
+import { cerrarEscuadras, fijarCaja, miraViajera, ponerMira } from './portada-mira.js';
 import { montarVuelta } from './portada-vuelta.js';
 
 const $ = (selector, base = document) => base.querySelector(selector);
@@ -63,12 +71,39 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   const cabecera = $('.sitio-barra');
   const altoCabecera = () => cabecera?.offsetHeight ?? 72;
   const partir = (el, vars) => (SplitText ? SplitText.create(el, { aria: 'auto', autoSplit: true, ...vars }) : null);
+  /** La telemetría fija una caja (portada-mira.js): el haz la imprime y la mira se cierra sobre ella. */
+  const fijar = (caja, opciones) => fijarCaja(gsap, caja, opciones);
+  /**
+   * Las cifras de un dato ruedan hasta su valor, como en el tablero de
+   * salidas, una sola vez. Mientras ruedan se anuncia el valor real.
+   */
+  const rodarCifras = (el, { duracion = 1.1 } = {}) => {
+    if (!el || el.dataset.rodado) return;
+    const final = el.textContent;
+    if (!/\d/.test(final)) return;
+    el.dataset.rodado = 'si';
+    const rueda = { p: 0 };
+    gsap.to(rueda, {
+      p: 1,
+      duration: duracion,
+      ease: 'power2.out',
+      onStart: () => el.setAttribute('aria-label', final),
+      onUpdate: () => { el.textContent = cifrasRodando(final, rueda.p); },
+      onComplete: () => {
+        el.textContent = final;
+        el.removeAttribute('aria-label');
+      },
+    });
+  };
   const escenas = { lenis: null, apertura: null, vuelta: null };
 
   // -------------------------------------------------------------------------
   // Desplazamiento suave (solo con ratón o trackpad)
   // -------------------------------------------------------------------------
 
+  // Cada escena con dos versiones (pantalla ancha y estrecha) lleva además la
+  // condición `todas: 'all'`: matchMedia solo llama a la función si alguna de
+  // sus condiciones se cumple, y sin ella la versión estrecha nunca correría.
   const mm = gsap.matchMedia();
   mm.add('(hover: hover) and (pointer: fine)', () => {
     if (typeof Lenis !== 'function') return undefined;
@@ -137,9 +172,9 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       .from('.hero__lead', { opacity: 0, y: 26, duration: 1 }, 0.4)
       // Los botones tienen sus propias transiciones de hover: se mueve su caja.
       .from('.hero__acciones', { opacity: 0, y: 26, duration: 1 }, 0.5)
-      .from('.hero__cifras .cifra', { opacity: 0, y: 34, stagger: ESCALON, duration: 1 }, 0.6)
       .from('.hero__guia', { opacity: 0, duration: 1.2 }, 1.1);
-    // Las cifras se cuentan desde cero mientras suben.
+    // Las cifras se fijan una a una (el haz las imprime) mientras se cuentan desde cero.
+    $$('.hero__cifras .cifra').forEach((cifra, i) => tl.add(fijar(cifra, { duracion: 0.8 }), 0.6 + i * ESCALON));
     for (const valor of $$('.hero__cifras .cifra__valor')) {
       const nodo = [...valor.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && /^\s*[\d.]+\s*$/.test(n.textContent));
       if (!nodo) continue;
@@ -155,7 +190,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     return tl;
   };
 
-  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 560px)' }, (contexto) => {
+  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 560px)', todas: 'all' }, (contexto) => {
     if (!hero) return;
     const { ancho } = contexto.conditions;
     // En pantalla ancha la apertura se queda quieta y la primera sección sube
@@ -280,7 +315,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       scrollTrigger: { trigger: foto, start: 'top bottom', end: 'bottom top', scrub: true },
     });
   }
-  mm.add({ escena: '(min-width: 1100px) and (min-aspect-ratio: 1/1) and (min-height: 640px)' }, (contexto) => {
+  mm.add({ escena: '(min-width: 1100px) and (min-aspect-ratio: 1/1) and (min-height: 640px)', todas: 'all' }, (contexto) => {
     if (!mosaico || fotosMosaico.length < 2) return undefined;
     if (!contexto.conditions.escena) {
       fotosMosaico.forEach(revelarFoto);
@@ -388,7 +423,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
 
   const pistaDisciplinas = $('.disciplinas__pista');
   const disciplinas = $$('.disciplina');
-  mm.add({ grande: '(min-width: 1100px) and (min-height: 640px)' }, (contexto) => {
+  mm.add({ grande: '(min-width: 1100px) and (min-height: 640px)', todas: 'all' }, (contexto) => {
     if (!pistaDisciplinas || !disciplinas.length) return undefined;
     if (contexto.conditions.grande) {
       pistaDisciplinas.classList.add('disciplinas--vuelta');
@@ -405,25 +440,37 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       if (palabras) lead.classList.add('seccion__lead--iluminada');
       const tl = gsap.timeline({
         defaults: { ease: 'none' },
-        scrollTrigger: { trigger: fijo, start: 'center center', end: palabras ? '+=200%' : '+=150%', pin: true, scrub: 0.6, anticipatePin: 1 },
+        scrollTrigger: { trigger: fijo, start: 'center center', end: palabras ? '+=200%' : '+=150%', pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true },
       });
       if (palabras) tl.fromTo(lead, { '--luz': 0 }, { '--luz': palabras + 1, duration: salida }, 0);
       tl.fromTo('.disciplinas__vuelta span', { scaleX: 0 }, { scaleX: 1, duration: disciplinas.length }, salida);
+      // La mira sigue la vuelta: se fija en el sector que se está corriendo y
+      // salta al siguiente cuando su tramo se completa.
+      const { mira, apuntar } = miraViajera(pistaDisciplinas);
+      const destino = (i) => ({
+        x: () => apuntar(disciplinas[i], 12).x,
+        y: () => apuntar(disciplinas[i], 12).y,
+        width: () => apuntar(disciplinas[i], 12).width,
+        height: () => apuntar(disciplinas[i], 12).height,
+      });
+      tl.set(mira, destino(0), salida)
+        .fromTo(mira, { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'expo.out' }, salida);
       disciplinas.forEach((disciplina, i) => {
         tl.fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1 }, salida + i)
           .fromTo(disciplina, { opacity: 0.22 }, { opacity: 1, duration: 0.3, ease: 'power1.out' }, salida + i)
           .fromTo($('.disciplina__num', disciplina), { color: '#8b9296' }, { color: '#93d241', duration: 0.2 }, salida + i)
           .from($$('h3, p', disciplina), { y: 24, duration: 0.5, stagger: 0.1, ease: 'power2.out' }, salida + i);
+        if (i > 0) tl.to(mira, { ...destino(i), duration: 0.3, ease: 'power3.inOut' }, salida + i - 0.15);
       });
       return () => {
         pistaDisciplinas.classList.remove('disciplinas--vuelta');
         lead?.classList.remove('seccion__lead--iluminada');
+        mira.remove();
       };
     }
     disciplinas.forEach((disciplina) => {
-      const tl = gsap.timeline({ scrollTrigger: alEntrar(disciplina, 'top 90%') });
-      tl.fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: 'expo.inOut' })
-        .from($$('.disciplina__num, h3, p', disciplina), { opacity: 0, y: 24, stagger: ESCALON, duration: 1 }, 0.1);
+      fijar(disciplina, { scrollTrigger: alEntrar(disciplina, 'top 90%') })
+        .fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: 'expo.inOut' }, 0.6);
     });
     return undefined;
   });
@@ -441,10 +488,10 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     // El auto espera en la parrilla (el trazado empieza en la línea de
     // salida) y no en el origen del dibujo mientras nadie lo pone a andar.
     if (MotionPathPlugin) gsap.set(auto, { motionPath: { path: trazado, align: trazado, alignOrigin: [0.5, 0.5], end: 0 } });
-    gsap.from(plano, { ...SUBIDA, y: 48, duration: 1.3, scrollTrigger: alEntrar(plano, 'top 85%') });
+    fijar(plano, { duracion: 1.2, scrollTrigger: alEntrar(plano, 'top 85%') });
     gsap.from('.plano__cota', { opacity: 0, duration: 1, stagger: 0.2, delay: 0.3, scrollTrigger: alEntrar(plano, 'top 85%') });
   }
-  mm.add({ guiada: '(min-width: 961px)' }, (contexto) => {
+  mm.add({ guiada: '(min-width: 961px)', todas: 'all' }, (contexto) => {
     if (!ficha || !trazado || !auto) return undefined;
     const curvas = $$('.plano__curvas text');
     if (contexto.conditions.guiada) {
@@ -462,11 +509,22 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       posicionesEnRecorrido(curvas.length).forEach((momento, i) => {
         tl.fromTo(curvas[i], { opacity: 0.15, scale: 0.4, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: 0.06, ease: 'back.out(3)' }, momento);
       });
+      // La mira sigue la lectura: se fija en la fila que se lee y, al
+      // llegar a una por primera vez, sus cifras ruedan hasta el dato.
+      const { mira, apuntar } = miraViajera(ficha);
       const triggers = filas.map((fila) => ScrollTrigger.create({
         trigger: fila,
         start: 'top 62%',
         end: 'bottom 62%',
         toggleClass: 'activa',
+        onToggle: (self) => {
+          if (self.isActive) {
+            gsap.to(mira, { ...apuntar(fila, 8), opacity: 1, duration: 0.5, ease: 'expo.out', overwrite: true });
+            rodarCifras($('strong', fila));
+          } else if (!filas.some((otra) => otra.classList.contains('activa'))) {
+            gsap.to(mira, { opacity: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
+          }
+        },
         onLeave: () => fila.classList.add('vista'),
         onEnterBack: () => fila.classList.remove('vista'),
       }));
@@ -474,6 +532,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         ficha.classList.remove('ficha--guiada');
         triggers.forEach((t) => t.kill());
         filas.forEach((fila) => fila.classList.remove('activa', 'vista'));
+        mira.remove();
       };
     }
     // En el teléfono el trazado se dibuja al llegar y el auto da vueltas mientras se ve.
@@ -482,7 +541,10 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       const vuelta = gsap.to(auto, { motionPath: { path: trazado, align: trazado, alignOrigin: [0.5, 0.5] }, duration: 7, ease: 'none', repeat: -1, paused: true });
       ScrollTrigger.create({ trigger: plano, start: 'top bottom', end: 'bottom top', onToggle: (self) => (self.isActive ? vuelta.play() : vuelta.pause()) });
     }
-    gsap.from(filas, { ...SUBIDA, y: 24, stagger: ESCALON, scrollTrigger: alEntrar('.ficha__lista', 'top 85%') });
+    filas.forEach((fila) => {
+      fijar(fila, { duracion: 0.8, scrollTrigger: alEntrar(fila, 'top 90%') })
+        .add(() => rodarCifras($('strong', fila)), 0.25);
+    });
     return undefined;
   });
 
@@ -492,60 +554,76 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
 
   const horarios = $$('.horario');
   if (horarios.length) {
-    gsap.from(horarios, { ...SUBIDA, stagger: 0.1, scrollTrigger: alEntrar('.horarios__lista', 'top 85%') });
-    // Tablero de salidas: solo ruedan las cifras; los dos puntos y el guion
-    // se quedan quietos, así el ancho de la hora no baila.
+    // Cada jornada se fija en escalera y, mientras el haz la imprime, su hora
+    // rueda como en un tablero de salidas: solo ruedan las cifras; los dos
+    // puntos y el guion se quedan quietos, así el ancho de la hora no baila.
     horarios.forEach((fila, i) => {
-      const horas = $('.horario__horas', fila);
-      const final = horas.textContent;
-      const rueda = { p: 0 };
-      gsap.to(rueda, {
-        p: 1,
-        duration: 1.3,
-        delay: 0.2 + i * 0.12,
-        ease: 'power2.out',
-        scrollTrigger: unaVez('.horarios__lista', 'top 85%'),
-        onStart: () => horas.setAttribute('aria-label', final),
-        onUpdate: () => { horas.textContent = cifrasRodando(final, rueda.p); },
-        onComplete: () => {
-          horas.textContent = final;
-          horas.removeAttribute('aria-label');
-        },
-      });
+      fijar(fila, { retraso: i * 0.12, scrollTrigger: alEntrar('.horarios__lista', 'top 85%') })
+        .add(() => rodarCifras($('.horario__horas', fila), { duracion: 1.3 }), 0.1);
     });
     gsap.from('.horarios__nota', { ...SUBIDA, y: 20, scrollTrigger: alEntrar('.horarios__nota', 'top 95%') });
   }
 
   // -------------------------------------------------------------------------
-  // 05 · Récords: el tablero se enciende y el cronómetro corre hasta el récord
+  // 05 · Récords: foto finish. Un solo reloj y cada piloto cruza en su tiempo
   // -------------------------------------------------------------------------
 
   const tablero = $('.tiempos');
   if (tablero) {
-    const tl = gsap.timeline({ scrollTrigger: alEntrar(tablero, 'top 85%') });
-    tl.from(tablero, { ...SUBIDA, y: 48, duration: 1.3 })
-      .from('.tiempos__cabeza > *', { opacity: 0, y: -8, stagger: 0.05, duration: 0.6 }, 0.2)
-      .from($$('.tiempo', tablero), { opacity: 0, y: 18, stagger: 0.12, duration: 1 }, 0.25);
-    $$('.tiempo__marca', tablero).forEach((celda, i) => {
-      const final = celda.textContent.trim();
-      const valor = Number.parseFloat(final);
-      if (!Number.isFinite(valor)) return;
-      const cuenta = { v: 0 };
-      gsap.to(cuenta, {
-        v: valor,
-        duration: 1.6,
-        delay: 0.45 + i * 0.18,
-        ease: 'power3.out',
-        scrollTrigger: unaVez(tablero, 'top 80%'),
-        onStart: () => celda.setAttribute('aria-label', final),
-        onUpdate: () => { celda.textContent = tiempoEnTexto(cuenta.v, 2, final.length); },
-        onComplete: () => {
-          celda.textContent = final;
-          celda.removeAttribute('aria-label');
-          if (i === 0) celda.closest('.tiempo')?.classList.add('tiempo--destello');
-        },
-      });
-    });
+    const corredores = $$('.tiempo', tablero).map((fila) => {
+      const celda = $('.tiempo__marca', fila);
+      const final = celda ? celda.textContent.trim() : '';
+      return { fila, celda, final, valor: Number.parseFloat(final), dif: $('.tiempo__dif', fila) };
+    }).filter((c) => c.celda && Number.isFinite(c.valor));
+    // La carrera se corre una vez: el tablero se fija y suena la salida.
+    const tl = gsap.timeline({ scrollTrigger: unaVez(tablero, 'top 80%') });
+    tl.add(fijar(tablero, { duracion: 1 }), 0)
+      .from('.tiempos__cabeza > *', { opacity: 0, y: -8, stagger: 0.05, duration: 0.6 }, 0.35);
+    if (corredores.length) {
+      // Un reloj común corre a cámara lenta y cada piloto avanza hacia la
+      // meta con su barra; cruza en su tiempo y su cifra se queda quieta. Las
+      // llegadas se separan lo que separan sus marcas (+0.40 son 0,8 s): se
+      // ve quién gana y por cuánto.
+      const finales = corredores.map((c) => c.valor);
+      const inicio = salidaDeCarrera(finales);
+      const llegadas = momentosDeLlegada(finales, inicio);
+      const mejor = Math.min(...finales);
+      const SALIDA = 0.75;
+      for (const c of corredores) {
+        c.fila.classList.add('tiempo--en-carrera');
+        c.barra = document.createElement('span');
+        c.barra.className = 'tiempo__carrera';
+        c.barra.setAttribute('aria-hidden', 'true');
+        c.fila.prepend(c.barra);
+        c.ancho = gsap.quickSetter(c.barra, 'width', '%');
+        c.mira = ponerMira(c.fila, { haz: false });
+      }
+      const reloj = { t: inicio };
+      const pintar = () => {
+        for (const c of corredores) {
+          const { tiempo, avance } = enCarrera(reloj.t, inicio, c.valor);
+          c.celda.textContent = tiempoEnTexto(tiempo, 2, c.final.length);
+          c.ancho(avance * 100);
+        }
+      };
+      const llegar = (c) => {
+        c.celda.textContent = c.final;
+        c.celda.removeAttribute('aria-label');
+        c.ancho(100);
+        if (c.dif) gsap.to(c.dif, { opacity: 1, x: 0, duration: 0.7, ease: 'expo.out' });
+        gsap.to(c.barra, { opacity: 0, duration: 1, delay: 0.3, ease: 'power2.out' });
+        cerrarEscuadras(gsap, c.mira);
+        if (c.valor === mejor) c.fila.classList.add('tiempo--destello');
+      };
+      // Mientras corren, se anuncia la marca real y no la del reloj.
+      tl.call(() => {
+        corredores.forEach((c) => c.celda.setAttribute('aria-label', c.final));
+        pintar();
+      }, null, 0)
+        .set(corredores.map((c) => c.dif).filter(Boolean), { opacity: 0, x: 10 }, 0)
+        .to(reloj, { t: Math.max(...finales), duration: Math.max(...llegadas), ease: 'none', onUpdate: pintar }, SALIDA);
+      corredores.forEach((c, i) => tl.call(() => llegar(c), null, SALIDA + llegadas[i]));
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -554,8 +632,13 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
 
   const eventos = $$('.evento');
   if (eventos.length) {
-    gsap.from(eventos, { ...SUBIDA, y: 56, stagger: 0.12, duration: 1.3, scrollTrigger: alEntrar('.agenda', 'top 88%') });
-    gsap.fromTo(eventos, { '--linea': 0 }, { '--linea': 1, stagger: 0.12, delay: 0.35, duration: 1, ease: 'expo.inOut', scrollTrigger: alEntrar('.agenda', 'top 88%') });
+    // Cada fecha se fija en su turno y su cifra, que llega en contorno, se
+    // rellena: la temporada se va confirmando fecha a fecha.
+    eventos.forEach((evento, i) => {
+      fijar(evento, { duracion: 1, retraso: i * 0.16, scrollTrigger: alEntrar('.agenda', 'top 88%') })
+        .fromTo($('.evento__fecha b', evento), { '--relleno': 0 }, { '--relleno': 1, duration: 0.9, ease: 'power2.out' }, 0.8);
+    });
+    gsap.fromTo(eventos, { '--linea': 0 }, { '--linea': 1, stagger: 0.16, delay: 0.5, duration: 1, ease: 'expo.inOut', scrollTrigger: alEntrar('.agenda', 'top 88%') });
     // Una vez en su sitio las tarjetas se quedan alineadas: una rejilla que
     // se descuadra al leerla no cuenta nada.
     gsap.from('.agenda__accion', { ...SUBIDA, y: 24, scrollTrigger: alEntrar('.agenda__accion', 'top 95%') });
@@ -600,10 +683,13 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   const galeria = $('#galeria');
   const pista = $('#galeria-pista');
   const fotos = $$('.galeria__foto');
-  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 600px)' }, (contexto) => {
+  mm.add({ ancho: '(min-width: 900px) and (min-aspect-ratio: 1/1) and (min-height: 600px)', todas: 'all' }, (contexto) => {
     if (!galeria || !pista || !fotos.length) return undefined;
     if (!contexto.conditions.ancho) {
-      gsap.from(fotos, { ...SUBIDA, y: 0, x: 64, stagger: ESCALON, scrollTrigger: alEntrar(pista, 'top 85%') });
+      // Se descubren como las del mosaico. Nada de desplazarlas de lado: en un
+      // carrusel con anclaje, mover las fotos mueve sus puntos de anclaje y el
+      // carrusel arrancaría ya empezado. El recorte no toca la maquetación.
+      fotos.forEach(revelarFoto);
       return undefined;
     }
     galeria.classList.add('galeria-fija');
@@ -683,15 +769,17 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   });
 
   // -------------------------------------------------------------------------
-  // 08 · Tienda: las tarjetas llegan en escalera
+  // 08 · Tienda: las tarjetas se fijan en escalera, como autos que salen a pista
   // -------------------------------------------------------------------------
 
-  const productos = $$('.productos > li');
-  if (productos.length) {
-    // Llegan en escalera y se quedan alineadas; el movimiento de la tarjeta es
-    // la respuesta al puntero (portada-tacto.js), no el desplazamiento.
-    gsap.from(productos, { ...SUBIDA, y: 64, stagger: ESCALON, duration: 1.3, scrollTrigger: alEntrar('.productos', 'top 90%') });
-  }
+  const productos = $$('.productos .producto');
+  // Se fijan en escalera y se quedan alineadas; mientras el haz las imprime,
+  // la foto se asienta. El movimiento de la tarjeta es la respuesta al
+  // puntero (portada-tacto.js), no el desplazamiento.
+  productos.forEach((tarjeta, i) => {
+    fijar(tarjeta, { duracion: 1, retraso: i * 0.12, scrollTrigger: alEntrar('.productos', 'top 88%') })
+      .fromTo($('.producto__foto img', tarjeta), { scale: 1.3 }, { scale: 1, duration: 1.8, ease: 'expo.out' }, 0);
+  });
 
   // -------------------------------------------------------------------------
   // 09 · Tu pase: la meta. La bandera a cuadros cruza la pantalla y el panel llega
@@ -707,8 +795,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       scrollTrigger: { trigger: acceso, start: 'top bottom', end: 'top 40%', scrub: 0.6 },
     });
     montarBandera({ gsap, ScrollTrigger });
-    const ventajas = $$('.ventaja');
-    gsap.from(ventajas, { ...SUBIDA, y: 24, stagger: 0.12, scrollTrigger: alEntrar('.ventajas', 'top 88%') });
+    $$('.ventaja').forEach((ventaja, i) => fijar(ventaja, { retraso: i * 0.12, scrollTrigger: alEntrar('.ventajas', 'top 88%') }));
     // Cada icono se dibuja con un solo trazo, como se marca una línea en la pista.
     const trazos = $$('.ventaja__icono path');
     trazos.forEach((trazo) => trazo.setAttribute('pathLength', '1'));
@@ -721,14 +808,27 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       delay: 0.2,
       scrollTrigger: alEntrar('.ventajas', 'top 88%'),
     });
-    gsap.from('.entrada__acceso-panel', { ...SUBIDA, y: 72, duration: 1.4, scrollTrigger: alEntrar('.entrada__acceso-panel', 'top 92%') });
+    // El pase: su borde se traza como una vuelta completa, desde la esquina
+    // de salida y en el sentido de la marcha; al cerrarse, el pase se abre.
+    const panel = $('.entrada__acceso-panel');
+    if (panel) {
+      // Un texto fijo: el analizador lo crea como SVG, con su espacio de nombres.
+      const contenido = $$(':scope > *', panel);
+      if (getComputedStyle(panel).position === 'static') panel.classList.add('con-mira');
+      panel.insertAdjacentHTML('beforeend', '<svg class="panel-trazo" aria-hidden="true" focusable="false"><rect x="0" y="0" width="100%" height="100%" rx="10" pathLength="1"/></svg>');
+      const borde = $('.panel-trazo rect', panel);
+      const tl = gsap.timeline({ scrollTrigger: alEntrar(panel, 'top 88%') });
+      tl.fromTo(borde, { strokeDasharray: 1, strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: 0, autoRound: false, duration: 1.5, ease: 'power2.inOut' }, 0)
+        .from(contenido, { opacity: 0, y: 22, stagger: 0.1, duration: 1, ease: 'expo.out' }, 0.75)
+        .to(borde, { opacity: 0, duration: 1, ease: 'power2.out' }, 1.7);
+    }
   }
 
   // -------------------------------------------------------------------------
   // Pie
   // -------------------------------------------------------------------------
 
-  gsap.from('.sitio-pie__marca, .sitio-pie__columna', { ...SUBIDA, y: 32, stagger: 0.1, scrollTrigger: alEntrar('.sitio-pie', 'top 92%') });
+  $$('.sitio-pie__marca, .sitio-pie__columna').forEach((caja, i) => fijar(caja, { duracion: 0.8, retraso: i * 0.12, scrollTrigger: alEntrar('.sitio-pie', 'top 92%') }));
 
   // -------------------------------------------------------------------------
   // La vuelta: al final, cuando las escenas fijas ya ocupan su sitio
