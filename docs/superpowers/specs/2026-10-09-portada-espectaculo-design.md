@@ -107,8 +107,11 @@ de 300 %):
    El mosaico mide más que la pantalla en la mayoría de los portátiles (en
    1440×900 la fila de abajo acaba 97 px por debajo; en 1366×768, 172 px):
    cuando el recorrido llega a esa fila, la cámara baja lo justo para que
-   cada foto se vea entera con su mira (24 px de aire por debajo) y vuelve a
-   subir al final. Si el mosaico cabe, no se mueve.
+   cada foto se vea entera con su mira (24 px de aire por debajo) y se queda
+   ahí: volver a subir al final no tenía sentido, la página sigue bajando
+   desde donde la cámara la dejó. Para que no quede un hueco bajo el mosaico,
+   lo que sigue sube lo mismo (`--recorte-mosaico`, medido antes de cada
+   recálculo de ScrollTrigger). Si el mosaico cabe, no se mueve.
 6. **La nave entera** se enciende de nuevo antes de soltarse.
 
 ## 02 · Complejo: un escenario para cada disciplina
