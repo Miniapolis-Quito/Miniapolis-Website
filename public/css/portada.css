@@ -283,6 +283,10 @@
   z-index: 2;
   will-change: transform;
 }
+/* Tras el recorrido la cámara se queda abajo, donde se vio entera la fila de
+   abajo: lo que sigue sube lo mismo (--recorte-mosaico lo mide
+   portada-escenas.js) para que no quede un hueco bajo el mosaico. */
+.portada-animada .seccion--telon > .marco { margin-bottom: calc(-1 * var(--recorte-mosaico, 0px)); }
 /* El recorrido por los detalles: el que se mira queda encendido y los demás,
    en penumbra (--penumbra la mueve GSAP; quieta vale 0 y no tapa nada). Sobre
    todo, también su pie de foto: solo se lee el que se está mirando. */
