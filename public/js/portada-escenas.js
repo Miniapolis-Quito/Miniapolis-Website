@@ -470,8 +470,14 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     // 3 · El recorrido por los detalles, en orden de lectura.
     const RECORRIDO = 2.05;
     const PASO = 0.62;
+    // El mosaico mide más que la pantalla: la fila de abajo queda cortada.
+    // Cuando le toca, la cámara baja lo justo para verla entera (con aire
+    // por debajo) y vuelve a subir al final; si el mosaico cabe, no se mueve.
+    const bajada = () => Math.max(0, mosaico.offsetHeight + 24 - window.innerHeight);
+    const filaDeAbajo = resto.findIndex((foto) => foto.offsetTop > principal.offsetTop + principal.offsetHeight / 2);
     resto.forEach((foto, k) => {
       const momento = RECORRIDO + k * PASO;
+      if (k === filaDeAbajo) tl.to(fotosMosaico, { y: () => -bajada(), duration: 0.32, ease: 'power2.inOut' }, momento - 0.2);
       fotosMosaico.forEach((otra) => {
         tl.to(otra, { '--penumbra': otra === foto ? 0 : 0.72, duration: 0.24, ease: 'power2.out' }, momento);
       });
@@ -482,6 +488,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     // 4 · La nave entera, encendida: todo vuelve a su luz antes de soltarse.
     const final = RECORRIDO + resto.length * PASO;
     tl.to(fotosMosaico, { '--penumbra': 0, duration: 0.3, ease: 'power2.out' }, final)
+      .to(fotosMosaico, { y: 0, duration: 0.32, ease: 'power2.inOut' }, final)
       .to(resto.map((foto) => $('img', foto)), { scale: 1.06, duration: 0.3, ease: 'power2.out' }, final)
       .to({}, { duration: 0.25 });
     return () => {
