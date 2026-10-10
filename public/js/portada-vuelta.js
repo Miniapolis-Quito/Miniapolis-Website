@@ -8,11 +8,9 @@
  * Un indicador fijo cuenta la vuelta: el número del sector rueda como un
  * marcador, cada sector se llena mientras se recorre y el nombre del que está
  * en curso se lee al lado. Es una regla vertical en el margen izquierdo de
- * las pantallas anchas; en las estrechas no hay margen, y la cuenta la lleva
- * la cinta de cronometraje de la cabecera (portada.js), que lee los mismos
- * sectores con `leerSectores`. Al cruzar la meta el número se convierte en la
- * bandera y el pie da el tiempo de la vuelta, contado desde que se apagó el
- * semáforo.
+ * las pantallas anchas; en las estrechas no hay margen y no se muestra. Al
+ * cruzar la meta el número se convierte en la bandera y el pie da el tiempo
+ * de la vuelta, contado desde que se apagó el semáforo.
  *
  * En la regla vertical corre además el cronómetro de la vuelta, como el
  * rótulo de tiempo de una retransmisión: al cruzar cada sector se detiene un
@@ -40,7 +38,7 @@ function crear(etiqueta, clase, padre) {
  * buscan en todo `main` y no solo entre sus hijas: una sección fija (la
  * galería) va dentro del envoltorio que le pone ScrollTrigger.
  */
-export function leerSectores() {
+function leerSectores() {
   return $$('main section').flatMap((seccion) => {
     const indice = $('.seccion__indice', seccion);
     const numero = indice && $(':scope > span', indice);
