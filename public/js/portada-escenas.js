@@ -880,6 +880,11 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     // también ella tiene su momento en foco y su pie en grande.
     const ultima = fotos[fotos.length - 1];
     const distancia = () => Math.max(0, ultima.offsetLeft + ultima.offsetWidth / 2 - document.documentElement.clientWidth / 2);
+    // Y arranca con la primera en el centro: sin eso, en las pantallas donde
+    // la segunda queda más cerca del centro, el contador empezaba en 02.
+    const primera = fotos[0];
+    const entrada = () => Math.max(0, document.documentElement.clientWidth / 2 - (primera.offsetLeft + primera.offsetWidth / 2));
+    const recorrido = () => entrada() + distancia();
     const contador = $('.galeria__contador b');
     const leyenda = $('.galeria__leyenda span');
     const pies = fotos.map((foto) => $('figcaption', foto)?.textContent.trim() ?? '');
@@ -944,14 +949,14 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       });
       enfocarPie(cerca);
     };
-    const avance = gsap.to(pista, {
+    const avance = gsap.fromTo(pista, { x: () => entrada() }, {
       x: () => -distancia(),
       ease: 'none',
       onUpdate: enfocar,
       scrollTrigger: {
         trigger: galeria,
         start: 'top top',
-        end: () => `+=${distancia()}`,
+        end: () => `+=${recorrido()}`,
         pin: true,
         scrub: 0.8,
         anticipatePin: 1,
@@ -969,7 +974,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     gsap.fromTo('.galeria__barra i', { scaleX: 0 }, {
       scaleX: 1,
       ease: 'none',
-      scrollTrigger: { trigger: galeria, start: 'top top', end: () => `+=${distancia()}`, scrub: 0.8, invalidateOnRefresh: true },
+      scrollTrigger: { trigger: galeria, start: 'top top', end: () => `+=${recorrido()}`, scrub: 0.8, invalidateOnRefresh: true },
     });
     fotos.forEach((foto) => {
       const img = $('img', foto);
