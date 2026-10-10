@@ -124,3 +124,22 @@ movimiento reducido) se leen en fila o en lista, cada una con su dibujo.
 Los trazos se dibujan con `pathLength="1"` y su grosor va en unidades del
 dibujo, sin `vector-effect: non-scaling-stroke`: con él, Chrome mide el guion
 en píxeles de pantalla y el dibujo se quedaba a medias.
+
+## 07 · Galería: una tira con profundidad y subtítulos
+
+La tira fija que corre de lado gana lo que le faltaba para sentirse dentro:
+
+- **Llegada.** Mientras la sección sube, las fotos se descubren de abajo
+  arriba, una detrás de otra, antes de empezar a correr.
+- **Foco de verdad.** La foto que pasa por el centro queda entera y
+  encendida; las demás, más pequeñas (hasta 0,8) y en penumbra (hasta 0,3).
+- **Profundidad.** Cada foto va a su propia distancia de la cámara: se
+  aparta del foco más o menos que sus vecinas (hacia fuera, para no montarse
+  nunca sobre la foto en foco) y se hunde al alejarse del centro. Se mueve el marco y no la figura, que es la que se mide: así el
+  foco no se persigue a sí mismo.
+- **Subtítulos.** El pie de la foto en foco se lee en grande bajo la tira, con
+  un barrido al cambiar, junto a un contador grande que sigue la foto en foco
+  y no el porcentaje del desplazamiento. Los pies de cada figura siguen ahí
+  para quien no ve la pantalla.
+- **Final.** La tira corre hasta que la última foto llega al centro: también
+  ella tiene su momento en foco.
