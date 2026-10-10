@@ -283,6 +283,18 @@
   z-index: 2;
   will-change: transform;
 }
+/* El recorrido por los detalles: el que se mira queda encendido y los demás,
+   en penumbra (--penumbra la mueve GSAP; quieta vale 0 y no tapa nada). Sobre
+   todo, también su pie de foto: solo se lee el que se está mirando. */
+.mosaico--escena .mosaico__foto::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: '';
+  background: #000;
+  opacity: var(--penumbra, 0);
+  pointer-events: none;
+}
 
 @media (max-width: 760px) {
   .mosaico { grid-template-columns: repeat(2, minmax(0, 1fr)); }

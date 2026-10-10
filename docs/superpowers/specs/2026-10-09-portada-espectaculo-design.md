@@ -95,6 +95,17 @@ en tres tiempos sobre una fijación más larga (190 % de pantalla):
    como sobre las demás cajas de la página. Sin la retirada larga de
    `cerrarEscuadras`: en una escena con scrub, esa espera era pantalla quieta.
 
+Después de que la foto principal se hace pequeña, la escena sigue (fijación
+de 300 %):
+
+4. **Llegan las demás**, cada una descubriéndose desde su lado del mosaico
+   (el recorte se abre hacia la principal) con su fondo asentándose.
+5. **El recorrido.** La cámara visita cada detalle en orden de lectura: la
+   nave, el bordillo, la curva. El que se mira queda encendido y su foto se
+   acerca un poco, con la mira cerrándose sobre él; los demás quedan en
+   penumbra, pie de foto incluido (`--penumbra`, un velo negro por encima).
+6. **La nave entera** se enciende de nuevo antes de soltarse.
+
 ## 02 · Complejo: un escenario para cada disciplina
 
 La fila de cinco textos pequeños se leía genérica. Ahora cada disciplina tiene
