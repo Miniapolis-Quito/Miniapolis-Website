@@ -177,6 +177,45 @@ export function tiempoDeVuelta(ms) {
 }
 
 // ---------------------------------------------------------------------------
+// La cinta de cronometraje: el avance de lectura de la cabecera
+// ---------------------------------------------------------------------------
+
+/**
+ * En qué sector va la lectura `avance` (0..1). `marcas` son los puntos de
+ * la cinta (0..1, crecientes) en que empieza cada sector; es el último que
+ * ya se pasó, y -1 en la parrilla, antes del primero.
+ */
+export function sectorEnAvance(marcas, avance) {
+  for (let i = marcas.length - 1; i >= 0; i -= 1) {
+    if (avance > marcas[i]) return i;
+  }
+  return -1;
+}
+
+/**
+ * La estela de la cabeza (0..1) en el fotograma siguiente: se estira deprisa
+ * con la velocidad del desplazamiento (px/ms; `tope` la llena entera) y se
+ * recoge despacio, como la luz de un faro en una foto de exposición larga.
+ * Lo que ya no se ve vale 0, para que el bucle que la pinta pueda parar.
+ */
+export function estelaSiguiente(estela, velocidad, tope = 3) {
+  const objetivo = limitar(Math.abs(velocidad) / tope);
+  const siguiente = estela + (objetivo - estela) * (objetivo > estela ? 0.35 : 0.1);
+  return siguiente < 0.004 ? 0 : siguiente;
+}
+
+/**
+ * Dónde va la lectura de telemetría (px desde la izquierda) para que cuelgue
+ * siempre bajo la cabeza: en la parrilla sale alineada a la izquierda de la
+ * cabeza, en la meta a la derecha, y entre medias se desliza sin saltos. Nunca
+ * se sale de la cinta: queda a `margen` de cada borde.
+ */
+export function posicionLectura(avance, ancho, anchoLectura, margen = 8) {
+  const x = limitar(avance) * (ancho - anchoLectura);
+  return Math.round(limitar(x, margen, Math.max(margen, ancho - anchoLectura - margen)));
+}
+
+// ---------------------------------------------------------------------------
 // La próxima jornada, para el rótulo de la apertura
 // ---------------------------------------------------------------------------
 

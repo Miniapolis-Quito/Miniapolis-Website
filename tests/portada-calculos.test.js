@@ -5,7 +5,7 @@ import {
   diaDeTexto, rangoDeTexto, horaEcuador, estadoJornada, textoJornada,
   formatoMiles, inclinacionPorVelocidad, posicionesEnRecorrido, atraccion, cifrasRodando,
   sectorEnCurso, vueltaCompleta, progresosDeSectores, tiempoDeVuelta, empujePorVelocidad, onda, enfoqueGaleria,
-  enCarrera, salidaDeCarrera, momentosDeLlegada,
+  enCarrera, salidaDeCarrera, momentosDeLlegada, sectorEnAvance, estelaSiguiente, posicionLectura,
 } from '../public/js/portada-calculos.js';
 
 test('limitar recorta al rango', () => {
@@ -240,4 +240,44 @@ test('momentosDeLlegada: las diferencias reales, a cámara lenta', () => {
   assert.ok(Math.abs(segundo - lider - 0.8) < 1e-9, '+0.40 se ve como 0,8 s');
   assert.ok(Math.abs(tercero - lider - 1.16) < 1e-9, '+0.58 se ve como 1,16 s');
   assert.deepEqual(momentosDeLlegada([10], 11), [0], 'nadie llega antes de la salida');
+});
+
+test('sectorEnAvance: el último sector ya pasado, y -1 en la parrilla', () => {
+  const marcas = [0.1, 0.4, 0.8];
+  assert.equal(sectorEnAvance(marcas, 0), -1, 'arriba del todo no empezó ninguno');
+  assert.equal(sectorEnAvance(marcas, 0.1), -1, 'sobre la marca todavía no se cruzó');
+  assert.equal(sectorEnAvance(marcas, 0.25), 0);
+  assert.equal(sectorEnAvance(marcas, 0.5), 1);
+  assert.equal(sectorEnAvance(marcas, 1), 2);
+  assert.equal(sectorEnAvance([], 0.5), -1, 'sin sectores no hay en cuál estar');
+});
+
+test('estelaSiguiente: se estira deprisa con la velocidad y se recoge despacio hasta apagarse', () => {
+  assert.equal(estelaSiguiente(0, 0), 0, 'quieto, sin estela');
+  const arranque = estelaSiguiente(0, 3);
+  assert.ok(Math.abs(arranque - 0.35) < 1e-9, 'a toda velocidad crece un tercio por fotograma');
+  assert.equal(estelaSiguiente(0, -3), arranque, 'al subir se estira igual: el sentido va aparte');
+  assert.ok(estelaSiguiente(1, 30) <= 1, 'nunca pasa de entera');
+  assert.ok(Math.abs(estelaSiguiente(1, 0) - 0.9) < 1e-9, 'al frenar se recoge un décimo por fotograma');
+  let estela = 1;
+  let fotogramas = 0;
+  while (estela > 0 && fotogramas < 200) {
+    estela = estelaSiguiente(estela, 0);
+    fotogramas += 1;
+  }
+  assert.equal(estela, 0, 'termina en cero exacto: el bucle que la pinta para');
+  assert.ok(fotogramas < 60, 'y se apaga en menos de un segundo');
+});
+
+test('posicionLectura: cuelga bajo la cabeza y no se sale de la cinta', () => {
+  assert.equal(posicionLectura(0, 400, 100), 8, 'en la parrilla, pegada al margen izquierdo');
+  assert.equal(posicionLectura(1, 400, 100), 292, 'en la meta, pegada al margen derecho');
+  assert.equal(posicionLectura(0.5, 400, 100), 150);
+  for (const avance of [0.1, 0.33, 0.5, 0.77, 0.9]) {
+    const x = posicionLectura(avance, 400, 100);
+    const cabeza = avance * 400;
+    assert.ok(x <= cabeza && cabeza <= x + 100, `con ${avance}, la cabeza cae dentro de la lectura`);
+  }
+  assert.equal(posicionLectura(0.5, 90, 100), 8, 'si no cabe, se queda al margen');
+  assert.equal(posicionLectura(2, 400, 100), 292, 'el avance se recorta al rango');
 });
