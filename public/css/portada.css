@@ -1895,11 +1895,9 @@ html.lenis { scroll-behavior: auto; }
 /* --- La vuelta: el avance contado por sectores ------------------------------------- */
 
 /* Lo monta portada-vuelta.js y es decorativo: la navegación ya dice dónde se
-   está. En pantallas anchas es una regla vertical en el margen izquierdo con
-   el número del sector, que rueda, y su nombre, y reemplaza a la cinta de
-   cronometraje de la cabecera. En las estrechas no hay margen: la cuenta la
-   lleva la cinta, que lee los mismos sectores y se queda arriba del todo
-   cuando la cabecera se aparta. */
+   está. Es una regla vertical en el margen izquierdo, con el número del
+   sector, que rueda, y su nombre; solo en pantallas anchas, que tienen
+   margen. En las estrechas no hay avance de lectura. */
 @media (max-width: 899px), (max-height: 559px) {
   .vuelta { display: none; }
 }
@@ -1957,7 +1955,6 @@ html.lenis { scroll-behavior: auto; }
     transform: translateX(-10px);
   }
   .portada-animada .vuelta.vuelta--en-pista { transform: none; }
-  .con-vuelta .sitio-progreso { display: none; }
   .vuelta__numero {
     display: block;
     height: 1.25em;

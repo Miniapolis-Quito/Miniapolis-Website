@@ -211,7 +211,6 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
       dentro: panel.left >= -1 && panel.right <= innerWidth + 1,
       pie: document.querySelector('.sitio-pie__base').getBoundingClientRect().bottom <= innerHeight + 1,
       pestanas: [...document.querySelectorAll('.entrada__acceso-panel .pestana')].map((e) => e.getBoundingClientRect().height),
-      progreso: Number(getComputedStyle(document.querySelector('.sitio-progreso span')).getPropertyValue('--progreso')),
       // La vuelta: un sector lleno por sección numerada, la bandera y el tiempo en el pie.
       vuelta: (() => {
         const v = document.querySelector('.vuelta');
@@ -240,7 +239,6 @@ async function comprobar(nombre, ancho, alto, { tactil = false, reducido = false
   if (!fin.dentro) fallos.push('el panel de acceso se sale de la pantalla');
   if (!fin.pie) fallos.push('el pie no se ve al llegar al final');
   if (fin.pestanas.some((h) => h > 52)) fallos.push(`las pestañas de acceso se parten en dos líneas (${fin.pestanas.join(', ')} px)`);
-  if (fin.progreso < 0.99) fallos.push(`el avance de lectura no llega al final (${fin.progreso})`);
   if (reducido) {
     if (fin.vuelta) fallos.push('con movimiento reducido no hay vuelta que contar');
   } else if (!fin.vuelta) {

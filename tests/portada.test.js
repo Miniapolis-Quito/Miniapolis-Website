@@ -227,10 +227,7 @@ test('fluidez: el puntero se sigue con quickTo y el imán no pisa el transform d
   assert.match(TACTO, /evento\.pointerType !== 'mouse'/, 'con el dedo no hay imán ni inclinación');
 });
 
-test('fluidez: el avance de lectura se pinta una vez por fotograma y el desplazamiento suave alimenta a ScrollTrigger', () => {
-  assert.match(JS, /window\.addEventListener\('scroll', programar, \{ passive: true \}\)/);
-  assert.match(JS, /if \(pendiente\) return;\s*pendiente = true;\s*requestAnimationFrame\(pintar\)/);
-  assert.match(PUBLICO, /transform:\s*scaleX\(var\(--progreso, 0\)\)/, 'el avance de lectura se compone, no reescribe el layout');
+test('fluidez: el desplazamiento suave alimenta a ScrollTrigger', () => {
   assert.match(ESCENAS, /lenis\.on\('scroll', ScrollTrigger\.update\)/);
   assert.match(ESCENAS, /gsap\.ticker\.add\(latir\)/, 'Lenis late con el mismo reloj que GSAP: un solo bucle por fotograma');
   assert.match(ESCENAS, /mm\.add\('\(hover: hover\) and \(pointer: fine\)'/, 'en táctil el desplazamiento es el nativo del sistema');
@@ -385,43 +382,15 @@ test('la página se cuenta como una vuelta: un sector por sección numerada y la
   assert.match(VUELTA, /vuelta--meta/);
   // Sin movimiento no hay vuelta: todo lo que la esconde cuelga de .portada-animada.
   assert.match(CSS, /\.portada-animada \.vuelta \{[^}]*opacity: 0;/s);
-  assert.match(CSS, /@media \(min-width: 900px\) and \(min-height: 560px\) \{\s*\.portada-animada \.vuelta \{[\s\S]*?\.con-vuelta \.sitio-progreso \{ display: none; \}/,
-    'en pantalla ancha la regla vertical reemplaza a la cinta de la cabecera, no se suma');
+  assert.match(CSS, /@media \(min-width: 900px\) and \(min-height: 560px\) \{\s*\.portada-animada \.vuelta \{/, 'regla vertical solo donde hay margen');
   assert.match(CSS, /@media \(max-width: 899px\), \(max-height: 559px\) \{\s*\.vuelta \{ display: none; \}/,
-    'donde no hay margen, la cuenta la lleva la cinta: no dos líneas de avance a la vez');
+    'donde no hay margen no hay avance de lectura');
 });
 
-test('la cinta de cronometraje: regla, sectores, cabeza con estela, lectura y bandera', () => {
-  // Decorativa: la navegación de la cabecera ya dice dónde se está.
-  assert.match(HTML, /<div class="sitio-progreso" aria-hidden="true">/);
-  for (const pieza of ['regla', 'regla sitio-progreso__regla--viva', 'bandera', 'relleno', 'sectores', 'cabeza', 'lectura']) {
-    assert.match(HTML, new RegExp(`<span class="sitio-progreso__${pieza}">`), `falta la pieza ${pieza}`);
-  }
-  // Los sectores son los mismos de la vuelta: una marca por sección numerada.
-  assert.match(VUELTA, /export function leerSectores\(\)/);
-  assert.match(JS, /import \{ leerSectores \} from '\.\/portada-vuelta\.js'/);
-  assert.match(JS, /sectorEnAvance\(inicios, avance\)/, 'en qué sector se va lo decide una función pura y probada');
-  assert.match(JS, /posicionLectura\(avance, cinta\.clientWidth, anchoLectura\)/, 'la lectura cuelga de la cabeza sin salirse');
-  assert.match(JS, /new ResizeObserver\(remedir\)\.observe\(document\.body\)/, 'las marcas se vuelven a medir cuando la página cambia de largo');
-  // La cinta queda arriba del todo cuando la cabecera se aparta.
-  assert.match(PUBLICO, /\.sitio-progreso \{[^}]*top: calc\(100% \+ 1px\);/s);
-  assert.match(PUBLICO, /\.sitio-progreso \{[^}]*overflow-x: clip;/s, 'la estela no ensancha la página');
-  // Todo corre por transformación, recorte o variables: nada reescribe el layout.
-  assert.match(PUBLICO, /\.sitio-progreso__cabeza \{[^}]*transform: translateX\(calc\(var\(--progreso, 0\) \* 100%\)\);/s);
-  assert.match(PUBLICO, /\.sitio-progreso__regla--viva \{[^}]*clip-path: inset\(0 calc\(100% - var\(--progreso\) \* 100%\) 0 0\);/s);
-  assert.match(PUBLICO, /transform: scaleX\(calc\(var\(--estela\) \* var\(--sentido\)\)\);/, 'la estela apunta hacia donde se viene');
-  assert.match(PUBLICO, /transform: translate3d\(var\(--lectura-x, 0px\), -3px, 0\);/);
-  // La estela se apaga sola y entonces el bucle para.
-  assert.match(JS, /if \(estela > 0\) programar\(\);/);
-  // Sin movimiento: ni estela, ni latido, ni ondas; la cinta sigue contando.
-  assert.match(JS, /const conEstela = !sinMovimiento\(\);/);
-  const quieta = PUBLICO.slice(PUBLICO.indexOf('@media (prefers-reduced-motion: reduce) {\n  .sitio-progreso__cabeza i'));
-  assert.match(quieta, /\.sitio-progreso__cabeza i \{ display: none; \}/);
-  assert.match(quieta, /\.sitio-progreso__cabeza b \{ animation: none;/);
-  assert.match(quieta, /\.sitio-progreso__sectores i::after \{ animation: none; \}/);
-  // La meta es la bandera a cuadros, como en la regla de la vuelta.
-  assert.match(PUBLICO, /\.sitio-progreso--meta \.sitio-progreso__bandera \{ clip-path: inset\(0\); \}/);
-  assert.match(JS, /const llegada = avance >= 0\.995;/);
+test('la portada no lleva barra de avance arriba', () => {
+  assert.doesNotMatch(HTML, /sitio-progreso/);
+  assert.doesNotMatch(CSS + PUBLICO, /sitio-progreso/);
+  assert.doesNotMatch(JS, /sitio-progreso|montarAvance/);
 });
 
 test('la meta da el tiempo de la vuelta, contado desde que se apaga el semáforo', () => {
