@@ -859,25 +859,73 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       imagen.decode?.().catch(() => {});
     });
     pista.scrollLeft = 0;
-    const distancia = () => Math.max(0, pista.scrollWidth - document.documentElement.clientWidth);
+    // La tira corre hasta que su última foto llega al centro de la pantalla:
+    // también ella tiene su momento en foco y su pie en grande.
+    const ultima = fotos[fotos.length - 1];
+    const distancia = () => Math.max(0, ultima.offsetLeft + ultima.offsetWidth / 2 - document.documentElement.clientWidth / 2);
     const contador = $('.galeria__contador b');
+    const leyenda = $('.galeria__leyenda span');
+    const pies = fotos.map((foto) => $('figcaption', foto)?.textContent.trim() ?? '');
     // La tira enfoca: la foto que pasa por el centro de la pantalla se ve
-    // entera y las demás esperan un poco más pequeñas y en penumbra.
-    const enfoques = fotos.map((foto) => {
+    // entera y encendida; las demás esperan más pequeñas y en penumbra.
+    // Cada una, además, va a su propia profundidad: se aparta del foco más o
+    // menos que sus vecinas y se hunde al alejarse del centro, como
+    // planos a distinta distancia de la cámara. Se mueve el marco y no la
+    // figura: la figura es la que se mide, y así no se persigue a sí misma.
+    const PROFUNDIDAD = [0.5, 1.1, 0.7, 1.3, 0.6, 1];
+    const enfoques = fotos.map((foto, i) => {
       const marco = $('.galeria__marco', foto);
       // `quickSetter` no admite el atajo `scale`: un ajuste por eje.
       const ancho = gsap.quickSetter(marco, 'scaleX');
       const alto = gsap.quickSetter(marco, 'scaleY');
-      return { foto, escala: (valor) => { ancho(valor); alto(valor); }, luz: gsap.quickSetter(marco, 'opacity') };
+      return {
+        foto,
+        marco,
+        profundidad: PROFUNDIDAD[i % PROFUNDIDAD.length],
+        escala: (valor) => { ancho(valor); alto(valor); },
+        luz: gsap.quickSetter(marco, 'opacity'),
+        x: gsap.quickSetter(marco, 'x', 'px'),
+        y: gsap.quickSetter(marco, 'y', 'px'),
+      };
     });
+    // El pie de la foto en foco se lee en grande bajo la tira, como un
+    // subtítulo, y cambia con un barrido cuando llega la siguiente.
+    let enFoco = -1;
+    const enfocarPie = (i) => {
+      if (i === enFoco) return;
+      const primera = enFoco < 0;
+      enFoco = i;
+      const numero = String(i + 1).padStart(2, '0');
+      if (contador && contador.textContent !== numero) contador.textContent = numero;
+      if (!leyenda) return;
+      if (primera) {
+        leyenda.textContent = pies[i];
+        return;
+      }
+      gsap.timeline({ overwrite: true })
+        .to(leyenda, { yPercent: -110, opacity: 0, duration: 0.22, ease: 'power2.in' })
+        .add(() => { leyenda.textContent = pies[i]; })
+        .fromTo(leyenda, { yPercent: 110, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.55, ease: 'expo.out' });
+    };
     const enfocar = () => {
       const centro = window.innerWidth / 2;
-      for (const { foto, escala, luz } of enfoques) {
+      let cerca = 0;
+      let menor = Infinity;
+      enfoques.forEach(({ foto, escala, luz, x, y, profundidad }, i) => {
         const caja = foto.getBoundingClientRect();
         const lejos = enfoqueGaleria(caja.left + caja.width / 2, centro, window.innerWidth);
-        escala(1 - 0.12 * lejos);
-        luz(1 - 0.55 * lejos);
-      }
+        const lado = Math.sign(caja.left + caja.width / 2 - centro);
+        escala(1 - 0.2 * lejos);
+        luz(1 - 0.7 * lejos);
+        // Hacia fuera: las lejanas se apartan del foco y nunca se le montan encima.
+        x(lado * lejos * window.innerWidth * 0.05 * profundidad);
+        y(lejos * lejos * 36 * profundidad);
+        if (lejos < menor) {
+          menor = lejos;
+          cerca = i;
+        }
+      });
+      enfocarPie(cerca);
     };
     const avance = gsap.to(pista, {
       x: () => -distancia(),
@@ -891,12 +939,15 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         scrub: 0.8,
         anticipatePin: 1,
         invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          const n = Math.min(fotos.length, 1 + Math.floor(self.progress * fotos.length * 0.999));
-          const texto = String(n).padStart(2, '0');
-          if (contador && contador.textContent !== texto) contador.textContent = texto;
-        },
       },
+    });
+    // La llegada: mientras la sección sube, las fotos de la tira se descubren
+    // de abajo arriba, una detrás de otra, antes de empezar a correr.
+    gsap.fromTo(enfoques.map(({ marco }) => marco), { clipPath: 'inset(100% 0% 0% 0%)' }, {
+      clipPath: 'inset(0% 0% 0% 0%)',
+      ease: 'power3.out',
+      stagger: 0.12,
+      scrollTrigger: { trigger: galeria, start: 'top 85%', end: 'top 15%', scrub: 0.6 },
     });
     gsap.fromTo('.galeria__barra i', { scaleX: 0 }, {
       scaleX: 1,
@@ -911,12 +962,6 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         ease: 'none',
         scrollTrigger: { trigger: foto, containerAnimation: avance, start: 'left right', end: 'right left', scrub: true, invalidateOnRefresh: true },
       });
-      gsap.from($('figcaption', foto), {
-        opacity: 0,
-        y: 20,
-        duration: 1,
-        scrollTrigger: { trigger: foto, containerAnimation: avance, start: 'left 78%', toggleActions: 'play none none reverse' },
-      });
     });
     enfocar();
     ScrollTrigger.addEventListener('refresh', enfocar);
@@ -924,6 +969,8 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       ScrollTrigger.removeEventListener('refresh', enfocar);
       galeria.classList.remove('galeria-fija');
       if (contador) contador.textContent = '01';
+      if (leyenda) leyenda.textContent = '';
+      gsap.set(enfoques.map(({ marco }) => marco), { clearProps: 'transform,opacity,clipPath' });
     };
   });
 

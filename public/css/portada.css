@@ -2090,6 +2090,8 @@ html.lenis { scroll-behavior: auto; }
 .galeria-fija .seccion__cabeza { margin-bottom: clamp(20px, 4vh, 48px); }
 .galeria-fija .galeria__controles { display: none; }
 .galeria-fija .galeria {
+  /* Referencia de las medidas de cada foto (offsetLeft) para la escena. */
+  position: relative;
   align-items: flex-start;
   overflow: visible;
   scroll-snap-type: none;
@@ -2113,6 +2115,59 @@ html.lenis { scroll-behavior: auto; }
   font-variant-numeric: tabular-nums;
 }
 .galeria__contador b { color: var(--acento); font-weight: 700; }
+/* En la tira fija el contador crece y el pie de la foto en foco se lee en
+   grande a su lado, como un subtítulo (lo escribe portada-escenas.js). Los
+   pies de cada foto siguen en su figura para quien no la ve. */
+.galeria__leyenda { display: none; }
+.galeria-fija .galeria__avance {
+  align-items: flex-end;
+  gap: clamp(20px, 3vw, 48px);
+  margin-top: clamp(20px, 3.6vh, 40px);
+}
+.galeria-fija .galeria__contador {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 10px;
+}
+.galeria-fija .galeria__contador b {
+  font-size: clamp(2.4rem, 4.4vw, 4.2rem);
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: .8;
+  letter-spacing: 0;
+}
+.galeria-fija .galeria__leyenda {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding-block: .2em;
+}
+.galeria-fija .galeria__leyenda span {
+  display: block;
+  overflow: hidden;
+  color: var(--texto);
+  font-family: var(--fuente);
+  font-size: clamp(1.05rem, 1.35vw, 1.38rem);
+  font-weight: 500;
+  font-stretch: 100%;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+.galeria-fija .galeria__barra { flex: 0 0 clamp(140px, 18vw, 280px); align-self: center; }
+.portada-animada .galeria-fija .galeria__foto figcaption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .galeria__barra {
   position: relative;
   flex: 1;
