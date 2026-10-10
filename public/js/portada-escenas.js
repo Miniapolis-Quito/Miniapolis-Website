@@ -390,14 +390,24 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     //  1. El trazado completo llena la pantalla y la cámara lo recorre de lado
     //     mientras se asienta.
     //  2. La cámara se aleja: la foto vuelve a su casilla y las otras tres se
-    //     arman alrededor, cada una desde su lado del mosaico.
-    //  3. Llegan los pies de foto y la mira se cierra sobre el trazado, como
-    //     sobre las demás cajas de la página: fijado.
+    //     descubren alrededor, cada una desde su lado del mosaico.
+    //  3. El recorrido: la cámara visita cada detalle en orden de lectura (la
+    //     nave, el bordillo, la curva). El que se mira queda encendido, con su
+    //     pie de foto y la mira cerrándose sobre él; los demás, en penumbra.
+    //  4. Al final la nave entera se enciende y la escena se suelta.
     const [principal, ...resto] = fotosMosaico;
     const imgPrincipal = $('img', principal);
     const mira = ponerMira(principal, { haz: false });
+    const miras = resto.map((foto) => ponerMira(foto, { haz: false }));
+    const pies = fotosMosaico.map((foto) => $('figcaption', foto));
+    gsap.set(fotosMosaico, { '--penumbra': 0 });
     // De qué lado del mosaico llega cada foto: el de su casilla respecto de la
     // principal. Se mide con offset*, que no ve los transform de la escena.
+    /** El recorte con que se descubre una foto: abierto del lado de la principal. */
+    const recorteDesde = ({ x, y }) => {
+      if (Math.abs(x) >= Math.abs(y)) return x > 0 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)';
+      return y > 0 ? 'inset(0% 0% 100% 0%)' : 'inset(100% 0% 0% 0%)';
+    };
     const lado = (el) => {
       const dx = el.offsetLeft + el.offsetWidth / 2 - (principal.offsetLeft + principal.offsetWidth / 2);
       const dy = el.offsetTop + el.offsetHeight / 2 - (principal.offsetTop + principal.offsetHeight / 2);
@@ -428,7 +438,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
       scrollTrigger: {
         trigger: mosaico,
         start: 'top top',
-        end: '+=190%',
+        end: '+=300%',
         pin: true,
         scrub: 0.7,
         anticipatePin: 1,
@@ -445,23 +455,39 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         scale: cubrir,
         borderRadius: 0,
       }, { x: 0, y: 0, scale: 1, borderRadius: 4, duration: 1, ease: 'power2.inOut' }, 0.45)
-      // …y las demás se arman alrededor, desde su lado y con su propio fondo.
+      // …y las demás se descubren alrededor, cada una desde su lado (el
+      // recorte se abre hacia la principal) y con su propio fondo asentándose.
       .fromTo(resto, {
-        opacity: 0,
-        x: (i, el) => lado(el).x,
-        y: (i, el) => lado(el).y,
-        scale: 0.9,
-      }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.7, stagger: 0.1, ease: 'power3.out' }, 0.8)
-      .fromTo(resto.map((foto) => $('img', foto)), { scale: 1.3 }, { scale: 1.06, duration: 0.8, stagger: 0.1, ease: 'power2.out' }, 0.8)
-      // 3 · Fijado: los pies de foto y la mira sobre el trazado.
-      .from($$('figcaption', mosaico), { opacity: 0, y: 14, duration: 0.3, stagger: 0.06 }, 1.35)
-      // Sin la retirada larga de las demás cajas: en una escena con scrub,
-      // esa espera sería pantalla quieta al final de la fijación.
+        clipPath: (i, el) => recorteDesde(lado(el)),
+        x: (i, el) => lado(el).x * 0.35,
+        y: (i, el) => lado(el).y * 0.35,
+      }, { clipPath: 'inset(0% 0% 0% 0%)', x: 0, y: 0, duration: 0.7, stagger: 0.12, ease: 'power3.inOut' }, 0.8)
+      .fromTo(resto.map((foto) => $('img', foto)), { scale: 1.3 }, { scale: 1.06, duration: 0.9, stagger: 0.12, ease: 'power2.out' }, 0.8)
+      .from(pies, { opacity: 0, y: 14, duration: 0.3, stagger: 0.06 }, 1.35)
+      // El trazado queda fijado: su mira se cierra y se aparta.
       .add(cerrarEscuadras(gsap, mira, { retirar: false }), 1.4)
       .to($$(':scope > i', mira), { opacity: 0, duration: 0.25, ease: 'power1.out' }, 1.85);
+    // 3 · El recorrido por los detalles, en orden de lectura.
+    const RECORRIDO = 2.05;
+    const PASO = 0.62;
+    resto.forEach((foto, k) => {
+      const momento = RECORRIDO + k * PASO;
+      fotosMosaico.forEach((otra) => {
+        tl.to(otra, { '--penumbra': otra === foto ? 0 : 0.72, duration: 0.24, ease: 'power2.out' }, momento);
+      });
+      tl.fromTo($('img', foto), { scale: 1.06 }, { scale: 1.12, duration: PASO, ease: 'none' }, momento)
+        .add(cerrarEscuadras(gsap, miras[k], { retirar: false }), momento + 0.05)
+        .to($$(':scope > i', miras[k]), { opacity: 0, duration: 0.18, ease: 'power1.out' }, momento + PASO - 0.12);
+    });
+    // 4 · La nave entera, encendida: todo vuelve a su luz antes de soltarse.
+    const final = RECORRIDO + resto.length * PASO;
+    tl.to(fotosMosaico, { '--penumbra': 0, duration: 0.3, ease: 'power2.out' }, final)
+      .to(resto.map((foto) => $('img', foto)), { scale: 1.06, duration: 0.3, ease: 'power2.out' }, final)
+      .to({}, { duration: 0.25 });
     return () => {
       mosaico.classList.remove('mosaico--escena');
       mira.remove();
+      miras.forEach((m) => m.remove());
     };
   });
 
