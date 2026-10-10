@@ -149,5 +149,7 @@ La tira fija que corre de lado gana lo que le faltaba para sentirse dentro:
   un barrido al cambiar, junto a un contador grande que sigue la foto en foco
   y no el porcentaje del desplazamiento. Los pies de cada figura siguen ahí
   para quien no ve la pantalla.
-- **Final.** La tira corre hasta que la última foto llega al centro: también
-  ella tiene su momento en foco.
+- **Principio y final.** La tira arranca con la primera foto en el centro y
+  corre hasta que la última llega a él: las dos tienen su momento en foco.
+  Antes empezaba alineada a la izquierda y, donde la segunda quedaba más
+  cerca del centro (1366×768), el contador nunca mostraba el 01.
