@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="luz" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#93d241"/><stop offset="1" stop-color="#f3f7f4"/></linearGradient>
+    <filter id="sombra" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation=".75" flood-color="#000000" flood-opacity=".75"/></filter>
+  </defs>
+  <g transform="translate(24 24)" filter="url(#sombra)">
+    <g transform="scale(0.78)">
+      <path d="M-14 14C-16-6-6-16 14-14C16 6 6 16-14 14Z" fill="#93d241" fill-opacity=".09" stroke="#93d241" stroke-opacity=".95" stroke-width="1.15"/>
+      <path d="M-13 13L-7 7M7-7L13-13" fill="none" stroke="#93d241" stroke-opacity=".6" stroke-width=".9" stroke-linecap="round"/>
+      <path d="M-11 2L-7 7L-2 11M2-11L7-7L11-2" fill="none" stroke="#93d241" stroke-opacity=".35" stroke-width=".8" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <path d="M-5 5C-6-2-2-6 5-5C6 2 2 6-5 5Z" fill="url(#luz)" stroke="#93d241" stroke-width=".7"/>
+    <path d="M-4 4L4-4" fill="none" stroke="#041006" stroke-opacity=".65" stroke-width=".8" stroke-linecap="round"/>
+  </g>
+</svg>

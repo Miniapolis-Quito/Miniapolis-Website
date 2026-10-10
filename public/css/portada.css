@@ -2143,115 +2143,43 @@ html.lenis { scroll-behavior: auto; }
 .seccion__cabeza .boton,
 .sitio-arriba { translate: var(--mx, 0px) var(--my, 0px); }
 
-/* --- Cursor propio (puntero fino y movimiento permitido) --------------------------- */
+/* --- Cursor nativo: dos hojas y un único punto de clic --------------------- */
 
-.cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 200;
-  pointer-events: none;
-  will-change: transform;
+/* Las imágenes llevan las dos hojas juntas. El navegador mueve el cursor;
+   la página nunca tiene que perseguirlo. Cada estado conserva el punto de
+   clic en el centro, también mientras el contorno brota sobre un enlace. */
+html.cursor-propio {
+  --cursor-hoja: url('../images/cursor/hoja.png') 24 24, default;
+  cursor: var(--cursor-hoja);
 }
-.cursor__punto,
-.cursor__aro {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  will-change: transform;
-}
-.cursor__punto {
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
-  background: var(--acento);
-  box-shadow: 0 0 5px var(--acento);
-  transition: transform 240ms var(--pub-curva), background-color 240ms ease-out, box-shadow 240ms ease-out;
-}
-.cursor__aro {
-  width: 36px;
-  height: 36px;
-  margin: -18px 0 0 -18px;
-  border: 1px solid rgba(226, 240, 231, .45);
-  box-shadow: inset 0 0 0 1px rgba(147, 210, 65, .12), 0 0 8px rgba(147, 210, 65, .08);
-  transition: width 240ms var(--pub-curva), height 240ms var(--pub-curva), margin 240ms var(--pub-curva), background-color 240ms ease-out, border-color 240ms ease-out, opacity 200ms ease-out, box-shadow 240ms ease-out;
-}
-.cursor__aro::before,
-.cursor__aro::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  transition: background-color 240ms ease-out;
-}
-/* Mira táctica: retícula horizontal */
-.cursor__aro::before {
-  top: 0;
-  bottom: 0;
-  margin: auto 0;
-  height: 1px;
-  left: -7px;
-  right: -7px;
-  background: linear-gradient(
-    90deg,
-    var(--acento) 0,
-    var(--acento) 9px,
-    transparent 9px,
-    transparent calc(100% - 9px),
-    var(--acento) calc(100% - 9px),
-    var(--acento) 100%
-  );
-}
-/* Mira táctica: retícula vertical */
-.cursor__aro::after {
-  left: 0;
-  right: 0;
-  margin: 0 auto;
-  width: 1px;
-  top: -7px;
-  bottom: -7px;
-  background: linear-gradient(
-    180deg,
-    var(--acento) 0,
-    var(--acento) 9px,
-    transparent 9px,
-    transparent calc(100% - 9px),
-    var(--acento) calc(100% - 9px),
-    var(--acento) 100%
-  );
-}
-.cursor--enlace .cursor__aro {
-  width: 58px;
-  height: 58px;
-  margin: -29px 0 0 -29px;
-  border-color: var(--acento);
-  background: rgba(147, 210, 65, .09);
-  box-shadow: 0 0 14px rgba(147, 210, 65, .25), inset 0 0 8px rgba(147, 210, 65, .1);
-}
-/* Sobre un objetivo el centro no se apaga: se enciende y fija la mira. */
-.cursor--enlace .cursor__punto {
-  transform: scale(1.5);
-  background: var(--texto);
-  box-shadow: 0 0 6px var(--acento);
-}
-.cursor--pulsado .cursor__aro {
-  width: 26px;
-  height: 26px;
-  margin: -13px 0 0 -13px;
-  border-color: var(--acento);
-  box-shadow: 0 0 10px rgba(147, 210, 65, .4), inset 0 0 4px rgba(147, 210, 65, .25);
-}
-.cursor--oculto .cursor__punto,
-.cursor--oculto .cursor__aro { opacity: 0; }
-html.cursor-propio,
+html.cursor-propio body,
 html.cursor-propio a,
 html.cursor-propio button,
 html.cursor-propio [role="tab"],
-html.cursor-propio label { cursor: none; }
+html.cursor-propio [role="button"],
+html.cursor-propio label,
+html.cursor-propio summary { cursor: var(--cursor-hoja); }
+
+/* Solo se anima la forma de la imagen nativa, nunca su posición. Las tres
+   siluetas se abren desde el mismo centro, como una hoja que brota. */
+@keyframes cursorBrote {
+  0% { --cursor-hoja: url('../images/cursor/hoja.png') 24 24, default; }
+  40% { --cursor-hoja: url('../images/cursor/hoja-brote.png') 26 26, default; }
+  100% { --cursor-hoja: url('../images/cursor/hoja-abierta.png') 28 28, default; }
+}
+html.cursor-propio.cursor--enlace {
+  --cursor-hoja: url('../images/cursor/hoja-abierta.png') 28 28, pointer;
+  animation: cursorBrote var(--t-hover) steps(1, end);
+}
+html.cursor-propio.cursor--pulsado {
+  --cursor-hoja: url('../images/cursor/hoja-pulsada.png') 24 24, pointer;
+  animation: none;
+}
 html.cursor-propio input,
 html.cursor-propio textarea,
 html.cursor-propio select { cursor: text; }
+html.cursor-propio :disabled,
+html.cursor-propio [aria-disabled="true"] { cursor: not-allowed; }
 
 /* --- Apertura: la foto que sigue al puntero --------------------------------- */
 
@@ -2365,7 +2293,12 @@ html.cursor-propio select { cursor: text; }
   .hero__estado--abierta::before,
   .funciona__haz { animation: none; }
   .funciona__paso { transition: none; }
-  .cursor { display: none; }
+  html.cursor-propio,
+  html.cursor-propio.cursor--enlace,
+  html.cursor-propio.cursor--pulsado {
+    --cursor-hoja: auto;
+    animation: none;
+  }
 }
 
 /* El mejor tiempo destella una vez cuando el cronómetro se detiene. */

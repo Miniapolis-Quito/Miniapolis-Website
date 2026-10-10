@@ -128,7 +128,8 @@ test('cada bloque de la portada tiene su sistema visual, responsive y salida acc
 
 test('ninguna foto se usa como fondo detrás de un texto, salvo la apertura con su velo', () => {
   assert.doesNotMatch(portadaCss, /--(?:scene|card|caption|local)-fondo/, 'las fichas no llevan fotos de fondo');
-  assert.doesNotMatch(portadaCss, /url\(['"]?\.\.\/images/, 'las fotos van en el HTML, con su alt y su carga diferida');
+  // Las hojas del cursor son iconos nativos, no fotografías de fondo.
+  assert.doesNotMatch(portadaCss, /url\(['"]?\.\.\/images\/(?!cursor\/)/, 'las fotos van en el HTML, con su alt y su carga diferida');
   assert.match(portadaCss, /\.hero__foto::after\s*\{[^}]*linear-gradient\(90deg, rgba\(0, 0, 0, \.9\)/s, 'el titular de la apertura se lee sobre un velo denso');
 });
 

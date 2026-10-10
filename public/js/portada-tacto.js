@@ -7,9 +7,9 @@
  * veces por segundo y la pieza lo sigue sin reiniciar una transición CSS en
  * cada evento (que es lo que hace que un hover se sienta a tirones).
  *
- *  - Cursor: un punto y un aro que van exactamente donde está el puntero, los
- *    dos a la vez y sin inercia (un aro que llega tarde se lee como un fallo);
- *    el aro solo cambia de tamaño: se abre sobre lo que se puede pulsar.
+ *  - Cursor: dos hojas en una misma imagen nativa, con un solo punto de clic.
+ *    El navegador las mueve juntas sin esperar al dibujo de la página.
+ *    Solo cambia su estado: brotan sobre enlaces y se recogen al pulsar.
  *  - Imán: los botones grandes se acercan al puntero. Se mueven con la
  *    propiedad CSS `translate` (variables --mx/--my), que no pisa el
  *    `transform` con el que el botón sube al pasar por encima.
@@ -28,36 +28,32 @@ const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
 const CLICABLES = 'a, button, [role="tab"], label, summary';
 const ESCRIBIBLES = 'input, textarea, select';
 
-function montarCursor(gsap) {
-  const cursor = document.createElement('div');
-  cursor.className = 'cursor cursor--oculto';
-  cursor.setAttribute('aria-hidden', 'true');
-  const punto = document.createElement('span');
-  punto.className = 'cursor__punto';
-  const aro = document.createElement('span');
-  aro.className = 'cursor__aro';
-  cursor.append(aro, punto);
-  document.body.append(cursor);
-  document.documentElement.classList.add('cursor-propio');
+function montarCursor() {
+  const raiz = document.documentElement;
+  raiz.classList.add('cursor-propio');
 
-  // Se mueve el cursor entero, sin interpolar: punto y aro comparten un solo
-  // desplazamiento, así que van siempre juntos y pegados al puntero.
-  const ponerX = gsap.quickSetter(cursor, 'x', 'px');
-  const ponerY = gsap.quickSetter(cursor, 'y', 'px');
-
-  window.addEventListener('pointermove', (evento) => {
+  const esEnlace = (nodo) => nodo instanceof Element
+    && !nodo.closest(`${ESCRIBIBLES}, :disabled, [aria-disabled="true"]`)
+    && Boolean(nodo.closest(CLICABLES));
+  // La posición pertenece al cursor nativo. Estos eventos solo cambian la
+  // forma; no hay pointermove, interpolación ni espera de otro fotograma.
+  window.addEventListener('pointerover', (evento) => {
     if (evento.pointerType !== 'mouse') return;
-    ponerX(evento.clientX);
-    ponerY(evento.clientY);
-    const objetivo = evento.target instanceof Element ? evento.target : null;
-    cursor.classList.toggle('cursor--enlace', Boolean(objetivo?.closest(CLICABLES)));
-    cursor.classList.toggle('cursor--oculto', Boolean(objetivo?.closest(ESCRIBIBLES)));
+    raiz.classList.toggle('cursor--enlace', esEnlace(evento.target));
   }, { passive: true });
-  document.addEventListener('pointerleave', () => cursor.classList.add('cursor--oculto'));
-  document.documentElement.addEventListener('pointerleave', () => cursor.classList.add('cursor--oculto'));
-  window.addEventListener('pointerdown', () => cursor.classList.add('cursor--pulsado'), { passive: true });
-  window.addEventListener('pointerup', () => cursor.classList.remove('cursor--pulsado'), { passive: true });
-  window.addEventListener('blur', () => cursor.classList.add('cursor--oculto'));
+  window.addEventListener('pointerout', (evento) => {
+    if (evento.pointerType !== 'mouse') return;
+    raiz.classList.toggle('cursor--enlace', esEnlace(evento.relatedTarget));
+  }, { passive: true });
+  window.addEventListener('pointerdown', (evento) => {
+    if (evento.pointerType === 'mouse' && evento.button === 0) raiz.classList.add('cursor--pulsado');
+  }, { passive: true });
+  const soltar = () => raiz.classList.remove('cursor--pulsado');
+  window.addEventListener('pointerup', soltar, { passive: true });
+  window.addEventListener('pointercancel', soltar, { passive: true });
+  const salir = () => raiz.classList.remove('cursor--pulsado', 'cursor--enlace');
+  document.documentElement.addEventListener('pointerleave', salir);
+  window.addEventListener('blur', salir);
 }
 
 function montarImanes(gsap) {
@@ -189,7 +185,7 @@ function montarTelefono(gsap) {
 
 export function montarTacto(gsap) {
   if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return;
-  montarCursor(gsap);
+  montarCursor();
   montarImanes(gsap);
   montarInclinacion(gsap);
   montarFondoApertura(gsap);

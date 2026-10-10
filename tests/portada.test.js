@@ -214,11 +214,7 @@ test('fluidez: GSAP y el CSS nunca animan la misma propiedad del mismo elemento'
   assert.doesNotMatch(CSS, /\.producto:hover\s*\{[^}]*transform/, 'el hover de la tarjeta no pisa su inclinación');
 });
 
-test('fluidez: el puntero se sigue con quickTo y el imán no pisa el transform del botón', () => {
-  // Punto y aro van pegados al puntero y juntos: un solo desplazamiento, sin inercia.
-  assert.match(TACTO, /gsap\.quickSetter\(cursor, 'x', 'px'\)/);
-  assert.match(TACTO, /gsap\.quickSetter\(cursor, 'y', 'px'\)/);
-  assert.doesNotMatch(TACTO, /quickTo\((?:punto|aro),/, 'el aro no llega tarde: nada del cursor se interpola');
+test('fluidez: los imanes y la inclinación no pisan el transform del botón', () => {
   assert.match(TACTO, /gsap\.quickTo\(boton, '--mx'/);
   assert.match(TACTO, /gsap\.quickTo\(tarjeta, 'rotationX'/);
   assert.match(CSS, /\.hero__acciones \.boton,[\s\S]*?\{\s*translate:\s*var\(--mx, 0px\) var\(--my, 0px\);\s*\}/,
@@ -361,7 +357,6 @@ test('el contenido decorativo repetido no se lee dos veces', () => {
   assert.match(HTML, /<div class="galeria__avance marco" aria-hidden="true">/);
   assert.match(HTML, /<div class="disciplinas__vuelta" aria-hidden="true">/);
   assert.match(HTML, /<span class="hero__guia" aria-hidden="true">/);
-  assert.match(TACTO, /cursor\.setAttribute\('aria-hidden', 'true'\)/);
   assert.match(VUELTA, /vuelta\.setAttribute\('aria-hidden', 'true'\)/);
 });
 
@@ -434,8 +429,7 @@ test('una sola gramática de movimiento: el encabezado se lee en orden y nada gi
 
 test('el cursor propio nunca esconde dónde se escribe', () => {
   assert.match(CSS, /html\.cursor-propio input,\s*html\.cursor-propio textarea,\s*html\.cursor-propio select \{ cursor: text; \}/);
-  assert.match(TACTO, /cursor\.classList\.toggle\('cursor--oculto', Boolean\(objetivo\?\.closest\(ESCRIBIBLES\)\)\)/);
-  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.cursor \{ display: none; \}/);
+  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*--cursor-hoja: auto;/);
 });
 
 test('lo que espera a revelarse se puede enfocar con el teclado', () => {

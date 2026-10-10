@@ -29,6 +29,13 @@ todas sus letras en su sitio y que la guía de la apertura (fuera del teléfono)
 tiene su luz en marcha; con movimiento reducido, que no se monta ninguna
 escena, no hay vuelta ni guía y todo se ve sin bajar.
 
+## `cursor.mjs` — el puntero de la portada
+
+`npm run test:cursor` comprueba en un navegador real que las dos hojas son
+un cursor nativo con el punto de clic centrado, que se abren sobre enlaces y
+se recogen al pulsar, y que se conservan la escritura, la interacción táctil
+y la preferencia de movimiento reducido.
+
 ## `interfaz.mjs` — la interfaz, sin montar nada
 
 ```bash
