@@ -12,7 +12,7 @@ vuelta o se quita.
 
 | Momento | Qué pasa | Qué cuenta |
 |---|---|---|
-| Salida | Junto al semáforo, el estado real de la pista («Pista abierta hasta las 23:00», «Abre mañana a las 09:00»), sacado de la tabla de horarios. La cuenta atrás es un pórtico de salida en el centro; después la nave respira (un acercamiento lentísimo de ida y vuelta) y la foto se mueve unos píxeles con el puntero. | Que la pista existe ahora mismo. |
+| Salida | Junto al semáforo, el estado real de la pista («Pista abierta hasta las 23:00», «Abre mañana a las 09:00»), sacado de la tabla de horarios. La cuenta atrás es un pórtico de salida en el centro; después la nave respira sola: un acercamiento y una deriva lentísimos, de ida y vuelta, que no siguen al puntero. | Que la pista existe ahora mismo. |
 | Sectores | Detrás de cada encabezado, su número enorme en contorno de un píxel, más lento que la página. | Dónde se está, como los dorsales en la nave. |
 | 09 · Cómo funciona | «Del pack a la pista»: tres pasos y un teléfono `sticky` que enseña la pantalla del paso que se lee (el pack, el QR que se renueva con su haz de lectura y su cuenta atrás, el saldo que baja de 10 a 9). Con ratón, el teléfono se inclina hacia el puntero; en pantalla ancha, un riel junto a los pasos se llena al leerlos. | El producto: el pase en el teléfono. |
 | Cronómetro | En la regla vertical de la vuelta corre el tiempo; al cruzar cada sector se detiene un instante en verde con su parcial; en la meta se queda fijo. | La vuelta se está cronometrando. |
@@ -36,9 +36,12 @@ récords. Con ellos se fueron sus funciones puras y sus pruebas.
   el teléfono monte su versión.
 - **Las estelas se retiraron** (las líneas de luz que salían del fondo de la
   nave): se leían como un efecto añadido y no como parte de la pista.
-- **La foto que sigue al puntero no se movía.** Iba por la propiedad
-  `translate` del CSS y GSAP, que escala esa foto en la apertura, la absorbe
-  en su `transform` y la deja en `none`. Ahora va por la `x` y la `y` de GSAP.
+- **La foto de la apertura ya no sigue al puntero.** Se mueve sola, con tres
+  vaivenes muy lentos y de periodos que no coinciden: la escala va de 1.04 a
+  1.08 en 19 s, la deriva horizontal hasta un 1.2 % en 27 s y la vertical hasta
+  un 0.8 % en 34 s. El encuadre nunca repite el mismo camino. La escala no baja
+  de 1.04, así que siempre sobra un 2 % por lado y el borde no asoma en ninguna
+  pantalla. Ya no hace falta agrandarla con márgenes negativos.
 - **El teléfono se mide en `em` sobre su propio ancho** (`container-type:
   inline-size`): en el móvil es la misma pantalla, más pequeña, y deja ver la
   pantalla por encima de las tarjetas de los pasos. Apaisado se queda lado a

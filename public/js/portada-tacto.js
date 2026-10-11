@@ -15,8 +15,6 @@
  *    `transform` con el que el botón sube al pasar por encima.
  *  - Tarjetas de tienda: se inclinan hacia el puntero, la foto se desplaza al
  *    revés y un brillo sigue la luz.
- *  - Apertura: la foto de la nave se desplaza unos píxeles al revés que el
- *    puntero, como se mueve el fondo cuando uno gira la cabeza.
  *  - «Cómo funciona»: el teléfono se inclina hacia el puntero, como uno que
  *    se tiene en la mano para enseñarlo en la puerta.
  */
@@ -145,27 +143,6 @@ function montarInclinacion(gsap) {
   }
 }
 
-function montarFondoApertura(gsap) {
-  const hero = document.querySelector('.hero');
-  const foto = hero?.querySelector('.hero__foto img');
-  if (!hero || !foto) return;
-  // `x` e `y` de GSAP y no `translate` del CSS: GSAP, que escala esta foto en
-  // la apertura, absorbe `translate` en su propio `transform` y lo anula.
-  const x = gsap.quickTo(foto, 'x', { duration: 1.4, ease: 'power3' });
-  const y = gsap.quickTo(foto, 'y', { duration: 1.4, ease: 'power3' });
-  hero.addEventListener('pointermove', (evento) => {
-    if (evento.pointerType !== 'mouse') return;
-    const rx = evento.clientX / window.innerWidth - 0.5;
-    const ry = evento.clientY / window.innerHeight - 0.5;
-    x(Math.round(-rx * 360) / 10);
-    y(Math.round(-ry * 240) / 10);
-  }, { passive: true });
-  hero.addEventListener('pointerleave', () => {
-    x(0);
-    y(0);
-  });
-}
-
 function montarTelefono(gsap) {
   const escena = document.querySelector('.funciona__escena');
   const marco = escena?.querySelector('.funciona__marco');
@@ -192,6 +169,5 @@ export function montarTacto(gsap) {
   montarCursor(gsap);
   montarImanes(gsap);
   montarInclinacion(gsap);
-  montarFondoApertura(gsap);
   montarTelefono(gsap);
 }
