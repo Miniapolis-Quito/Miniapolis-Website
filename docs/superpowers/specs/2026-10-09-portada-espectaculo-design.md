@@ -133,6 +133,33 @@ Los trazos se dibujan con `pathLength="1"` y su grosor va en unidades del
 dibujo, sin `vector-effect: non-scaling-stroke`: con él, Chrome mide el guion
 en píxeles de pantalla y el dibujo se quedaba a medias.
 
+Los dibujos se rehicieron con la geometría medida, no a ojo:
+
+- **Asfalto:** los pianos son paralelas exactas del trazado, pegadas al borde de
+  la banda en el vértice de cada curva. La línea de meta cruza la banda de borde
+  a borde. La línea del trazado se abre bajo el auto en lugar de atravesarlo.
+- **Crawling:** las rocas son una sola curva sin quiebres que nace y muere en
+  el suelo. Cada rueda se apoya en la roca, tangente y sin hundirse. La
+  carrocería se armó horizontal, con pasos de rueda concéntricos a las ruedas,
+  y después se inclinó al ángulo que marcan los dos apoyos.
+- **Rally:** los bordes son paralelas exactas del eje, con los extremos cortados
+  a escuadra. La calzada pasa de asfalto a tierra en una línea transversal. El
+  auto va alineado con la tangente, con sus huellas detrás.
+- **Drones:** ahora en planta, como el plano del circuito. Las puertas son
+  barras perpendiculares a la ruta, que se corta al pasar bajo cada una como un
+  camino bajo un puente. El tramo recorrido va en verde y lo que falta, en
+  punteado, a ambos lados del dron.
+- **Simulador:** la carretera converge al horizonte y su línea central se acorta
+  con la distancia. El pie del monitor ya no comparte eje con ella.
+
+Para que cada contorno cierre, el guion de la animación mide 1.05 y no 1: con un
+guion justo de 1, Chrome dejaba rectángulos y círculos abiertos en su punto de
+cierre. El dibujo entero se traza en su tramo con un escalonado de duración
+fija (`stagger: { amount }`), así que por muchos trazos que tenga termina y
+queda quieto antes de que su lámina se vaya. Los punteados no llevan
+`pathLength`: su guion se mide en unidades del dibujo; con `pathLength="1"`, el
+`3 6` cubría el trazo entero y nunca se veían punteados.
+
 ## 07 · Galería: una tira con profundidad y subtítulos
 
 La tira fija que corre de lado gana lo que le faltaba para sentirse dentro:
