@@ -2330,18 +2330,6 @@ html.cursor-propio input,
 html.cursor-propio textarea,
 html.cursor-propio select { cursor: text; }
 
-/* --- Apertura: la foto que sigue al puntero --------------------------------- */
-
-/* La foto se mueve unos píxeles con el puntero (portada-tacto.js): la nave
-   tiene fondo. Es un poco más grande que su marco para que el borde no asome
-   nunca. Se mueve con la `x` y la `y` de GSAP, que se suman a la escala con
-   que la anima la apertura; con `translate`, GSAP la anularía. */
-.cursor-propio .hero__foto img {
-  width: calc(100% + 48px);
-  height: calc(100% + 48px);
-  margin: -24px;
-}
-
 /* --- Números fantasma: el número de cada sector, enorme y de contorno ---------- */
 
 /* Detrás de cada encabezado, el número de su sector en contorno de un píxel:

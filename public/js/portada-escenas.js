@@ -190,14 +190,22 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     if (fotoHero) gsap.set(fotoHero, { filter: 'brightness(0.42)' });
   };
 
-  // Después de la apertura la nave respira: un acercamiento lentísimo, de ida
-  // y vuelta, para que la portada no se quede en una foto quieta. Se detiene
+  // Después de la apertura la nave respira sola, sin seguir al puntero: un
+  // acercamiento y una deriva lentísimos, de ida y vuelta, con periodos que no
+  // coinciden, así que el encuadre nunca repite el mismo camino. La foto nunca
+  // baja de 1.04: ese 2 % de sobra por cada lado cubre la deriva (como mucho
+  // un 1.2 % de su ancho) y el borde no asoma en ninguna pantalla. Se detiene
   // mientras la apertura no se ve.
   let respiro = null;
   const respirar = () => {
     if (!fotoHero || !hero || respiro) return;
-    respiro = gsap.to(fotoHero, { scale: 1.06, duration: 18, ease: 'sine.inOut', repeat: -1, yoyo: true });
-    ScrollTrigger.create({ trigger: hero, start: 'top bottom', end: 'bottom top', onToggle: (self) => respiro.paused(!self.isActive) });
+    const vaiven = { ease: 'sine.inOut', repeat: -1, yoyo: true };
+    respiro = [
+      gsap.to(fotoHero, { scale: 1.08, duration: 19, ...vaiven }),
+      gsap.to(fotoHero, { xPercent: -1.2, duration: 27, ...vaiven }),
+      gsap.to(fotoHero, { yPercent: -0.8, duration: 34, ...vaiven }),
+    ];
+    ScrollTrigger.create({ trigger: hero, start: 'top bottom', end: 'bottom top', onToggle: (self) => respiro.forEach((t) => t.paused(!self.isActive)) });
   };
 
   escenas.apertura = () => {
@@ -217,7 +225,7 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     }
     tl.set(lineas, { yPercent: 0 })
       .from(letrasPorLinea.flat(), { yPercent: 118, rotate: 6, duration: 1.25, stagger: 0.035 }, 0)
-      .from('.hero__foto img', { scale: 1.16, duration: 2.6, ease: 'power3.out' }, 0)
+      .fromTo('.hero__foto img', { scale: 1.16 }, { scale: 1.04, duration: 2.6, ease: 'power3.out' }, 0)
       .call(respirar, null, 2.6)
       .from('.hero__kicker', { opacity: 0, x: -36, duration: 1 }, 0.15)
       .from('.hero__estado', { opacity: 0, x: -16, duration: 1 }, 0.3)
