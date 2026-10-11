@@ -65,6 +65,14 @@ const unaVez = (trigger, start = 'top 82%') => ({ trigger, start, once: true });
 const ESCALON = 0.08;
 /** Lo que sube para aparecer: siempre la misma distancia y el mismo tiempo. */
 const SUBIDA = { opacity: 0, y: 36, duration: 1.1 };
+/**
+ * Un dibujo que se traza con `pathLength="1"`. El guion mide un 5 % más que
+ * el trazo: con un guion justo de 1, Chrome dejaba cada rectángulo y cada
+ * círculo abierto en su punto de cierre. Oculto, el guion termina antes del
+ * inicio del trazo y su remate redondo no deja un punto suelto.
+ */
+const TRAZO_OCULTO = { strokeDasharray: '1.05 2', strokeDashoffset: 1.06 };
+const TRAZO_DIBUJADO = { strokeDasharray: '1.05 2', strokeDashoffset: 0, autoRound: false };
 
 export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin, Lenis }) {
   gsap.registerPlugin(ScrollTrigger, ...[SplitText, MotionPathPlugin].filter(Boolean));
@@ -628,8 +636,10 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
         }
         if (i > 0) tl.to(mira, { ...destino(i), duration: 0.3, ease: 'power3.inOut' }, momento - 0.15);
         tl.fromTo($('.disciplina__num', disciplina), { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.45, ease: 'expo.out' }, momento + 0.12)
-          .fromTo(trazos, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0, autoRound: false, duration: 0.65, stagger: 0.04, ease: 'power2.inOut' }, momento + 0.15)
-          .fromTo(punteados, { opacity: 0 }, { opacity: 1, duration: 0.3 }, momento + 0.55)
+          // El dibujo entero cabe en su tramo: por muchos trazos que tenga, el
+          // último se cierra en +0.72 y queda quieto antes de que la lámina se vaya.
+          .fromTo(trazos, { ...TRAZO_OCULTO }, { ...TRAZO_DIBUJADO, duration: 0.42, stagger: { amount: 0.18 }, ease: 'power2.inOut' }, momento + 0.12)
+          .fromTo(punteados, { opacity: 0 }, { opacity: 1, duration: 0.25 }, momento + 0.45)
           .fromTo($('i', tramos[i]), { scaleX: 0 }, { scaleX: 1, duration: 1 }, momento);
       });
       // El último sector se queda en escena un instante antes de soltarse.
@@ -644,8 +654,8 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     disciplinas.forEach((disciplina) => {
       fijar(disciplina, { scrollTrigger: alEntrar(disciplina, 'top 90%') })
         .fromTo($('.disciplina__sector', disciplina), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: 'expo.inOut' }, 0.6)
-        .fromTo($$('.trazo:not(.trazo--punteado)', disciplina), { strokeDasharray: 1, strokeDashoffset: 1 }, {
-          strokeDasharray: 1, strokeDashoffset: 0, autoRound: false, duration: 1.2, stagger: 0.05, ease: 'power2.inOut',
+        .fromTo($$('.trazo:not(.trazo--punteado)', disciplina), { ...TRAZO_OCULTO }, {
+          ...TRAZO_DIBUJADO, duration: 1.2, stagger: 0.05, ease: 'power2.inOut',
         }, 0.4);
     });
     return undefined;

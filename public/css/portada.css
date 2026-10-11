@@ -373,8 +373,12 @@
 .trazo--tenue { stroke: var(--texto-3); }
 .trazo--acento { stroke: var(--acento); }
 .trazo--asfalto { stroke: rgba(255, 255, 255, .08); stroke-width: 14; }
+/* La calzada del rally: la banda llena el ancho entre sus dos bordes y se
+   corta a escuadra donde cambia la superficie. */
+.trazo--calzada { stroke: rgba(255, 255, 255, .08); stroke-width: 20; stroke-linecap: butt; }
 .trazo--tierra { stroke: rgba(255, 209, 102, .07); }
-.trazo--punteado { stroke-dasharray: 3 6; }
+/* Sin `pathLength`: el guion se mide en unidades del dibujo. */
+.trazo--punteado { stroke-dasharray: 2 4; }
 .disciplina h3 {
   margin: 0 0 12px;
   font-size: clamp(1.02rem, 1.2vw, 1.14rem);
@@ -1836,7 +1840,8 @@ html.lenis { scroll-behavior: auto; }
   box-shadow: var(--filo);
 }
 .disciplinas--vuelta .trazo { stroke-width: .95; }
-.disciplinas--vuelta .trazo--asfalto { stroke-width: 12; }
+.disciplinas--vuelta .trazo--asfalto { stroke-width: 14; }
+.disciplinas--vuelta .trazo--calzada { stroke-width: 20; }
 
 /* El tablero de sectores, bajo el escenario: cinco tramos con su número y su
    nombre que se llenan en orden. La línea de la vuelta corre por encima. */
