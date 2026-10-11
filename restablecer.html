@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Elegir contraseña nueva · Miniápolis #3</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/interior.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.png" type="image/png">
+</head>
+<body class="pagina-interior pagina-interior--sola">
+  <main class="contenedor contenedor--angosto pagina-sola">
+    <div class="centrado mb-3">
+      <div class="brand-lockup brand-lockup--entrada" aria-hidden="true">
+        <img class="brand-lockup__logo" src="./images/miniapolis-logo-oficial.webp" width="1000" height="425" alt="">
+      </div>
+      <h1 data-marca>Miniápolis #3</h1>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Elige una contraseña nueva</h2>
+
+      <div id="aviso" class="aviso" role="alert" hidden></div>
+
+      <div id="comprobando" class="vacio">
+        <div class="cargando cargando--grande"></div>
+        <p class="mt">Comprobando el enlace…</p>
+      </div>
+
+      <form id="form-restablecer" novalidate hidden>
+        <div class="campo">
+          <label for="nueva-password">Contraseña nueva</label>
+          <input id="nueva-password" name="newPassword" type="password" autocomplete="new-password" required>
+          <div class="campo__ayuda" id="ayuda-password">Mínimo 10 caracteres. Distinta a la anterior.</div>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="confirmar-password">Repite la contraseña nueva</label>
+          <input id="confirmar-password" name="confirmPassword" type="password" autocomplete="new-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <p class="tenue pequeno">Al guardarla cerramos la sesión en todos tus dispositivos.</p>
+        <button class="boton boton--principal boton--bloque boton--grande" type="submit">Guardar contraseña nueva</button>
+      </form>
+
+      <div id="acciones-final" class="mt" hidden>
+        <a class="boton boton--principal boton--bloque boton--grande" href="./index.html">Ir a entrar</a>
+      </div>
+    </div>
+
+    <p class="centrado tenue-2 pequeno mt-2">
+      ¿No pediste este cambio? Cierra esta página: tu contraseña sigue igual.
+    </p>
+  </main>
+
+  <script type="module" src="./js/restablecer.js"></script>
+</body>
+</html>
