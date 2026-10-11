@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Mis entradas · Miniápolis #3</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/interior.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.png" type="image/png">
+</head>
+<body class="pagina-interior pagina-interior--cliente">
+  <header class="barra" id="cabecera"></header>
+
+  <main class="contenedor">
+    <div id="cargando-inicial" class="vacio">
+      <div class="cargando cargando--grande"></div>
+      <p class="mt">Estamos cargando tus entradas…</p>
+    </div>
+
+    <div id="contenido" hidden>
+      <div class="encabezado-pista fila fila--entre mb-2">
+        <div>
+          <span class="seccion-marca">Tu pase de entrada</span>
+          <h1 class="sin-margen" id="titulo">Mis entradas</h1>
+          <p class="tenue sin-margen" id="subtitulo"></p>
+        </div>
+        <div class="fila">
+          <button class="boton boton--principal boton--chico" id="btn-comprar-pack" type="button">Comprar un pack</button>
+          <button class="boton boton--fantasma boton--chico" id="btn-cuenta" type="button">Mi cuenta</button>
+        </div>
+      </div>
+
+      <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <!-- Saldo total -->
+      <section class="saldo" id="saldo" aria-live="polite">
+        <div class="saldo__numero" id="saldo-numero">—</div>
+        <div class="saldo__texto" id="saldo-texto">entradas disponibles</div>
+      </section>
+
+      <!-- Programa de fidelidad. Solo aparece si la pista lo tiene encendido. -->
+      <section id="seccion-fidelidad" class="tarjeta mt-2 fidelidad" aria-live="polite" hidden>
+        <div class="tarjeta__titulo">
+          <h2>La casa invita</h2>
+          <span class="etiqueta etiqueta--info" id="fidelidad-etiqueta"></span>
+        </div>
+        <p class="sin-margen" id="fidelidad-texto"></p>
+        <div class="fidelidad__sellos" id="fidelidad-sellos" aria-hidden="true"></div>
+        <div class="barra-progreso mt" id="fidelidad-barra" hidden>
+          <div class="barra-progreso__relleno" id="fidelidad-relleno"></div>
+        </div>
+        <p class="tenue-2 pequeno sin-margen mt" id="fidelidad-detalle"></p>
+      </section>
+
+      <!-- Solicitud de recarga en revisión -->
+      <section id="seccion-solicitud-activa" class="tarjeta tarjeta--atencion mt-2" hidden>
+        <div class="tarjeta__titulo">
+          <h2 id="solicitud-activa-titulo">Tu solicitud está en revisión</h2>
+          <span class="etiqueta etiqueta--alerta" id="solicitud-activa-estado">En revisión</span>
+        </div>
+        <p class="tenue pequeno sin-margen" id="solicitud-activa-detalle"></p>
+        <div class="fila mt fila--entre">
+          <span class="tenue-2 pequeno" id="solicitud-activa-fecha"></span>
+          <button class="boton boton--fantasma boton--chico" id="btn-cancelar-solicitud-activa" type="button">Cancelar solicitud</button>
+        </div>
+      </section>
+
+      <!-- Pase activo con QR -->
+      <section id="seccion-qr" class="tarjeta mt-2" hidden>
+        <div class="tarjeta__titulo">
+          <h2>Tu pase para la pista</h2>
+          <span class="etiqueta etiqueta--info" id="qr-etiqueta-pack"></span>
+        </div>
+        <p class="tenue pequeno">
+          Enséñale este código al personal de la pista. Se actualiza solo por seguridad:
+          una captura deja de servir al rato y, una vez usado el código, esa copia
+          ya no funciona.
+        </p>
+
+        <div class="qr-caja qr-caja--cargando" id="qr-caja">
+          <div class="cargando cargando--grande"></div>
+        </div>
+
+        <div class="qr-pie mt">
+          <div class="mono codigo-grande" id="qr-codigo"></div>
+          <div id="qr-estado">Se actualiza en <span class="qr-cuenta" id="qr-cuenta">—</span> s</div>
+        </div>
+
+        <div class="fila mt centro-flex">
+          <button class="boton boton--fantasma boton--chico" id="btn-refrescar-qr" type="button">Actualizar ahora</button>
+          <button class="boton boton--fantasma boton--chico" id="btn-copiar-codigo" type="button">Copiar código</button>
+        </div>
+
+        <div id="selector-packs" class="fila mt centro-flex" hidden></div>
+
+        <!-- Guardar el pase en la cartera del teléfono. Solo aparece si el
+             sistema tiene configurada alguna de las dos. -->
+        <div id="cartera" class="cartera mt-2" hidden>
+          <h3 class="cartera__titulo">Llévalo en tu teléfono</h3>
+          <p class="tenue pequeno sin-margen" id="cartera-ayuda"></p>
+          <div id="carteras" class="fila mt centro-flex"></div>
+        </div>
+      </section>
+
+      <!-- Packs -->
+      <section class="mt-2">
+        <h2>Mis packs</h2>
+        <div class="rejilla rejilla--2" id="lista-packs"></div>
+      </section>
+
+      <!-- Historial -->
+      <section class="tarjeta mt-2">
+        <div class="tarjeta__titulo">
+          <h2>Historial de entradas</h2>
+          <button class="boton boton--fantasma boton--chico" id="btn-recargar-historial" type="button">Actualizar</button>
+        </div>
+        <div id="historial"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Diálogo de cuenta -->
+  <dialog id="dialogo-cuenta">
+    <div class="modal__cuerpo">
+      <h2>Mi cuenta</h2>
+      <form id="form-perfil" novalidate>
+        <div class="campo">
+          <label for="perfil-nombre">Nombre completo</label>
+          <input id="perfil-nombre" name="fullName" type="text" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="perfil-telefono">Teléfono</label>
+          <input id="perfil-telefono" name="phone" type="tel" inputmode="tel" placeholder="+593 99 000 0000">
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-perfil" class="aviso" role="status" hidden></div>
+        <button class="boton boton--principal" type="submit">Guardar cambios</button>
+      </form>
+
+      <!-- Solo aparece si la pista manda recordatorios por correo. -->
+      <div id="seccion-recordatorios" hidden>
+        <hr class="separador">
+        <h3>Recordatorios</h3>
+        <div class="campo campo--linea">
+          <input type="checkbox" id="perfil-recordatorios">
+          <label for="perfil-recordatorios">Avísame por correo cuando me queden pocas entradas, se me acaben o estén por vencer</label>
+        </div>
+        <p class="tenue-2 pequeno sin-margen">El comprobante de cada compra te llega siempre.</p>
+        <div id="aviso-recordatorios" class="aviso mt" role="status" hidden></div>
+      </div>
+
+      <hr class="separador">
+
+      <h3>Cambiar contraseña</h3>
+      <form id="form-password" novalidate>
+        <div class="campo">
+          <label for="password-actual">Contraseña actual</label>
+          <input id="password-actual" name="currentPassword" type="password" autocomplete="current-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="password-nueva">Contraseña nueva</label>
+          <input id="password-nueva" name="newPassword" type="password" autocomplete="new-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="password-confirmar">Repite la contraseña nueva</label>
+          <input id="password-confirmar" name="confirmPassword" type="password" autocomplete="new-password" required>
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-password" class="aviso" role="status" hidden></div>
+        <button class="boton boton--principal" type="submit">Cambiar contraseña</button>
+      </form>
+
+      <hr class="separador">
+
+      <!-- Verificación en dos pasos. Lo dibuja public/js/dos-factores.js. -->
+      <div id="seccion-dos-factores"></div>
+
+      <hr class="separador">
+      <button class="boton boton--peligro boton--bloque" id="btn-cerrar-todo" type="button">
+        Cerrar sesión en todos mis dispositivos
+      </button>
+    </div>
+    <div class="modal__pie">
+      <button class="boton boton--fantasma" id="btn-cerrar-cuenta" type="button">Cerrar</button>
+    </div>
+  </dialog>
+
+  <!-- Diálogo de transferir entradas -->
+  <dialog id="dialogo-transferir">
+    <div class="modal__cuerpo">
+      <h2>Transferir entradas</h2>
+      <p class="tenue pequeno" id="transferir-subtitulo">Pásale entradas de tu pack a otro piloto registrado.</p>
+      <form id="form-transferir" novalidate>
+        <div class="campo">
+          <label for="transferir-cantidad">Cantidad a transferir</label>
+          <input id="transferir-cantidad" name="quantity" type="number" min="1" max="50" value="1" required>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="transferir-destinatario">Correo o teléfono del destinatario</label>
+          <input id="transferir-destinatario" name="recipient" type="text" placeholder="amigo@correo.com o +593 99..." required>
+          <div class="campo__ayuda">El destinatario debe tener una cuenta registrada en Miniápolis.</div>
+          <div class="campo__error"></div>
+        </div>
+        <div class="campo">
+          <label for="transferir-nota">Nota o mensaje <span class="tenue-2">(opcional)</span></label>
+          <input id="transferir-nota" name="note" type="text" maxlength="200" placeholder="Ej: Para la carrera del sábado">
+          <div class="campo__error"></div>
+        </div>
+        <div id="aviso-transferir" class="aviso" role="alert" hidden></div>
+        <div class="fila mt">
+          <button class="boton boton--fantasma" id="btn-cancelar-transferir" type="button">Cancelar</button>
+          <button class="boton boton--principal crece" id="btn-confirmar-transferir" type="submit">Transferir entradas</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Diálogo para comprar / recargar pack -->
+  <dialog id="dialogo-comprar-pack" class="dialogo-ancho">
+    <div class="modal__cuerpo">
+      <h2>Comprar un pack</h2>
+      <p class="tenue pequeno">Escoge tu pack y paga por transferencia bancaria, DeUna o en efectivo en el mostrador.</p>
+
+      <form id="form-comprar-pack" novalidate>
+        <div class="campo">
+          <label>Escoge tu pack</label>
+          <div class="rejilla rejilla--2" id="catalogo-opciones-pack"></div>
+          <input type="hidden" id="compra-pack-size" name="size">
+          <div class="campo__error" id="error-compra-pack-size"></div>
+        </div>
+
+        <!-- Instrucciones de pago -->
+        <div class="caja-pago" id="bloque-datos-pago">
+          <div class="tarjeta__titulo">
+            <h3 class="sin-margen pequeno">Datos para el pago</h3>
+            <span class="etiqueta" id="pago-banco-nombre">Banco</span>
+          </div>
+          <div class="pequeno" id="pago-instrucciones-cuerpo"></div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-metodo-pago">Forma de pago</label>
+          <select id="compra-metodo-pago" name="paymentMethod" required>
+            <option value="deuna">DeUna (QR / celular)</option>
+            <option value="transferencia" selected>Transferencia bancaria</option>
+            <option value="efectivo">Efectivo en mostrador</option>
+          </select>
+          <div class="campo__error"></div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-referencia">Número de comprobante o referencia</label>
+          <input id="compra-referencia" name="paymentReference" type="text" maxlength="120" placeholder="Ej: 0849201 o número de recibo" required>
+          <div class="campo__ayuda">Copia aquí el número de transacción que te dio el banco o DeUna.</div>
+          <div class="campo__error"></div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-nota">Nota o mensaje <span class="tenue-2">(opcional)</span></label>
+          <input id="compra-nota" name="note" type="text" maxlength="300" placeholder="Ej: Transferí desde la cuenta de Juan">
+          <div class="campo__error"></div>
+        </div>
+
+        <div id="aviso-compra-pack" class="aviso" role="alert" hidden></div>
+
+        <div class="fila mt">
+          <button class="boton boton--fantasma" id="btn-cerrar-comprar-pack" type="button">Cancelar</button>
+          <button class="boton boton--principal crece" id="btn-enviar-comprar-pack" type="submit">Enviar solicitud</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <script type="module" src="./js/cliente.js"></script>
+</body>
+</html>
