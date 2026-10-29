@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generateSeo } from './generar-seo.js';
+import { site } from '../site.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,6 +39,8 @@ for (const file of htmlFiles) {
   const filePath = path.join(SITE_DIR, file);
   let html = fs.readFileSync(filePath, 'utf8');
   html = html.replace('<html ', '<html data-hosting-static="true" ');
+  // La página 404 también se sirve para rutas anidadas inexistentes.
+  if (file === '404.html') html = html.replace('</head>', `  <base href="${site.url}">\n</head>`);
 
   // Ajustar enlaces de recursos absolutos a relativos en la raíz de _site
   html = html

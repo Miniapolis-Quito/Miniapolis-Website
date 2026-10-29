@@ -7,7 +7,7 @@ const TTL = 180 * 24 * 60 * 60 * 1000;
 const campaigns = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 const denied = { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' };
 const production = new URL(measurement.url);
-const pagePath = (path) => path === `${production.pathname}index.html` ? production.pathname : path;
+const pagePath = (path) => path === `${production.pathname}index.html` ? production.pathname : path.replace(/\.html$/, '');
 const currentPage = () => measurement.pages.find((page) => page.path === pagePath(location.pathname));
 const validId = /^G-[A-Z0-9]+$/.test(measurement.id);
 const eligible = () => location.protocol === 'https:' && location.origin === production.origin && Boolean(currentPage()) && validId;

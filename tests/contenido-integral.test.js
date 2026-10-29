@@ -41,7 +41,7 @@ test('la portada enlaza al campeonato y a la tienda sin enlaces ficticios', () =
   assert.match(portada, /href="\.\/posiciones\.html"/);
   assert.match(portada, /href="https:\/\/racinghobbies\.net\/catalogo" target="_blank" rel="noreferrer">Tienda Racing Hobbies</);
   assert.doesNotMatch(portada, /href="#"/);
-  assert.doesNotMatch(portada, /racinghobbiesec\.com/);
+  assert.doesNotMatch(portada.match(/<section id="equipamiento"[\s\S]*?<\/section>/)?.[0] ?? '', /racinghobbiesec\.com/);
 });
 
 test('cada tarjeta de la tienda abre su producto en Racing Hobbies', () => {
@@ -82,7 +82,8 @@ test('las fichas de tienda de posiciones abren el mismo producto que la portada'
     ['Lancia Delta Integrale', 'https://racinghobbies.net/catalogo?q=lancia'],
     ['Motor brushless', pedirMotor],
   ]);
-  assert.doesNotMatch(posiciones, /racinghobbiesec\.com/);
+  assert.ok(fichas.every(([, href]) => !href.startsWith('https://racinghobbiesec.com/')),
+    'las ofertas de Racing Hobbies no se atribuyen al dominio de Miniápolis');
   // Las etiquetas dicen lo mismo que la tienda: el Lancia es "Top ventas" allí y
   // el motor no tiene precio publicado.
   assert.match(posiciones, /posiciones__tag">Top ventas</);

@@ -1,0 +1,306 @@
+{
+  "checkedAt": "2026-10-29T20:13:55.706Z",
+  "site": "https://racinghobbiesec.com/",
+  "results": [
+    {
+      "url": "http://racinghobbiesec.com/",
+      "finalUrl": "https://racinghobbiesec.com/",
+      "status": 200,
+      "redirects": [
+        {
+          "url": "http://racinghobbiesec.com/",
+          "status": 301,
+          "location": "https://racinghobbiesec.com/"
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 57748,
+      "sha256": "00316c5e88f32566cda0264d71b342637391ab401428e435a6c701ef11a251f2",
+      "title": "Miniápolis #3 — Entra a rodar",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/",
+      "finalUrl": "https://racinghobbiesec.com/",
+      "status": 200,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 57748,
+      "sha256": "00316c5e88f32566cda0264d71b342637391ab401428e435a6c701ef11a251f2",
+      "title": "Miniápolis #3 — Entra a rodar",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/robots.txt",
+      "finalUrl": "https://racinghobbiesec.com/robots.txt",
+      "status": 200,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "public, max-age=14400, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 176,
+      "sha256": "afac36f424f17b27980c44c68075572add67fc48ad9ef65981087135d2d198b8",
+      "title": null,
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": [],
+      "content": "# Todo el sistema está detrás de una sesión: no hay nada útil que indexar y sí\n# páginas de acceso que no conviene que aparezcan en buscadores.\nUser-agent: *\nDisallow: /\n"
+    },
+    {
+      "url": "https://racinghobbiesec.com/",
+      "finalUrl": "https://racinghobbiesec.com/",
+      "status": 200,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 57748,
+      "sha256": "00316c5e88f32566cda0264d71b342637391ab401428e435a6c701ef11a251f2",
+      "title": "Miniápolis #3 — Entra a rodar",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/posiciones",
+      "finalUrl": "https://racinghobbiesec.com/posiciones",
+      "status": 200,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 9636,
+      "sha256": "8fdc26a54617204d0dd8de27414104dc47577f8486a69d909bacd389a26512e9",
+      "title": "Miniápolis #3 — Tabla de posiciones",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/privacidad",
+      "finalUrl": "https://racinghobbiesec.com/privacidad",
+      "status": 404,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 1014,
+      "sha256": "21327e11d076286f9250f49f25a69c2c9e232c2d4fce306fb9b2c3fdd9d265b0",
+      "title": "Página no encontrada · Miniápolis #3",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/index.html",
+      "finalUrl": "https://racinghobbiesec.com/",
+      "status": 200,
+      "redirects": [
+        {
+          "url": "https://racinghobbiesec.com/index.html",
+          "status": 308,
+          "location": "/"
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 57748,
+      "sha256": "00316c5e88f32566cda0264d71b342637391ab401428e435a6c701ef11a251f2",
+      "title": "Miniápolis #3 — Entra a rodar",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/robots.txt",
+      "finalUrl": "https://racinghobbiesec.com/robots.txt",
+      "status": 200,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "public, max-age=14400, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 176,
+      "sha256": "afac36f424f17b27980c44c68075572add67fc48ad9ef65981087135d2d198b8",
+      "title": null,
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": [],
+      "content": "# Todo el sistema está detrás de una sesión: no hay nada útil que indexar y sí\n# páginas de acceso que no conviene que aparezcan en buscadores.\nUser-agent: *\nDisallow: /\n"
+    },
+    {
+      "url": "https://racinghobbiesec.com/sitemap.xml",
+      "finalUrl": "https://racinghobbiesec.com/sitemap.xml",
+      "status": 404,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 1014,
+      "sha256": "21327e11d076286f9250f49f25a69c2c9e232c2d4fce306fb9b2c3fdd9d265b0",
+      "title": "Página no encontrada · Miniápolis #3",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": [],
+      "content": "<!doctype html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <meta name=\"theme-color\" content=\"#000000\">\n  <title>Página no encontrada · Miniápolis #3</title>\n  <link rel=\"stylesheet\" href=\"./css/styles.css\">\n  <link rel=\"stylesheet\" href=\"./css/interior.css\">\n  <link rel=\"icon\" href=\"./favicon.png\" type=\"image/png\">\n</head>\n<body class=\"pagina-interior pagina-interior--sola\">\n  <main class=\"contenedor contenedor--angosto centrado pagina-sola\">\n    <div class=\"brand-lockup brand-lockup--entrada\">\n      <img class=\"brand-lockup__logo\" src=\"./images/miniapolis-logo-oficial.webp\" width=\"1000\" height=\"425\" alt=\"Miniápolis #3\">\n    </div>\n    <span class=\"seccion-marca\">Error 404</span>\n    <h1>Esa página no existe</h1>\n    <p class=\"tenue\">Puede que el enlace esté mal escrito o que la página se haya movido.</p>\n    <a class=\"boton boton--principal mt\" href=\"./index.html\">Volver a la portada</a>\n  </main>\n</body>\n</html>\n"
+    },
+    {
+      "url": "https://racinghobbiesec.com/app.html",
+      "finalUrl": "https://racinghobbiesec.com/app",
+      "status": 200,
+      "redirects": [
+        {
+          "url": "https://racinghobbiesec.com/app.html",
+          "status": 308,
+          "location": "/app"
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 12763,
+      "sha256": "3054913a130ad1e34cc630d0a26e347bebb4161862976b816115d4c934e0a122",
+      "title": "Mis entradas · Miniápolis #3",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/admin.html",
+      "finalUrl": "https://racinghobbiesec.com/admin",
+      "status": 200,
+      "redirects": [
+        {
+          "url": "https://racinghobbiesec.com/admin.html",
+          "status": 308,
+          "location": "/admin"
+        }
+      ],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 21295,
+      "sha256": "77887c0811590a508a3a3d28a669448936d1c3d63c2601277cbd391051950b52",
+      "title": "Administración · Miniápolis #3",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/api/health",
+      "finalUrl": "https://racinghobbiesec.com/api/health",
+      "status": 404,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 1014,
+      "sha256": "21327e11d076286f9250f49f25a69c2c9e232c2d4fce306fb9b2c3fdd9d265b0",
+      "title": "Página no encontrada · Miniápolis #3",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    },
+    {
+      "url": "https://racinghobbiesec.com/no-existe-seo-check",
+      "finalUrl": "https://racinghobbiesec.com/no-existe-seo-check",
+      "status": 404,
+      "redirects": [],
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "strict-transport-security": null,
+        "content-security-policy": null,
+        "x-robots-tag": null,
+        "last-modified": null
+      },
+      "bytes": 1014,
+      "sha256": "21327e11d076286f9250f49f25a69c2c9e232c2d4fce306fb9b2c3fdd9d265b0",
+      "title": "Página no encontrada · Miniápolis #3",
+      "canonical": null,
+      "robots": null,
+      "siteName": null,
+      "structuredData": []
+    }
+  ]
+}

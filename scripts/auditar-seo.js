@@ -3,7 +3,9 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import { site, publicPages } from '../site.config.js';
 
-const targets = [site.url.replace('https:', 'http:'), new URL('/', site.url).href, new URL('/robots.txt', site.url).href,
+const www = new URL(site.url);
+www.hostname = `www.${www.hostname}`;
+const targets = [site.url.replace('https:', 'http:'), www.href, new URL('/robots.txt', site.url).href,
   ...publicPages.map((p) => new URL(p.path, site.url).href),
   ...['index.html', 'robots.txt', 'sitemap.xml', 'app.html', 'admin.html', 'api/health', 'no-existe-seo-check'].map((p) => new URL(p, site.url).href)];
 

@@ -192,6 +192,7 @@ export function createApp() {
   app.get('/escanear', page('scan.html'));
   app.get('/admin', page('admin.html'));
   app.get('/posiciones', page('posiciones.html'));
+  app.get('/privacidad', page('privacidad.html'));
   // La página del enlace de recuperación no manda Referer a ninguna parte. El
   // token viaja en el fragmento y la página lo borra, pero no cuesta nada
   // cerrar también esta vía.

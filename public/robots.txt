@@ -2,6 +2,5 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /Miniapolis-Website/api/
 
-Sitemap: https://miniapolis-quito.github.io/Miniapolis-Website/sitemap.xml
+Sitemap: https://racinghobbiesec.com/sitemap.xml

@@ -47,7 +47,9 @@ test('sin permiso no se carga Google ni se envían eventos, tampoco al rechazar'
   assert.equal(b.scripts.length, 0);
   assert.equal(JSON.parse(b.stored()).choice, 'rejected');
   assert.ok(b.cookies.some((c) => c.includes('Path=/;')));
-  assert.ok(b.cookies.some((c) => c.includes('Path=/Miniapolis-Website/;')));
+  const nested = browser({ url: `${site.url}nivel/pagina.html` });
+  nested.reject();
+  assert.ok(nested.cookies.some((c) => c.includes('Path=/nivel/;')));
   assert.ok(!b.cookies.some((c) => c.startsWith('session=')));
 });
 
