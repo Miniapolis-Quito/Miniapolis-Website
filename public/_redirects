@@ -1,3 +1,0 @@
-# Consolidar el dominio propio y conservar la ruta de cada página.
-https://www.racinghobbiesec.com/* https://racinghobbiesec.com/:splat 301
-https://miniapolis-website.pages.dev/* https://racinghobbiesec.com/:splat 301
