@@ -19,7 +19,7 @@ export function generateSeo() {
     html = html.replace(/<html lang="[^"]+"/, '<html lang="es-EC"')
       .replace(/<title>[^<]*<\/title>/, `<title>${escape(page.title)}</title>`)
       .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escape(page.description)}">`)
-      .replace(/\n  <!-- SEO:inicio -->[\s\S]*?<!-- SEO:fin -->\n/g, '\n');
+      .replace(/\n\s*<!-- SEO:inicio -->[\s\S]*?<!-- SEO:fin -->\s*/g, '\n');
     const graph = [organization, { '@type': 'WebPage', '@id': canonical, url: canonical, name: page.title, description: page.description, inLanguage: site.language, isPartOf: { '@id': `${home}#sitio` } }];
     if (page.path === '') graph.unshift({ '@type': 'WebSite', '@id': `${home}#sitio`, name: site.name, alternateName: site.alternateName, url: home, inLanguage: site.language, publisher: { '@id': organization['@id'] } });
     else graph.push({ '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: site.name, item: home }, { '@type': 'ListItem', position: 2, name: page.path.startsWith('posiciones') ? 'Tabla de posiciones' : 'Privacidad y cookies', item: canonical }] });

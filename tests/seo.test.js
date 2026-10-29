@@ -30,13 +30,14 @@ function browser({ url = site.url, saved = null, storageFails = false } = {}) {
     set cookie(value) { cookies.push(value); },
   };
   let stored = saved;
-  const localStorage = { getItem() { if (storageFails) throw new Error('denied'); return stored; }, setItem(_, value) { if (storageFails) throw new Error('denied'); stored = value; } };
+  let writes = 0;
+  const localStorage = { getItem() { if (storageFails) throw new Error('denied'); return stored; }, setItem(_, value) { if (storageFails) throw new Error('denied'); stored = value; writes += 1; } };
   const measurement = { id: 'G-TEST1234', url: site.url, pages: publicPages.map((p) => ({ path: new URL(p.path, site.url).pathname, title: p.title })) };
   const context = vm.createContext({ window, document, location: new URL(url), localStorage, URL, Date, measurement, el });
   vm.runInContext(source, context);
   const clickChoice = (choice) => buttons.find((b) => b.children.includes(choice))?.onClick();
   const events = () => (window.dataLayer || []).filter(([type]) => type === 'event');
-  return { window, document, nodes, scripts, cookies, context, handlers, events, stored: () => stored, accept: () => clickChoice('Aceptar medición'), reject: () => clickChoice('Rechazar medición') };
+  return { window, document, nodes, scripts, cookies, context, handlers, events, writes: () => writes, stored: () => stored, accept: () => clickChoice('Aceptar medición'), reject: () => clickChoice('Rechazar medición') };
 }
 
 test('sin permiso no se carga Google ni se envían eventos, tampoco al rechazar', () => {
@@ -110,6 +111,7 @@ test('la revocación en otra pestaña bloquea esta pestaña', () => {
   b.handlers.storage({ key: 'miniapolis-consentimiento-v1', newValue: JSON.stringify({ choice: 'rejected', at: Date.now() }) });
   assert.equal(b.window['ga-disable-G-TEST1234'], true);
   assert.equal(b.events().length, 0);
+  assert.equal(b.writes(), 1, 'recibir una revocación no debe escribir otra vez ni provocar bucles entre pestañas');
 });
 
 test('las páginas públicas tienen identidad, canónica única, marcado y sitemap coherentes', () => {
