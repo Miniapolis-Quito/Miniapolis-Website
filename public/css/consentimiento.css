@@ -1,0 +1,12 @@
+/* Elección opcional, con la tipografía y los tokens del sitio. */
+.consentimiento { position: fixed; z-index: 10000; inset: auto 16px 16px; max-width: 760px; margin-inline: auto; padding: 22px; border: 1px solid var(--borde-fuerte); border-radius: var(--radio-s); background: var(--superficie); color: var(--texto); box-shadow: var(--sombra-alta); }
+.consentimiento[hidden] { display: none; }
+.consentimiento h2 { margin: 0 0 10px; font-family: var(--display); font-size: 1.2rem; }
+.consentimiento p { margin: 0 0 16px; color: var(--texto-2); font-size: .88rem; line-height: 1.65; }
+.consentimiento__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.consentimiento__acciones .boton { min-height: 44px; flex: 1 1 160px; }
+.privacidad { max-width: 920px; padding-block: 140px 90px; }
+.privacidad h1 { font-family: var(--display); font-size: clamp(2rem, 6vw, 4rem); line-height: 1.1; }
+.privacidad h2 { margin-top: 40px; font-family: var(--display); }
+.privacidad p { margin-block: 20px; color: var(--texto-2); line-height: 1.8; }
+@media (max-width: 400px) { .consentimiento { inset-inline: 8px; bottom: 8px; padding: 16px; } .consentimiento__acciones .boton { flex-basis: 100%; } }

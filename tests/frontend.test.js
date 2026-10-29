@@ -22,6 +22,7 @@ const PAGINAS = {
   'public/restablecer.html': ['restablecer.js'],
   'public/cartera.html': ['cartera.js'],
   'public/posiciones.html': [],
+  'public/privacidad.html': [],
 };
 /** Módulos que carga toda página autenticada. */
 const COMUNES = ['shell.js', 'ui.js', 'api.js', 'realtime.js'];

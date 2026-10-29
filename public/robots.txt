@@ -1,4 +1,7 @@
-# Todo el sistema está detrás de una sesión: no hay nada útil que indexar y sí
-# páginas de acceso que no conviene que aparezcan en buscadores.
+# La portada es pública; las zonas de cuenta llevan noindex y requieren sesión.
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /api/
+Disallow: /Miniapolis-Website/api/
+
+Sitemap: https://miniapolis-quito.github.io/Miniapolis-Website/sitemap.xml
