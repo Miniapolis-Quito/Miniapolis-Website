@@ -589,10 +589,14 @@ function programarBarrido(espera) {
 export function anotarCambio(packId) {
   if (!packId) return false;
   const ahora = ahoraIso();
+  // Dos cambios pueden caer en el mismo milisegundo: la marca que usan las
+  // carteras para pedir novedades debe avanzar incluso en ese caso.
   const cambios = getDb()
     .prepare(
       `UPDATE wallet_passes
-          SET updated_at = ?,
+          SET updated_at = CASE
+                WHEN updated_at >= ? THEN strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0.001 seconds')
+                ELSE ? END,
               sync_pending_at = COALESCE(sync_pending_at, ?),
               -- Si ya venía fallando, se respeta su espera: un pack muy
               -- escaneado no debe reiniciar el reintento en cada lectura y
@@ -600,7 +604,7 @@ export function anotarCambio(packId) {
               sync_next_at = CASE WHEN sync_attempts = 0 THEN NULL ELSE sync_next_at END
         WHERE pack_id = ?`,
     )
-    .run(ahora, ahora, packId).changes;
+    .run(ahora, ahora, ahora, packId).changes;
 
   // Si nadie guardó este pack en su cartera, no hay nada que avisar.
   if (!cambios) return false;

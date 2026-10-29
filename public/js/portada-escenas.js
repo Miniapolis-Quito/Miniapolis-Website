@@ -328,6 +328,9 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
     const lead = $('.seccion__lead, :scope > .entrada__acceso-nota', cabeza);
     if (lead) {
       partir(lead, {
+        // Los párrafos conservan su texto real; aria-label no está permitido
+        // en el rol semántico de párrafo.
+        aria: 'none',
         // Las palabras van numeradas (--i): la escena del complejo las enciende
         // una a una moviendo una sola variable (--luz) en la entradilla, que
         // sobrevive a que SplitText vuelva a partir el texto al cambiar el ancho.

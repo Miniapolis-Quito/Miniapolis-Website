@@ -204,6 +204,13 @@ formRegistro.addEventListener('submit', async (evento) => {
 // Configuración pública: marca, longitud mínima de contraseña y si el registro
 // está abierto.
 (async () => {
+  // GitHub Pages publica la información de la pista, pero no ejecuta la API.
+  // No pedir contraseñas ni enviar formularios a un alojamiento sin servidor.
+  if (document.documentElement.dataset.hostingStatic === 'true') {
+    for (const campo of document.querySelectorAll('#acceso input, #acceso button')) campo.disabled = true;
+    mostrarAviso(aviso, 'El acceso a entradas no está disponible en esta web pública. Consulta con la administración de la pista para gestionar tu pase.', 'alerta');
+    return;
+  }
   try {
     const configuracion = await fetch('/api/config').then((r) => r.json());
     aplicarMarca(configuracion);

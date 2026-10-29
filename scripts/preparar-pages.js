@@ -9,6 +9,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { generateSeo } from './generar-seo.js';
+import { site } from '../site.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +19,7 @@ const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 const SITE_DIR = path.join(ROOT_DIR, '_site');
 
 console.log('Preparando sitio para GitHub Pages...');
+generateSeo();
 
 // Limpiar y crear _site/
 if (fs.existsSync(SITE_DIR)) {
@@ -35,6 +38,9 @@ const htmlFiles = fs.readdirSync(SITE_DIR).filter((f) => f.endsWith('.html'));
 for (const file of htmlFiles) {
   const filePath = path.join(SITE_DIR, file);
   let html = fs.readFileSync(filePath, 'utf8');
+  html = html.replace('<html ', '<html data-hosting-static="true" ');
+  // La página 404 también se sirve para rutas anidadas inexistentes.
+  if (file === '404.html') html = html.replace('</head>', `  <base href="${site.url}">\n</head>`);
 
   // Ajustar enlaces de recursos absolutos a relativos en la raíz de _site
   html = html

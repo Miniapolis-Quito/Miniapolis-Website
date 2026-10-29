@@ -1208,7 +1208,7 @@
   transition: opacity 420ms ease-out;
 }
 .funciona__paso:first-child { justify-content: flex-start; padding-top: 0; border-top: 0; }
-.funciona--guiado .funciona__paso { opacity: .3; }
+.funciona--guiado .funciona__paso { opacity: .7; }
 .funciona--guiado .funciona__paso.funciona__paso--activo { opacity: 1; }
 .funciona__num {
   margin-bottom: 18px;
@@ -2049,7 +2049,7 @@ html.lenis { scroll-behavior: auto; }
 }
 .ficha--guiada .ficha__fila {
   position: relative;
-  opacity: .34;
+  opacity: .7;
   transition: opacity 320ms ease-out;
 }
 .ficha--guiada .ficha__fila::before {
