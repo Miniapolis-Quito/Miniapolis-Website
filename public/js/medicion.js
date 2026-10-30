@@ -25,7 +25,7 @@ export function cleanLocation(value) {
     const clean = new URL(page.path, production.origin);
     for (const key of campaigns) {
       const safe = safeCampaign(source.searchParams.get(key));
-      if (safe) clean.searchParams.set(key, safe);
+      if (safe && measurement.campaignValues?.[key]?.includes(safe)) clean.searchParams.set(key, safe);
     }
     return clean.href;
   } catch { return measurement.url; }
@@ -105,9 +105,9 @@ function enable() {
   pageView();
 }
 
-function choose(nextChoice) {
+function choose(nextChoice, persist = true) {
   choice = nextChoice;
-  try { localStorage.setItem(KEY, JSON.stringify({ choice, at: Date.now() })); } catch { /* Conservar en memoria. */ }
+  try { if (persist) localStorage.setItem(KEY, JSON.stringify({ choice, at: Date.now() })); } catch { /* Conservar en memoria. */ }
   if (choice === 'accepted') enable();
   else {
     window[`ga-disable-${measurement.id}`] = true;
@@ -160,7 +160,9 @@ function setup() {
     try { if (JSON.parse(event.newValue)?.choice === 'accepted') next = 'accepted'; } catch { /* Revocar si se borra. */ }
     choice = next;
     if (next === 'accepted') { enable(); banner.hidden = true; }
-    else { choose('rejected'); }
+    // Un cambio de otra pestaña ya está persistido: escribirlo de nuevo
+    // provocaría un bucle de eventos storage entre ambas pestañas.
+    else { choose('rejected', false); }
   });
   document.addEventListener('click', (event) => {
     if (choice !== 'accepted' || !eligible()) return;
