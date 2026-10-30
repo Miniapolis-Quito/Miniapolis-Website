@@ -8,6 +8,14 @@ export const site = Object.freeze({
   logo: 'images/miniapolis-logo-oficial-400.webp',
   googleVerification: 'hDxF8oTZxJSnNkIfJyvluPNpxU3XDz-Pw_t4thXxcy0',
   measurementId: '', // Copiar únicamente el G-… del flujo propio verificado.
+  // Vocabulario cerrado: no enviar texto libre de campañas a Google.
+  campaignValues: {
+    utm_source: ['google', 'bing', 'facebook', 'instagram', 'newsletter', 'boletin', 'whatsapp', 'racing_hobbies', 'sim_racing_ecuador'],
+    utm_medium: ['organic', 'referral', 'social', 'email', 'cpc', 'paid_social', 'display', 'qr'],
+    utm_campaign: [],
+    utm_content: [],
+    utm_term: [],
+  },
 });
 
 export const publicPages = Object.freeze([

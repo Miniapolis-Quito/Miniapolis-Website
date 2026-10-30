@@ -58,7 +58,7 @@ export function generateSeo() {
   }
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${publicPages.map((p) => `  <url><loc>${escape(absolute(p.path))}</loc></url>`).join('\n')}\n</urlset>\n`);
   fs.writeFileSync(path.join(publicDir, 'robots.txt'), `# La portada es pública; las zonas de cuenta llevan noindex y requieren sesión.\nUser-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${absolute('sitemap.xml')}\n`);
-  fs.writeFileSync(path.join(publicDir, 'js/medicion-config.js'), `// Generado por scripts/generar-seo.js a partir de site.config.js.\nexport const measurement = Object.freeze(${JSON.stringify({ id: site.measurementId, url: home, pages: publicPages.map((p) => ({ path: new URL(p.path, home).pathname, title: p.title })) }, null, 2)});\n`);
+  fs.writeFileSync(path.join(publicDir, 'js/medicion-config.js'), `// Generado por scripts/generar-seo.js a partir de site.config.js.\nexport const measurement = Object.freeze(${JSON.stringify({ id: site.measurementId, url: home, campaignValues: site.campaignValues, pages: publicPages.map((p) => ({ path: new URL(p.path, home).pathname, title: p.title })) }, null, 2)});\n`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) generateSeo();

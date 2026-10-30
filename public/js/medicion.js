@@ -25,7 +25,7 @@ export function cleanLocation(value) {
     const clean = new URL(page.path, production.origin);
     for (const key of campaigns) {
       const safe = safeCampaign(source.searchParams.get(key));
-      if (safe) clean.searchParams.set(key, safe);
+      if (safe && measurement.campaignValues?.[key]?.includes(safe)) clean.searchParams.set(key, safe);
     }
     return clean.href;
   } catch { return measurement.url; }

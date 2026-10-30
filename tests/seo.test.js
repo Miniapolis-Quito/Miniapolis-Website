@@ -32,7 +32,7 @@ function browser({ url = site.url, saved = null, storageFails = false } = {}) {
   let stored = saved;
   let writes = 0;
   const localStorage = { getItem() { if (storageFails) throw new Error('denied'); return stored; }, setItem(_, value) { if (storageFails) throw new Error('denied'); stored = value; writes += 1; } };
-  const measurement = { id: 'G-TEST1234', url: site.url, pages: publicPages.map((p) => ({ path: new URL(p.path, site.url).pathname, title: p.title })) };
+  const measurement = { id: 'G-TEST1234', url: site.url, campaignValues: site.campaignValues, pages: publicPages.map((p) => ({ path: new URL(p.path, site.url).pathname, title: p.title })) };
   const context = vm.createContext({ window, document, location: new URL(url), localStorage, URL, Date, measurement, el });
   vm.runInContext(source, context);
   const clickChoice = (choice) => buttons.find((b) => b.children.includes(choice))?.onClick();
@@ -103,6 +103,9 @@ test('URLs y referentes excluyen datos privados, fragmentos y campañas de texto
   assert.equal(params.page_location, `${site.url}?utm_source=newsletter&utm_medium=email`);
   assert.equal(params.page_referrer, 'https://example.org/');
   assert.ok(!JSON.stringify(b.window.dataLayer).includes('private'));
+  const personal = browser({ url: `${site.url}?utm_source=Danilo_Monge&utm_campaign=Ana_Piloto&utm_term=Cliente_Real` });
+  personal.accept();
+  assert.equal(personal.events()[0][2].page_location, site.url, 'una forma válida no convierte un nombre personal en una campaña autorizada');
 });
 
 test('la revocación en otra pestaña bloquea esta pestaña', () => {

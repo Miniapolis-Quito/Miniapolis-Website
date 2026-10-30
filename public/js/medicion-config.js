@@ -2,6 +2,32 @@
 export const measurement = Object.freeze({
   "id": "",
   "url": "https://racinghobbiesec.com/",
+  "campaignValues": {
+    "utm_source": [
+      "google",
+      "bing",
+      "facebook",
+      "instagram",
+      "newsletter",
+      "boletin",
+      "whatsapp",
+      "racing_hobbies",
+      "sim_racing_ecuador"
+    ],
+    "utm_medium": [
+      "organic",
+      "referral",
+      "social",
+      "email",
+      "cpc",
+      "paid_social",
+      "display",
+      "qr"
+    ],
+    "utm_campaign": [],
+    "utm_content": [],
+    "utm_term": []
+  },
   "pages": [
     {
       "path": "/",
