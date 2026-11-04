@@ -11,7 +11,7 @@ const escape = (value) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;
 /** Generación determinista: sin lastmod ficticio ni URLs que no existan. */
 export function generateSeo() {
   const home = site.url;
-  const organization = { '@type': 'Organization', '@id': `${home}#organizacion`, name: site.name, url: home, logo: absolute(site.logo) };
+  const organization = { '@type': 'Organization', '@id': `${home}#organizacion`, name: site.name, alternateName: site.alternateName, url: home, logo: absolute(site.logo) };
   for (const page of publicPages) {
     const filename = path.join(publicDir, page.file);
     let html = fs.readFileSync(filename, 'utf8');
@@ -38,7 +38,7 @@ export function generateSeo() {
   <meta property="og:image" content="${absolute(site.image)}">
   <meta property="og:image:width" content="1675">
   <meta property="og:image:height" content="939">
-  <meta property="og:image:alt" content="Circuito indoor de asfalto de Miniápolis #3">
+  <meta property="og:image:alt" content="Circuito indoor de asfalto de ${escape(site.name)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escape(page.title)}">
   <meta name="twitter:description" content="${escape(page.description)}">

@@ -31,15 +31,15 @@ export const measurement = Object.freeze({
   "pages": [
     {
       "path": "/",
-      "title": "Miniápolis #3 | Pista RC indoor en Quito"
+      "title": "Miniapolis #3 Ecuador | Pista RC indoor en Quito"
     },
     {
       "path": "/posiciones",
-      "title": "Campeonato F1 RC: posiciones | Miniápolis #3"
+      "title": "Campeonato F1 RC: posiciones | Miniapolis #3 Ecuador"
     },
     {
       "path": "/privacidad",
-      "title": "Privacidad y cookies | Miniápolis #3"
+      "title": "Privacidad y cookies | Miniapolis #3 Ecuador"
     }
   ]
 });

@@ -140,3 +140,18 @@ test('las páginas públicas tienen identidad, canónica única, marcado y sitem
     assert.match(fs.readFileSync(`public/${file}.html`, 'utf8'), /name="robots" content="noindex/);
   }
 });
+
+test('la portada declara WebSite con el nombre Miniapolis #3 Ecuador y alternativas para Google', () => {
+  const html = fs.readFileSync('public/index.html', 'utf8');
+  const data = JSON.parse(html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
+  const website = data['@graph'].find((item) => item['@type'] === 'WebSite');
+  assert.ok(website, 'falta el objeto WebSite en JSON-LD');
+  assert.equal(website.name, 'Miniapolis #3 Ecuador');
+  assert.ok(Array.isArray(website.alternateName));
+  assert.ok(website.alternateName.includes('Miniápolis #3 Ecuador'));
+  assert.ok(website.alternateName.includes('racinghobbiesec.com'));
+  assert.equal(website.url, 'https://racinghobbiesec.com/');
+  assert.ok(html.includes('<meta property="og:site_name" content="Miniapolis #3 Ecuador">'));
+  assert.ok(html.includes('alt="Miniapolis #3 Ecuador"'));
+  assert.ok(html.includes('Miniapolis #3 Ecuador: pista indoor de asfalto'));
+});
