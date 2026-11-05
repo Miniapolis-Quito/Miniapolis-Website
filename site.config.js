@@ -11,7 +11,7 @@ export const site = Object.freeze({
   image: 'images/pista/miniapolis-track-wide.webp',
   logo: 'images/miniapolis-logo-oficial-400.webp',
   googleVerification: 'hDxF8oTZxJSnNkIfJyvluPNpxU3XDz-Pw_t4thXxcy0',
-  measurementId: '', // Copiar únicamente el G-… del flujo propio verificado.
+  measurementId: 'G-NX90JV1VSH', // Flujo propio de Miniapolis: 16237934211, propiedad 561697306.
   // Vocabulario cerrado: no enviar texto libre de campañas a Google.
   campaignValues: {
     utm_source: ['google', 'bing', 'facebook', 'instagram', 'newsletter', 'boletin', 'whatsapp', 'racing_hobbies', 'sim_racing_ecuador'],
