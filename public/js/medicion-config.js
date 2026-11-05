@@ -1,6 +1,6 @@
 // Generado por scripts/generar-seo.js a partir de site.config.js.
 export const measurement = Object.freeze({
-  "id": "",
+  "id": "G-NX90JV1VSH",
   "url": "https://racinghobbiesec.com/",
   "campaignValues": {
     "utm_source": [
