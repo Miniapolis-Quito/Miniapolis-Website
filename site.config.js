@@ -1,13 +1,10 @@
 /** Identidad y URLs públicas comprobadas. No contiene secretos. */
 export const site = Object.freeze({
-  name: 'Miniapolis #3 Ecuador',
+  name: 'Miniapolis #3',
   alternateName: Object.freeze([
-    'Miniápolis #3 Ecuador',
     'Miniápolis #3',
-    'Miniapolis #3',
     'Miniápolis',
     'Miniapolis',
-    'racinghobbiesec.com',
   ]),
   url: 'https://racinghobbiesec.com/',
   language: 'es-EC',
@@ -26,7 +23,7 @@ export const site = Object.freeze({
 });
 
 export const publicPages = Object.freeze([
-  { file: 'index.html', path: '', title: 'Miniapolis #3 Ecuador | Pista RC indoor en Quito', description: 'Conoce Miniápolis #3 en Quito, Ecuador: pista indoor de asfalto para autos a control remoto. Consulta el circuito, horarios, disciplinas y campeonato F1 RC.' },
-  { file: 'posiciones.html', path: 'posiciones', title: 'Campeonato F1 RC: posiciones | Miniapolis #3 Ecuador', description: 'Consulta la clasificación del campeonato F1 RC de Miniápolis #3 en Quito, Ecuador, temporada julio–agosto de 2026, y la información de carreras publicada por la pista.' },
-  { file: 'privacidad.html', path: 'privacidad', title: 'Privacidad y cookies | Miniapolis #3 Ecuador', description: 'Información sobre la medición de visitas, cookies opcionales y cómo aceptar, rechazar o retirar el consentimiento en la web de Miniápolis #3 Ecuador.' },
+  { file: 'index.html', path: '', title: 'Miniapolis #3 | Pista RC indoor en Quito', description: 'Conoce Miniápolis #3 en Quito, Ecuador: pista indoor de asfalto para autos a control remoto. Consulta el circuito, horarios, disciplinas y campeonato F1 RC.' },
+  { file: 'posiciones.html', path: 'posiciones', title: 'Campeonato F1 RC: posiciones | Miniapolis #3', description: 'Consulta la clasificación del campeonato F1 RC de Miniápolis #3 en Quito, Ecuador, temporada julio–agosto de 2026, y la información de carreras publicada por la pista.' },
+  { file: 'privacidad.html', path: 'privacidad', title: 'Privacidad y cookies | Miniapolis #3', description: 'Información sobre la medición de visitas, cookies opcionales y cómo aceptar, rechazar o retirar el consentimiento en la web de Miniapolis #3.' },
 ]);
