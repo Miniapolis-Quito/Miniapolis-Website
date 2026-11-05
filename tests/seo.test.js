@@ -141,17 +141,20 @@ test('las páginas públicas tienen identidad, canónica única, marcado y sitem
   }
 });
 
-test('la portada declara WebSite con el nombre Miniapolis #3 Ecuador y alternativas para Google', () => {
+test('la portada declara Miniapolis #3 como nombre y no ofrece el dominio como marca alternativa', () => {
   const html = fs.readFileSync('public/index.html', 'utf8');
   const data = JSON.parse(html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
   const website = data['@graph'].find((item) => item['@type'] === 'WebSite');
   assert.ok(website, 'falta el objeto WebSite en JSON-LD');
-  assert.equal(website.name, 'Miniapolis #3 Ecuador');
+  assert.equal(website.name, 'Miniapolis #3');
   assert.ok(Array.isArray(website.alternateName));
-  assert.ok(website.alternateName.includes('Miniápolis #3 Ecuador'));
-  assert.ok(website.alternateName.includes('racinghobbiesec.com'));
+  assert.ok(website.alternateName.includes('Miniápolis #3'));
+  assert.ok(!website.alternateName.some((name) => /racinghobbies|Ecuador|\.com/i.test(name)));
+  assert.equal(data['@graph'].filter((item) => item['@type'] === 'WebSite').length, 1);
+  assert.equal(data['@graph'].find((item) => item['@type'] === 'Organization').name, website.name);
   assert.equal(website.url, 'https://racinghobbiesec.com/');
-  assert.ok(html.includes('<meta property="og:site_name" content="Miniapolis #3 Ecuador">'));
-  assert.ok(html.includes('alt="Miniapolis #3 Ecuador"'));
-  assert.ok(html.includes('Miniapolis #3 Ecuador: pista indoor de asfalto'));
+  assert.ok(html.includes('<meta property="og:site_name" content="Miniapolis #3">'));
+  assert.ok(html.includes('alt="Miniapolis #3"'));
+  assert.ok(html.includes('Miniapolis #3: pista indoor de asfalto'));
+  assert.ok(!html.includes('Miniapolis #3 — Racing Hobbies'));
 });

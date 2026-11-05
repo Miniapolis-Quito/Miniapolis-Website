@@ -1,5 +1,7 @@
 # Corrección del Site Name en Google Search — Miniapolis #3 Ecuador
 
+> Registro histórico de la versión del 4 de noviembre, sustituida por la corrección del 5 de noviembre: el nombre solicitado es **Miniapolis #3**, sin «Ecuador» y sin el dominio como alternativa. La hipótesis de que el sufijo `ec` exigía añadir «Ecuador» al nombre no está demostrada ni es un requisito de Google. Véase `2026-11-05-nombre-sitio-google.md` para el diagnóstico vigente.
+
 Fecha: 4 de noviembre de 2026.
 Dominio: <https://racinghobbiesec.com/>
 Repositorio: <https://github.com/Miniapolis-Quito/Miniapolis-Website>
