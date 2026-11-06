@@ -28,7 +28,7 @@ export function generateSeo() {
   <link rel="canonical" href="${canonical}">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta name="google-site-verification" content="${site.googleVerification}">
+  <meta name="google-site-verification" content="${site.googleVerification}">${page.path === '' && site.bingVerification ? `\n  <meta name="msvalidate.01" content="${escape(site.bingVerification)}">` : ''}
   <meta property="og:site_name" content="${escape(site.name)}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_EC">

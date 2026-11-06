@@ -11,6 +11,7 @@ export const site = Object.freeze({
   image: 'images/pista/miniapolis-track-wide.webp',
   logo: 'images/miniapolis-logo-oficial-400.webp',
   googleVerification: 'hDxF8oTZxJSnNkIfJyvluPNpxU3XDz-Pw_t4thXxcy0',
+  bingVerification: 'F7AC396C5EF924AB08790B71B5357E40', // Token obtenido para este dominio en Bing Webmaster Tools.
   measurementId: 'G-NX90JV1VSH', // Flujo propio de Miniapolis: 16237934211, propiedad 561697306.
   // Vocabulario cerrado: no enviar texto libre de campañas a Google.
   campaignValues: {
