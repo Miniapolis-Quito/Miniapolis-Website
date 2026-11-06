@@ -2,6 +2,8 @@
 
 Fecha: 5 de noviembre de 2026. Este registro actualiza los pendientes de Analytics del informe inicial del 29 de octubre. El usuario confirmó 1–10 personas y autorizó crear y configurar la propiedad independiente.
 
+**Actualización del 6 de noviembre:** el ID ya está publicado, se comprobó recepción en Tiempo real, se guardó el vínculo con Search Console y se crearon las dos dimensiones. Los estados pendientes de esta instantánea del día 5 se sustituyen, para esos puntos, por el [registro de verificación del 6 de noviembre](2026-11-06-verificacion-ga4.md).
+
 ## Identificadores comprobados
 
 | Recurso | Valor | Estado y evidencia |
