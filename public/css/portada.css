@@ -2222,11 +2222,14 @@ html.lenis { scroll-behavior: auto; }
 
 /* --- Cursor propio (puntero fino y movimiento permitido) --------------------------- */
 
+/* El cursor del sistema no se pinta (`cursor: none`): este lo sustituye, así
+   que va por encima de cualquier capa, también del panel de cookies. Como no
+   recibe el puntero (`pointer-events: none`), no tapa nada de lo que se pulsa. */
 .cursor {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 200;
+  z-index: 2147483647;
   pointer-events: none;
   will-change: transform;
 }

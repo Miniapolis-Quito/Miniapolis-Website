@@ -442,6 +442,25 @@ test('el cursor propio nunca esconde dónde se escribe', () => {
   assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.cursor \{ display: none; \}/);
 });
 
+test('el cursor propio queda por encima de todo, también del panel de cookies', () => {
+  // Con el cursor propio el del sistema no se pinta (`cursor: none`): si una
+  // capa (el panel de cookies, la cabecera) quedara por encima, el puntero
+  // desaparecería al pasar sobre ella.
+  const hojas = [...HTML.matchAll(/<link rel="stylesheet" href="\/(css\/[\w-]+\.css)">/g)].map((m) => m[1]);
+  assert.ok(hojas.includes('css/consentimiento.css'), 'la portada carga el panel de cookies');
+  const cursor = reglas(CSS).find((r) => r.selector === '.cursor');
+  const propio = Number(cursor?.cuerpo.match(/z-index:\s*(\d+)/)?.[1]);
+  assert.ok(Number.isFinite(propio), 'el cursor propio declara su z-index');
+  for (const hoja of hojas) {
+    for (const { selector, cuerpo } of reglas(leer(`public/${hoja}`))) {
+      if (selector === '.cursor') continue;
+      for (const [, valor] of cuerpo.matchAll(/z-index:\s*(-?\d+)/g)) {
+        assert.ok(Number(valor) < propio, `${hoja} · ${selector} (z-index ${valor}) taparía el cursor propio (z-index ${propio})`);
+      }
+    }
+  }
+});
+
 test('lo que espera a revelarse se puede enfocar con el teclado', () => {
   // `autoAlpha` pone `visibility: hidden`, que saca el elemento del orden de
   // tabulación: un enlace o un campo sin revelar sería inalcanzable con el
