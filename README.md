@@ -1,9 +1,22 @@
-# Sistema de entradas — Miniápolis #3
+# Miniápolis #3
 
-Control de acceso por packs de entradas para la pista de autos a control remoto.
+Sitio web y sistema de entradas de Miniápolis #3, pista indoor de autos a control remoto en Quito.
+
+Sitio en producción: [racinghobbiesec.com](https://racinghobbiesec.com/)
+
+![Portada del sitio de Miniápolis #3](docs/imagenes/portada.webp)
+
 Los clientes compran packs de 5 o 10 entradas, muestran un código QR desde su
-teléfono y el personal lo escanea en la puerta: cada escaneo descuenta una
+teléfono y el personal lo escanea en la puerta. Cada escaneo descuenta una
 entrada y el saldo se actualiza en el teléfono del cliente al instante.
+
+| Área | Tecnología |
+| --- | --- |
+| Servidor | Node.js 22, Express, SQLite con better-sqlite3, validación con Zod |
+| Interfaz | HTML, CSS y JavaScript sin framework, con GSAP y Lenis en la portada |
+| Entradas | Códigos QR rotativos, pases de Apple Wallet y Google Wallet, escáner sin conexión |
+| Correo | Nodemailer para comprobantes y recordatorios |
+| Calidad | Pruebas con node:test, pruebas de extremo a extremo y CI en GitHub Actions |
 
 ---
 
