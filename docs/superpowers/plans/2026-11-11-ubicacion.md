@@ -31,7 +31,7 @@
 - [x] Ejecutar npm test y npm run build:pages; verificar el resultado y auditar SEO.
 - [x] Verificar en navegador el pin, enlaces, 320/375 px, escritorio, movimiento reducido y fallback.
 - [x] Solicitar revisión independiente y resolver hallazgos: revisión sin hallazgos.
-- [ ] Crear/fusionar PR en main cuando CI pase.
+- [x] Crear/fusionar PR en main cuando CI pase: PR #117 fusionado, CI y publicación correctos.
 
 ## Evidencia
 - `npm test`: 584/584 pruebas, sin fallos.
@@ -41,3 +41,13 @@
 - Mapa real muestra Miniapolis #3 en el CID solicitado; enlaces originales y foco de teclado comprobados.
 - Sin JavaScript, GSAP o acceso al mapa: titular, dirección y enlace visibles. Movimiento reducido sin recortes ni opacidad residual.
 - Revisión independiente: sin hallazgos críticos, importantes ni menores.
+
+## Corrección encontrada al comprobar producción
+El alojamiento devuelve `Cache-Control: public, max-age=14400, must-revalidate` para el CSS, aunque `_headers` solicita revalidación inmediata. Una visita repetida recibió el HTML nuevo con el CSS y módulo de escenas anteriores: `.ubicacion` se mostraba como bloque y el mapa no tenía el tratamiento visual previsto.
+
+Se añaden versiones basadas en contenido a las URLs publicadas de `portada.css`, `portada.js` y su importación de `portada-escenas.js`. Solo cambia la salida de Pages; el código fuente, las demás páginas y la caché del escáner conservan su comportamiento. La prueba de regresión ejecuta el preparador real y comprueba que cambios en CSS o escenas renuevan las tres URLs y que una reconstrucción idéntica las conserva.
+
+- [x] Verificar regresión, suite completa (585/585) y navegador con recursos antiguos en caché.
+- [x] Revisión independiente de la corrección: sin hallazgos.
+
+La fusión y la verificación publicada se registran en el PR de esta corrección.

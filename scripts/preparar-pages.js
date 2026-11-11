@@ -8,6 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { generateSeo } from './generar-seo.js';
 import { site } from '../site.config.js';
@@ -30,6 +31,19 @@ fs.mkdirSync(SITE_DIR, { recursive: true });
 // Copiar todo el contenido de public/ a _site/
 fs.cpSync(PUBLIC_DIR, SITE_DIR, { recursive: true });
 
+// El alojamiento puede conservar CSS y módulos durante horas en el navegador.
+// La portada y su escena cambian de URL juntas: incluso una visita repetida
+// obtiene los estilos y el movimiento de esta publicación, sin vaciar la caché.
+const portadaAssets = ['css/portada.css', 'js/portada.js', 'js/portada-escenas.js'];
+const portadaHash = createHash('sha256');
+for (const asset of portadaAssets) {
+  portadaHash.update(asset).update('\0').update(fs.readFileSync(path.join(PUBLIC_DIR, asset))).update('\0');
+}
+const portadaVersion = portadaHash.digest('hex').slice(0, 12);
+const portadaPath = path.join(SITE_DIR, 'js/portada.js');
+fs.writeFileSync(portadaPath, fs.readFileSync(portadaPath, 'utf8')
+  .replace("from './portada-escenas.js'", `from './portada-escenas.js?v=${portadaVersion}'`));
+
 // Crear .nojekyll para evitar que Jekyll ignore archivos que empiecen con guion bajo o modifique assets
 fs.writeFileSync(path.join(SITE_DIR, '.nojekyll'), '');
 
@@ -50,7 +64,8 @@ for (const file of htmlFiles) {
     .replace(/src="\/vendor\//g, 'src="./vendor/')
     .replace(/href="\/favicon\.png"/g, 'href="./favicon.png"')
     .replace(/href="\/manifest\.webmanifest"/g, 'href="./manifest.webmanifest"')
-    .replace(/href="\/"/g, 'href="./index.html"');
+    .replace(/href="\/"/g, 'href="./index.html"')
+    .replace(/((?:href|src)="\.\/(?:css\/portada\.css|js\/portada\.js))"/g, `$1?v=${portadaVersion}"`);
 
   fs.writeFileSync(filePath, html, 'utf8');
   console.log(`✓ Procesado ${file}`);
