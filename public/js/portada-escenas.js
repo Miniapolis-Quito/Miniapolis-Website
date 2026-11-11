@@ -762,7 +762,15 @@ export function montarEscenas({ gsap, ScrollTrigger, SplitText, MotionPathPlugin
   }
 
   // -------------------------------------------------------------------------
-  // 05 · Récords: foto finish. Un solo reloj y cada piloto cruza en su tiempo
+  // Ubicación: la misma lectura de telemetría fija la dirección y el mapa
+  // -------------------------------------------------------------------------
+
+  $$('.ubicacion__datos, .ubicacion__plano').forEach((panel, i) => {
+    fijar(panel, { duracion: 1, retraso: i * 0.12, scrollTrigger: alEntrar(panel, 'top 88%') });
+  });
+
+  // -------------------------------------------------------------------------
+  // Récords: foto finish. Un solo reloj y cada piloto cruza en su tiempo
   // -------------------------------------------------------------------------
 
   const tablero = $('.tiempos');

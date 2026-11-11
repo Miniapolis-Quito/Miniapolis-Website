@@ -98,6 +98,11 @@ test('las respuestas llevan las cabeceras de seguridad esperadas', async () => {
   const csp = r.headers.get('content-security-policy');
   assert.ok(csp.includes("default-src 'self'"));
   assert.ok(csp.includes("frame-ancestors 'none'"));
+  assert.equal(
+    csp.split('; ').find((directiva) => directiva.startsWith('frame-src ')),
+    'frame-src https://www.google.com',
+    'el mapa se permite sin abrir marcos de otros proveedores',
+  );
   assert.ok(csp.includes("object-src 'none'"));
   // Sin 'unsafe-inline' ni 'unsafe-eval': la interfaz no los necesita.
   assert.ok(!csp.includes('unsafe-inline'));

@@ -3,9 +3,9 @@ import { config } from '../config.js';
 import { forbidden } from '../lib/errors.js';
 
 /**
- * Política de seguridad de contenido. La interfaz no carga nada de terceros,
- * así que se puede cerrar casi por completo: sin scripts externos, sin marcos,
- * y solo conexiones al propio origen.
+ * Política de seguridad de contenido. El único marco externo permitido es
+ * Google Maps, para la ubicación de la portada. Los scripts y las conexiones
+ * del documento siguen limitados al propio origen.
  */
 const CSP = [
   "default-src 'self'",
@@ -17,6 +17,7 @@ const CSP = [
   "connect-src 'self'",
   "media-src 'self' blob:",
   "object-src 'none'",
+  'frame-src https://www.google.com',
   "frame-ancestors 'none'",
   "form-action 'self'",
   'upgrade-insecure-requests',
