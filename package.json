@@ -29,7 +29,7 @@
     "test:e2e:sin-conexion": "node tests/e2e/sin-conexion.mjs"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^13.2.0",
     "compression": "^1.8.2",
     "express": "^5.3.0",
     "nodemailer": "^10.0.10",
